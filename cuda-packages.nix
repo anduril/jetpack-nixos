@@ -115,6 +115,7 @@ let
       version = debs.common."cuda-sanitizer-${cudaVersionDashes}".version;
       srcs = [ debs.common."cuda-sanitizer-${cudaVersionDashes}".src ];
     };
+    cuda_profiler_api = buildFromSourcePackage { name = "cuda-profiler-api"; };
     cudnn = buildFromSourcePackage {
       name = "cudnn";
       buildInputs = with cudaPackages; [ libcublas ];
@@ -239,10 +240,10 @@ let
       '';
     };
 
-    # TODO: libnvinfer-samples
-    # TODO: This package is too large to want to want to just combine. Maybe split back into lib/dev/bin subpackages?
     # Test with:
-    # LD_LIBRARY_PATH=/run/opengl-driver/lib:/nix/store/q17hpgqcpyzskbpy8hp58pgmlz36hphy-l4t-nvidia-l4t-nvsci-35.1.0-20220825113828/lib /nix/store/jjn25fy0xj3y1swp22lb2v1fg4ldqvwr-tensorrt-8.4.1-1+cuda11.4/bin/trtexec --onnx=mnist.onnx
+    # ./result/bin/trtexec --onnx=mnist.onnx
+    # (mnist.onnx is from libnvinfer-samples deb)
+    # TODO: This package is maybe large to want to just combine everything. Maybe split back into lib/dev/bin subpackages?
     tensorrt = let
       # Filter out samples. They're too big
       tensorrtDebs = builtins.filter (p: !(lib.hasInfix "libnvinfer-samples" p.filename)) (debsForSourcePackage "tensorrt");
@@ -260,16 +261,50 @@ let
         mv src/tensorrt/bin bin
       '';
 
-      # These libraries access each other at runtime
-      # This is getting overwritten by autoPatchelfHook ?
+      # Tell autoPatchelf about runtime dependencies.
+      # (postFixup phase is run before autoPatchelfHook.)
       postFixup = ''
-        patchelf --add-rpath $out/lib lib/lib*.so
+        echo "Patching RPATH of libnvinfer libs"
+        patchelf --debug --add-needed libnvinfer.so $out/lib/libnvinfer*.so.*
       '';
     };
-    #  tensorrt # Should probably get re-split into dev and non-dev components.
-    #  tensorrt (8.4.1-1+cuda11.4)
+
+    # Contains a bunch of tests, for example:
+    # ./result/bin/sample_mnist --datadir=result/data/mnist
+    libnvinfer-samples = stdenv.mkDerivation {
+      pname = "libnvinfer-samples";
+      version = debs.common.libnvinfer-samples.version;
+      src = debs.common.libnvinfer-samples.src;
+
+      unpackCmd = "dpkg -x $src source";
+      sourceRoot = "source/usr/src/tensorrt/samples";
+
+      nativeBuildInputs = [ dpkg autoAddOpenGLRunpathHook ];
+      buildInputs = with cudaPackages; [ tensorrt cuda_profiler_api cudnn ];
+
+      # These environment variables are required by the /usr/src/tensorrt/samples/README.md
+      CUDA_INSTALL_DIR = cudaPackages.cudatoolkit;
+      CUDNN_INSTALL_DIR = cudaPackages.cudnn;
+
+      enableParallelBuilding = true;
+
+      installPhase = ''
+        runHook preInstall
+
+        mkdir -p $out
+
+        rm -rf ../bin/chobj
+        rm -rf ../bin/dchobj
+        cp -r ../bin $out/
+        cp -r ../data $out/
+
+        runHook postInstall
+      '';
+    };
+
+    # TODO:
     #  libnvidia-container
     #  libcudla
-    #  cuda-profiler-api # Is this cuda_nvprof?
+    # vpi2
   };
 in cudaPackages

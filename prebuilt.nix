@@ -14,7 +14,7 @@ let
       nativeBuildInputs ? [], autoPatchelf ? true, postPatch ? "", ...
     }@args:
     stdenvNoCC.mkDerivation ((lib.filterAttrs (n: v: !(builtins.elem n [ "name" "autoPatchelf" ])) args) // {
-      pname = "l4t-${name}";
+      pname = name;
       inherit version src;
 
       nativeBuildInputs = [ dpkg ] ++ lib.optional autoPatchelf autoPatchelfHook ++ nativeBuildInputs;
