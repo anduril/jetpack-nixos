@@ -29,33 +29,6 @@ let
     mv Linux_for_Tegra $out
   '';
 
-  nvtools = stdenv.mkDerivation {
-    pname = "nvtools";
-    inherit version;
-    src = "${bspSrc}/nv_tegra/nv_tools.tbz2";
-
-    nativeBuildInputs = [ autoPatchelfHook ];
-    buildInputs = [ stdenv.cc.cc ];  # for libstdc++.so.6
-
-    sourceRoot = ".";
-
-    dontConfigure = true;
-    dontBuild = true;
-    noDumpEnvVars = true;
-
-    postPatch = ''
-      # Broken link
-      rm usr/bin/nvcapture-status-decoder
-    '';
-
-    installPhase = ''
-      mkdir -p $out/{bin,etc}
-      cp -r etc/. $out/etc/
-      cp usr/sbin/{nvbootctrl,nvpmodel,nv_part_update,nv_update_engine,nv_bootloader_payload_updater} $out/bin/
-      cp usr/bin/{tegrastats,jetson_clocks} $out/bin/
-    '';
-  };
-
   # Fixed version of edk that works with cross-compilation
   # TODO: Remove when we upgrade beyond 22.05
   edk2 = callPackage ./edk2.nix {};
@@ -114,6 +87,8 @@ let
 
   cudaPackages = callPackages ./cuda-packages.nix { inherit debs cudaVersion autoAddOpenGLRunpathHook prebuilt; };
 
+  samples = callPackages ./samples.nix { inherit debs cudaVersion autoAddOpenGLRunpathHook prebuilt cudaPackages; };
+
   # Just for convenience. Unused
   unpackedDebs = pkgs.runCommand "unpackedDebs" { nativeBuildInputs = [ pkgs.dpkg ]; } ''
     mkdir -p $out
@@ -122,11 +97,11 @@ let
   '';
 
 in rec {
-  inherit bspSrc flash-tools nvtools cudaPackages;
+  # Just for convenience
+  inherit bspSrc debs unpackedDebs;
 
-  inherit unpackedDebs;
-
-  inherit debs;
+  inherit cudaPackages samples;
+  inherit flash-tools;
 
   kernel = callPackage ./kernel { inherit (prebuilt) l4t-xusb-firmware; };
 
@@ -175,7 +150,7 @@ in rec {
   flash-xavier-nx-devkit = mkFlashScript {
     name = "xavier-nx-devkit";
     flashArgs = "jetson-xavier-nx-devkit-qspi mmcblk0p1";
-    partitionTemplate = "${bspSrc}/bootloader/t186ref/cfg/flash_l4t_t194_qspi_p3668.xml ";
+    partitionTemplate = "${bspSrc}/bootloader/t186ref/cfg/flash_l4t_t194_qspi_p3668.xml";
   };
   # xavier-nx-devkit-emmc.conf uses p3668-0001 (production SoM) device tree,
   # Since we manually specifify the partition config file, we don't actually
@@ -183,7 +158,7 @@ in rec {
   flash-xavier-nx-prod = mkFlashScript {
     name = "xavier-nx-prod";
     flashArgs = "jetson-xavier-nx-devkit-emmc mmcblk0p1";
-    partitionTemplate = "${bspSrc}/bootloader/t186ref/cfg/flash_l4t_t194_qspi_p3668.xml ";
+    partitionTemplate = "${bspSrc}/bootloader/t186ref/cfg/flash_l4t_t194_qspi_p3668.xml";
   };
 }
 // prebuilt

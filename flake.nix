@@ -15,7 +15,6 @@
       # Avoids a bunch of extra modules we don't have in the tegra_defconfig, like "ata_piix",
       disabledModules = [ "profiles/all-hardware.nix" ];
 
-      boot.initrd.includeDefaultModules = false;
       hardware.nvidia-jetpack.enable = true;
     };
   in {
@@ -37,6 +36,7 @@
           flash-xavier-nx-devkit
           flash-xavier-nx-prod;
 
+        # TODO: Untested
         iso_minimal = self.nixosConfigurations.installer_minimal_cross.config.system.build.isoImage;
       };
 

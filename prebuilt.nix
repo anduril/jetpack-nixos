@@ -1,6 +1,6 @@
-{ stdenv, stdenvNoCC, lib, fetchurl, autoPatchelfHook,
+{ stdenv, stdenvNoCC, lib, fetchurl, fetchpatch, autoPatchelfHook,
   dpkg, expat, libglvnd, egl-wayland, xorg, mesa, wayland,
-  pango, alsa-lib, gst_all_1,
+  pango, alsa-lib, gst_all_1, gtk3,
 
   debs, l4tVersion
 }:
@@ -11,7 +11,7 @@ let
     # use t194. No guarantee that will stay the same in the future, so we
     # should consider choosing the right package set based on the SoC.
     { name, src ? debs.t234.${name}.src, version ? debs.t234.${name}.version,
-      nativeBuildInputs ? [], autoPatchelf ? true, postPatch ? "", ...
+      sourceRoot ? "source", nativeBuildInputs ? [], autoPatchelf ? true, postPatch ? "", ...
     }@args:
     stdenvNoCC.mkDerivation ((lib.filterAttrs (n: v: !(builtins.elem n [ "name" "autoPatchelf" ])) args) // {
       pname = name;
@@ -19,8 +19,8 @@ let
 
       nativeBuildInputs = [ dpkg ] ++ lib.optional autoPatchelf autoPatchelfHook ++ nativeBuildInputs;
 
-      unpackCmd = "dpkg-deb -x $src ./";
-      sourceRoot = ".";
+      unpackCmd = "dpkg-deb -x $src source";
+      inherit sourceRoot;
 
       dontConfigure = true;
       dontBuild = true;
@@ -52,6 +52,10 @@ let
       '';
     });
 
+  l4t-camera = buildFromDeb {
+    name = "nvidia-l4t-camera";
+    buildInputs = [ stdenv.cc.cc.lib l4t-core l4t-multimedia gtk3 ];
+  };
 
   l4t-core = buildFromDeb {
     name = "nvidia-l4t-core";
@@ -110,7 +114,7 @@ let
     name = "nvidia-l4t-gbm";
     buildInputs = [ l4t-core l4t-3d-core mesa ];
     postPatch = ''
-      rm -rf lib/gbm # These are just symlinks
+      ln -s libnvidia-egl-gbm.so lib/libnvidia-egl-gbm.so.1
       sed -i -E "s#(libnvidia-egl-gbm)#$out/lib/\\1#" share/egl/egl_external_platform.d/nvidia_gbm.json
     '';
   };
@@ -123,19 +127,38 @@ let
     autoPatchelf = false;
   };
 
-  # TODO: build and test multimedia samples from nvidia-l4t-jetson-multimedia-api
   l4t-multimedia = buildFromDeb {
     name = "nvidia-l4t-multimedia";
     # TODO: Replace the below with the builder from cuda-packages that works with multiple debs
-    postUnpack = "dpkg-deb -x ${debs.t234.nvidia-l4t-multimedia-utils.src} .";
+    postUnpack = ''
+      dpkg-deb -x ${debs.t234.nvidia-l4t-multimedia-utils.src} source
+      dpkg-deb -x ${debs.common.nvidia-l4t-jetson-multimedia-api.src} source
+    '';
     buildInputs = [ l4t-core l4t-cuda l4t-nvsci pango alsa-lib ] ++ (with gst_all_1; [ gstreamer gst-plugins-base ]);
-    # Fix a couple broken symlinks
+
+    patches = [
+      (fetchpatch {
+        url = "https://raw.githubusercontent.com/OE4T/meta-tegra/af0a93313c13e9eac4e80082d8a8e8ac5f7ad6e8/recipes-multimedia/argus/files/0005-Remove-DO-NOT-USE-declarations-from-v4l2_nv_extensio.patch";
+        sha256 = "sha256-meHF7uS2TFMoh0qGCmjGzR8hfhE0cCwSP2T3ufzwM0s=";
+        stripLen = 1;
+        extraPrefix = "usr/src/jetson_multimedia_api/";
+      })
+    ];
     postPatch = ''
+      cp -r src/jetson_multimedia_api/{argus,include,samples} .
+      rm -rf src
+
+      # Fix a couple broken symlinks
       ln -sf libnvv4l2.so lib/libv4l2.so.0.0.999999
       ln -sf libnvv4l2.so lib/libv4l2.so.0
       ln -sf libnvv4lconvert.so lib/libv4lconvert.so.0.0.999999
       ln -sf libnvv4lconvert.so lib/libv4lconvert.so.0
     '';
+  };
+
+  l4t-nvfancontrol = buildFromDeb {
+    name = "nvidia-l4t-nvfancontrol";
+    buildInputs = [ l4t-core ];
   };
 
   l4t-nvpmodel = buildFromDeb {
@@ -145,6 +168,12 @@ let
   l4t-nvsci = buildFromDeb {
     name = "nvidia-l4t-nvsci";
     buildInputs = [ l4t-core ];
+  };
+
+  # Programmable Vision Accelerator
+  l4t-pva = buildFromDeb {
+    name = "nvidia-l4t-pva";
+    buildInputs = [ l4t-core l4t-cuda l4t-nvsci ];
   };
 
   # For tegrastats and jetson_clocks
@@ -161,6 +190,7 @@ let
     name = "nvidia-l4t-wayland";
     buildInputs = [ wayland ];
     postPatch = ''
+      ln -s libnvidia-egl-wayland.so lib/libnvidia-egl-wayland.so.1
       sed -i -E "s#(libnvidia-egl-wayland)#$out/lib/\\1#" share/egl/egl_external_platform.d/nvidia_wayland.json
     '';
   };
@@ -173,14 +203,17 @@ in {
   inherit
     ### Debs from L4T BSP
     l4t-3d-core
+    l4t-camera
     l4t-core
     l4t-cuda
     l4t-firmware
     l4t-gbm
     l4t-init
     l4t-multimedia
+    l4t-nvfancontrol
     l4t-nvpmodel
     l4t-nvsci
+    l4t-pva
     l4t-tools
     l4t-wayland
     l4t-xusb-firmware;

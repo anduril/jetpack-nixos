@@ -1,0 +1,39 @@
+diff -Naur a/lib/cmake/vpi/vpi-config.cmake b/lib/aarch64-linux-gnu/cmake/vpi/vpi-config.cmake
+--- a/lib/aarch64-linux-gnu/cmake/vpi/vpi-config.cmake	1969-12-31 16:00:01.000000000 -0800
++++ b/lib/aarch64-linux-gnu/cmake/vpi/vpi-config.cmake	2022-09-27 14:30:22.957595096 -0700
+@@ -42,16 +42,7 @@
+ 
+ 
+ # Compute the installation prefix relative to this file.
+-get_filename_component(_IMPORT_PREFIX "${CMAKE_CURRENT_LIST_FILE}" PATH)
+-get_filename_component(_IMPORT_PREFIX "${_IMPORT_PREFIX}" REALPATH)
+-
+-get_filename_component(_IMPORT_PREFIX "${_IMPORT_PREFIX}" PATH)
+-get_filename_component(_IMPORT_PREFIX "${_IMPORT_PREFIX}" PATH)
+-get_filename_component(_IMPORT_PREFIX "${_IMPORT_PREFIX}" PATH)
+-get_filename_component(_IMPORT_PREFIX "${_IMPORT_PREFIX}" PATH)
+-if(_IMPORT_PREFIX STREQUAL "/")
+-  set(_IMPORT_PREFIX "")
+-endif()
++set(_IMPORT_PREFIX "@out@")
+ 
+ # Create imported target vpi
+ add_library(vpi SHARED IMPORTED)
+diff -Naur a/lib/aarch64-linux-gnu/cmake/vpi/vpi-config-release.cmake b/opt/nvidia/vpi2/lib/aarch64-linux-gnu/cmake/vpi/vpi-config-release.cmake
+--- a/lib/aarch64-linux-gnu/cmake/vpi/vpi-config-release.cmake	1969-12-31 16:00:01.000000000 -0800
++++ b/lib/aarch64-linux-gnu/cmake/vpi/vpi-config-release.cmake	2022-09-27 14:30:33.465584253 -0700
+@@ -8,12 +8,12 @@
+ # Import target "vpi" for configuration "Release"
+ set_property(TARGET vpi APPEND PROPERTY IMPORTED_CONFIGURATIONS RELEASE)
+ set_target_properties(vpi PROPERTIES
+-  IMPORTED_LOCATION_RELEASE "${_IMPORT_PREFIX}/lib/aarch64-linux-gnu/libnvvpi.so.2.1.6"
++  IMPORTED_LOCATION_RELEASE "${_IMPORT_PREFIX}/lib/libnvvpi.so.2.1.6"
+   IMPORTED_SONAME_RELEASE "libnvvpi.so.2"
+   )
+ 
+ list(APPEND _IMPORT_CHECK_TARGETS vpi )
+-list(APPEND _IMPORT_CHECK_FILES_FOR_vpi "${_IMPORT_PREFIX}/lib/aarch64-linux-gnu/libnvvpi.so.2.1.6" )
++list(APPEND _IMPORT_CHECK_FILES_FOR_vpi "${_IMPORT_PREFIX}/lib/libnvvpi.so.2.1.6" )
+ 
+ # Commands beyond this point should not need to know the version.
+ set(CMAKE_IMPORT_FILE_VERSION)

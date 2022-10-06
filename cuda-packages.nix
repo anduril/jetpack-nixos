@@ -6,7 +6,8 @@
   symlinkJoin,
   expat,
   pkg-config,
-  freeimage,
+  substituteAll,
+  gcc10,
   prebuilt,
 
   debs,
@@ -21,8 +22,8 @@ let
   # TODO: Fix the pkg-config files
   buildFromDebs =
     { name, srcs, version ? debs.common.${name}.version,
-      buildInputs ? [], nativeBuildInputs ? [],  postPatch ? "", postFixup ? "",
-      autoPatchelf ? true, ...
+      sourceRoot ? "source", buildInputs ? [], nativeBuildInputs ? [],
+      postPatch ? "", postFixup ? "", autoPatchelf ? true, ...
     }@args:
     stdenv.mkDerivation ((lib.filterAttrs (n: v: !(builtins.elem n [ "name" "autoPatchelf" ])) args) // {
       pname = name;
@@ -31,8 +32,7 @@ let
       nativeBuildInputs = [ dpkg autoPatchelfHook autoAddOpenGLRunpathHook ] ++ nativeBuildInputs;
       buildInputs = [ stdenv.cc.cc.lib ] ++ buildInputs;
 
-      unpackCmd = "for src in $srcs; do dpkg-deb -x $src ./; done";
-      sourceRoot = ".";
+      unpackCmd = "for src in $srcs; do dpkg-deb -x $src source; done";
 
       dontConfigure = true;
       dontBuild = true;
@@ -142,7 +142,7 @@ let
 
     # Combined package. We construct it from the debs, since nvidia doesn't
     # distribute a combined cudatoolkit package for jetson
-    cudatoolkit = symlinkJoin {
+    cudatoolkit = (symlinkJoin {
       name = "cudatoolkit";
       version = cudaVersion;
       paths = with cudaPackages; [
@@ -151,94 +151,18 @@ let
         cuda_nvprune cuda_nvrtc cuda_nvtx cuda_sanitizer_api libcublas
         libcufft libcurand libcusolver libcusparse libnpp
       ];
-    };
+    } // {
+      # To match attributes from upstream's cudatoolkit
+      cc = gcc10;
+      majorMinorVersion = lib.versions.majorMinor cudaVersion;
+      majorVersion = lib.versions.majorMinor cudaVersion;
+    });
+
+    ### Below are things that are not included in the cudatoolkit package
 
     # https://docs.nvidia.com/deploy/cuda-compatibility/index.html
     # TODO: This needs to be linked directly against driver libs
     # cuda-compat = buildFromSourcePackage { name = "cuda-compat"; };
-
-    # This package is unfortunately not identical to the upstream cuda-samples
-    # published at https://github.com/NVIDIA/cuda-samples, so we can't use
-    # nixpkgs's pkgs/tests/cuda packages
-    cuda-samples = stdenv.mkDerivation {
-      pname = "cuda-samples";
-      version = debs.common."cuda-samples-${cudaVersionDashes}".version;
-      src = debs.common."cuda-samples-${cudaVersionDashes}".src;
-
-      unpackCmd = "dpkg -x $src source";
-      sourceRoot = "source/usr/local/cuda-${cudaVersion}/samples";
-
-      nativeBuildInputs = [ dpkg pkg-config autoAddOpenGLRunpathHook ];
-      buildInputs = [ cudaPackages.cudatoolkit ];
-
-      preConfigure = ''
-        export CUDA_PATH=${cudaPackages.cudatoolkit}
-      '';
-
-      enableParallelBuilding = true;
-
-      installPhase = ''
-        runHook preInstall
-
-        install -Dm755 -t $out/bin bin/${stdenv.hostPlatform.parsed.cpu.name}/${stdenv.hostPlatform.parsed.kernel.name}/release/*
-
-        runHook postInstall
-      '';
-    };
-
-    cudnn-samples = stdenv.mkDerivation {
-      pname = "cudnn-samples";
-      version = debs.common.libcudnn8-samples.version;
-      src = debs.common.libcudnn8-samples.src;
-
-      unpackCmd = "dpkg -x $src source";
-      sourceRoot = "source/usr/src/cudnn_samples_v8";
-
-      nativeBuildInputs = [ dpkg autoAddOpenGLRunpathHook ];
-      buildInputs = with cudaPackages; [ cudatoolkit cudnn freeimage ];
-
-      buildFlags = [
-        "CUDA_PATH=${cudaPackages.cudatoolkit}"
-        "CUDNN_INCLUDE_PATH=${cudaPackages.cudnn}/include"
-        "CUDNN_LIB_PATH=${cudaPackages.cudnn}/lib"
-      ];
-
-      enableParallelBuilding = true;
-
-      buildPhase = ''
-        runHook preBuild
-
-        pushd conv_sample
-        make $buildFlags
-        popd 2>/dev/null
-
-        pushd mnistCUDNN
-        make $buildFlags
-        popd 2>/dev/null
-
-        pushd multiHeadAttention
-        make $buildFlags
-        popd 2>/dev/null
-
-        pushd RNN_v8.0
-        make $buildFlags
-        popd 2>/dev/null
-
-        runHook postBuild
-      '';
-
-      installPhase = ''
-        runHook preInstall
-
-        install -Dm755 -t $out/bin \
-          conv_sample/conv_sample \
-          mnistCUDNN/mnistCUDNN \
-          multiHeadAttention/multiHeadAttention \
-          RNN_v8.0/RNN
-
-        runHook postInstall
-      '';
-    };
 
     # Test with:
     # ./result/bin/trtexec --onnx=mnist.onnx
@@ -269,42 +193,29 @@ let
       '';
     };
 
-    # Contains a bunch of tests, for example:
-    # ./result/bin/sample_mnist --datadir=result/data/mnist
-    libnvinfer-samples = stdenv.mkDerivation {
-      pname = "libnvinfer-samples";
-      version = debs.common.libnvinfer-samples.version;
-      src = debs.common.libnvinfer-samples.src;
+    # vpi2
+    vpi2 = buildFromDebs {
+      name = "vpi2";
+      version = debs.common.vpi2-dev.version;
+      srcs = [ debs.common.libnvvpi2.src debs.common.vpi2-dev.src ];
+      sourceRoot = "source/opt/nvidia/vpi2";
+      buildInputs = (with prebuilt; [ l4t-core l4t-cuda l4t-nvsci l4t-3d-core l4t-multimedia l4t-pva ])
+        ++ (with cudaPackages; [ libcufft ]);
+      patches = [ ./vpi2.patch ];
+      postPatch = ''
+        rm -rf etc
 
-      unpackCmd = "dpkg -x $src source";
-      sourceRoot = "source/usr/src/tensorrt/samples";
+        substituteInPlace lib/cmake/vpi/vpi-config.cmake --subst-var out
 
-      nativeBuildInputs = [ dpkg autoAddOpenGLRunpathHook ];
-      buildInputs = with cudaPackages; [ tensorrt cuda_profiler_api cudnn ];
-
-      # These environment variables are required by the /usr/src/tensorrt/samples/README.md
-      CUDA_INSTALL_DIR = cudaPackages.cudatoolkit;
-      CUDNN_INSTALL_DIR = cudaPackages.cudnn;
-
-      enableParallelBuilding = true;
-
-      installPhase = ''
-        runHook preInstall
-
-        mkdir -p $out
-
-        rm -rf ../bin/chobj
-        rm -rf ../bin/dchobj
-        cp -r ../bin $out/
-        cp -r ../data $out/
-
-        runHook postInstall
-      '';
+        # Needed for vpi2-samples benchmark w/ pva to work
+        # TODO: Move this into its own derivation
+        mkdir -p lib/firmware
+        mv lib/priv/pva_auth_allowlist lib/firmware
+    '';
     };
 
     # TODO:
     #  libnvidia-container
     #  libcudla
-    # vpi2
   };
 in cudaPackages
