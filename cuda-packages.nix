@@ -1,5 +1,6 @@
 { lib,
   stdenv,
+  runCommand,
   dpkg,
   autoPatchelfHook,
   autoAddOpenGLRunpathHook,
@@ -204,15 +205,15 @@ let
       patches = [ ./vpi2.patch ];
       postPatch = ''
         rm -rf etc
-
         substituteInPlace lib/cmake/vpi/vpi-config.cmake --subst-var out
-
-        # Needed for vpi2-samples benchmark w/ pva to work
-        # TODO: Move this into its own derivation
-        mkdir -p lib/firmware
-        mv lib/priv/pva_auth_allowlist lib/firmware
-    '';
+      '';
     };
+
+    # Needed for vpi2-samples benchmark w/ pva to work
+    vpi2-firmware = runCommand "vpi2-firmware" { nativeBuildInputs = [ dpkg ]; } ''
+      dpkg-deb -x ${debs.common.libnvvpi2.src} source
+      install -D -t $out/lib/firmware source/opt/nvidia/vpi2/lib64/priv/pva_auth_allowlist
+    '';
 
     # TODO:
     #  libnvidia-container

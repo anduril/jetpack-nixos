@@ -49,7 +49,7 @@ in
     hardware.firmware = with pkgs.nvidia-jetpack; [
       l4t-firmware
       l4t-xusb-firmware # usb firmware also present in linux-firmware package, but that package is huge and has much more than needed
-      cudaPackages.vpi2 # Optional, but needed for pva_auth_allowlist firmware file used by VPI2
+      cudaPackages.vpi2-firmware # Optional, but needed for pva_auth_allowlist firmware file used by VPI2
     ];
 
     hardware.deviceTree.enable = true;
