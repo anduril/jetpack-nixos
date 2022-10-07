@@ -7,7 +7,8 @@ let
     mkForce
     mkIf
     mkOption
-    mkOptionDefault;
+    mkOptionDefault
+    types;
 
   cfg = config.hardware.nvidia-jetpack;
 in
@@ -23,7 +24,11 @@ in
     hardware.nvidia-jetpack = {
       enable = mkEnableOption "NVIDIA Jetson device support";
 
-      maxClock.enable = mkEnableOption "max clock speed";
+      maxClock = mkOption {
+        default = false;
+        type = types.bool;
+        description = "Always run at maximum clock speed";
+      };
     };
   };
 
@@ -85,7 +90,7 @@ in
     environment.etc."nvpower/libjetsonpower".source = "${pkgs.nvidia-jetpack.l4t-tools}/etc/nvpower/libjetsonpower";
 
     # https://developer.ridgerun.com/wiki/index.php/Xavier/JetPack_5.0.2/Performance_Tuning
-    systemd.services.jetson_clocks = mkIf cfg.maxClock.enable {
+    systemd.services.jetson_clocks = mkIf cfg.maxClock {
       enable = true;
       description = "Set maximum clock speed";
       serviceConfig = {
