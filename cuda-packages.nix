@@ -2,12 +2,14 @@
   stdenv,
   runCommand,
   dpkg,
+  makeWrapper,
   autoPatchelfHook,
   autoAddOpenGLRunpathHook,
   symlinkJoin,
   expat,
   pkg-config,
   substituteAll,
+  gcc9,
   gcc10,
   prebuilt,
 
@@ -16,6 +18,10 @@
 }:
 
 let
+  # We should use gcc10 to match CUDA 11.4, but we get link errors on opencv and torch2trt if we do
+  # ../../lib/libopencv_core.so.4.5.4: undefined reference to `__aarch64_ldadd4_acq_rel
+  gccForCuda = gcc9;
+
   cudaVersionDashes = lib.replaceStrings [ "." ] [ "-"] cudaVersion;
 
   debsForSourcePackage = srcPackageName: lib.filter (pkg: (pkg.source or "") == srcPackageName) (builtins.attrValues debs.common);
@@ -104,7 +110,21 @@ let
     cuda_cuxxfilt = buildFromSourcePackage { name = "cuda-cuxxfilt"; };
     cuda_documentation = buildFromSourcePackage { name = "cuda-documentation"; };
     cuda_gdb = buildFromSourcePackage { name = "cuda-gdb"; buildInputs = [ expat ]; };
-    cuda_nvcc = buildFromSourcePackage { name = "cuda-nvcc"; };
+    cuda_nvcc = buildFromSourcePackage {
+      name = "cuda-nvcc";
+      nativeBuildInputs = [ makeWrapper ];
+      # Fixes from upstream nixpkgs cudatoolkit
+      postFixup = ''
+        # Set compiler for NVCC.
+        wrapProgram $out/bin/nvcc \
+          --prefix PATH : ${gccForCuda}/bin
+
+        # Change the #error on recent GCC/Clang to a #warning
+        sed -i $out/include/crt/host_config.h \
+          -e 's/#error\(.*unsupported GNU version\)/#warning\1/' \
+          -e 's/#error\(.*unsupported clang version\)/#warning\1/'
+      '';
+    };
     cuda_nvdisasm = buildFromSourcePackage { name = "cuda-nvdisasm"; };
     cuda_nvml_dev = buildFromSourcePackage { name = "cuda-nvml-dev"; };
     cuda_nvprune = buildFromSourcePackage { name = "cuda-nvprune"; };
@@ -152,9 +172,18 @@ let
         cuda_nvprune cuda_nvrtc cuda_nvtx cuda_sanitizer_api libcublas
         libcufft libcurand libcusolver libcusparse libnpp
       ];
+      # Bits from upstream nixpkgs cudatoolkit
+      postBuild = ''
+        # Ensure that cmake can find CUDA.
+        mkdir -p $out/nix-support
+        echo "cmakeFlags+=' -DCUDA_TOOLKIT_ROOT_DIR=$out'" >> $out/nix-support/setup-hook
+
+        # Set the host compiler to be used by nvcc for CMake-based projects:
+        # https://cmake.org/cmake/help/latest/module/FindCUDA.html#input-variables
+        echo "cmakeFlags+=' -DCUDA_HOST_COMPILER=${gccForCuda}/bin'" >> $out/nix-support/setup-hook
+      '';
     } // {
-      # To match attributes from upstream's cudatoolkit
-      cc = gcc10;
+      cc = gccForCuda;
       majorMinorVersion = lib.versions.majorMinor cudaVersion;
       majorVersion = lib.versions.majorMinor cudaVersion;
     });
