@@ -35,8 +35,6 @@ in
       serviceConfig = {
         Type = "oneshot";
         ExecStart = "${pkgs.nvidia-jetpack.l4t-nvpmodel}/bin/nvpmodel -f ${cfg.configFile}" + lib.optionalString (cfg.profileNumber != null) " -m ${builtins.toString cfg.profileNumber}";
-        ReadWritePaths = [ "/sys" "/var" ];
-        ProtectSystem = "strict";
       };
       wantedBy = [ "multi-user.target" ];
     };
