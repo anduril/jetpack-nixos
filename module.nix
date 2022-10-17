@@ -35,21 +35,30 @@ in
   config = mkIf cfg.enable {
     nixpkgs.overlays = [ (import ./overlay.nix) ];
 
-    boot.kernelPackages = pkgs.linuxPackagesFor pkgs.nvidia-jetpack.kernel;
+    boot.kernelPackages = pkgs.nvidia-jetpack.kernelPackages;
 
     boot.kernelParams = [
       "console=ttyTCU0,115200" # Provides console on "Tegra Combined UART" (TCU)
       "console=tty0" # Output to HDMI/DP
       "fbcon=map:0" # Needed for HDMI/DP
+      #"nvidia-drm.modeset=1" # For Orin  (make optional based on modesetting)
+      #"tegra-udrm.modeset=1" # For Xavier
+
+      # Needed on Orin at least, but upstream has it for both
+      "nvidia.rm_firmware_active=all"
     ];
 
     boot.initrd.includeDefaultModules = false; # Avoid a bunch of modules we may not get from tegra_defconfig
     boot.initrd.availableKernelModules = [ "xhci-tegra" ]; # Make sure USB firmware makes it into initrd
-    boot.initrd.kernelModules = [ "nvgpu tegra-udrm" ]; # Load these drivers early. Unclear if this is necessary
-    # Enable DRM/KMS
-    boot.extraModprobeConfig = ''
-      options tegra-udrm modeset=1
-    '';
+
+    boot.kernelModules = [
+      "nvgpu"
+      "tegra-udrm" # For Xavier
+      "nvidia-drm" # For Orin
+    ];
+
+    # For Orin
+    boot.extraModulePackages = [ config.boot.kernelPackages.nvidia-display-driver ];
 
     hardware.firmware = with pkgs.nvidia-jetpack; [
       l4t-firmware
@@ -80,11 +89,15 @@ in
     ];
 
     # Override other drivers, fbdev seems to conflict
-    services.xserver.drivers = mkForce (lib.singleton {
+    # TODO: This also disables the modesetting driver, so we can't have that!
+    services.xserver.drivers = lib.singleton {
       name = "nvidia";
       modules = [ pkgs.nvidia-jetpack.l4t-3d-core ];
       display = true;
-    });
+      screenSection = ''
+        Option "AllowEmptyInitialConfiguration" "true"
+      '';
+    };
 
     # Used by libjetsonpower.so, which is used by nvfancontrol at least.
     environment.etc."nvpower/libjetsonpower".source = "${pkgs.nvidia-jetpack.l4t-tools}/etc/nvpower/libjetsonpower";

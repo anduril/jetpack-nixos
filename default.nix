@@ -96,6 +96,11 @@ let
     ${lib.concatStringsSep "\n" (lib.mapAttrsToList (n: p: "echo Unpacking ${n}; dpkg -x ${p.src} $out/${n}") debs.t234)}
   '';
 
+  kernel = callPackage ./kernel { inherit (prebuilt) l4t-xusb-firmware; };
+  kernelPackages = (pkgs.linuxPackagesFor kernel).extend (self: super: {
+    nvidia-display-driver = self.callPackage ./kernel/display-driver.nix {};
+  });
+
 in rec {
   # Just for convenience
   inherit bspSrc debs unpackedDebs;
@@ -103,7 +108,7 @@ in rec {
   inherit cudaPackages samples;
   inherit flash-tools;
 
-  kernel = callPackage ./kernel { inherit (prebuilt) l4t-xusb-firmware; };
+  inherit kernel kernelPackages;
 
   # TODO: Source packages. source_sync.sh from bspSrc
   # OPTEE
