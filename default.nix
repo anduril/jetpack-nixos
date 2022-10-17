@@ -134,7 +134,7 @@ in rec {
   };
   flash-xavier-agx-devkit = mkFlashScript {
     name = "xavier-agx-devkit";
-    flashArgs = "-c bootloader/t186ref/cfg/flash_t194_uefi_sdmmc_min.xml jetson-agx-xavier-devkit mmcblk0p1";
+    flashArgs = "jetson-agx-xavier-devkit mmcblk0p1";
     # Remove unnecessary partitions to make it more like
     # flash_t194_uefi_sdmmc_min.xml, except also keep the A/B slots of
     # each partition
