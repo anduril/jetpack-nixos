@@ -98,7 +98,7 @@ in rec {
       '';
     };
 
-    flash-xavier-agx-devkit = callPackage ./flash-script.nix {
+    flash-xavier-agx-devkit = flash-generic.override {
       name = "xavier-agx-devkit";
       flashArgs = "jetson-agx-xavier-devkit mmcblk0p1";
       # Remove unnecessary partitions to make it more like
@@ -119,7 +119,7 @@ in rec {
       '';
     };
 
-    flash-xavier-nx-devkit = callPackage ./flash-script.nix {
+    flash-xavier-nx-devkit = flash-generic.override {
       name = "xavier-nx-devkit";
       flashArgs = "jetson-xavier-nx-devkit-qspi mmcblk0p1";
       partitionTemplate = "${bspSrc}/bootloader/t186ref/cfg/flash_l4t_t194_qspi_p3668.xml";
@@ -127,7 +127,7 @@ in rec {
     # xavier-nx-devkit-emmc.conf uses p3668-0001 (production SoM) device tree,
     # Since we manually specifify the partition config file, we don't actually
     # use the eMMC at all.
-    flash-xavier-nx-prod = callPackage ./flash-script.nix {
+    flash-xavier-nx-prod = flash-generic.override {
       name = "xavier-nx-prod";
       flashArgs = "jetson-xavier-nx-devkit-emmc mmcblk0p1";
       partitionTemplate = "${bspSrc}/bootloader/t186ref/cfg/flash_l4t_t194_qspi_p3668.xml";
