@@ -3,12 +3,6 @@
   bintools-unwrapped, findutils, util-linux, dosfstools, lz4, gcc, dtc,
 
   bspSrc, version,
-  # Optional directory containing DTBs to be used by flashing script, which can
-  # be used by the bootloader(s) and passed to the kernel.
-  dtbsDir ? null,
-
-  # Optional package containing uefi_jetson.efi to replace prebuilt version
-  edk2-firmware ? null,
 }:
 
 let
@@ -47,17 +41,6 @@ let
       rm -rf nv_tegra
       mkdir nv_tegra
       mv bsp_version nv_tegra
-    '' + lib.optionalString (dtbsDir != null) ''
-      cp -r ${dtbsDir}/. kernel/dtb/
-    '' + lib.optionalString (edk2-firmware != null) ''
-      cp ${edk2-firmware}/uefi_jetson.bin bootloader/uefi_jetson.bin
-
-      # For normal NixOS usage, we'd probably use systemd-boot or GRUB instead,
-      # but lets replace the upstream L4TLauncher EFI payload anyway
-      cp ${edk2-firmware}/L4TLauncher.efi bootloader/BOOTAA64.efi
-
-      # Replace additional dtbos
-      cp ${edk2-firmware}/dtbs/*.dtbo kernel/dtb/
     '';
 
     # Create update payloads with:

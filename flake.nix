@@ -31,16 +31,11 @@
 
     packages = {
       x86_64-linux = {
-        # Flashing scripts _only_ work on x86_64-linux
-        inherit (nixpkgs.legacyPackages.x86_64-linux.callPackage ./default.nix {})
-          flash-script
-          flash-orin-agx-devkit
-          flash-xavier-nx-devkit
-          flash-xavier-nx-prod;
-
         # TODO: Untested
         iso_minimal = self.nixosConfigurations.installer_minimal_cross.config.system.build.isoImage;
-      };
+      }
+      # Flashing scripts _only_ work on x86_64-linux
+      // (nixpkgs.legacyPackages.x86_64-linux.callPackage ./default.nix {}).flash-scripts;
 
       aarch64-linux = {
         iso_minimal = self.nixosConfigurations.installer_minimal.config.system.build.isoImage;

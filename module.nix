@@ -109,8 +109,6 @@ in
       serviceConfig = {
         Type = "oneshot";
         ExecStart = "${pkgs.nvidia-jetpack.l4t-tools}/bin/jetson_clocks";
-        ReadWritePaths = [ "/sys" ];
-        ProtectSystem = "strict";
       };
       after = [ "nvpmodel.service" ];
       wantedBy = [ "multi-user.target" ];

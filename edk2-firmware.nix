@@ -1,8 +1,8 @@
-{ lib, stdenv, buildPackages, fetchFromGitHub, runCommand, edk2, acpica-tools,
-  dtc, python3, bc, applyPatches,
+{ lib, stdenv, buildPackages, fetchFromGitHub, fetchurl, runCommand, edk2, acpica-tools,
+  dtc, python3, bc, imagemagick, applyPatches,
 
-  # Optional path directory containing boot logos named logo1080.png, logo720.png, and logo480.png
-  bootLogoVariants ? null,
+  # Optional path to a boot logo that will be converted and cropped into the format required
+  bootLogo ? null,
 }:
 
 let
@@ -10,6 +10,13 @@ let
 
   debugMode = false;
   debugModeErrorLevelInfo = debugMode; # Enables a bunch more info messages
+
+  bootLogoVariants = runCommand "uefi-bootlogo" { nativeBuildInputs = [ imagemagick ]; } ''
+    mkdir -p $out
+    convert ${bootLogo} -resize 1920x1080 -gravity Center -extent 1920x1080 -format bmp -define bmp:format=bmp3 $out/logo1080.bmp
+    convert ${bootLogo} -resize 1280x720  -gravity Center -extent 1280x720  -format bmp -define bmp:format=bmp3 $out/logo720.bmp
+    convert ${bootLogo} -resize 640x480   -gravity Center -extent 640x480   -format bmp -define bmp:format=bmp3 $out/logo480.bmp
+  '';
 
   ###
 
@@ -43,12 +50,12 @@ let
     sha256 = "sha256-hy1ph+bzBUGOTgp5DNicv/y2ORVxlcQgij53Z7p6C8Q=";
   };
   edk2-nvidia =
-    if (debugModeErrorLevelInfo || bootLogoVariants != null)
+    if (debugModeErrorLevelInfo || bootLogo != null)
     then applyPatches {
       src = _edk2-nvidia;
       postPatch = lib.optionalString debugModeErrorLevelInfo ''
         sed -i 's#PcdDebugPrintErrorLevel|.*#PcdDebugPrintErrorLevel|0x8000004F#' Platform/NVIDIA/NVIDIA.common.dsc.inc
-      '' + lib.optionalString (bootLogoVariants != null) ''
+      '' + lib.optionalString (bootLogo != null) ''
         cp ${bootLogoVariants}/logo1080.bmp Silicon/NVIDIA/Assets/nvidiagray1080.bmp
         cp ${bootLogoVariants}/logo720.bmp Silicon/NVIDIA/Assets/nvidiagray720.bmp
         cp ${bootLogoVariants}/logo480.bmp Silicon/NVIDIA/Assets/nvidiagray480.bmp
@@ -141,7 +148,7 @@ let
       '';
     };
 
-    edk2-firmware = runCommand "jetson-firmware" { nativeBuildInputs = [ python3 ]; } ''
+    jetson-firmware = runCommand "jetson-firmware" { nativeBuildInputs = [ python3 ]; } ''
       mkdir -p $out
       python3 ${edk2-nvidia}/Silicon/NVIDIA/Tools/FormatUefiBinary.py \
         ${edk2-jetson}/FV/UEFI_NS.Fv \
@@ -157,5 +164,5 @@ let
       done
   '';
 in {
-  inherit edk2-jetson edk2-firmware;
+  inherit edk2-jetson jetson-firmware;
 }

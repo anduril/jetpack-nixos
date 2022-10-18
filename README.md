@@ -43,7 +43,7 @@ On an x86_64 machine (some of NVIDIA's precompiled components like `tegrarcm_v2`
 build and run (as root) the flashing script which corresponds to your device:
 ```shell
 $ nix build github:danielfullmer/jetpack-nixos#flash-xavier-agx-devkit
-$ sudo ./result
+$ sudo ./result/bin/flash-xavier-agx-devkit
 ```
 
 At this point, your device should have a working UEFI firmware accessible either a monitor/keyboard, or via UART.
