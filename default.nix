@@ -18,7 +18,8 @@ let
 
   debs = import ./debs { inherit lib fetchurl; };
 
-  version = "35.1.0";
+  jetpackVersion = "5.0.2";
+  l4tVersion = "35.1.0";
   cudaVersion = "11.4";
 
   # we use a more recent version of bzip2 here because we hit this bug extracting nvidia's archives:
@@ -44,10 +45,10 @@ let
   }).jetson-firmware;
 
   flash-tools = callPackage ./flash-tools.nix {
-    inherit bspSrc version;
+    inherit bspSrc l4tVersion;
   };
 
-  prebuilt = callPackages ./prebuilt.nix { inherit debs; l4tVersion = version; };
+  prebuilt = callPackages ./prebuilt.nix { inherit debs l4tVersion; };
 
   cudaPackages = callPackages ./cuda-packages.nix { inherit debs cudaVersion autoAddOpenGLRunpathHook prebuilt; };
 
@@ -59,6 +60,8 @@ let
   });
 
 in rec {
+  inherit jetpackVersion l4tVersion cudaVersion;
+
   # Just for convenience
   inherit bspSrc debs unpackedDebs;
 

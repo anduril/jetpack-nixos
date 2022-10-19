@@ -2,13 +2,13 @@
   libxml2, coreutils, gnugrep, gnused, gnutar, gawk, which, gzip, cpio,
   bintools-unwrapped, findutils, util-linux, dosfstools, lz4, gcc, dtc,
 
-  bspSrc, version,
+  bspSrc, l4tVersion,
 }:
 
 let
   flash-tools = stdenv.mkDerivation {
     pname = "flash-tools";
-    inherit version;
+    version = l4tVersion;
 
     src = bspSrc;
 
