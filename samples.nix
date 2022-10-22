@@ -59,21 +59,11 @@ let
     buildPhase = ''
       runHook preBuild
 
-      pushd conv_sample
-      make $buildFlags
-      popd 2>/dev/null
-
-      pushd mnistCUDNN
-      make $buildFlags
-      popd 2>/dev/null
-
-      pushd multiHeadAttention
-      make $buildFlags
-      popd 2>/dev/null
-
-      pushd RNN_v8.0
-      make $buildFlags
-      popd 2>/dev/null
+      for dirname in conv_sample mnistCUDNN multiHeadAttention RNN_v8.0; do
+        pushd "$dirname"
+        make $buildFlags
+        popd 2>/dev/null
+      done
 
       runHook postBuild
     '';
