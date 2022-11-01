@@ -3,14 +3,17 @@
 
   # Optional path to a boot logo that will be converted and cropped into the format required
   bootLogo ? null,
+
+  debugMode ? false,
+  errorLevelInfo ? debugMode, # Enables a bunch more info messages
 }:
 
 let
   version = "jetson-r35.1";
 
-  debugMode = false;
-  debugModeErrorLevelInfo = debugMode; # Enables a bunch more info messages
-
+  # TODO: Move this generation out of jetson-firmware.nix, because this .nix
+  # file is callPackage'd using an aarch64 version of nixpkgs, and we don't
+  # want to have to recompilie imagemagick
   bootLogoVariants = runCommand "uefi-bootlogo" { nativeBuildInputs = [ imagemagick ]; } ''
     mkdir -p $out
     convert ${bootLogo} -resize 1920x1080 -gravity Center -extent 1920x1080 -format bmp -define bmp:format=bmp3 $out/logo1080.bmp
@@ -50,10 +53,10 @@ let
     sha256 = "sha256-hy1ph+bzBUGOTgp5DNicv/y2ORVxlcQgij53Z7p6C8Q=";
   };
   edk2-nvidia =
-    if (debugModeErrorLevelInfo || bootLogo != null)
+    if (errorLevelInfo || bootLogo != null)
     then applyPatches {
       src = _edk2-nvidia;
-      postPatch = lib.optionalString debugModeErrorLevelInfo ''
+      postPatch = lib.optionalString errorLevelInfo ''
         sed -i 's#PcdDebugPrintErrorLevel|.*#PcdDebugPrintErrorLevel|0x8000004F#' Platform/NVIDIA/NVIDIA.common.dsc.inc
       '' + lib.optionalString (bootLogo != null) ''
         cp ${bootLogoVariants}/logo1080.bmp Silicon/NVIDIA/Assets/nvidiagray1080.bmp

@@ -40,7 +40,7 @@ let
   # TODO: Remove when we upgrade beyond 22.05
   edk2 = callPackage ./edk2.nix {};
 
-  jetson-firmware = (pkgsAarch64.callPackages ./edk2-firmware.nix {
+  jetson-firmware = (pkgsAarch64.callPackages ./jetson-firmware.nix {
     inherit edk2;
   }).jetson-firmware;
 
@@ -76,6 +76,27 @@ in rec {
   #   nv-tegra.nvidia.com/tegra/optee-src/nv-optee.git
   # GST plugins
 
+  # Generate a flash script using the built configuration options set in a NixOS configuration
+  flashScriptFromNixos = config: let
+    cfg = config.hardware.nvidia-jetpack;
+  in callPackage ./flash-script.nix {
+    name = config.networking.hostName;
+    inherit (cfg.flashScriptOverrides)
+      flashArgs partitionTemplate;
+
+    flash-tools = flash-tools.overrideAttrs ({ postPatch ? "", ... }: {
+      postPatch = postPatch + cfg.flashScriptOverrides.postPatch;
+    });
+
+    jetson-firmware = jetson-firmware.override {
+      bootLogo = cfg.bootloader.logo;
+      debugMode = cfg.bootloader.debugMode;
+      errorLevelInfo = cfg.bootloader.errorLevelInfo;
+    };
+
+    dtbsDir = config.hardware.deviceTree.package;
+  };
+
   flash-scripts = rec {
     # Generic flash script which contains the default NVIDIA devices without any patches
     flash-generic = callPackage ./flash-script.nix {
@@ -87,55 +108,16 @@ in rec {
         hardware.nvidia-jetpack.enable = true;
       }).config.hardware.deviceTree.package;
     };
-
-    flash-orin-agx-devkit = flash-generic.override {
-      name = "orin-agx-devkit";
-      flashArgs = "jetson-agx-orin-devkit mmcblk0p1";
-      # We don't flash the sdmmc with kernel/initrd/etc at all. Just let it be a
-      # regular NixOS machine instead of having some weird partition structure.
-      partitionTemplate = runCommand "flash.xml" {} ''
-        sed -z \
-          -E 's#<device[^>]*type="sdmmc_user"[^>]*>.*?</device>##' \
-          <${bspSrc}/bootloader/t186ref/cfg/flash_t234_qspi_sdmmc.xml \
-          >$out
-      '';
-    };
-
-    flash-xavier-agx-devkit = flash-generic.override {
-      name = "xavier-agx-devkit";
-      flashArgs = "jetson-agx-xavier-devkit mmcblk0p1";
-      # Remove unnecessary partitions to make it more like
-      # flash_t194_uefi_sdmmc_min.xml, except also keep the A/B slots of
-      # each partition
-      partitionTemplate = let
-        partitionsToRemove = [
-          "kernel" "kernel-dtb" "reserved_for_chain_A_user"
-          "kernel_b" "kernel-dtb_b" "reserved_for_chain_B_user"
-          "RECNAME" "RECDTB-NAME" "RP1" "RP2" "RECROOTFS" # Recovery
-          "esp" # L4TLauncher
-        ];
-      in runCommand "flash.xml" {} ''
-        sed -z \
-          -E 's#<partition[^>]*type="(${lib.concatStringsSep "|" partitionsToRemove})"[^>]*>.*?</partition>##' \
-          <${bspSrc}/bootloader/t186ref/cfg/flash_t194_sdmmc.xml \
-          >$out
-      '';
-    };
-
-    flash-xavier-nx-devkit = flash-generic.override {
-      name = "xavier-nx-devkit";
-      flashArgs = "jetson-xavier-nx-devkit-qspi mmcblk0p1";
-      partitionTemplate = "${bspSrc}/bootloader/t186ref/cfg/flash_l4t_t194_qspi_p3668.xml";
-    };
-    # xavier-nx-devkit-emmc.conf uses p3668-0001 (production SoM) device tree,
-    # Since we manually specifify the partition config file, we don't actually
-    # use the eMMC at all.
-    flash-xavier-nx-prod = flash-generic.override {
-      name = "xavier-nx-prod";
-      flashArgs = "jetson-xavier-nx-devkit-emmc mmcblk0p1";
-      partitionTemplate = "${bspSrc}/bootloader/t186ref/cfg/flash_l4t_t194_qspi_p3668.xml";
-    };
-  };
+  } // (builtins.listToAttrs (map (n: lib.nameValuePair "flash-${n}" (flashScriptFromNixos {
+    imports = [ ./module.nix (./. + "/profiles/${n}.nix") ];
+    hardware.nvidia-jetpack.enable = true;
+    networking.hostName = n; # Just so it sets 
+  })) [
+    "orin-agx-devkit"
+    "xavier-agx-devkit"
+    "xavier-nx-devkit"
+    "xavier-nx-devkit-emmc"
+  ]));
 }
 // prebuilt
-// callPackage ./edk2-firmware.nix { inherit edk2; }
+// callPackage ./jetson-firmware.nix { inherit edk2; }

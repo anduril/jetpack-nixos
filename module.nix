@@ -18,6 +18,7 @@ in
     ./nvpmodel-module.nix
     ./nvfancontrol-module.nix
     ./nvargus-daemon-module.nix
+    ./flash-script-module.nix
   ];
 
   options = {
