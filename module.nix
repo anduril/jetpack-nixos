@@ -44,6 +44,7 @@ in
       "fbcon=map:0" # Needed for HDMI/DP
       #"nvidia-drm.modeset=1" # For Orin  (make optional based on modesetting)
       #"tegra-udrm.modeset=1" # For Xavier
+      "video=efifb:off" # Disable efifb driver, which crashes Xavier AGX/NX
 
       # Needed on Orin at least, but upstream has it for both
       "nvidia.rm_firmware_active=all"
