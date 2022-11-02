@@ -4,5 +4,7 @@
 {
   imports = [ ./xavier-nx.nix ];
 
-  services.nvfancontrol.enable = mkDefault true;
+  config = lib.mkIf config.hardware.nvidia-jetpack.enable {
+    services.nvfancontrol.enable = mkDefault true;
+  };
 }

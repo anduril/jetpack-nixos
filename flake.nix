@@ -41,5 +41,8 @@
         iso_minimal = self.nixosConfigurations.installer_minimal.config.system.build.isoImage;
       };
     };
+
+    legacyPackages.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.pkgsCross.aarch64-multiplatform.callPackage ./default.nix {};
+    legacyPackages.aarch64-linux = nixpkgs.legacyPackages.aarch64-linux.callPackage ./default.nix {};
   };
 }

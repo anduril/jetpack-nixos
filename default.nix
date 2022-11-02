@@ -108,11 +108,11 @@ in rec {
         hardware.nvidia-jetpack.enable = true;
       }).config.hardware.deviceTree.package;
     };
-  } // (builtins.listToAttrs (map (n: lib.nameValuePair "flash-${n}" (flashScriptFromNixos {
+  } // (builtins.listToAttrs (map (n: lib.nameValuePair "flash-${n}" (flashScriptFromNixos (pkgs.nixos {
     imports = [ ./module.nix (./. + "/profiles/${n}.nix") ];
     hardware.nvidia-jetpack.enable = true;
     networking.hostName = n; # Just so it sets 
-  })) [
+  }).config)) [
     "orin-agx-devkit"
     "xavier-agx-devkit"
     "xavier-nx-devkit"

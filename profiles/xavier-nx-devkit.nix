@@ -4,6 +4,8 @@
 {
   imports = [ ./xavier-nx.nix ];
 
-  services.nvfancontrol.enable = lib.mkDefault true;
-  hardware.nvidia-jetpack.flashScriptOverrides.targetBoard = "jetson-xavier-nx-devkit-qspi";
+  config = lib.mkIf config.hardware.nvidia-jetpack.enable {
+    services.nvfancontrol.enable = lib.mkDefault true;
+    hardware.nvidia-jetpack.flashScriptOverrides.targetBoard = "jetson-xavier-nx-devkit-qspi";
+  };
 }
