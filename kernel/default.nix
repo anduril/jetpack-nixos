@@ -30,10 +30,10 @@ let
       target = "Image";
     };
   };
-  hackedPkgs = import pkgs.path {
-    localSystem = if (stdenvNoCC.buildPlatform == stdenvNoCC.hostPlatform) then hackedSystem else stdenvNoCC.buildPlatform;
-    ${if (stdenvNoCC.buildPlatform != stdenvNoCC.hostPlatform) then "crossSystem" else null} = hackedSystem;
-  };
+  hackedPkgs = import pkgs.path (
+    lib.optionalAttrs stdenvNoCC.buildPlatform.isAarch64 { localSystem = hackedSystem; }
+    // lib.optionalAttrs (!stdenvNoCC.buildPlatform.isAarch64) { localSystem = stdenvNoCC.buildPlatform; crossSystem = hackedSystem; }
+  );
 in hackedPkgs.buildLinux (args // rec {
   version = "5.10.104";
   extraMeta.branch = "5.10";
