@@ -48,13 +48,13 @@ let
     inherit bspSrc l4tVersion;
   };
 
-  prebuilt = callPackages ./prebuilt.nix { inherit debs l4tVersion; };
+  l4t = callPackages ./l4t.nix { inherit debs l4tVersion; };
 
-  cudaPackages = callPackages ./cuda-packages.nix { inherit debs cudaVersion autoAddOpenGLRunpathHook prebuilt; };
+  cudaPackages = callPackages ./cuda-packages.nix { inherit debs cudaVersion autoAddOpenGLRunpathHook l4t; };
 
-  samples = callPackages ./samples.nix { inherit debs cudaVersion autoAddOpenGLRunpathHook prebuilt cudaPackages; };
+  samples = callPackages ./samples.nix { inherit debs cudaVersion autoAddOpenGLRunpathHook l4t cudaPackages; };
 
-  kernel = callPackage ./kernel { inherit (prebuilt) l4t-xusb-firmware; };
+  kernel = callPackage ./kernel { inherit (l4t) l4t-xusb-firmware; };
   kernelPackages = (pkgs.linuxPackagesFor kernel).extend (self: super: {
     nvidia-display-driver = self.callPackage ./kernel/display-driver.nix {};
   });
@@ -119,5 +119,5 @@ in rec {
     "xavier-nx-devkit-emmc"
   ]));
 }
-// prebuilt
+// l4t
 // callPackage ./jetson-firmware.nix { inherit edk2; }

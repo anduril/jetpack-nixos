@@ -1,7 +1,7 @@
 { stdenv, lib, fetchurl, dpkg, pkg-config, autoAddOpenGLRunpathHook, freeimage,
   cmake, opencv, opencv2, libX11, libdrm, libv4l, libglvnd, python2,
 
-  prebuilt, cudaPackages,
+  l4t, cudaPackages,
   cudaVersion, debs
 }:
 let
@@ -134,7 +134,7 @@ let
 
     nativeBuildInputs = [ dpkg python2 ];
     buildInputs = [ libX11 libdrm  libglvnd opencv2 libv4l ] # TODO: nixpkgs libv4l is very likely incompatible. We need to use the prebuilt one or see what OE4T does.
-      ++ (with prebuilt; [ l4t-cuda l4t-multimedia l4t-camera ])
+      ++ (with l4t; [ l4t-cuda l4t-multimedia l4t-camera ])
       ++ (with cudaPackages; [ cudatoolkit tensorrt ]);
 
     # Usually provided by pkg-config, but the samples don't use it.
