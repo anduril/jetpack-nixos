@@ -12,7 +12,7 @@
     installer_minimal_config = {
       imports = [
         "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
-        ./module.nix
+        ./modules/default.nix
       ];
       # Avoids a bunch of extra modules we don't have in the tegra_defconfig, like "ata_piix",
       disabledModules = [ "profiles/all-hardware.nix" ];
@@ -25,7 +25,7 @@
       installer_minimal_cross = nixpkgs.legacyPackages.x86_64-linux.pkgsCross.aarch64-multiplatform.nixos installer_minimal_config;
     };
 
-    nixosModules.default = import ./module.nix;
+    nixosModules.default = import ./modules/default.nix;
 
     overlays.default = import ./overlay.nix;
 

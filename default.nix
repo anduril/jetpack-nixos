@@ -104,12 +104,12 @@ in rec {
       # Use cross-compiled machine here so we don't have to depend on aarch64 builders
       # TODO: Do a smaller cross-compiled version from old jetpack dir
       dtbsDir = (pkgsAarch64.nixos {
-        imports = [ ./module.nix ];
+        imports = [ ./modules/default.nix ];
         hardware.nvidia-jetpack.enable = true;
       }).config.hardware.deviceTree.package;
     };
   } // (builtins.listToAttrs (map (n: lib.nameValuePair "flash-${n}" (flashScriptFromNixos (pkgs.nixos {
-    imports = [ ./module.nix (./. + "/profiles/${n}.nix") ];
+    imports = [ ./modules/default.nix (./. + "/profiles/${n}.nix") ];
     hardware.nvidia-jetpack.enable = true;
     networking.hostName = n; # Just so it sets 
   }).config)) [

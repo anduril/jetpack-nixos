@@ -15,10 +15,10 @@ in
 {
   imports = [
     # https://developer.ridgerun.com/wiki/index.php/Xavier/JetPack_5.0.2/Performance_Tuning
-    ./nvpmodel-module.nix
-    ./nvfancontrol-module.nix
-    ./nvargus-daemon-module.nix
-    ./flash-script-module.nix
+    ./nvpmodel.nix
+    ./nvfancontrol.nix
+    ./nvargus-daemon.nix
+    ./flash-script.nix
   ];
 
   options = {
@@ -30,11 +30,15 @@ in
         type = types.bool;
         description = "Always run at maximum clock speed";
       };
+
+      chip = mkOption {
+        default = "generic";
+      };
     };
   };
 
   config = mkIf cfg.enable {
-    nixpkgs.overlays = [ (import ./overlay.nix) ];
+    nixpkgs.overlays = [ (import ../overlay.nix) ];
 
     boot.kernelPackages = pkgs.nvidia-jetpack.kernelPackages;
 
