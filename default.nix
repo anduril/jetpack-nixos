@@ -108,16 +108,16 @@ in rec {
         hardware.nvidia-jetpack.enable = true;
       }).config.hardware.deviceTree.package;
     };
-  } // (builtins.listToAttrs (map (n: lib.nameValuePair "flash-${n}" (flashScriptFromNixos (pkgs.nixos {
-    imports = [ ./modules/default.nix (./. + "/profiles/${n}.nix") ];
+  } // (lib.mapAttrs' (n: c: lib.nameValuePair "flash-${n}" (flashScriptFromNixos (pkgs.nixos {
+    imports = [ ./modules/default.nix { hardware.nvidia-jetpack = c; } ];
     hardware.nvidia-jetpack.enable = true;
-    networking.hostName = n; # Just so it sets 
-  }).config)) [
-    "orin-agx-devkit"
-    "xavier-agx-devkit"
-    "xavier-nx-devkit"
-    "xavier-nx-devkit-emmc"
-  ]));
+    networking.hostName = n; # Just so it sets the flash binary name.
+  }).config)) {
+    "orin-agx-devkit" = { som = "orin-agx"; carrierBoard = "devkit"; };
+    "xavier-agx-devkit" = { som = "xavier-agx"; carrierBoard = "devkit"; };
+    "xavier-nx-devkit" = { som = "xavier-nx"; carrierBoard = "devkit"; };
+    "xavier-nx-devkit-emmc" = { som = "xavier-nx-emmc"; carrierBoard = "devkit"; };
+  });
 }
 // l4t
 // callPackage ./jetson-firmware.nix { inherit edk2; }

@@ -19,6 +19,7 @@ in
     ./nvfancontrol.nix
     ./nvargus-daemon.nix
     ./flash-script.nix
+    ./devices.nix
   ];
 
   options = {
@@ -31,8 +32,18 @@ in
         description = "Always run at maximum clock speed";
       };
 
-      chip = mkOption {
-        default = "generic";
+      som = mkOption {
+        default = null;
+        # You can add your own som or carrierBoard by merging the enum type
+        # with additional possibilies in an external NixOS module. See:
+        # "Extensible option types" in the NixOS manual
+        type = types.nullOr (types.enum [ "orin-agx" "xavier-agx" "xavier-nx" "xavier-nx-emmc" ]);
+        description = "Jetson SoM (System-on-Module) to target. Can be null to target a generic jetson device, but some things may not work.";
+      };
+
+      carrierBoard = mkOption {
+        type = types.nullOr (types.enum [ "devkit" ]);
+        description = "Jetson carrier board to target.";
       };
     };
   };
