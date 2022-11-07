@@ -51,6 +51,7 @@ in
       };
 
       carrierBoard = mkOption {
+        default = null;
         type = types.nullOr (types.enum [ "devkit" ]);
         description = "Jetson carrier board to target.";
       };
