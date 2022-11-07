@@ -27,10 +27,10 @@ in {
   services.nvpmodel.enable = mkIf (cfg.som != null && nvpModelConf ? "${cfg.som}") (mkDefault true);
   services.nvpmodel.configFile = mkIf (cfg.som != null && nvpModelConf ? "${cfg.som}") (mkDefault nvpModelConf.${cfg.som});
 
-  # Set fan control service if we have a confog for it
-  services.nvfancontrol.enable = mkIf (cfg.som != null && nvfancontrolConf ? "${cfg.som}") (mkDefault true);
+  # Set fan control service if we have a config for it
+  services.nvfancontrol.configFile = mkIf (cfg.som != null && nvfancontrolConf ? "${cfg.som}") (mkDefault nvfancontrolConf.${cfg.som});
   # Enable the fan control service if it's a devkit
-  services.nvfancontrol.configFile = mkIf (cfg.carrierBoard == "devkit") (mkDefault true);
+  services.nvfancontrol.enable = mkIf (cfg.carrierBoard == "devkit") (mkDefault true);
 
   hardware.nvidia-jetpack.flashScriptOverrides = mkMerge [
     (mkIf (cfg.som == "orin-agx") {
