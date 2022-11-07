@@ -37,10 +37,9 @@ in {
       targetBoard = mkDefault "jetson-agx-orin-devkit";
       # We don't flash the sdmmc with kernel/initrd/etc at all. Just let it be a
       # regular NixOS machine instead of having some weird partition structure.
-      partitionTemplate = mkDefault (pkgs.runCommand "flash.xml" {} ''
-        sed -z \
-          -E 's#<device[^>]*type="sdmmc_user"[^>]*>.*?</device>##' \
-          <${pkgs.nvidia-jetpack.bspSrc}/bootloader/t186ref/cfg/flash_t234_qspi_sdmmc.xml \
+      partitionTemplate = mkDefault (pkgs.runCommand "flash.xml" { nativeBuildInputs = [ pkgs.xmlstarlet ]; } ''
+        xmlstarlet ed -d '//device[@type="sdmmc_user"]' \
+          ${pkgs.nvidia-jetpack.bspSrc}/bootloader/t186ref/cfg/flash_t234_qspi_sdmmc.xml \
           >$out
       '');
     })
@@ -58,10 +57,10 @@ in {
           "RECNAME" "RECDTB-NAME" "RP1" "RP2" "RECROOTFS" # Recovery
           "esp" # L4TLauncher
         ];
-      in pkgs.runCommand "flash.xml" {} ''
-        sed -z \
-          -E 's#<partition[^>]*name="(${lib.concatStringsSep "|" partitionsToRemove})"[^>]*>.*?</partition>##' \
-          <${pkgs.nvidia-jetpack.bspSrc}/bootloader/t186ref/cfg/flash_t194_sdmmc.xml \
+        xpathMatch = lib.concatMapStringsSep " or " (p: "@name = \"${p}\"") partitionsToRemove;
+      in pkgs.runCommand "flash.xml" { nativeBuildInputs = [ pkgs.xmlstarlet ]; } ''
+        xmlstarlet ed -d '//partition[${xpathMatch}]' \
+          ${pkgs.nvidia-jetpack.bspSrc}/bootloader/t186ref/cfg/flash_t194_sdmmc.xml \
           >$out
       '';
     })
