@@ -26,8 +26,11 @@ in
     hardware.nvidia-jetpack = {
       enable = mkEnableOption "NVIDIA Jetson device support";
 
+      # I get this error when enabling modesetting
+      # [   14.243184] NVRM gpumgrGetSomeGpu: Failed to retrieve pGpu - Too early call!.
+      # [   14.243188] NVRM nvAssertFailedNoLog: Assertion failed: NV_FALSE @ gpu_mgr.c:
       modesetting.enable = mkOption {
-        default = true;
+        default = false;
         type = types.bool;
         description = "Enable kernel modesetting";
       };
@@ -75,13 +78,13 @@ in
     boot.kernelModules = [
       "nvgpu"
     ] ++ lib.optionals cfg.modesetting.enable [
-      "tegra-udrm"
+      "tegra-udrm" # For Xavier`
       "nvidia-drm" # For Orin
     ];
 
     boot.extraModprobeConfig = lib.optionalString cfg.modesetting.enable ''
-      options nvidia-drm modeset=1 # For Orin  (make optional based on modesetting)
       options tegra-udrm modeset=1 # For Xavier
+      options nvidia-drm modeset=1 # For Orin
     '';
 
     # For Orin
