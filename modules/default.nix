@@ -118,16 +118,14 @@ in
       '')
     ];
 
-    # Override other drivers, fbdev seems to conflict
-    # TODO: This also disables the modesetting driver, so we can't have that!
-    services.xserver.drivers = lib.singleton {
+    services.xserver.drivers = lib.mkBefore (lib.singleton {
       name = "nvidia";
       modules = [ pkgs.nvidia-jetpack.l4t-3d-core ];
       display = true;
       screenSection = ''
         Option "AllowEmptyInitialConfiguration" "true"
       '';
-    };
+    });
 
     # Used by libjetsonpower.so, which is used by nvfancontrol at least.
     environment.etc."nvpower/libjetsonpower".source = "${pkgs.nvidia-jetpack.l4t-tools}/etc/nvpower/libjetsonpower";
