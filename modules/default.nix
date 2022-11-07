@@ -26,6 +26,12 @@ in
     hardware.nvidia-jetpack = {
       enable = mkEnableOption "NVIDIA Jetson device support";
 
+      modesetting.enable = mkOption {
+        default = true;
+        type = types.bool;
+        description = "Enable kernel modesetting";
+      };
+
       maxClock = mkOption {
         default = false;
         type = types.bool;
@@ -57,8 +63,6 @@ in
       "console=ttyTCU0,115200" # Provides console on "Tegra Combined UART" (TCU)
       "console=tty0" # Output to HDMI/DP
       "fbcon=map:0" # Needed for HDMI/DP
-      #"nvidia-drm.modeset=1" # For Orin  (make optional based on modesetting)
-      #"tegra-udrm.modeset=1" # For Xavier
       "video=efifb:off" # Disable efifb driver, which crashes Xavier AGX/NX
 
       # Needed on Orin at least, but upstream has it for both
@@ -70,9 +74,15 @@ in
 
     boot.kernelModules = [
       "nvgpu"
-      "tegra-udrm" # For Xavier
+    ] ++ lib.optionals cfg.modesetting.enable [
+      "tegra-udrm"
       "nvidia-drm" # For Orin
     ];
+
+    boot.extraModprobeConfig = lib.optionalString cfg.modesetting.enable ''
+      options nvidia-drm modeset=1 # For Orin  (make optional based on modesetting)
+      options tegra-udrm modeset=1 # For Xavier
+    '';
 
     # For Orin
     boot.extraModulePackages = [ config.boot.kernelPackages.nvidia-display-driver ];
