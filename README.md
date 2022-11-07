@@ -111,3 +111,13 @@ https://developer.nvidia.com/embedded-computing
 https://developer.nvidia.com/embedded/jetpack
 https://forums.developer.nvidia.com/c/agx-autonomous-machines/jetson-embedded-systems/70
 
+
+## Known issues
+
+Can't change UEFI variables at runtime
+https://forums.developer.nvidia.com/t/using-uefi-runtime-variables-on-xavier-agx/227970
+
+
+## TODO
+https://developer.nvidia.com/blog/simplifying-cuda-upgrades-for-nvidia-jetson-users/
+cuda-compat package
