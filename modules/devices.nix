@@ -54,12 +54,13 @@ in {
         partitionsToRemove = [
           "kernel" "kernel-dtb" "reserved_for_chain_A_user"
           "kernel_b" "kernel-dtb_b" "reserved_for_chain_B_user"
+          "APP" # Original rootfs
           "RECNAME" "RECDTB-NAME" "RP1" "RP2" "RECROOTFS" # Recovery
           "esp" # L4TLauncher
         ];
       in pkgs.runCommand "flash.xml" {} ''
         sed -z \
-          -E 's#<partition[^>]*type="(${lib.concatStringsSep "|" partitionsToRemove})"[^>]*>.*?</partition>##' \
+          -E 's#<partition[^>]*name="(${lib.concatStringsSep "|" partitionsToRemove})"[^>]*>.*?</partition>##' \
           <${pkgs.nvidia-jetpack.bspSrc}/bootloader/t186ref/cfg/flash_t194_sdmmc.xml \
           >$out
       '';
