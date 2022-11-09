@@ -151,8 +151,10 @@ let
       # Fix a couple broken symlinks
       ln -sf libnvv4l2.so lib/libv4l2.so.0.0.999999
       ln -sf libnvv4l2.so lib/libv4l2.so.0
+      ln -sf libnvv4l2.so lib/libv4l2.so
       ln -sf libnvv4lconvert.so lib/libv4lconvert.so.0.0.999999
       ln -sf libnvv4lconvert.so lib/libv4lconvert.so.0
+      ln -sf libnvv4lconvert.so lib/libv4lconvert.so
     '';
   };
 
