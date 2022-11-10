@@ -1,5 +1,5 @@
 { stdenv, lib, fetchurl, dpkg, pkg-config, autoAddOpenGLRunpathHook, freeimage,
-  cmake, opencv, opencv2, libX11, libdrm, libv4l, libglvnd, python2, coreutils, gnused,
+  cmake, opencv, opencv2, libX11, libdrm, libglvnd, python2, coreutils, gnused,
   libGL, libXau, wayland, libxkbcommon, libffi,
 
   l4t, cudaPackages,
@@ -165,6 +165,8 @@ let
   };
 
   # https://docs.nvidia.com/jetson/l4t-multimedia/group__l4t__mm__test__group.html
+  # ./result/bin/video_decode H264 /nix/store/zry377bb5vkz560ra31ds8r485jsizip-multimedia-samples-35.1.0-20220825113828/data/Video/sample_outdoor_car_1080p_10fps.h26
+  # (Requires X11)
   multimedia-samples = stdenv.mkDerivation {
     pname = "multimedia-samples";
     src = debs.common.nvidia-l4t-jetson-multimedia-api.src;
@@ -174,7 +176,7 @@ let
     sourceRoot = "source/usr/src/jetson_multimedia_api";
 
     nativeBuildInputs = [ dpkg python2 ];
-    buildInputs = [ libX11 libdrm  libglvnd opencv2 libv4l ] # TODO: nixpkgs libv4l is very likely incompatible. We need to use the prebuilt one or see what OE4T does.
+    buildInputs = [ libX11 libdrm  libglvnd opencv2 ]
       ++ (with l4t; [ l4t-cuda l4t-multimedia l4t-camera ])
       ++ (with cudaPackages; [ cudatoolkit tensorrt ]);
 

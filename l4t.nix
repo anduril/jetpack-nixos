@@ -1,6 +1,6 @@
-{ stdenv, stdenvNoCC, lib, fetchurl, fetchpatch, autoPatchelfHook,
-  dpkg, expat, libglvnd, egl-wayland, xorg, mesa, wayland,
-  pango, alsa-lib, gst_all_1, gtk3,
+{ stdenv, stdenvNoCC, lib, fetchurl, fetchpatch, fetchgit, autoPatchelfHook,
+  dpkg, expat, libglvnd, egl-wayland, xorg, mesa, wayland, pango, alsa-lib,
+  gst_all_1, gtk3, libv4l,
 
   debs, l4tVersion
 }:
@@ -127,6 +127,23 @@ let
     autoPatchelf = false;
   };
 
+  # Nvidia's included libv4l has very minimal changes against the upstream
+  # version. We need to rebuild it from source to ensure it can find nvidia's
+  # v4l plugins in the right location. Nvidia's version has the path hardcoded.
+  # See https://nv-tegra.nvidia.com/tegra/v4l2-src/v4l2_libs.git
+  _l4t-multimedia-v4l = libv4l.overrideAttrs ({ nativeBuildInputs ? [], patches ? [], postPatch ? "", ... }: {
+    nativeBuildInputs = nativeBuildInputs ++ [ dpkg ];
+    patches = patches ++ lib.singleton (fetchpatch {
+      url = "https://raw.githubusercontent.com/OE4T/meta-tegra/master/recipes-multimedia/libv4l2/libv4l2-minimal/0003-Update-conversion-defaults-to-match-NVIDIA-sources.patch";
+      sha256 = "sha256-vGilgHWinrKjX+ikHo0J20PL713+w+lv46dBgfdvsZM=";
+    });
+    # Use a placeholder path that we replace in the l4t-multimedia derivation, We avoid an infinite recursion problem this way.
+    postPatch = postPatch + ''
+      substituteInPlace lib/libv4l2/v4l2-plugin.c \
+        --replace LIBV4L2_PLUGIN_DIR '"/nix/store/00000000000000000000000000000000-${l4t-multimedia.name}/lib/libv4l/plugins/nv"'
+    '';
+  });
+
   l4t-multimedia = buildFromDeb {
     name = "nvidia-l4t-multimedia";
     # TODO: Replace the below with the builder from cuda-packages that works with multiple debs
@@ -148,13 +165,23 @@ let
       cp -r src/jetson_multimedia_api/{argus,include,samples} .
       rm -rf src
 
-      # Fix a couple broken symlinks
+      # Replace nvidia's v4l libs with ours. Copy them instead of symlinking so we can modify them
+      cp ${_l4t-multimedia-v4l}/lib/libv4l2.so lib/libnvv4l2.so
+      cp ${_l4t-multimedia-v4l}/lib/libv4lconvert.so lib/libnvv4lconvert.so
+
+      # Fix the placeholder path in the compiled v4l derivation
+      sed -i "s#/nix/store/00000000000000000000000000000000-${l4t-multimedia.name}#$out#" lib/libnvv4l2.so lib/libnvv4lconvert.so
+
+      # Fix a few broken symlinks
       ln -sf libnvv4l2.so lib/libv4l2.so.0.0.999999
       ln -sf libnvv4l2.so lib/libv4l2.so.0
       ln -sf libnvv4l2.so lib/libv4l2.so
       ln -sf libnvv4lconvert.so lib/libv4lconvert.so.0.0.999999
       ln -sf libnvv4lconvert.so lib/libv4lconvert.so.0
       ln -sf libnvv4lconvert.so lib/libv4lconvert.so
+
+      ln -sf ../../../libv4l2_nvcuvidvideocodec.so lib/libv4l/plugins/nv/libv4l2_nvcuvidvideocodec.so
+      ln -sf ../../../libv4l2_nvvideocodec.so lib/libv4l/plugins/nv/libv4l2_nvvideocodec.so
     '';
   };
 
