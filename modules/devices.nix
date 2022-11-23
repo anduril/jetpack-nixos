@@ -31,6 +31,8 @@ in {
   services.nvfancontrol.configFile = mkIf (cfg.som != null && nvfancontrolConf ? "${cfg.som}") (mkDefault nvfancontrolConf.${cfg.som});
   # Enable the fan control service if it's a devkit
   services.nvfancontrol.enable = mkIf (cfg.carrierBoard == "devkit") (mkDefault true);
+  # The default power mode for xavier-nx is the 2-core low power mode, change it to use the MODE_20W_6CORE by default
+  services.nvfancontrol.enable = mkIf (cfg.som == "xavier-nx" || cfg.som == "xavier-nx-emmc") 8;
 
   hardware.nvidia-jetpack.flashScriptOverrides = mkMerge [
     (mkIf (cfg.som == "orin-agx") {
