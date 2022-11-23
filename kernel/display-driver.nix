@@ -23,6 +23,8 @@ stdenv.mkDerivation rec {
     "SYSSRC=${kernel.dev}/lib/modules/${kernel.modDirVersion}/source"
     "SYSOUT=${kernel.dev}/lib/modules/${kernel.modDirVersion}/build"
     "MODLIB=$(out)/lib/modules/${kernel.modDirVersion}"
+  ] ++ lib.optionals ((stdenv.buildPlatform != stdenv.hostPlatform) && stdenv.hostPlatform.isAarch64) [
+    "TARGET_ARCH=aarch64"
   ];
 
   # Avoid an error in modpost: "__stack_chk_guard" [.../nvidia.ko] undefined

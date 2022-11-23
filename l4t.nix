@@ -26,6 +26,8 @@ let
       dontBuild = true;
       noDumpEnvVars = true;
 
+      extraAutoPatchelfLibs = lib.optionals (autoPatchelf && (stdenv.buildPlatform != stdenv.hostPlatform)) [ "${stdenv.cc.cc.lib}/${stdenv.targetPlatform.config}/lib" ];
+
       postPatch = ''
         if [[ -d usr ]]; then
           mv usr/* .
