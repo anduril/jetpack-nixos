@@ -201,7 +201,7 @@ let
     # Test with:
     # ./result/bin/trtexec --onnx=mnist.onnx
     # (mnist.onnx is from libnvinfer-samples deb)
-    # TODO: This package is maybe large to want to just combine everything. Maybe split back into lib/dev/bin subpackages?
+    # TODO: This package is too large to want to just combine everything. Maybe split back into lib/dev/bin subpackages?
     tensorrt = let
       # Filter out samples. They're too big
       tensorrtDebs = builtins.filter (p: !(lib.hasInfix "libnvinfer-samples" p.filename)) (debsForSourcePackage "tensorrt");
