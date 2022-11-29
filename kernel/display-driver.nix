@@ -32,4 +32,8 @@ stdenv.mkDerivation rec {
 
   installTargets = [ "modules_install" ];
   enableParallelBuilding = true;
+
+  passthru.meta = {
+    license = with lib.licenses; [ mit /* OR */ gpl2Only ];
+  };
 }

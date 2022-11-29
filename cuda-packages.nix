@@ -91,6 +91,10 @@ let
       installPhase = ''
         cp -r . $out
       '';
+
+      passthru.meta = {
+        license = with lib.licenses; [ unfree ];
+      };
     });
 
   # Combine all the debs that originated from the same source package and build
