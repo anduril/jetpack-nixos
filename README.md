@@ -69,7 +69,7 @@ Include the following in your `configuration.nix` (or the equivalent in your `fl
 ```nix
 {
   imports = [
-    (builtins.fetchTree "https://github.com/anduril/jetpack-nixos/master/...") + "/module.nix")
+    (builtins.fetchTarball "https://github.com/anduril/jetpack-nixos/archive/master.tar.gz") + "/modules/default.nix")
   ];
 
   hardware.nvidia-jetpack.enable = true;
