@@ -36,7 +36,7 @@ Bus 003 Device 013: ID 0955:7023 NVIDIA Corp. APX
 On an x86_64 machine (some of NVIDIA's precompiled components like `tegrarcm_v2` are only built for x86_64),
 build and run (as root) the flashing script which corresponds to your device:
 ```shell
-$ nix build github:danielfullmer/jetpack-nixos#flash-xavier-agx-devkit
+$ nix build github:anduril/jetpack-nixos#flash-xavier-agx-devkit
 $ sudo ./result/bin/flash-xavier-agx-devkit
 ```
 
@@ -46,7 +46,7 @@ At this point, your device should have a working UEFI firmware accessible either
 
 Now, build and write the customized installer ISO to a USB drive:
 ```shell
-$ nix build github:danielfullmer/jetpack-nixos#installer-iso
+$ nix build github:anduril/jetpack-nixos#installer-iso
 $ sudo dd if=./result/iso/nixos-22.11pre-git-aarch64-linux.iso of=/dev/sdX bs=1M oflag=sync status=progress
 ```
 (Replace `/dev/sdX` with the correct path for your device)
@@ -69,7 +69,7 @@ Include the following in your `configuration.nix` (or the equivalent in your `fl
 ```nix
 {
   imports = [
-    (builtins.fetchTree "https://github.com/danielfullmer/jetpack-nixos/master/...") + "/module.nix")
+    (builtins.fetchTree "https://github.com/anduril/jetpack-nixos/master/...") + "/module.nix")
   ];
 
   hardware.nvidia-jetpack.enable = true;
