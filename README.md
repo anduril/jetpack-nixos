@@ -73,6 +73,8 @@ Include the following in your `configuration.nix` (or the equivalent in your `fl
   ];
 
   hardware.nvidia-jetpack.enable = true;
+  hardware.nvidia-jetpack.som = "xavier-agx"; # Other options include orin-agx, xavier-nx, and xavier-nx-emmc
+  hardware.nvidia-jetpack.carrierBoard = "devkit";
 }
 ```
 The Xavier AGX contains some critical firmware paritions on the eMMC.
