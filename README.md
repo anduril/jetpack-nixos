@@ -46,7 +46,7 @@ At this point, your device should have a working UEFI firmware accessible either
 
 Now, build and write the customized installer ISO to a USB drive:
 ```shell
-$ nix build github:anduril/jetpack-nixos#installer-iso
+$ nix build github:anduril/jetpack-nixos#iso_minimal
 $ sudo dd if=./result/iso/nixos-22.11pre-git-aarch64-linux.iso of=/dev/sdX bs=1M oflag=sync status=progress
 ```
 (Replace `/dev/sdX` with the correct path for your device)
@@ -69,7 +69,7 @@ Include the following in your `configuration.nix` (or the equivalent in your `fl
 ```nix
 {
   imports = [
-    (builtins.fetchTarball "https://github.com/anduril/jetpack-nixos/archive/master.tar.gz") + "/modules/default.nix")
+    (builtins.fetchTarball "https://github.com/anduril/jetpack-nixos/archive/master.tar.gz" + "/modules/default.nix")
   ];
 
   hardware.nvidia-jetpack.enable = true;
