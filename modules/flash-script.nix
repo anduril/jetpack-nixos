@@ -37,6 +37,11 @@ in
           type = types.bool;
           default = cfg.bootloader.debugMode;
         };
+
+        edk2NvidiaPatches = mkOption {
+          type = types.listOf types.path;
+          default = [];
+        };
       };
 
       flashScriptOverrides = {
