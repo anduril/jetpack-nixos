@@ -4,6 +4,9 @@
   # Optional path to a boot logo that will be converted and cropped into the format required
   bootLogo ? null,
 
+  # Patches to apply to edk2-nvidia source tree
+  edk2NvidiaPatches ? [],
+
   debugMode ? false,
   errorLevelInfo ? debugMode, # Enables a bunch more info messages
 }:
@@ -56,6 +59,7 @@ let
     if (errorLevelInfo || bootLogo != null)
     then applyPatches {
       src = _edk2-nvidia;
+      patches = edk2NvidiaPatches;
       postPatch = lib.optionalString errorLevelInfo ''
         sed -i 's#PcdDebugPrintErrorLevel|.*#PcdDebugPrintErrorLevel|0x8000004F#' Platform/NVIDIA/NVIDIA.common.dsc.inc
       '' + lib.optionalString (bootLogo != null) ''

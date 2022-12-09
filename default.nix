@@ -92,6 +92,7 @@ in rec {
       bootLogo = cfg.bootloader.logo;
       debugMode = cfg.bootloader.debugMode;
       errorLevelInfo = cfg.bootloader.errorLevelInfo;
+      edk2NvidiaPatches = cfg.bootloader.edk2NvidiaPatches;
     };
 
     dtbsDir = config.hardware.deviceTree.package;
