@@ -17,7 +17,7 @@ This package is based on the Jetpack 5 release, and will only work with devices 
  * Jetson Xavier NX
 
 The Jetson Nano, TX2, and TX1 devices are _not_ supported, since support for them was dropped upstream in Jetpack 5.
-In the future, when the the Orin NX and Orin Nano are released, it should be possible to make them work as well.
+In the future, when the Orin NX and Orin Nano are released, it should be possible to make them work as well.
 
 ## Getting started
 
@@ -49,7 +49,7 @@ Now, build and write the customized installer ISO to a USB drive:
 $ nix build github:anduril/jetpack-nixos#iso_minimal
 $ sudo dd if=./result/iso/nixos-22.11pre-git-aarch64-linux.iso of=/dev/sdX bs=1M oflag=sync status=progress
 ```
-(Replace `/dev/sdX` with the correct path for your device)
+(Replace `/dev/sdX` with the correct path for your USB drive)
 
 As an alternative, you could also try the generic ARM64 multiplatform ISO from NixOS. See https://nixos.wiki/wiki/NixOS_on_ARM/UEFI
 (Last I tried, this worked on Xavier AGX but not Orin AGX. We should do additional testing to see exactly what is working or not with the vendor kernel vs. mainline kernel)
@@ -90,7 +90,7 @@ However, the Xavier AGX stores it on a `uefi_variables` partition on the eMMC.
 This means that it cannot support runtime UEFI variables, since the UEFI runtime drivers to access the eMMC would conflict with the Linux kernel's drivers for the eMMC.
 Concretely, that means that you cannot modify the EFI variables from Linux, so UEFI bootloaders will not be able to create an EFI boot entry and reorder the boot options.
 You may need to enter the firmware menu and reorder it manually so NixOS will boot first.
-(See [this issue](https://forums.developer.nvidia.com/t/using-uefi-runtime-variables-on-xavier-agx/227970)
+(See [this issue](https://forums.developer.nvidia.com/t/using-uefi-runtime-variables-on-xavier-agx/227970))
 
 ## Additional Links
 
