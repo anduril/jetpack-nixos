@@ -40,11 +40,28 @@ in hackedPkgs.buildLinux (args // rec {
 
   defconfig = "tegra_defconfig";
 
-  src = fetchFromGitHub {
-    owner = "OE4T";
-    repo = "linux-tegra-5.10";
-    rev = "63c149056a7ef7bf146a747e7c8a179c1aaf72f7"; # 2022-08-18
-    sha256 = "sha256-sIk3gxCuWHpFXjxqFIUGP1ApWsq7+fCC4nFB693Sdg0=";
+  # Using applyPatches here since it's not obvious how to append an extra
+  # postPatch. This is not very efficient.
+  src = pkgs.applyPatches {
+    src = fetchFromGitHub {
+      owner = "OE4T";
+      repo = "linux-tegra-5.10";
+      rev = "63c149056a7ef7bf146a747e7c8a179c1aaf72f7"; # 2022-08-18
+      sha256 = "sha256-sIk3gxCuWHpFXjxqFIUGP1ApWsq7+fCC4nFB693Sdg0=";
+    };
+    # Remove device tree overlays with some incorrect "remote-endpoint" nodes.
+    # They are strings, but should be phandles. Otherwise, it fails to compile
+    postPatch = ''
+      rm \
+        nvidia/platform/t19x/galen/kernel-dts/tegra194-p2822-camera-imx185-overlay.dts \
+        nvidia/platform/t19x/galen/kernel-dts/tegra194-p2822-camera-dual-imx274-overlay.dts \
+        nvidia/platform/t23x/concord/kernel-dts/tegra234-p3737-camera-imx185-overlay.dts \
+        nvidia/platform/t23x/concord/kernel-dts/tegra234-p3737-camera-dual-imx274-overlay.dts
+
+      sed -i -e '/imx185-overlay/d' -e '/imx274-overlay/d' \
+        nvidia/platform/t19x/galen/kernel-dts/Makefile \
+        nvidia/platform/t23x/concord/kernel-dts/Makefile
+    '';
   };
   autoModules = false;
   features = {}; # TODO: Why is this needed in nixpkgs master (but not NixOS 22.05)?
