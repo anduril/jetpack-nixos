@@ -32,7 +32,22 @@ in {
   # Enable the fan control service if it's a devkit
   services.nvfancontrol.enable = mkIf (cfg.carrierBoard == "devkit") (mkDefault true);
 
-  hardware.nvidia-jetpack.flashScriptOverrides = mkMerge [
+  hardware.nvidia-jetpack.flashScriptOverrides = let
+    # Remove unnecessary partitions to make it more like
+    # flash_t194_uefi_sdmmc_min.xml, except also keep the A/B slots on each
+    # partition
+    partitionsToRemove = [
+      "kernel" "kernel-dtb" "reserved_for_chain_A_user"
+      "kernel_b" "kernel-dtb_b" "reserved_for_chain_B_user"
+      "APP" # Original rootfs
+      "RECNAME" "RECDTB-NAME" "RP1" "RP2" "RECROOTFS" # Recovery
+      "esp" # L4TLauncher
+    ];
+    xpathMatch = lib.concatMapStringsSep " or " (p: "@name = \"${p}\"") partitionsToRemove;
+    filterPartitions = basefile: pkgs.runCommand "flash.xml" { nativeBuildInputs = [ pkgs.xmlstarlet ]; } ''
+      xmlstarlet ed -d '//partition[${xpathMatch}]' ${basefile} >$out
+    '';
+  in mkMerge [
     (mkIf (cfg.som == "orin-agx") {
       targetBoard = mkDefault "jetson-agx-orin-devkit";
       # We don't flash the sdmmc with kernel/initrd/etc at all. Just let it be a
@@ -45,7 +60,7 @@ in {
     })
 
     (mkIf (cfg.som == "xavier-agx") {
-      targetBoard = lib.mkDefault "jetson-agx-xavier-devkit";
+      targetBoard = mkDefault "jetson-agx-xavier-devkit";
       # Remove unnecessary partitions to make it more like
       # flash_t194_uefi_sdmmc_min.xml, except also keep the A/B slots of
       # each partition
@@ -57,27 +72,22 @@ in {
           "RECNAME" "RECDTB-NAME" "RP1" "RP2" "RECROOTFS" # Recovery
           "esp" # L4TLauncher
         ];
-        xpathMatch = lib.concatMapStringsSep " or " (p: "@name = \"${p}\"") partitionsToRemove;
-      in pkgs.runCommand "flash.xml" { nativeBuildInputs = [ pkgs.xmlstarlet ]; } ''
+        xpathMatch = concatMapStringsSep " or " (p: "@name = \"${p}\"") partitionsToRemove;
+      in mkDefault (pkgs.runCommand "flash.xml" { nativeBuildInputs = [ pkgs.xmlstarlet ]; } ''
         xmlstarlet ed -d '//partition[${xpathMatch}]' \
           ${pkgs.nvidia-jetpack.bspSrc}/bootloader/t186ref/cfg/flash_t194_sdmmc.xml \
           >$out
-      '';
+      '');
     })
 
-    (mkIf (cfg.som == "xavier-nx" || cfg.som == "xavier-nx-emmc") {
-      # We are inentionally using the flash_l4t_t194_qspi_p3668.xml for both
-      # variants, instead of flash_l4t_t194_spi_emmc_p3668.xml for the emmc
-      # variant as is done upstream, since they are otherwise identical, and we
-      # don't want to flash partitions to the emmc.
-      partitionTemplate = lib.mkDefault "${pkgs.nvidia-jetpack.bspSrc}/bootloader/t186ref/cfg/flash_l4t_t194_qspi_p3668.xml";
+    (mkIf (cfg.som == "xavier-nx") {
+      targetBoard = mkDefault "jetson-xavier-nx-devkit";
+      partitionTemplate = mkDefault (filterPartitions "${pkgs.nvidia-jetpack.bspSrc}/bootloader/t186ref/cfg/flash_l4t_t194_spi_sd_p3668.xml");
     })
 
-    {
-      targetBoard = mkMerge [
-        (mkIf (cfg.som == "xavier-nx") (mkDefault "jetson-xavier-nx-devkit-qspi"))
-        (mkIf (cfg.som == "xavier-nx-emmc") (mkDefault "jetson-xavier-nx-devkit-emmc"))
-      ];
-    }
+    (mkIf (cfg.som == "xavier-nx-emmc") {
+      targetBoard = mkDefault "jetson-xavier-nx-devkit-emmc";
+      partitionTemplate = mkDefault (filterPartitions "${pkgs.nvidia-jetpack.bspSrc}/bootloader/t186ref/cfg/flash_l4t_t194_spi_emmc_p3668.xml");
+    })
   ];
 }
