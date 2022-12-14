@@ -72,7 +72,7 @@ in {
           "RECNAME" "RECDTB-NAME" "RP1" "RP2" "RECROOTFS" # Recovery
           "esp" # L4TLauncher
         ];
-        xpathMatch = concatMapStringsSep " or " (p: "@name = \"${p}\"") partitionsToRemove;
+        xpathMatch = lib.concatMapStringsSep " or " (p: "@name = \"${p}\"") partitionsToRemove;
       in mkDefault (pkgs.runCommand "flash.xml" { nativeBuildInputs = [ pkgs.xmlstarlet ]; } ''
         xmlstarlet ed -d '//partition[${xpathMatch}]' \
           ${pkgs.nvidia-jetpack.bspSrc}/bootloader/t186ref/cfg/flash_t194_sdmmc.xml \
