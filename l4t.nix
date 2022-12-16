@@ -118,6 +118,11 @@ let
     postPatch = ''
       ln -s libnvidia-egl-gbm.so lib/libnvidia-egl-gbm.so.1
       sed -i -E "s#(libnvidia-egl-gbm)#$out/lib/\\1#" share/egl/egl_external_platform.d/nvidia_gbm.json
+
+      # Replace incorrect symlinks
+      ln -sf ../libnvidia-allocator.so lib/gbm/nvidia-drm_gbm.so
+      ln -sf ../libnvidia-allocator.so lib/gbm/tegra_gbm.so
+      ln -sf ../libnvidia-allocator.so lib/gbm/tegra-udrm_gbm.so
     '';
   };
 
