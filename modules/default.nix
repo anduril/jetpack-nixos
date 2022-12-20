@@ -144,5 +144,8 @@ in
     };
 
     environment.systemPackages = with pkgs.nvidia-jetpack; [ l4t-tools ];
+
+    # Used by libEGL_nvidia.so.0
+    environment.etc."egl/egl_external_platform.d".source = "/run/opengl-driver/share/egl/egl_external_platform.d/";
   };
 }
