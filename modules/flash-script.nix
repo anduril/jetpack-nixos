@@ -81,6 +81,6 @@ in
     # Totally ugly reimport of nixpkgs so we can get a native x86 version. This
     # is probably not the right way to do it, since overlays wouldn't get
     # applied in the new import of nixpkgs.
-    hardware.nvidia-jetpack.flashScript = ((import pkgs.path { system = "x86_64-linux"; }).callPackage ./default.nix {}).flashScriptFromNixos config;
+    hardware.nvidia-jetpack.flashScript = ((import pkgs.path { system = "x86_64-linux"; }).callPackage ../default.nix {}).flashScriptFromNixos config;
   };
 }
