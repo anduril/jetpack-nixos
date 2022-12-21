@@ -108,7 +108,13 @@ let
 
   cudaPackages = {
     cuda_cccl = buildFromSourcePackage { name = "cuda-thrust"; };
-    cuda_cudart = buildFromSourcePackage { name = "cuda-cudart"; };
+    cuda_cudart = buildFromSourcePackage {
+      name = "cuda-cudart";
+      preFixup = ''
+        # Some build systems look for libcuda.so.1 expliticly:
+        ln -s $out/lib/stubs/libcuda.so $out/lib/stubs/libcuda.so.1
+      '';
+    };
     cuda_cuobjdump = buildFromSourcePackage { name = "cuda-cuobjdump"; };
     cuda_cupti = buildFromSourcePackage { name = "cuda-cupti"; };
     cuda_cuxxfilt = buildFromSourcePackage { name = "cuda-cuxxfilt"; };
