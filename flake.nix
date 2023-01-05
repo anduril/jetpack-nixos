@@ -1,8 +1,5 @@
 {
   inputs = {
-    # Kernel build fails with nixpkgs master, but not 22.05. (During dtc compilation)
-    # Bisected to this commit:  https://github.com/NixOS/nixpkgs/commit/907b497d7e7669f3c2794ab313f8c42f80929bd6
-    # Likely due to DTC_FLAGS=-@ in kernel build
     nixpkgs.url = "github:nixos/nixpkgs/nixos-22.05";
   };
 
