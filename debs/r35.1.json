@@ -308,40 +308,40 @@
       "version": "1.10.0-1"
     },
     "libnvinfer-bin": {
-      "filename": "pool/main/t/tensorrt/libnvinfer-bin_8.4.1-1+cuda11.4_arm64.deb",
-      "sha256": "a92dfc18f2d999fa2e8581fadbcc9430f1b03f7fcdd5e6f828e45c830ad7d76c",
+      "filename": "pool/main/t/tensorrt/libnvinfer-bin_8.4.0-1+cuda11.4_arm64.deb",
+      "sha256": "e975e2623d8183c1a338fb8ac80d4b2a9660cc184f4c076ee853dc428f3dd164",
       "source": "tensorrt",
-      "version": "8.4.1-1+cuda11.4"
+      "version": "8.4.0-1+cuda11.4"
     },
     "libnvinfer-dev": {
-      "filename": "pool/main/t/tensorrt/libnvinfer-dev_8.4.1-1+cuda11.4_arm64.deb",
-      "sha256": "537d69a7580a7c1c055cdae87cb5af77d9cee1a59fa028449309dd5bdca6805a",
+      "filename": "pool/main/t/tensorrt/libnvinfer-dev_8.4.0-1+cuda11.4_arm64.deb",
+      "sha256": "4a12c7e5fb64a71b5fd5ad3e3df13b57240fc48d8d65361196779beeb7f119e1",
       "source": "tensorrt",
-      "version": "8.4.1-1+cuda11.4"
+      "version": "8.4.0-1+cuda11.4"
     },
     "libnvinfer-plugin-dev": {
-      "filename": "pool/main/t/tensorrt/libnvinfer-plugin-dev_8.4.1-1+cuda11.4_arm64.deb",
-      "sha256": "63e70bdc9d31b76ee14dab39b26e60765a21217a7957fa23c508cda92e670bdb",
+      "filename": "pool/main/t/tensorrt/libnvinfer-plugin-dev_8.4.0-1+cuda11.4_arm64.deb",
+      "sha256": "a14670f7d31b61506cdc4d7b06113a626874946154f94d3798f319c87068312c",
       "source": "tensorrt",
-      "version": "8.4.1-1+cuda11.4"
+      "version": "8.4.0-1+cuda11.4"
     },
     "libnvinfer-plugin8": {
-      "filename": "pool/main/t/tensorrt/libnvinfer-plugin8_8.4.1-1+cuda11.4_arm64.deb",
-      "sha256": "a533e5d0c029be8ebfe67d4d4531ba08c8750373aeabc4bd6fb1f9abe8db92c1",
+      "filename": "pool/main/t/tensorrt/libnvinfer-plugin8_8.4.0-1+cuda11.4_arm64.deb",
+      "sha256": "84610d06f8bf34421eff9560055908618e981536476eeeaebe296fe828322e33",
       "source": "tensorrt",
-      "version": "8.4.1-1+cuda11.4"
+      "version": "8.4.0-1+cuda11.4"
     },
     "libnvinfer-samples": {
-      "filename": "pool/main/t/tensorrt/libnvinfer-samples_8.4.1-1+cuda11.4_all.deb",
-      "sha256": "e617ed3dfbe73e90ac07c859f154a7853b9657acdb72758d40fd23bb472325f8",
+      "filename": "pool/main/t/tensorrt/libnvinfer-samples_8.4.0-1+cuda11.4_all.deb",
+      "sha256": "aaf9d6823174f3f43652e66481bcd71894c4137f41a4e02967b433c7d71dfc44",
       "source": "tensorrt",
-      "version": "8.4.1-1+cuda11.4"
+      "version": "8.4.0-1+cuda11.4"
     },
     "libnvinfer8": {
-      "filename": "pool/main/t/tensorrt/libnvinfer8_8.4.1-1+cuda11.4_arm64.deb",
-      "sha256": "dad970cd0d2fc6b6240cdce8cc37cf8ab04f90e1853c30c8a7644566d5f31de8",
+      "filename": "pool/main/t/tensorrt/libnvinfer8_8.4.0-1+cuda11.4_arm64.deb",
+      "sha256": "fc7410c58c99e01fe5e0449c2856ccf01cefb98565745d1f35f85c386f2d00c6",
       "source": "tensorrt",
-      "version": "8.4.1-1+cuda11.4"
+      "version": "8.4.0-1+cuda11.4"
     },
     "libnvonnxparsers-dev": {
       "filename": "pool/main/t/tensorrt/libnvonnxparsers-dev_8.4.1-1+cuda11.4_arm64.deb",
@@ -484,14 +484,14 @@
       "version": "5.0.2-b231"
     },
     "nvidia-tensorrt": {
-      "filename": "pool/main/n/nvidia-tensorrt/nvidia-tensorrt_5.0.2-b231_arm64.deb",
-      "sha256": "46fad7815074e67050f7f92d87eca53130fe3a8699b8942f6c63b2f6e2f81760",
-      "version": "5.0.2-b231"
+      "filename": "pool/main/n/nvidia-tensorrt/nvidia-tensorrt-runtime_5.0.1-b118_arm64.deb",
+      "sha256": "9aa11c2062ec2c8acd0d425f871224e5c628bbfec2f4e10b1e920a43f0ce9eaa",
+      "version": "5.0.1-b118"
     },
     "nvidia-tensorrt-dev": {
-      "filename": "pool/main/n/nvidia-tensorrt-dev/nvidia-tensorrt-dev_5.0.2-b231_arm64.deb",
-      "sha256": "2417d5f2a6b574dad758e647f1811e77561368417becd557c589170cca2cacdf",
-      "version": "5.0.2-b231"
+      "filename": "pool/main/n/nvidia-tensorrt-dev/nvidia-tensorrt-dev_5.0.1-b118_arm64.deb",
+      "sha256": "a31bf52b24a0f150692b9fa0f2102dbe3434174535b483e3a5f492323151f6e1",
+      "version": "5.0.1-b118"
     },
     "nvidia-vpi": {
       "filename": "pool/main/n/nvidia-vpi/nvidia-vpi_5.0.2-b231_arm64.deb",
@@ -531,10 +531,10 @@
       "version": "2.1.6"
     },
     "tensorrt": {
-      "filename": "pool/main/t/tensorrt/tensorrt_8.4.1.5-1+cuda11.4_arm64.deb",
-      "sha256": "adb86ccaedb7b1c8ddf3a79443e19806090e92e3555b113f507b6f4c3354f34c",
-      "source": "tensorrt (8.4.1-1+cuda11.4)",
-      "version": "8.4.1.5-1+cuda11.4"
+      "filename": "pool/main/t/tensorrt/tensorrt_8.4.0.11-1+cuda11.4_arm64.deb",
+      "sha256": "35a054a1a1cec4ec3a342d93af35deca9433a825b89665f822e002070862c6b2",
+      "source": "tensorrt (8.4.0-11-1+cuda11.4)",
+      "version": "8.4.0.11-1+cuda11.4"
     },
     "uff-converter-tf": {
       "filename": "pool/main/t/tensorrt/uff-converter-tf_8.4.1-1+cuda11.4_arm64.deb",
