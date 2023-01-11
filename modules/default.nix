@@ -84,8 +84,8 @@ in
     ];
 
     boot.extraModprobeConfig = lib.optionalString cfg.modesetting.enable ''
-      options tegra-udrm modeset=1 # For Xavier
-      options nvidia-drm modeset=1 # For Orin
+      options tegra-udrm modeset=1
+      options nvidia-drm modeset=1
     '';
 
     # For Orin
