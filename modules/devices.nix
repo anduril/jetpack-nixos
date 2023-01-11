@@ -44,7 +44,8 @@ in {
       "esp" # L4TLauncher
     ];
     xpathMatch = lib.concatMapStringsSep " or " (p: "@name = \"${p}\"") partitionsToRemove;
-    filterPartitions = basefile: pkgs.runCommand "flash.xml" { nativeBuildInputs = [ pkgs.xmlstarlet ]; } ''
+    # It's unclear why cross-compiles appear to need pkgs.buildPackages.xmlstarlet instead of just xmlstarlet in nativeBuildInputs
+    filterPartitions = basefile: pkgs.runCommand "flash.xml" { nativeBuildInputs = [ pkgs.buildPackages.xmlstarlet ]; } ''
       xmlstarlet ed -d '//partition[${xpathMatch}]' ${basefile} >$out
     '';
   in mkMerge [
@@ -52,7 +53,7 @@ in {
       targetBoard = mkDefault "jetson-agx-orin-devkit";
       # We don't flash the sdmmc with kernel/initrd/etc at all. Just let it be a
       # regular NixOS machine instead of having some weird partition structure.
-      partitionTemplate = mkDefault (pkgs.runCommand "flash.xml" { nativeBuildInputs = [ pkgs.xmlstarlet ]; } ''
+      partitionTemplate = mkDefault (pkgs.runCommand "flash.xml" { nativeBuildInputs = [ pkgs.buildPackages.xmlstarlet ]; } ''
         xmlstarlet ed -d '//device[@type="sdmmc_user"]' \
           ${pkgs.nvidia-jetpack.bspSrc}/bootloader/t186ref/cfg/flash_t234_qspi_sdmmc.xml \
           >$out
@@ -73,7 +74,7 @@ in {
           "esp" # L4TLauncher
         ];
         xpathMatch = lib.concatMapStringsSep " or " (p: "@name = \"${p}\"") partitionsToRemove;
-      in mkDefault (pkgs.runCommand "flash.xml" { nativeBuildInputs = [ pkgs.xmlstarlet ]; } ''
+      in mkDefault (pkgs.runCommand "flash.xml" { nativeBuildInputs = [ pkgs.buildPackages.xmlstarlet ]; } ''
         xmlstarlet ed -d '//partition[${xpathMatch}]' \
           ${pkgs.nvidia-jetpack.bspSrc}/bootloader/t186ref/cfg/flash_t194_sdmmc.xml \
           >$out
