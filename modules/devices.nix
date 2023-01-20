@@ -65,20 +65,7 @@ in {
       # Remove unnecessary partitions to make it more like
       # flash_t194_uefi_sdmmc_min.xml, except also keep the A/B slots of
       # each partition
-      partitionTemplate = let
-        partitionsToRemove = [
-          "kernel" "kernel-dtb" "reserved_for_chain_A_user"
-          "kernel_b" "kernel-dtb_b" "reserved_for_chain_B_user"
-          "APP" # Original rootfs
-          "RECNAME" "RECDTB-NAME" "RP1" "RP2" "RECROOTFS" # Recovery
-          "esp" # L4TLauncher
-        ];
-        xpathMatch = lib.concatMapStringsSep " or " (p: "@name = \"${p}\"") partitionsToRemove;
-      in mkDefault (pkgs.runCommand "flash.xml" { nativeBuildInputs = [ pkgs.buildPackages.xmlstarlet ]; } ''
-        xmlstarlet ed -d '//partition[${xpathMatch}]' \
-          ${pkgs.nvidia-jetpack.bspSrc}/bootloader/t186ref/cfg/flash_t194_sdmmc.xml \
-          >$out
-      '');
+      partitionTemplate = mkDefault (filterPartitions "${pkgs.nvidia-jetpack.bspSrc}/bootloader/t186ref/cfg/flash_t194_sdmmc.xml");
     })
 
     (mkIf (cfg.som == "xavier-nx") {
