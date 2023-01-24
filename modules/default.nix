@@ -55,13 +55,22 @@ in
         type = types.nullOr (types.enum [ "devkit" ]);
         description = "Jetson carrier board to target.";
       };
+
+      realtimeKernel = mkOption {
+        default = false;
+        type = types.bool;
+        description = "Enable PREEMPT_RT patches";
+      };
     };
   };
 
   config = mkIf cfg.enable {
     nixpkgs.overlays = [ (import ../overlay.nix) ];
 
-    boot.kernelPackages = pkgs.nvidia-jetpack.kernelPackages;
+    boot.kernelPackages =
+      if cfg.realtimeKernel
+      then pkgs.nvidia-jetpack.rtkernelPackages
+      else pkgs.nvidia-jetpack.kernelPackages;
 
     boot.kernelParams = [
       "console=ttyTCU0,115200" # Provides console on "Tegra Combined UART" (TCU)
