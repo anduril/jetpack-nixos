@@ -97,8 +97,8 @@ in
       options nvidia-drm modeset=1
     '';
 
-    # For Orin
-    boot.extraModulePackages = [ config.boot.kernelPackages.nvidia-display-driver ];
+    # For Orin. Unsupported with PREEMPT_RT.
+    boot.extraModulePackages = lib.optional (!cfg.realtimeKernel) config.boot.kernelPackages.nvidia-display-driver;
 
     hardware.firmware = with pkgs.nvidia-jetpack; [
       l4t-firmware
