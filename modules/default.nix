@@ -55,13 +55,22 @@ in
         type = types.nullOr (types.enum [ "devkit" ]);
         description = "Jetson carrier board to target.";
       };
+
+      kernel.realtime = mkOption {
+        default = false;
+        type = types.bool;
+        description = "Enable PREEMPT_RT patches";
+      };
     };
   };
 
   config = mkIf cfg.enable {
     nixpkgs.overlays = [ (import ../overlay.nix) ];
 
-    boot.kernelPackages = pkgs.nvidia-jetpack.kernelPackages;
+    boot.kernelPackages =
+      if cfg.kernel.realtime
+      then pkgs.nvidia-jetpack.rtkernelPackages
+      else pkgs.nvidia-jetpack.kernelPackages;
 
     boot.kernelParams = [
       "console=ttyTCU0,115200" # Provides console on "Tegra Combined UART" (TCU)
@@ -88,8 +97,8 @@ in
       options nvidia-drm modeset=1
     '';
 
-    # For Orin
-    boot.extraModulePackages = [ config.boot.kernelPackages.nvidia-display-driver ];
+    # For Orin. Unsupported with PREEMPT_RT.
+    boot.extraModulePackages = lib.optional (!cfg.kernel.realtime) config.boot.kernelPackages.nvidia-display-driver;
 
     hardware.firmware = with pkgs.nvidia-jetpack; [
       l4t-firmware

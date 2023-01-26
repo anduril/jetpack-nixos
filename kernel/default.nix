@@ -1,5 +1,5 @@
 # Due to some really weird behavior, we can't include "stdenv" in the function headedr or else the hackedSystem stuff below stops working.
-{ pkgs, lib, stdenvNoCC, fetchFromGitHub, l4t-xusb-firmware, ... }@args:
+{ pkgs, lib, stdenvNoCC, fetchFromGitHub, l4t-xusb-firmware, realtime ? false, ... }@args:
 let
   # overriding the platform to remove the USB_XHCI_TEGRA m which breaks the nvidia build
   hackedSystem = {
@@ -35,7 +35,7 @@ let
     // lib.optionalAttrs (!stdenvNoCC.buildPlatform.isAarch64) { localSystem = stdenvNoCC.buildPlatform; crossSystem = hackedSystem; }
   );
 in hackedPkgs.buildLinux (args // rec {
-  version = "5.10.104";
+  version = "5.10.104" + lib.optionalString realtime "-rt63";
   extraMeta.branch = "5.10";
 
   defconfig = "tegra_defconfig";
@@ -61,6 +61,12 @@ in hackedPkgs.buildLinux (args // rec {
       sed -i -e '/imx185-overlay/d' -e '/imx274-overlay/d' \
         nvidia/platform/t19x/galen/kernel-dts/Makefile \
         nvidia/platform/t23x/concord/kernel-dts/Makefile
+
+      '' + lib.optionalString realtime ''
+      for p in $(find $PWD/rt-patches -name \*.patch -type f | sort); do
+        echo "Applying $p"
+        patch -s -p1 < $p
+      done
     '';
   };
   autoModules = false;
@@ -114,6 +120,16 @@ in hackedPkgs.buildLinux (args // rec {
     MD_RAID1 = module;
     MD_RAID10 = module;
     MD_RAID456 = module;
+  } // lib.optionalAttrs realtime {
+    PREEMPT_VOLUNTARY = lib.mkForce no; # Disable the one set in common-config.nix
+    # These are the options enabled/disabled by scripts/rt-patch.sh
+    PREEMPT_RT = yes;
+    DEBUG_PREEMPT = no;
+    KVM = no;
+    CPU_IDLE_TEGRA18X = no;
+    CPU_FREQ_GOV_INTERACTIVE = no;
+    CPU_FREQ_TIMES = no;
+    FAIR_GROUP_SCHED = no;
   };
 
 } // (args.argsOverride or {}))

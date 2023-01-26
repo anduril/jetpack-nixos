@@ -55,10 +55,13 @@ let
   samples = callPackages ./samples.nix { inherit debs cudaVersion autoAddOpenGLRunpathHook l4t cudaPackages; };
 
   kernel = callPackage ./kernel { inherit (l4t) l4t-xusb-firmware; };
-  kernelPackages = (pkgs.linuxPackagesFor kernel).extend (self: super: {
+  kernelPackagesOverlay = self: super: {
     nvidia-display-driver = self.callPackage ./kernel/display-driver.nix {};
-  });
+  };
+  kernelPackages = (pkgs.linuxPackagesFor kernel).extend kernelPackagesOverlay;
 
+  rtkernel = callPackage ./kernel { inherit (l4t) l4t-xusb-firmware; realtime = true; };
+  rtkernelPackages = (pkgs.linuxPackagesFor rtkernel).extend kernelPackagesOverlay;
 in rec {
   inherit jetpackVersion l4tVersion cudaVersion;
 
@@ -69,6 +72,7 @@ in rec {
   inherit flash-tools;
 
   inherit kernel kernelPackages;
+  inherit rtkernel rtkernelPackages;
 
   # TODO: Source packages. source_sync.sh from bspSrc
   # OPTEE
