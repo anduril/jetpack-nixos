@@ -56,7 +56,7 @@ in
         description = "Jetson carrier board to target.";
       };
 
-      realtimeKernel = mkOption {
+      kernel.realtime = mkOption {
         default = false;
         type = types.bool;
         description = "Enable PREEMPT_RT patches";
@@ -68,7 +68,7 @@ in
     nixpkgs.overlays = [ (import ../overlay.nix) ];
 
     boot.kernelPackages =
-      if cfg.realtimeKernel
+      if cfg.kernel.realtime
       then pkgs.nvidia-jetpack.rtkernelPackages
       else pkgs.nvidia-jetpack.kernelPackages;
 
@@ -98,7 +98,7 @@ in
     '';
 
     # For Orin. Unsupported with PREEMPT_RT.
-    boot.extraModulePackages = lib.optional (!cfg.realtimeKernel) config.boot.kernelPackages.nvidia-display-driver;
+    boot.extraModulePackages = lib.optional (!cfg.kernel.realtime) config.boot.kernelPackages.nvidia-display-driver;
 
     hardware.firmware = with pkgs.nvidia-jetpack; [
       l4t-firmware
