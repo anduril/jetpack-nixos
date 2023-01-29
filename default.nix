@@ -1,5 +1,5 @@
 { callPackage, callPackages, stdenv, stdenvNoCC, lib, runCommand, fetchurl,
-  autoPatchelfHook, bzip2_1_1, writeShellScriptBin, pkgs, dtc,
+  autoPatchelfHook, bzip2_1_1, dpkg, writeShellScriptBin, pkgs, dtc,
 }:
 
 let
@@ -30,7 +30,7 @@ let
   '';
 
   # Just for convenience. Unused
-  unpackedDebs = pkgs.runCommand "unpackedDebs" { nativeBuildInputs = [ pkgs.dpkg ]; } ''
+  unpackedDebs = pkgs.runCommand "unpackedDebs" { nativeBuildInputs = [ dpkg ]; } ''
     mkdir -p $out
     ${lib.concatStringsSep "\n" (lib.mapAttrsToList (n: p: "echo Unpacking ${n}; dpkg -x ${p.src} $out/${n}") debs.common)}
     ${lib.concatStringsSep "\n" (lib.mapAttrsToList (n: p: "echo Unpacking ${n}; dpkg -x ${p.src} $out/${n}") debs.t234)}
