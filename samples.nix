@@ -19,11 +19,14 @@ let
     unpackCmd = "dpkg -x $src source";
     sourceRoot = "source/usr/local/cuda-${cudaVersion}/samples";
 
+    patches = [ ./cuda-samples.patch ];
+
     nativeBuildInputs = [ dpkg pkg-config autoAddOpenGLRunpathHook ];
     buildInputs = [ cudaPackages.cudatoolkit ];
 
     preConfigure = ''
       export CUDA_PATH=${cudaPackages.cudatoolkit}
+      export CUDA_SEARCH_PATH=${cudaPackages.cudatoolkit}/lib/stubs
     '';
 
     enableParallelBuilding = true;
@@ -32,6 +35,9 @@ let
       runHook preInstall
 
       install -Dm755 -t $out/bin bin/${stdenv.hostPlatform.parsed.cpu.name}/${stdenv.hostPlatform.parsed.kernel.name}/release/*
+
+      # *_nvrtc samples require your current working directory contains the corresponding .cu file
+      find -ipath "*_nvrtc/*.cu" -exec install -Dt $out/data {} \;
 
       runHook postInstall
     '';
