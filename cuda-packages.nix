@@ -138,7 +138,13 @@ let
     cuda_nvdisasm = buildFromSourcePackage { name = "cuda-nvdisasm"; };
     cuda_nvml_dev = buildFromSourcePackage { name = "cuda-nvml-dev"; };
     cuda_nvprune = buildFromSourcePackage { name = "cuda-nvprune"; };
-    cuda_nvrtc = buildFromSourcePackage { name = "cuda-nvrtc"; };
+    cuda_nvrtc = buildFromSourcePackage {
+      name = "cuda-nvrtc";
+      postFixup = ''
+        # libnvrtc.so uses libnvrtc-builtins.so
+        patchelf --add-rpath $out/lib $(readlink -f $out/lib/libnvrtc.so)
+      '';
+    };
     cuda_nvtx = buildFromSourcePackage { name = "cuda-nvtx"; };
     cuda_sanitizer_api = buildFromDebs {
       # There are 11-4 and 11-7 versions in the deb repo, and we only want one for now.
