@@ -46,8 +46,8 @@ in hackedPkgs.buildLinux (args // rec {
     src = fetchFromGitHub {
       owner = "OE4T";
       repo = "linux-tegra-5.10";
-      rev = "63c149056a7ef7bf146a747e7c8a179c1aaf72f7"; # 2022-08-18
-      sha256 = "sha256-sIk3gxCuWHpFXjxqFIUGP1ApWsq7+fCC4nFB693Sdg0=";
+      rev = "5921377f5ffb5b1fbca9e40a187d1059743ef631"; # latest on oe4t-patches-l4t-r35.1 as of 2023-02-01
+      sha256 = "sha256-3OvOk2Hlq1gsX34j2rwzJmlVt038ygDkepB4ysmbGxA=";
     };
     # Remove device tree overlays with some incorrect "remote-endpoint" nodes.
     # They are strings, but should be phandles. Otherwise, it fails to compile
