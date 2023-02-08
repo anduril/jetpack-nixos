@@ -48,6 +48,10 @@ let
     inherit bspSrc l4tVersion;
   };
 
+  board-automation = callPackage ./board-automation.nix {
+    inherit bspSrc l4tVersion;
+  };
+
   l4t = callPackages ./l4t.nix { inherit debs l4tVersion; };
 
   cudaPackages = callPackages ./cuda-packages.nix { inherit debs cudaVersion autoAddOpenGLRunpathHook l4t; };
@@ -70,6 +74,7 @@ in rec {
 
   inherit cudaPackages samples;
   inherit flash-tools;
+  inherit board-automation;
 
   inherit kernel kernelPackages;
   inherit rtkernel rtkernelPackages;
