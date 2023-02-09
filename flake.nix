@@ -33,7 +33,7 @@
       }
       # Flashing and board automation scripts _only_ work on x86_64-linux
       // {
-        inherit (nixpkgs.legacyPackages.x86_64-linux.callPackage ./default.nix {}) flash-scripts board-automation;
+        inherit (nixpkgs.legacyPackages.x86_64-linux.callPackage ./default.nix {}) flash-scripts board-automation python-jetson;
       };
 
       aarch64-linux = {

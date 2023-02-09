@@ -1,5 +1,5 @@
 { callPackage, callPackages, stdenv, stdenvNoCC, lib, runCommand, fetchurl,
-  autoPatchelfHook, bzip2_1_1, dpkg, writeShellScriptBin, pkgs, dtc,
+  autoPatchelfHook, bzip2_1_1, dpkg, writeShellScriptBin, pkgs, dtc, python3,
 }:
 
 let
@@ -52,6 +52,8 @@ let
     inherit bspSrc l4tVersion;
   };
 
+  python-jetson = python3.pkgs.callPackage ./python-jetson.nix { };
+
   l4t = callPackages ./l4t.nix { inherit debs l4tVersion; };
 
   cudaPackages = callPackages ./cuda-packages.nix { inherit debs cudaVersion autoAddOpenGLRunpathHook l4t; };
@@ -74,7 +76,8 @@ in rec {
 
   inherit cudaPackages samples;
   inherit flash-tools;
-  inherit board-automation;
+  inherit board-automation; # Allows automation of Orin AGX devkit
+  inherit python-jetson; # Allows automation of Xavier AGX devkit
 
   inherit kernel kernelPackages;
   inherit rtkernel rtkernelPackages;
