@@ -76,8 +76,8 @@ in rec {
 
   inherit cudaPackages samples;
   inherit flash-tools;
-  inherit board-automation;
-  inherit python-jetson;
+  inherit board-automation; # Allows automation of Orin AGX devkit
+  inherit python-jetson; # Allows automation of Xavier AGX devkit
 
   inherit kernel kernelPackages;
   inherit rtkernel rtkernelPackages;
