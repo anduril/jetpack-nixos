@@ -52,6 +52,8 @@ let
     inherit bspSrc l4tVersion;
   };
 
+  python-jetson = callPackage ./python-jetson.nix { };
+
   l4t = callPackages ./l4t.nix { inherit debs l4tVersion; };
 
   cudaPackages = callPackages ./cuda-packages.nix { inherit debs cudaVersion autoAddOpenGLRunpathHook l4t; };
@@ -75,6 +77,7 @@ in rec {
   inherit cudaPackages samples;
   inherit flash-tools;
   inherit board-automation;
+  inherit python-jetson;
 
   inherit kernel kernelPackages;
   inherit rtkernel rtkernelPackages;
