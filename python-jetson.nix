@@ -1,6 +1,9 @@
-{ python3, fetchFromGitHub }:
+{ buildPythonPackage
+, fetchFromGitHub
+, pyftdi
+}:
 
-python3.pkgs.buildPythonPackage {
+buildPythonPackage {
   pname = "python-jetson";
   version = "0.0.0";
   src = fetchFromGitHub {
@@ -10,7 +13,7 @@ python3.pkgs.buildPythonPackage {
     sha256 = "sha256-APlDliwGqlhWChJESyCYyI2N9/yzlRdp1qwvfqlRjKM=";
   };
 
-  propagatedBuildInputs = [ python3.pkgs.pyftdi ];
+  propagatedBuildInputs = [ pyftdi ];
 
   doCheck = false;
 }

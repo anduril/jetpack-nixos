@@ -52,7 +52,7 @@ let
     inherit bspSrc l4tVersion;
   };
 
-  python-jetson = callPackage ./python-jetson.nix { };
+  python-jetson = pkgs.python3.pkgs.callPackage ./python-jetson.nix { };
 
   l4t = callPackages ./l4t.nix { inherit debs l4tVersion; };
 
