@@ -8,6 +8,9 @@
 
   # Optional package containing uefi_jetson.efi to replace prebuilt version
   jetson-firmware ? null,
+
+  # Optional package containing sdcard image
+  sdImage ? null,
 }:
 
 writeShellScriptBin "flash-${name}" (''
@@ -42,10 +45,16 @@ writeShellScriptBin "flash-${name}" (''
   cp ${jetson-firmware}/dtbs/*.dtbo kernel/dtb/
   ''}
 
+  ${lib.optionalString (sdImage != null) ''
+    # Copy rootfs and boot partitions
+    cp -r ${sdImage}/firmware_part.img bootloader/esp.img
+    cp -r ${sdImage}/root-fs.img bootloader/system.img
+  ''}
+
   chmod -R u+w .
 
 '' + (if (flashArgs != null) then ''
-  ./flash.sh ${lib.optionalString (partitionTemplate != null) "-c flash.xml"} $@ ${flashArgs}
+  ./flash.sh ${lib.optionalString (sdImage != null) "-r"} ${lib.optionalString (partitionTemplate != null) "-c flash.xml"} $@ ${flashArgs}
 '' else ''
   ${runtimeShell}
 ''))

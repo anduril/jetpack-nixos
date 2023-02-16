@@ -89,7 +89,7 @@ in rec {
   # GST plugins
 
   # Generate a flash script using the built configuration options set in a NixOS configuration
-  flashScriptFromNixos = config: let
+  flashScriptFromNixos = flashEmmc: config: let
     cfg = config.hardware.nvidia-jetpack;
   in callPackage ./flash-script.nix {
     name = config.networking.hostName;
@@ -108,6 +108,10 @@ in rec {
     };
 
     dtbsDir = config.hardware.deviceTree.package;
+
+    sdImage = if (flashEmmc)
+      then (pkgsAarch64.nixos (import ./emmc-image.nix { inherit jetson-firmware cfg; })).config.system.build.sdImage
+      else null;
   };
 
   flash-scripts = rec {
@@ -121,7 +125,7 @@ in rec {
         hardware.nvidia-jetpack.enable = true;
       }).config.hardware.deviceTree.package;
     };
-  } // (lib.mapAttrs' (n: c: lib.nameValuePair "flash-${n}" (flashScriptFromNixos (pkgs.nixos {
+  } // (lib.mapAttrs' (n: c: lib.nameValuePair "flash-${n}" (flashScriptFromNixos false (pkgs.nixos {
     imports = [ ./modules/default.nix { hardware.nvidia-jetpack = c; } ];
     hardware.nvidia-jetpack.enable = true;
     networking.hostName = n; # Just so it sets the flash binary name.
@@ -130,6 +134,27 @@ in rec {
     "xavier-agx-devkit" = { som = "xavier-agx"; carrierBoard = "devkit"; };
     "xavier-nx-devkit" = { som = "xavier-nx"; carrierBoard = "devkit"; };
     "xavier-nx-devkit-emmc" = { som = "xavier-nx-emmc"; carrierBoard = "devkit"; };
+  })
+  //({
+    "flash-orin-agx-devkit-emmc" = let
+      partitionsToRemove = [
+        "RECNAME" "RECDTB-NAME" "RP1" "RP2" "RECROOTFS" # Recovery
+      ];
+      xpathMatch = lib.concatMapStringsSep " or " (p: "@name = \"${p}\"") partitionsToRemove;
+      filterPartitions = basefile: pkgs.runCommand "flash.xml" { nativeBuildInputs = [ pkgs.buildPackages.xmlstarlet ]; } ''
+      xmlstarlet ed -d '//partition[${xpathMatch}]' ${basefile} >$out
+    '';
+    in
+    (flashScriptFromNixos true (pkgs.nixos {
+      imports = [ ./modules/default.nix { hardware.nvidia-jetpack = {
+        som = "orin-agx";
+        carrierBoard = "devkit";
+        dtbName = "tegra234-p3701-0000-p3737-0000.dtb";
+        flashScriptOverrides.partitionTemplate = (filterPartitions "${bspSrc}/bootloader/t186ref/cfg/flash_t234_qspi_sdmmc.xml");
+      }; } ];
+      hardware.nvidia-jetpack.enable = true;
+      networking.hostName = "orin-agx-devkit";
+    }).config);
   });
 }
 // l4t

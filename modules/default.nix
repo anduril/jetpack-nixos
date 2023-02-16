@@ -61,6 +61,12 @@ in
         type = types.bool;
         description = "Enable PREEMPT_RT patches";
       };
+
+      dtbName = mkOption {
+        default = "";
+        type = types.str;
+        description = "Devicetree filename";
+      };
     };
   };
 
