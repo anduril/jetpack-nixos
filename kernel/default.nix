@@ -110,6 +110,17 @@ in hackedPkgs.buildLinux (args // rec {
     NFT_COMPAT = module;
     NFT_LOG = module;
     NFT_COUNTER = module;
+    # IPv6 is enabled by default and without some of these `firewall.service` will explode.
+    IP6_NF_MATCH_AH = module;
+    IP6_NF_MATCH_EUI64 = module;
+    IP6_NF_MATCH_FRAG = module;
+    IP6_NF_MATCH_OPTS = module;
+    IP6_NF_MATCH_HL = module;
+    IP6_NF_MATCH_IPV6HEADER = module;
+    IP6_NF_MATCH_MH = module;
+    IP6_NF_MATCH_RPFILTER = module;
+    IP6_NF_MATCH_RT = module;
+    IP6_NF_MATCH_SRH = module;
 
     # Needed since mdadm stuff is currently unconditionally included in the initrd
     # This will hopefully get changed, see: https://github.com/NixOS/nixpkgs/pull/183314
