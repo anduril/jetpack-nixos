@@ -45,6 +45,15 @@ let
       dontBuild = true;
       noDumpEnvVars = true;
 
+
+      # In cross-compile scenarios, the directory containing `libgcc_s.so` and other such
+      # libraries is actually under a target-specific directory such as
+      # `${stdenv.cc.cc.lib}/aarch64-unknown-linux-gnu/lib/` rather than just plain `/lib` which
+      # makes `autoPatchelfHook` fail at finding them libraries.
+      postFixup = (lib.optionalString (stdenv.hostPlatform != stdenv.buildPlatform) ''
+        addAutoPatchelfSearchPath ${stdenv.cc.cc.lib}/*/lib/
+      '') + postFixup;
+
       postPatch = ''
         if [[ -d usr ]]; then
           cp -r usr/. .
