@@ -12,6 +12,7 @@
   gcc9,
   gcc10,
   l4t,
+  zlib,
 
   debs,
   cudaVersion,
@@ -164,7 +165,7 @@ let
     cuda_profiler_api = buildFromSourcePackage { name = "cuda-profiler-api"; };
     cudnn = buildFromSourcePackage {
       name = "cudnn";
-      buildInputs = with cudaPackages; [ libcublas ];
+      buildInputs = with cudaPackages; [ libcublas zlib ];
       # Unclear how it's supposed to work normally if all header files use
       # _v8.h suffix, since they refer to each other via #includes without any
       # suffix. Just symlink them all here
@@ -184,6 +185,7 @@ let
     libcusolver = buildFromSourcePackage { name = "libcusolver"; buildInputs = [ cudaPackages.libcublas ]; };
     libcusparse = buildFromSourcePackage { name = "libcusparse"; };
     libnpp = buildFromSourcePackage { name = "libnpp"; };
+    libcudla = buildFromSourcePackage { name = "libcudla"; buildInputs = [ l4t.l4t-cuda ]; };
     #nsight_compute = buildFromSourcePackage { name = "nsight-compute"; };
 
     # Combined package. We construct it from the debs, since nvidia doesn't
@@ -194,7 +196,7 @@ let
       paths = with cudaPackages; [
         cuda_cccl cuda_cudart cuda_cuobjdump cuda_cupti cuda_cuxxfilt
         cuda_documentation cuda_gdb cuda_nvcc cuda_nvdisasm cuda_nvml_dev
-        cuda_nvprune cuda_nvrtc cuda_nvtx cuda_sanitizer_api libcublas
+        cuda_nvprune cuda_nvrtc cuda_nvtx cuda_sanitizer_api cuda_profiler_api libcublas
         libcufft libcurand libcusolver libcusparse libnpp
       ];
       # Bits from upstream nixpkgs cudatoolkit
@@ -232,7 +234,7 @@ let
       version = (lib.head tensorrtDebs).version;
       srcs = builtins.map (deb: deb.src) tensorrtDebs;
 
-      buildInputs = (with cudaPackages; [ cuda_cudart libcublas cudnn ]) ++ (with l4t; [ l4t-core l4t-multimedia ]);
+      buildInputs = (with cudaPackages; [ cuda_cudart libcublas libcudla cudnn ]) ++ (with l4t; [ l4t-core l4t-multimedia ]);
       # Remove unnecessary (and large) static libs
       postPatch = ''
         rm -rf lib/*.a
@@ -255,11 +257,13 @@ let
       srcs = [ debs.common.libnvvpi2.src debs.common.vpi2-dev.src ];
       sourceRoot = "source/opt/nvidia/vpi2";
       buildInputs = (with l4t; [ l4t-core l4t-cuda l4t-nvsci l4t-3d-core l4t-multimedia l4t-pva ])
-        ++ (with cudaPackages; [ libcufft ]);
+        ++ (with cudaPackages; [ libcufft libnpp ]);
       patches = [ ./vpi2.patch ];
       postPatch = ''
         rm -rf etc
         substituteInPlace lib/cmake/vpi/vpi-config.cmake --subst-var out
+        substituteInPlace lib/cmake/vpi/vpi-config-release.cmake \
+          --replace "lib/aarch64-linux-gnu" "lib/"
       '';
     };
 
@@ -271,6 +275,5 @@ let
 
     # TODO:
     #  libnvidia-container
-    #  libcudla
   };
 in cudaPackages

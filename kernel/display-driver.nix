@@ -7,7 +7,7 @@
 
 stdenv.mkDerivation rec {
   pname = "nvidia-display-driver";
-  version = "jetson_35.1";
+  version = "jetson_35.2.1";
 
   src = fetchgit {
     url = "https://nv-tegra.nvidia.com/tegra/kernel-src/nv-kernel-display-driver.git";
