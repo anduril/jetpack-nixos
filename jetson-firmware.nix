@@ -1,4 +1,4 @@
-{ lib, stdenv, buildPackages, fetchFromGitHub, fetchurl, runCommand, edk2, acpica-tools,
+{ lib, stdenv, buildPackages, fetchFromGitHub, runCommand, edk2, acpica-tools,
   dtc, python3, bc, imagemagick, applyPatches,
 
   # Optional path to a boot logo that will be converted and cropped into the format required
@@ -12,7 +12,7 @@
 }:
 
 let
-  version = "jetson-r35.1";
+  version = "jetson-r35.2.1";
 
   # TODO: Move this generation out of jetson-firmware.nix, because this .nix
   # file is callPackage'd using an aarch64 version of nixpkgs, and we don't
@@ -30,30 +30,30 @@ let
   edk2-src = fetchFromGitHub {
     owner = "NVIDIA";
     repo = "edk2";
-    rev = version;
+    rev = "r35.2.1-edk2-stable202208";
     fetchSubmodules = true;
-    sha256 = "sha256-nm/Cx/DegFEvlJcm/9WMFeY9s7eSpahTLmD9KpJGqAo=";
+    sha256 = "sha256-PTbNxbncfSvxLW2XmdRHzUy+w5+1Blpk62DJpxDmedA=";
   };
 
   edk2-platforms = fetchFromGitHub {
     owner = "NVIDIA";
     repo = "edk2-platforms";
-    rev = version;
-    sha256 = "sha256-sbEddgJqByuKYIrLIgzqgpj7Qsy1wq0ACxHaSDqNbrc=";
+    rev = "r35.2.1-upstream-20220830";
+    sha256 = "sha256-PjAJEbbswOLYupMg/xEqkAOJuAC8SxNsQlb9YBswRfo=";
   };
 
   edk2-non-osi = fetchFromGitHub {
     owner = "NVIDIA";
     repo = "edk2-non-osi";
-    rev = version;
-    sha256 = "sha256-l8t+B4an/Ta6orfksoOTHOlr4bizTE7SXXKUankUgTg=";
+    rev = "r35.2.1-upstream-20220830";
+    sha256 = "sha256-EPtI63jYhEIo4uVTH3lUt9NC/lK5vPVacUAc5qgmz9M=";
   };
 
   _edk2-nvidia = fetchFromGitHub {
     owner = "NVIDIA";
     repo = "edk2-nvidia";
-    rev = version;
-    sha256 = "sha256-hy1ph+bzBUGOTgp5DNicv/y2ORVxlcQgij53Z7p6C8Q=";
+    rev = "r35.2.1";
+    sha256 = "sha256-W2kt3r2ymmAj/bKahjEfc8B9orI1o4GYCkByDJ6JORA=";
   };
   edk2-nvidia =
     if (errorLevelInfo || bootLogo != null)
@@ -73,8 +73,8 @@ let
   edk2-nvidia-non-osi = fetchFromGitHub {
     owner = "NVIDIA";
     repo = "edk2-nvidia-non-osi";
-    rev = version;
-    sha256 = "sha256-hWTRlfCCdBoFZ4M2bJs8cwAKU2M2aDCPQj6uwvu8jso=";
+    rev = "r35.2.1";
+    sha256 = "sha256-28xndaIEsVwbD7jIesSO6MKO662jRXVX/y0IdmVTKoc=";
   };
 
   my_edk2 = edk2.overrideAttrs (_: { src = edk2-src; });

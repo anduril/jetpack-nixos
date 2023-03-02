@@ -116,7 +116,6 @@ let
     name = "nvidia-l4t-gbm";
     buildInputs = [ l4t-core l4t-3d-core mesa ];
     postPatch = ''
-      ln -s libnvidia-egl-gbm.so lib/libnvidia-egl-gbm.so.1
       sed -i -E "s#(libnvidia-egl-gbm)#$out/lib/\\1#" share/egl/egl_external_platform.d/nvidia_gbm.json
 
       # Replace incorrect symlinks
@@ -226,7 +225,6 @@ let
     name = "nvidia-l4t-wayland";
     buildInputs = [ wayland ];
     postPatch = ''
-      ln -s libnvidia-egl-wayland.so lib/libnvidia-egl-wayland.so.1
       sed -i -E "s#(libnvidia-egl-wayland)#$out/lib/\\1#" share/egl/egl_external_platform.d/nvidia_wayland.json
     '';
   };

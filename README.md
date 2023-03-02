@@ -11,7 +11,7 @@ This repository packages components from NVIDIA's [Jetpack SDK](https://develope
    - Graphics: Wayland, GBM, EGL, Vulkan
    - Power/fan control: nvpmodel, nvfancontrol
 
-This package is based on the Jetpack 5 release, and will only work with devices supported by Jetpack 5:
+This package is based on the Jetpack 5 release, and will only work with devices supported by Jetpack 5.1:
  * Jetson Orin AGX
  * Jetson Xavier AGX
  * Jetson Xavier NX

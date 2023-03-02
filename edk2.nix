@@ -37,7 +37,7 @@ buildType = if stdenv.isDarwin then
 
 edk2 = buildStdenv.mkDerivation {
   pname = "edk2";
-  version = "202202";
+  version = "202208";
 
   patches = [
     # pass targetPrefix as an env var
