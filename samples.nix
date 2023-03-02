@@ -1,6 +1,7 @@
 { stdenv, lib, fetchurl, dpkg, pkg-config, autoAddOpenGLRunpathHook, freeimage,
   cmake, opencv, opencv2, libX11, libdrm, libglvnd, python2, coreutils, gnused,
   libGL, libXau, wayland, libxkbcommon, libffi,
+  writeShellApplication,
 
   l4t, cudaPackages,
   cudaVersion, debs
@@ -40,6 +41,18 @@ let
       find -ipath "*_nvrtc/*.cu" -exec install -Dt $out/data {} \;
 
       runHook postInstall
+    '';
+  };
+  cuda-test = writeShellApplication {
+    name = "cuda-test";
+    text = ''
+      for binary in deviceQuery deviceQueryDrv bandwidthTest clock clock_nvrtc; do
+        echo " * Running $binary"
+        # clock_nvrtc expects .cu files under $PWD/data
+        (cd ${cuda-samples}; ${cuda-samples}/bin/$binary)
+        echo
+        echo
+      done
     '';
   };
 
@@ -84,6 +97,13 @@ let
         RNN_v8.0/RNN
 
       runHook postInstall
+    '';
+  };
+  cudnn-test = writeShellApplication {
+    name = "cudnn-test";
+    text = ''
+      echo " * Running conv_sample"
+      ${cudnn-samples}/bin/conv_sample
     '';
   };
 
@@ -136,6 +156,7 @@ let
 
     enableParallelBuilding = true;
   };
+  # TODO: Add wayland and x11 tests for graphics demos....
 
   # Contains a bunch of tests for tensorrt, for example:
   # ./result/bin/sample_mnist --datadir=result/data/mnist
@@ -169,10 +190,17 @@ let
       runHook postInstall
     '';
   };
+  libnvinfer-test = writeShellApplication {
+    name = "libnvinfer-test";
+    text = ''
+      echo " * Running sample_onnx_mnist"
+      ${libnvinfer-samples}/bin/sample_onnx_mnist --datadir ${libnvinfer-samples}/data/mnist
+      echo
+      echo
+    '';
+  };
 
   # https://docs.nvidia.com/jetson/l4t-multimedia/group__l4t__mm__test__group.html
-  # ./result/bin/video_decode H264 /nix/store/zry377bb5vkz560ra31ds8r485jsizip-multimedia-samples-35.1.0-20220825113828/data/Video/sample_outdoor_car_1080p_10fps.h26
-  # (Requires X11)
   multimedia-samples = stdenv.mkDerivation {
     pname = "multimedia-samples";
     src = debs.common.nvidia-l4t-jetson-multimedia-api.src;
@@ -214,6 +242,27 @@ let
       cp -r data $out/
 
       runHook postInstall
+    '';
+  };
+  # ./result/bin/video_decode H264 /nix/store/zry377bb5vkz560ra31ds8r485jsizip-multimedia-samples-35.1.0-20220825113828/data/Video/sample_outdoor_car_1080p_10fps.h26
+  # (Requires X11)
+  #
+  # Doing example here: https://docs.nvidia.com/jetson/l4t-multimedia/l4t_mm_07_video_convert.html
+  multimedia-test = writeShellApplication {
+    name = "multimedia-test";
+    text = ''
+      WORKDIR=$(mktemp -d)
+      on_exit() {
+        rm -rf "$WORKDIR"
+      }
+      trap on_exit EXIT
+
+      echo " * Running jpeg_decode"
+      ${multimedia-samples}/bin/jpeg_decode num_files 1 ${multimedia-samples}/data/Picture/nvidia-logo.jpg "$WORKDIR"/nvidia-logo.yuv
+      echo
+      echo " * Running video_convert"
+      ${multimedia-samples}/bin/video_convert "$WORKDIR"/nvidia-logo.yuv 1920 1080 YUV420 "$WORKDIR"/test.yuv 1920 1080 YUYV
+      echo
     '';
   };
 
@@ -270,12 +319,73 @@ let
       runHook postInstall
     '';
   };
+  vpi2-test = writeShellApplication {
+    name = "vpi2-test";
+    text = ''
+      echo " * Running vpi_sample_05_benchmark cuda"
+      ${vpi2-samples}/bin/vpi_sample_05_benchmark cuda
+      echo
+
+      echo " * Running vpi_sample_05_benchmark cpu"
+      ${vpi2-samples}/bin/vpi_sample_05_benchmark cpu
+      echo
+
+      CHIP="$(tr -d '\0' < /proc/device-tree/compatible)"
+      if [[ "''${CHIP}" =~ "tegra194" ]]; then
+        echo " * Running vpi_sample_05_benchmark pva"
+        ${vpi2-samples}/bin/vpi_sample_05_benchmark pva
+        echo
+      fi
+    '';
+      # PVA is only available on Xaviers. If the Jetpack version of the
+      # firmware doesnt match the vpi2 version, it might fail with the
+      # following:
+      # [  435.318277] pva 16800000.pva1: invalid symbol id in descriptor for dst2 VMEM
+      # [  435.318467] pva 16800000.pva1: failed to map DMA desc info
+  };
+
+  combined-test =  writeShellApplication {
+    name = "combined-test";
+    text = ''
+      echo "====="
+      echo "Running CUDA test"
+      echo "====="
+      ${cuda-test}/bin/cuda-test
+
+      echo "====="
+      echo "Running CUDNN test"
+      echo "====="
+      ${cudnn-test}/bin/cudnn-test
+
+      echo "====="
+      echo "Running TensorRT test"
+      echo "====="
+      ${libnvinfer-test}/bin/libnvinfer-test
+
+      echo "====="
+      echo "Running Multimedia test"
+      echo "====="
+      ${multimedia-test}/bin/multimedia-test
+
+      echo "====="
+      echo "Running VPI2 test"
+      echo "====="
+      ${vpi2-test}/bin/vpi2-test
+    '';
+  };
 in {
   inherit
     cuda-samples
+    cuda-test
     cudnn-samples
+    cudnn-test
     graphics-demos
     libnvinfer-samples
+    libnvinfer-test
     multimedia-samples
-    vpi2-samples;
+    multimedia-test
+    vpi2-samples
+    vpi2-test;
+
+  inherit combined-test;
 }
