@@ -85,4 +85,18 @@ in {
       partitionTemplate = mkDefault (filterPartitions "${pkgs.nvidia-jetpack.bspSrc}/bootloader/t186ref/cfg/flash_l4t_t194_spi_emmc_p3668.xml");
     })
   ];
+
+  boot.kernelPatches = lib.mkIf (cfg.som == "orin-nx") [
+    {
+      name = "disable-usb-otg";
+      patch = null;
+      # TODO: Having these options enabled on the Orin NX currently causes a
+      # kernel panic with a failure in tegra_xudc_unpowergate. We should figure
+      # this out
+      extraStructuredConfig = with lib.kernel; {
+        USB_OTG = no;
+        USB_GADGET = no;
+      };
+    }
+  ];
 }
