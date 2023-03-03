@@ -13,11 +13,12 @@ This repository packages components from NVIDIA's [Jetpack SDK](https://develope
 
 This package is based on the Jetpack 5 release, and will only work with devices supported by Jetpack 5.1:
  * Jetson Orin AGX
+ * Jetson Orin NX
  * Jetson Xavier AGX
  * Jetson Xavier NX
 
 The Jetson Nano, TX2, and TX1 devices are _not_ supported, since support for them was dropped upstream in Jetpack 5.
-In the future, when the Orin NX and Orin Nano are released, it should be possible to make them work as well.
+In the future, when the Orin Nano is released, it should be possible to make it work as well.
 
 ## Getting started
 

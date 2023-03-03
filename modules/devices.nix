@@ -11,6 +11,7 @@ let
 
   nvpModelConf = {
     "orin-agx" = "${pkgs.nvidia-jetpack.l4t-nvpmodel}/etc/nvpmodel/nvpmodel_p3701_0000.conf";
+    "orin-nx" = "${pkgs.nvidia-jetpack.l4t-nvpmodel}/etc/nvpmodel/nvpmodel_p3767_0000.conf";
     "xavier-agx" = "${pkgs.nvidia-jetpack.l4t-nvpmodel}/etc/nvpmodel/nvpmodel_t194.conf";
     "xavier-nx" = "${pkgs.nvidia-jetpack.l4t-nvpmodel}/etc/nvpmodel/nvpmodel_t194_p3668.conf";
     "xavier-nx-emmc" = "${pkgs.nvidia-jetpack.l4t-nvpmodel}/etc/nvpmodel/nvpmodel_t194_p3668.conf";
@@ -18,6 +19,7 @@ let
 
   nvfancontrolConf = {
     "orin-agx" = "${pkgs.nvidia-jetpack.l4t-nvfancontrol}/etc/nvpower/nvfancontrol/nvfancontrol_p3701_0000.conf";
+    "orin-nx" = "${pkgs.nvidia-jetpack.l4t-nvfancontrol}/etc/nvpower/nvfancontrol/nvfancontrol_p3767_0000.conf";
     "xavier-agx" = "${pkgs.nvidia-jetpack.l4t-nvfancontrol}/etc/nvpower/nvfancontrol/nvfancontrol_p2888.conf";
     "xavier-nx" ="${pkgs.nvidia-jetpack.l4t-nvfancontrol}/etc/nvpower/nvfancontrol/nvfancontrol_p3668.conf";
     "xavier-nx-emmc" ="${pkgs.nvidia-jetpack.l4t-nvfancontrol}/etc/nvpower/nvfancontrol/nvfancontrol_p3668.conf";
@@ -58,6 +60,11 @@ in {
           ${pkgs.nvidia-jetpack.bspSrc}/bootloader/t186ref/cfg/flash_t234_qspi_sdmmc.xml \
           >$out
       '');
+    })
+
+    (mkIf (cfg.som == "orin-nx") {
+      targetBoard = mkDefault "p3509-a02+p3767-0000";
+      partitionTemplate = mkDefault (filterPartitions "${pkgs.nvidia-jetpack.bspSrc}/bootloader/t186ref/cfg/flash_t234_qspi.xml");
     })
 
     (mkIf (cfg.som == "xavier-agx") {
