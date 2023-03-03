@@ -11,6 +11,7 @@ let
 
   nvpModelConf = {
     "orin-agx" = "${pkgs.nvidia-jetpack.l4t-nvpmodel}/etc/nvpmodel/nvpmodel_p3701_0000.conf";
+    "orin-nx" = "${pkgs.nvidia-jetpack.l4t-nvpmodel}/etc/nvpmodel/nvpmodel_p3767_0000.conf";
     "xavier-agx" = "${pkgs.nvidia-jetpack.l4t-nvpmodel}/etc/nvpmodel/nvpmodel_t194.conf";
     "xavier-nx" = "${pkgs.nvidia-jetpack.l4t-nvpmodel}/etc/nvpmodel/nvpmodel_t194_p3668.conf";
     "xavier-nx-emmc" = "${pkgs.nvidia-jetpack.l4t-nvpmodel}/etc/nvpmodel/nvpmodel_t194_p3668.conf";
@@ -18,6 +19,7 @@ let
 
   nvfancontrolConf = {
     "orin-agx" = "${pkgs.nvidia-jetpack.l4t-nvfancontrol}/etc/nvpower/nvfancontrol/nvfancontrol_p3701_0000.conf";
+    "orin-nx" = "${pkgs.nvidia-jetpack.l4t-nvfancontrol}/etc/nvpower/nvfancontrol/nvfancontrol_p3767_0000.conf";
     "xavier-agx" = "${pkgs.nvidia-jetpack.l4t-nvfancontrol}/etc/nvpower/nvfancontrol/nvfancontrol_p2888.conf";
     "xavier-nx" ="${pkgs.nvidia-jetpack.l4t-nvfancontrol}/etc/nvpower/nvfancontrol/nvfancontrol_p3668.conf";
     "xavier-nx-emmc" ="${pkgs.nvidia-jetpack.l4t-nvfancontrol}/etc/nvpower/nvfancontrol/nvfancontrol_p3668.conf";
@@ -60,6 +62,11 @@ in {
       '');
     })
 
+    (mkIf (cfg.som == "orin-nx") {
+      targetBoard = mkDefault "p3509-a02+p3767-0000";
+      partitionTemplate = mkDefault (filterPartitions "${pkgs.nvidia-jetpack.bspSrc}/bootloader/t186ref/cfg/flash_t234_qspi.xml");
+    })
+
     (mkIf (cfg.som == "xavier-agx") {
       targetBoard = mkDefault "jetson-agx-xavier-devkit";
       # Remove unnecessary partitions to make it more like
@@ -77,5 +84,19 @@ in {
       targetBoard = mkDefault "jetson-xavier-nx-devkit-emmc";
       partitionTemplate = mkDefault (filterPartitions "${pkgs.nvidia-jetpack.bspSrc}/bootloader/t186ref/cfg/flash_l4t_t194_spi_emmc_p3668.xml");
     })
+  ];
+
+  boot.kernelPatches = lib.mkIf (cfg.som == "orin-nx") [
+    {
+      name = "disable-usb-otg";
+      patch = null;
+      # TODO: Having these options enabled on the Orin NX currently causes a
+      # kernel panic with a failure in tegra_xudc_unpowergate. We should figure
+      # this out
+      extraStructuredConfig = with lib.kernel; {
+        USB_OTG = no;
+        USB_GADGET = no;
+      };
+    }
   ];
 }
