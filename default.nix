@@ -126,7 +126,7 @@ in rec {
     hardware.nvidia-jetpack.enable = true;
     networking.hostName = n; # Just so it sets the flash binary name.
   }).config)) {
-    "orin-agx-devkit" = { som = "orin-agx"; carrierBoard = "devkit"; bootloader.edk2NvidiaPatches = [ ./edk2-uefi-dtb.patch ]; };
+    "orin-agx-devkit" = { som = "orin-agx"; carrierBoard = "devkit"; };
     "xavier-agx-devkit" = { som = "xavier-agx"; carrierBoard = "devkit"; };
     "xavier-nx-devkit" = { som = "xavier-nx"; carrierBoard = "devkit"; };
     "xavier-nx-devkit-emmc" = { som = "xavier-nx-emmc"; carrierBoard = "devkit"; };
