@@ -45,7 +45,7 @@ writeShellScriptBin "flash-${name}" (''
   chmod -R u+w .
 
 '' + (if (flashArgs != null) then ''
-  ./flash.sh ${lib.optionalString (partitionTemplate != null) "-c flash.xml"} $@ ${flashArgs}
+  ./flash.sh ${lib.optionalString (partitionTemplate != null) "-c flash.xml"} $@ ${builtins.toString flashArgs}
 '' else ''
   ${runtimeShell}
 ''))
