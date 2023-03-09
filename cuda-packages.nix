@@ -116,6 +116,7 @@ let
     srcs = builtins.map (deb: deb.src) (debsForSourcePackage name);
   } // args);
 
+  nsight_system_version = "2022.5.2";
   cudaPackages = {
     cuda_cccl = buildFromSourcePackage { name = "cuda-thrust"; };
     cuda_cudart = buildFromSourcePackage {
@@ -187,6 +188,19 @@ let
     libnpp = buildFromSourcePackage { name = "libnpp"; };
     libcudla = buildFromSourcePackage { name = "libcudla"; buildInputs = [ l4t.l4t-cuda ]; };
     #nsight_compute = buildFromSourcePackage { name = "nsight-compute"; };
+    nsight_systems_target =  buildFromDebs {
+      name = "nsight-systems-${nsight_system_version}";
+      srcs = debs.common."nsight-systems-${nsight_system_version}".src;
+      postPatch = ''
+        cp -r "opt/nvidia/nsight-systems/${nsight_system_version}/target-linux-tegra-armv8" .
+        rm -rf opt
+
+        # nsys requires that the executable is under a directory called target-linux-tegra-armv8
+        # so symlink the binary from there to bin for easier access
+        ln -sfv ../target-linux-tegra-armv8/nsys ./bin/nsys
+        ln -sfv ../target-linux-tegra-armv8/nsys-launcher ./bin/nsys-launcher
+      '';
+    };
 
     # Combined package. We construct it from the debs, since nvidia doesn't
     # distribute a combined cudatoolkit package for jetson
