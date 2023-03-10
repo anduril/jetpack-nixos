@@ -36,13 +36,7 @@ let
     ${lib.concatStringsSep "\n" (lib.mapAttrsToList (n: p: "echo Unpacking ${n}; dpkg -x ${p.src} $out/${n}") debs.t234)}
   '';
 
-  # Fixed version of edk that works with cross-compilation
-  # TODO: Remove when we upgrade beyond 22.05
-  edk2 = callPackage ./edk2.nix {};
-
-  jetson-firmware = (pkgsAarch64.callPackages ./jetson-firmware.nix {
-    inherit edk2;
-  }).jetson-firmware;
+  jetson-firmware = (pkgsAarch64.callPackages ./jetson-firmware.nix {}).jetson-firmware;
 
   flash-tools = callPackage ./flash-tools.nix {
     inherit bspSrc l4tVersion;
@@ -133,4 +127,4 @@ in rec {
   });
 }
 // l4t
-// callPackage ./jetson-firmware.nix { inherit edk2; }
+// callPackage ./jetson-firmware.nix { }
