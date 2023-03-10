@@ -16,6 +16,8 @@
 
       hardware.nvidia-jetpack.enable = true;
     };
+
+    x86_packages = nixpkgs.legacyPackages.x86_64-linux.callPackage ./default.nix {};
   in {
     nixosConfigurations = {
       installer_minimal = nixpkgs.legacyPackages.aarch64-linux.nixos installer_minimal_config;
@@ -33,7 +35,8 @@
       }
       # Flashing and board automation scripts _only_ work on x86_64-linux
       // {
-        inherit (nixpkgs.legacyPackages.x86_64-linux.callPackage ./default.nix {}) flash-scripts board-automation python-jetson;
+        inherit (x86_packages) flash-scripts board-automation python-jetson;
+        inherit (x86_packages.cudaPackages) nsight_systems_host;
       };
 
       aarch64-linux = {

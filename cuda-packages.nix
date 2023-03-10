@@ -13,6 +13,17 @@
   gcc10,
   l4t,
   zlib,
+  qt6,
+  xorg,
+  fontconfig,
+  dbus,
+  nss,
+  alsa-lib,
+  xkeyboard_config,
+  nspr,
+  ncurses5,
+  buildFHSUserEnv,
+  requireFile,
 
   debs,
   cudaVersion,
@@ -189,16 +200,71 @@ let
     libcudla = buildFromSourcePackage { name = "libcudla"; buildInputs = [ l4t.l4t-cuda ]; };
     #nsight_compute = buildFromSourcePackage { name = "nsight-compute"; };
     nsight_systems_target =  buildFromDebs {
-      name = "nsight-systems-${nsight_system_version}";
+      name = "nsight-systems-target";
       srcs = debs.common."nsight-systems-${nsight_system_version}".src;
       postPatch = ''
         cp -r "opt/nvidia/nsight-systems/${nsight_system_version}/target-linux-tegra-armv8" .
         rm -rf opt
 
-        # nsys requires that the executable is under a directory called target-linux-tegra-armv8
-        # so symlink the binary from there to bin for easier access
+        # nsys requires that it remains under its original directory so symlink instead of copying
+        # things out
         ln -sfv ../target-linux-tegra-armv8/nsys ./bin/nsys
         ln -sfv ../target-linux-tegra-armv8/nsys-launcher ./bin/nsys-launcher
+      '';
+    };
+    nsight_systems_host = let
+      nsight_out = buildFromDebs {
+        name = "nsight-systems-host";
+        srcs = requireFile rec {
+          name = "NsightSystems-linux-public-2022.5.2.120-3231674.deb";
+          sha256 = "011f1vxrmxnip02zmlsb224cc01nviva2070qadkwhmz409sjxag";
+          message = ''
+            For Jetpack 5.1, Nvidia doesn't upload the corresponding nsight system x86_64 version to the deb repo, so it need to be fetched using sdkmanager
+
+            Once you have obtained the file, please use the following commands and re-run the installation:
+
+            nix-prefetch-url file://path/to/${name}
+          '';
+        };
+        version = nsight_system_version;
+        phases = [ "unpackPhase" "patchPhase" "installPhase" ];
+        postPatch = ''
+          mv opt/nvidia/nsight-systems/${nsight_system_version}/host-linux-x64 .
+          rm -r opt
+
+          mkdir -p bin
+          # nsys requires that it remains under its original directory so symlink instead of copying
+          # things out
+          ln -sfv ../host-linux-x64/nsys-ui ./bin/nsys-ui
+        '';
+      };
+    # nsys-ui has some hardcoded /usr access so use fhs instead of trying to patchelf
+    # it also comes with its own qt6 .so, trying to use Nix qt6 libs results in weird
+    # behavior(blank window) so just supply qt6 dependency instead of qt6 itself
+    in buildFHSUserEnv {
+      name = "nsys-ui";
+      targetPkgs = pkgs: (
+        [
+          ncurses5
+          xorg.libxcb
+          fontconfig
+          dbus
+          nss
+          xorg.libXcomposite
+          xorg.libXdamage
+          alsa-lib
+          xorg.libXtst
+          xorg.libSM
+          xorg.libICE
+          xorg.libXfixes
+          xkeyboard_config
+          expat
+          nspr
+        ] ++ qt6.qtbase.propagatedBuildInputs ++ qt6.qtwebengine.propagatedBuildInputs
+      );
+      # '';
+      runScript = ''
+        ${nsight_out}/bin/nsys-ui $*
       '';
     };
 
