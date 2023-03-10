@@ -201,6 +201,7 @@ let
     #nsight_compute = buildFromSourcePackage { name = "nsight-compute"; };
     nsight_systems_target =  buildFromDebs {
       name = "nsight-systems-target";
+      version = nsight_system_version;
       srcs = debs.common."nsight-systems-${nsight_system_version}".src;
       postPatch = ''
         cp -r "opt/nvidia/nsight-systems/${nsight_system_version}/target-linux-tegra-armv8" .
