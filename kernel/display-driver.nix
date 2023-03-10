@@ -11,11 +11,11 @@ stdenv.mkDerivation rec {
 
   src = fetchgit {
     url = "https://nv-tegra.nvidia.com/tegra/kernel-src/nv-kernel-display-driver.git";
-    rev = version;
-    sha256 = "sha256-fP54ztq4oNKgfn6LckqsOuPjYE+SB1W083DOwRNth80=";
+    rev = "5f54f1d5a58966fc5c84d41360aefbde466f7777";
+    sha256 = "sha256-ZY3eaP6dko6GnagcJIwAEb+aZ+IYxA+SsiaYBGK42oA=";
   };
 
-  sourceRoot = "nv-kernel-display-driver/NVIDIA-kernel-module-source-TempVersion";
+  sourceRoot = "nv-kernel-display-driver-5f54f1d/NVIDIA-kernel-module-source-TempVersion";
 
   nativeBuildInputs = kernel.moduleBuildDependencies;
 
