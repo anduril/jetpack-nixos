@@ -62,6 +62,19 @@ let
 
   rtkernel = callPackage ./kernel { inherit (l4t) l4t-xusb-firmware; realtime = true; };
   rtkernelPackages = (pkgs.linuxPackagesFor rtkernel).extend kernelPackagesOverlay;
+
+  nxJetsonBenchmarks = pkgs.callPackage ./jetson-benchmarks/default.nix {
+    targetSom = "nx";
+    inherit cudaPackages;
+  };
+  xavierAgxJetsonBenchmarks = pkgs.callPackage ./jetson-benchmarks/default.nix {
+    targetSom = "xavier-agx";
+    inherit cudaPackages;
+  };
+  orinAgxJetsonBenchmarks = pkgs.callPackage ./jetson-benchmarks/default.nix {
+    targetSom = "orin-agx";
+    inherit cudaPackages;
+  };
 in rec {
   inherit jetpackVersion l4tVersion cudaVersion;
 
@@ -75,6 +88,8 @@ in rec {
 
   inherit kernel kernelPackages;
   inherit rtkernel rtkernelPackages;
+
+  inherit nxJetsonBenchmarks xavierAgxJetsonBenchmarks orinAgxJetsonBenchmarks;
 
   # TODO: Source packages. source_sync.sh from bspSrc
   # OPTEE

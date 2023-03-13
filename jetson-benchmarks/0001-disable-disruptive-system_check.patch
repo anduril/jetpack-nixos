@@ -1,0 +1,41 @@
+From 52217f797026ad226e3799132b7d554458485c58 Mon Sep 17 00:00:00 2001
+From: ktrinh <ktrinh@anduril.com>
+Date: Sat, 11 Feb 2023 15:56:15 -0800
+Subject: [PATCH] disable some system_check
+
+The system_check disabled are either unnecessary(such as the close all app one) or disruptive like the ones that try to set the power model and clock
+---
+ benchmark.py | 14 +++++++-------
+ 1 file changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/benchmark.py b/benchmark.py
+index 72e7dcb..acef9cd 100755
+--- a/benchmark.py
++++ b/benchmark.py
+@@ -17,16 +17,16 @@ def main():
+ 
+     # System Check
+     system_check = utilities(jetson_devkit=args.jetson_devkit, gpu_freq=args.gpu_freq, dla_freq=args.dla_freq)
+-    system_check.close_all_apps()
++    # system_check.close_all_apps()
+     if system_check.check_trt():
+         sys.exit()
+-    system_check.set_power_mode(args.power_mode, args.jetson_devkit)
++    # system_check.set_power_mode(args.power_mode, args.jetson_devkit)
+     system_check.clear_ram_space()
+-    if args.jetson_clocks:
+-        system_check.set_jetson_clocks()
+-    else:
+-        system_check.run_set_clocks_withDVFS()
+-        system_check.set_jetson_fan(255)
++    # if args.jetson_clocks:
++    #     system_check.set_jetson_clocks()
++    # else:
++    #     system_check.run_set_clocks_withDVFS()
++    #     system_check.set_jetson_fan(255)
+ 
+     # Read CSV and Write Data
+     benchmark_data = read_write_data(csv_file_path=csv_file_path, model_path=model_path)
+-- 
+2.38.3
+
