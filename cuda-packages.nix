@@ -128,6 +128,7 @@ let
   } // args);
 
   nsight_system_version = "2022.5.2";
+  nsight_compute_version = "2022.2.1";
   cudaPackages = {
     cuda_cccl = buildFromSourcePackage { name = "cuda-thrust"; };
     cuda_cudart = buildFromSourcePackage {
@@ -198,9 +199,74 @@ let
     libcusparse = buildFromSourcePackage { name = "libcusparse"; };
     libnpp = buildFromSourcePackage { name = "libnpp"; };
     libcudla = buildFromSourcePackage { name = "libcudla"; buildInputs = [ l4t.l4t-cuda ]; };
-    #nsight_compute = buildFromSourcePackage { name = "nsight-compute"; };
+    nsight_compute_target =  buildFromDebs {
+      name = "nsight-compute-target";
+      version = nsight_compute_version;
+      srcs = debs.common."nsight-compute-${nsight_compute_version}".src;
+      postPatch = ''
+        # ncu relies on relative folder structure to find sections file so emulate that
+        mkdir -p target
+        cp -r "opt/nvidia/nsight-compute/${nsight_compute_version}/target/linux-v4l_l4t-t210-a64" target
+        cp -r "opt/nvidia/nsight-compute/${nsight_compute_version}/extras" .
+        cp -r "opt/nvidia/nsight-compute/${nsight_compute_version}/sections" .
+        rm -rf opt usr
+
+        # ncu requires that it remains under its original directory so symlink instead of copying
+        # things out
+        mkdir -p bin
+        ln -sfv ../target/linux-v4l_l4t-t210-a64/ncu ./bin/ncu
+      '';
+    };
+    nsight_compute_host = let
+      nsight_out = buildFromDebs {
+        name = "nsight-compute-host";
+        version = nsight_compute_version;
+        srcs = debs.common."nsight-compute-${nsight_compute_version}".src;
+        dontAutoPatchelf = true;
+        postPatch = ''
+          mkdir -p host
+          cp -r "opt/nvidia/nsight-compute/${nsight_compute_version}/host/linux-desktop-glibc_2_11_3-x64" host
+          cp -r "opt/nvidia/nsight-compute/${nsight_compute_version}/extras" .
+          cp -r "opt/nvidia/nsight-compute/${nsight_compute_version}/sections" .
+          rm -r opt
+
+          # ncu requires that it remains under its original directory so symlink instead of copying
+          # things out
+          mkdir -p bin
+          ln -sfv ../host/linux-desktop-glibc_2_11_3-x64/ncu-ui ./bin/ncu-ui
+        '';
+      };
+    # ncu-ui has some hardcoded /usr access so use fhs instead of trying to patchelf
+    # it also comes with its own qt6 .so, trying to use Nix qt6 libs results in weird
+    # behavior(blank window) so just supply qt6 dependency instead of qt6 itself
+    in buildFHSUserEnv {
+      name = "ncu-ui";
+      targetPkgs = pkgs: (
+        [
+          ncurses5
+          xorg.libxcb
+          fontconfig
+          dbus
+          nss
+          xorg.libXcomposite
+          xorg.libXdamage
+          alsa-lib
+          xorg.libXtst
+          xorg.libSM
+          xorg.libICE
+          xorg.libXfixes
+          xkeyboard_config
+          expat
+          nspr
+        ] ++ qt6.qtbase.propagatedBuildInputs ++ qt6.qtwebengine.propagatedBuildInputs
+      );
+      runScript = ''
+        ${nsight_out}/bin/ncu-ui $*
+      '';
+    };
     nsight_systems_target =  buildFromDebs {
       name = "nsight-systems-target";
+      version = nsight_system_version;
       srcs = debs.common."nsight-systems-${nsight_system_version}".src;
       postPatch = ''
         cp -r "opt/nvidia/nsight-systems/${nsight_system_version}/target-linux-tegra-armv8" .
@@ -208,6 +274,7 @@ let
 
         # nsys requires that it remains under its original directory so symlink instead of copying
         # things out
+        mkdir -p bin
         ln -sfv ../target-linux-tegra-armv8/nsys ./bin/nsys
         ln -sfv ../target-linux-tegra-armv8/nsys-launcher ./bin/nsys-launcher
       '';
@@ -262,7 +329,6 @@ let
           nspr
         ] ++ qt6.qtbase.propagatedBuildInputs ++ qt6.qtwebengine.propagatedBuildInputs
       );
-      # '';
       runScript = ''
         ${nsight_out}/bin/nsys-ui $*
       '';

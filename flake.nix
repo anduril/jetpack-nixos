@@ -36,7 +36,7 @@
       # Flashing and board automation scripts _only_ work on x86_64-linux
       // {
         inherit (x86_packages) flash-scripts board-automation python-jetson;
-        inherit (x86_packages.cudaPackages) nsight_systems_host;
+        inherit (x86_packages.cudaPackages) nsight_systems_host nsight_compute_host;
       };
 
       aarch64-linux = {
