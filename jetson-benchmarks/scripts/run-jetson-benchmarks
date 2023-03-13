@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+WORKDIR=$(mktemp -d)
+function on_exit() {
+    sudo rm -rf "$WORKDIR"
+}
+trap on_exit EXIT
+
+cp -r ${script_dir}/../. "$WORKDIR"
+chmod -R u+w "$WORKDIR"
+cd "$WORKDIR"
+
+csv_file="$PWD/benchmark_csv/${BENCHMARK_CSV_FILE}"
+model_dir="$PWD/models/${MODEL_DIR}"
+
+echo "Running jetson benchmark with csv ${csv_file} and models at ${model_dir}"
+
+sudo python3 benchmark.py --csv_file_path "${csv_file}" --model_dir "${model_dir}" "$@"
