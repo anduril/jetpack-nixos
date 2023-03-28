@@ -36,7 +36,7 @@ let
     ${lib.concatStringsSep "\n" (lib.mapAttrsToList (n: p: "echo Unpacking ${n}; dpkg -x ${p.src} $out/${n}") debs.t234)}
   '';
 
-  jetson-firmware = (pkgsAarch64.callPackages ./jetson-firmware.nix {}).jetson-firmware;
+  jetson-firmware = (pkgsAarch64.callPackages ./jetson-firmware.nix { inherit l4tVersion; }).jetson-firmware;
 
   flash-tools = callPackage ./flash-tools.nix {
     inherit bspSrc l4tVersion;
@@ -146,4 +146,4 @@ in rec {
   });
 }
 // l4t
-// callPackage ./jetson-firmware.nix { }
+// callPackage ./jetson-firmware.nix { inherit l4tVersion; }
