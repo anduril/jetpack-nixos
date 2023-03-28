@@ -140,6 +140,9 @@ in
     # Used by libjetsonpower.so, which is used by nvfancontrol at least.
     environment.etc."nvpower/libjetsonpower".source = "${pkgs.nvidia-jetpack.l4t-tools}/etc/nvpower/libjetsonpower";
 
+    # Include nv_tegra_release, just so we can tell what version our NixOS machine was built from.
+    environment.etc."nv_tegra_release".source = "${pkgs.nvidia-jetpack.l4t-core}/etc/nv_tegra_release";
+
     # https://developer.ridgerun.com/wiki/index.php/Xavier/JetPack_5.0.2/Performance_Tuning
     systemd.services.jetson_clocks = mkIf cfg.maxClock {
       enable = true;
