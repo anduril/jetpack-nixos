@@ -48,6 +48,9 @@ let
 
   python-jetson = python3.pkgs.callPackage ./python-jetson.nix { };
 
+  tegra-eeprom-tool = callPackage ./tegra-eeprom-tool.nix { };
+  tegra-eeprom-tool-static = pkgs.pkgsStatic.callPackage ./tegra-eeprom-tool.nix { };
+
   l4t = callPackages ./l4t.nix { inherit debs l4tVersion; };
 
   cudaPackages = callPackages ./cuda-packages.nix { inherit debs cudaVersion autoAddOpenGLRunpathHook l4t; };
@@ -85,6 +88,7 @@ in rec {
   inherit flash-tools;
   inherit board-automation; # Allows automation of Orin AGX devkit
   inherit python-jetson; # Allows automation of Xavier AGX devkit
+  inherit tegra-eeprom-tool;
 
   inherit kernel kernelPackages;
   inherit rtkernel rtkernelPackages;
