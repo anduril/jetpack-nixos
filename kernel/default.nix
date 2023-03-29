@@ -41,10 +41,10 @@ in pkgsAarch64.buildLinux (args // rec {
   autoModules = false;
   features = {}; # TODO: Why is this needed in nixpkgs master (but not NixOS 22.05)?
 
-  # as of 22.11, only kernel configs supplied throuhg kernelPatches
+  # as of 22.11, only kernel configs supplied through kernelPatches
   # can override configs specified in the platforms
   kernelPatches = [
-    # USB_XHCI_TEGRA is module, it won't build
+    # if USB_XHCI_TEGRA is built as module, the kernel won't build
     {
       name = "make-USB_XHCI_TEGRA-builtins";
       patch = null;
