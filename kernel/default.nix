@@ -1,4 +1,3 @@
-# Due to some really weird behavior, we can't include "stdenv" in the function headedr or else the hackedSystem stuff below stops working.
 { pkgs, lib, fetchFromGitHub, l4t-xusb-firmware, realtime ? false, ... }@args:
 let
   isNative = pkgs.stdenv.isAarch64;
