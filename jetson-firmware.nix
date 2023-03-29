@@ -16,7 +16,7 @@ let
   # TODO: Move this generation out of jetson-firmware.nix, because this .nix
   # file is callPackage'd using an aarch64 version of nixpkgs, and we don't
   # want to have to recompilie imagemagick
-  bootLogoVariants = runCommand "uefi-bootlogo" { nativeBuildInputs = [ imagemagick ]; } ''
+  bootLogoVariants = runCommand "uefi-bootlogo" { nativeBuildInputs = [ buildPackages.buildPackages.imagemagick ]; } ''
     mkdir -p $out
     convert ${bootLogo} -resize 1920x1080 -gravity Center -extent 1920x1080 -format bmp -define bmp:format=bmp3 $out/logo1080.bmp
     convert ${bootLogo} -resize 1280x720  -gravity Center -extent 1280x720  -format bmp -define bmp:format=bmp3 $out/logo720.bmp
