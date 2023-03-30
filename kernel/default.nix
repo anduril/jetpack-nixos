@@ -1,40 +1,8 @@
-# Due to some really weird behavior, we can't include "stdenv" in the function headedr or else the hackedSystem stuff below stops working.
-{ pkgs, lib, stdenvNoCC, fetchFromGitHub, l4t-xusb-firmware, realtime ? false, ... }@args:
+{ pkgs, lib, fetchFromGitHub, l4t-xusb-firmware, realtime ? false, ... }@args:
 let
-  # overriding the platform to remove the USB_XHCI_TEGRA m which breaks the nvidia build
-  hackedSystem = {
-    system = "aarch64-linux";
-    linux-kernel = {
-      name = "aarch64-multiplatform";
-      baseConfig = "defconfig";
-      DTB = true;
-      autoModules = true;
-      preferBuiltin = true;
-      extraConfig = ''
-        # Raspberry Pi 3 stuff. Not needed for   s >= 4.10.
-        ARCH_BCM2835 y
-        BCM2835_MBOX y
-        BCM2835_WDT y
-        RASPBERRYPI_FIRMWARE y
-        RASPBERRYPI_POWER y
-        SERIAL_8250_BCM2835AUX y
-        SERIAL_8250_EXTENDED y
-        SERIAL_8250_SHARE_IRQ y
-
-        # Cavium ThunderX stuff.
-        PCI_HOST_THUNDER_ECAM y
-
-        # Nvidia Tegra stuff.
-        PCI_TEGRA y
-      '';
-      target = "Image";
-    };
-  };
-  hackedPkgs = import pkgs.path (
-    lib.optionalAttrs stdenvNoCC.buildPlatform.isAarch64 { localSystem = hackedSystem; }
-    // lib.optionalAttrs (!stdenvNoCC.buildPlatform.isAarch64) { localSystem = stdenvNoCC.buildPlatform; crossSystem = hackedSystem; }
-  );
-in hackedPkgs.buildLinux (args // rec {
+  isNative = pkgs.stdenv.isAarch64;
+  pkgsAarch64 = if isNative then pkgs else pkgs.pkgsCross.aarch64-multiplatform;
+in pkgsAarch64.buildLinux (args // rec {
   version = "5.10.104" + lib.optionalString realtime "-rt63";
   extraMeta.branch = "5.10";
 
@@ -72,6 +40,18 @@ in hackedPkgs.buildLinux (args // rec {
   autoModules = false;
   features = {}; # TODO: Why is this needed in nixpkgs master (but not NixOS 22.05)?
 
+  # as of 22.11, only kernel configs supplied through kernelPatches
+  # can override configs specified in the platforms
+  kernelPatches = [
+    # if USB_XHCI_TEGRA is built as module, the kernel won't build
+    {
+      name = "make-USB_XHCI_TEGRA-builtins";
+      patch = null;
+      extraConfig = ''
+        USB_XHCI_TEGRA y
+      '';
+    }
+  ];
   structuredExtraConfig = with lib.kernel; {
     #  MODPOST modules-only.symvers
     #ERROR: modpost: "xhci_hc_died" [drivers/usb/host/xhci-tegra.ko] undefined!
