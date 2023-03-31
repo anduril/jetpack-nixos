@@ -1,0 +1,13 @@
+diff -Naur bsp-5.1/flash.sh bsp-new/flash.sh
+--- bsp-5.1/flash.sh	1969-12-31 16:00:01.000000000 -0800
++++ bsp-new/flash.sh	2023-03-09 11:07:44.833408932 -0800
+@@ -2410,6 +2410,9 @@
+ 			cmdline+="${string} ";
+ 		fi
+ 	done
++
++	# Yeah, lets just not....
++	cmdline="${CMDLINE}"
+ fi;
+ 
+ ##########################################################################

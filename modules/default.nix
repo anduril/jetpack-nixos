@@ -73,10 +73,11 @@ in
       else pkgs.nvidia-jetpack.kernelPackages;
 
     boot.kernelParams = [
-      "console=ttyTCU0,115200" # Provides console on "Tegra Combined UART" (TCU)
       "console=tty0" # Output to HDMI/DP
       "fbcon=map:0" # Needed for HDMI/DP
       "video=efifb:off" # Disable efifb driver, which crashes Xavier AGX/NX
+
+      "console=ttyTCU0,115200" # Provides console on "Tegra Combined UART" (TCU)
 
       # Needed on Orin at least, but upstream has it for both
       "nvidia.rm_firmware_active=all"

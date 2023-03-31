@@ -1,5 +1,5 @@
 { lib, stdenv, buildPackages, fetchFromGitHub, runCommand, edk2, acpica-tools,
-  dtc, python3, bc, imagemagick, applyPatches,
+  dtc, python3, bc, imagemagick, applyPatches, nukeReferences,
   l4tVersion,
 
   # Optional path to a boot logo that will be converted and cropped into the format required
@@ -154,7 +154,9 @@ let
       '';
     };
 
-    jetson-firmware = runCommand "jetson-firmware" { nativeBuildInputs = [ python3 ]; } ''
+    jetson-firmware = runCommand "jetson-firmware" {
+      nativeBuildInputs = [ python3 nukeReferences ];
+    } ''
       mkdir -p $out
       python3 ${edk2-nvidia}/Silicon/NVIDIA/Tools/FormatUefiBinary.py \
         ${edk2-jetson}/FV/UEFI_NS.Fv \
@@ -168,6 +170,9 @@ let
       for filename in ${edk2-jetson}/AARCH64/Silicon/NVIDIA/Tegra/DeviceTree/DeviceTree/OUTPUT/*.dtb; do
         cp $filename $out/dtbs/$(basename "$filename" ".dtb").dtbo
       done
+
+      # Get rid of any string references to source(s)
+      nuke-refs $out/uefi_jetson.bin
   '';
 in {
   inherit edk2-jetson jetson-firmware;

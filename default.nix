@@ -1,5 +1,5 @@
 { callPackage, callPackages, stdenv, stdenvNoCC, lib, runCommand, fetchurl,
-  autoPatchelfHook, bzip2_1_1, dpkg, writeShellScriptBin, pkgs, dtc, python3,
+  bzip2_1_1, dpkg,  pkgs, dtc, python3, runtimeShell,
 }:
 
 let
@@ -48,8 +48,8 @@ let
 
   python-jetson = python3.pkgs.callPackage ./python-jetson.nix { };
 
-  tegra-eeprom-tool = callPackage ./tegra-eeprom-tool.nix { };
-  tegra-eeprom-tool-static = pkgs.pkgsStatic.callPackage ./tegra-eeprom-tool.nix { };
+  tegra-eeprom-tool = pkgsAarch64.callPackage ./tegra-eeprom-tool.nix { };
+  tegra-eeprom-tool-static = pkgsAarch64.pkgsStatic.callPackage ./tegra-eeprom-tool.nix { };
 
   l4t = callPackages ./l4t.nix { inherit debs l4tVersion; };
 
@@ -78,6 +78,34 @@ let
     targetSom = "orin-agx";
     inherit cudaPackages;
   };
+
+  supportedConfigurations = lib.listToAttrs (map (c: {
+    name = "${c.som}-${c.carrierBoard}";
+    value = c;
+  }) [
+    { som = "orin-agx"; carrierBoard = "devkit"; }
+    { som = "orin-nx"; carrierBoard = "devkit"; }
+    { som = "xavier-agx"; carrierBoard = "devkit"; }
+    { som = "xavier-nx"; carrierBoard = "devkit"; }
+    { som = "xavier-nx-emmc"; carrierBoard = "devkit"; }
+  ]);
+
+  supportedNixOSConfigurations = lib.mapAttrs (n: c: {
+    imports = [ ./modules/default.nix ];
+    hardware.nvidia-jetpack = { enable = true; } // c;
+    networking.hostName = "${c.som}-${c.carrierBoard}"; # Just so it sets the flash binary name.
+  }) supportedConfigurations;
+
+  flashFromDevice = callPackage ./flash-from-device.nix {
+    inherit pkgsAarch64 tegra-eeprom-tool-static;
+  };
+
+  # Packages whose contents are paramterized by NixOS configuration
+  devicePkgsFromNixosConfig = callPackage ./device-pkgs.nix {
+    inherit l4tVersion pkgsAarch64 flash-tools flashFromDevice jetson-firmware;
+  };
+
+  devicePkgs = lib.mapAttrs (n: c: devicePkgsFromNixosConfig (pkgs.nixos c).config) supportedConfigurations;
 in rec {
   inherit jetpackVersion l4tVersion cudaVersion;
 
@@ -101,49 +129,27 @@ in rec {
   #   nv-tegra.nvidia.com/tegra/optee-src/nv-optee.git
   # GST plugins
 
-  # Generate a flash script using the built configuration options set in a NixOS configuration
-  flashScriptFromNixos = config: let
-    cfg = config.hardware.nvidia-jetpack;
-  in callPackage ./flash-script.nix {
-    name = config.networking.hostName;
-    inherit (cfg.flashScriptOverrides)
-      flashArgs partitionTemplate;
+  inherit flashFromDevice;
 
-    flash-tools = flash-tools.overrideAttrs ({ postPatch ? "", ... }: {
-      postPatch = postPatch + cfg.flashScriptOverrides.postPatch;
-    });
+  inherit devicePkgsFromNixosConfig;
 
-    jetson-firmware = jetson-firmware.override {
-      bootLogo = cfg.bootloader.logo;
-      debugMode = cfg.bootloader.debugMode;
-      errorLevelInfo = cfg.bootloader.errorLevelInfo;
-      edk2NvidiaPatches = cfg.bootloader.edk2NvidiaPatches;
-    };
+  devicePkgs = lib.mapAttrs (n: c: devicePkgsFromNixosConfig (pkgs.nixos c).config) supportedNixOSConfigurations;
 
-    dtbsDir = config.hardware.deviceTree.package;
+  flash-generic = callPackage ./flash-script.nix {
+    inherit flash-tools jetson-firmware;
+    flashCommands = ''
+      ${runtimeShell}
+    '';
+    # Use cross-compiled machine here so we don't have to depend on aarch64 builders
+    # TODO: Do a smaller cross-compiled version from old jetpack dir
+    dtbsDir = (pkgsAarch64.nixos {
+      imports = [ ./modules/default.nix ];
+      hardware.nvidia-jetpack.enable = true;
+    }).config.hardware.deviceTree.package;
   };
 
-  flash-scripts = rec {
-    # Generic flash script which contains the default NVIDIA devices without any patches
-    flash-generic = callPackage ./flash-script.nix {
-      inherit flash-tools jetson-firmware;
-      # Use cross-compiled machine here so we don't have to depend on aarch64 builders
-      # TODO: Do a smaller cross-compiled version from old jetpack dir
-      dtbsDir = (pkgsAarch64.nixos {
-        imports = [ ./modules/default.nix ];
-        hardware.nvidia-jetpack.enable = true;
-      }).config.hardware.deviceTree.package;
-    };
-  } // (lib.mapAttrs' (n: c: lib.nameValuePair "flash-${n}" (flashScriptFromNixos (pkgs.nixos {
-    imports = [ ./modules/default.nix { hardware.nvidia-jetpack = c; } ];
-    hardware.nvidia-jetpack.enable = true;
-    networking.hostName = n; # Just so it sets the flash binary name.
-  }).config)) {
-    "orin-agx-devkit" = { som = "orin-agx"; carrierBoard = "devkit"; };
-    "xavier-agx-devkit" = { som = "xavier-agx"; carrierBoard = "devkit"; };
-    "xavier-nx-devkit" = { som = "xavier-nx"; carrierBoard = "devkit"; };
-    "xavier-nx-devkit-emmc" = { som = "xavier-nx-emmc"; carrierBoard = "devkit"; };
-  });
+  flashScripts = lib.mapAttrs' (n: c: lib.nameValuePair "flash-${n}" c.flashScript) devicePkgs;
+  initrdFlashScripts = lib.mapAttrs' (n: c: lib.nameValuePair "initrd-flash-${n}" c.initrdFlashScript) devicePkgs;
 }
 // l4t
 // callPackage ./jetson-firmware.nix { inherit l4tVersion; }
