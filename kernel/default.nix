@@ -1,8 +1,14 @@
-{ pkgs, lib, fetchFromGitHub, l4t-xusb-firmware, realtime ? false, ... }@args:
+{ pkgs, lib, fetchFromGitHub, l4t-xusb-firmware, realtime ? false,
+  kernelPatches ? [ ],
+  structuredExtraConfig ? {},
+  extraMeta ? {},
+  argsOverride ? {},
+  ...
+}@args:
 let
   isNative = pkgs.stdenv.isAarch64;
   pkgsAarch64 = if isNative then pkgs else pkgs.pkgsCross.aarch64-multiplatform;
-in pkgsAarch64.buildLinux (args // rec {
+in pkgsAarch64.buildLinux (args // {
   version = "5.10.104" + lib.optionalString realtime "-rt63";
   extraMeta.branch = "5.10";
 
@@ -40,7 +46,7 @@ in pkgsAarch64.buildLinux (args // rec {
   autoModules = false;
   features = {}; # TODO: Why is this needed in nixpkgs master (but not NixOS 22.05)?
 
-  # as of 22.11, only kernel configs supplied through kernelPatches
+  # As of 22.11, only kernel configs supplied through kernelPatches
   # can override configs specified in the platforms
   kernelPatches = [
     # if USB_XHCI_TEGRA is built as module, the kernel won't build
@@ -51,7 +57,8 @@ in pkgsAarch64.buildLinux (args // rec {
         USB_XHCI_TEGRA y
       '';
     }
-  ];
+  ] ++ kernelPatches;
+
   structuredExtraConfig = with lib.kernel; {
     #  MODPOST modules-only.symvers
     #ERROR: modpost: "xhci_hc_died" [drivers/usb/host/xhci-tegra.ko] undefined!
@@ -111,7 +118,7 @@ in pkgsAarch64.buildLinux (args // rec {
     MD_RAID1 = module;
     MD_RAID10 = module;
     MD_RAID456 = module;
-  } // lib.optionalAttrs realtime {
+  } // (lib.optionalAttrs realtime {
     PREEMPT_VOLUNTARY = lib.mkForce no; # Disable the one set in common-config.nix
     # These are the options enabled/disabled by scripts/rt-patch.sh
     PREEMPT_RT = yes;
@@ -121,6 +128,6 @@ in pkgsAarch64.buildLinux (args // rec {
     CPU_FREQ_GOV_INTERACTIVE = no;
     CPU_FREQ_TIMES = no;
     FAIR_GROUP_SCHED = no;
-  };
+  }) // structuredExtraConfig;
 
-} // (args.argsOverride or {}))
+} // argsOverride)

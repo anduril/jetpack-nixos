@@ -57,7 +57,7 @@ let
 
   samples = callPackages ./samples.nix { inherit debs cudaVersion autoAddOpenGLRunpathHook l4t cudaPackages; };
 
-  kernel = callPackage ./kernel { inherit (l4t) l4t-xusb-firmware; };
+  kernel = callPackage ./kernel { inherit (l4t) l4t-xusb-firmware; kernelPatches = []; };
   kernelPackagesOverlay = self: super: {
     nvidia-display-driver = self.callPackage ./kernel/display-driver.nix {};
   };
