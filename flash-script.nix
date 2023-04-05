@@ -1,6 +1,6 @@
-{ lib, writeShellScriptBin, flash-tools, fetchurl, runtimeShell,
+{ lib, flash-tools,
 
-  name ? "generic", flashArgs ? null, partitionTemplate ? null,
+  preFlashCommands ? "", flashCommands ? "", postFlashCommands ? "", flashArgs ? [], partitionTemplate ? null,
 
   # Optional directory containing DTBs to be used by flashing script, which can
   # be used by the bootloader(s) and passed to the kernel.
@@ -9,15 +9,16 @@
   # Optional package containing uefi_jetson.efi to replace prebuilt version
   jetson-firmware ? null,
 }:
-
-writeShellScriptBin "flash-${name}" (''
+''
   set -euo pipefail
 
-  WORKDIR=$(mktemp -d)
-  function on_exit() {
-    rm -rf "$WORKDIR"
-  }
-  trap on_exit EXIT
+  if [[ -z ''${WORKDIR-} ]]; then
+    WORKDIR=$(mktemp -d)
+    function on_exit() {
+      rm -rf "$WORKDIR"
+    }
+    trap on_exit EXIT
+  fi
 
   cp -r ${flash-tools}/. "$WORKDIR"
   chmod -R u+w "$WORKDIR"
@@ -28,6 +29,7 @@ writeShellScriptBin "flash-${name}" (''
 
   export NO_ROOTFS=1
   export NO_RECOVERY_IMG=1
+  export NO_ESP_IMG=1
 
   ${lib.optionalString (partitionTemplate != null) "cp ${partitionTemplate} flash.xml"}
   ${lib.optionalString (dtbsDir != null) "cp -r ${dtbsDir}/. kernel/dtb/"}
@@ -42,10 +44,14 @@ writeShellScriptBin "flash-${name}" (''
   cp ${jetson-firmware}/dtbs/*.dtbo kernel/dtb/
   ''}
 
+  ${preFlashCommands}
+
   chmod -R u+w .
 
-'' + (if (flashArgs != null) then ''
-  ./flash.sh ${lib.optionalString (partitionTemplate != null) "-c flash.xml"} $@ ${flashArgs}
+'' + (if (flashCommands != "") then ''
+  ${flashCommands}
 '' else ''
-  ${runtimeShell}
-''))
+  ./flash.sh ${lib.optionalString (partitionTemplate != null) "-c flash.xml"} $@ ${builtins.toString flashArgs}
+'') + ''
+  ${postFlashCommands}
+''

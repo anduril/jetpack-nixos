@@ -1,0 +1,24 @@
+diff -ur bsp-5.1/bootloader/l4t_bup_gen.func bsp-5.1-new/bootloader/l4t_bup_gen.func
+--- bsp-5.1/bootloader/l4t_bup_gen.func	1969-12-31 16:00:01.000000000 -0800
++++ bsp-5.1-new/bootloader/l4t_bup_gen.func	2023-03-31 15:06:25.659044120 -0700
+@@ -23,9 +23,6 @@
+ 
+ declare -A ENTRY_LIST
+ ENTRY_LIST[bl]=""
+-ENTRY_LIST[kernel]=""
+-ENTRY_LIST[xusb]=""
+-ENTRY_LIST[bl_and_kernel]=""
+ 
+ PART_NAME=""
+ IMAGE_SIGNED=0
+@@ -454,10 +451,6 @@
+ 		rollback_opt="-r ${rollback_bin}"
+ 	fi
+ 
+-	if [ "${ENTRY_LIST[bl_and_kernel]}" == "" ]; then
+-		ENTRY_LIST[bl_and_kernel]="${ENTRY_LIST[bl]};${ENTRY_LIST[kernel]}"
+-	fi
+-
+ 	for list_name in "${!ENTRY_LIST[@]}"; do
+ 		if [ "${ENTRY_LIST["${list_name}"]}" == "" ]; then
+ 			continue

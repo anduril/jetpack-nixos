@@ -36,10 +36,10 @@ Bus 003 Device 013: ID 0955:7023 NVIDIA Corp. APX
 
 On an x86_64 machine (some of NVIDIA's precompiled components like `tegrarcm_v2` are only built for x86_64),
 build and run (as root) the flashing script which corresponds to your device (making sure to
-replace `xavier-agx` with the name of your device):
+replace `xavier-agx` with the name of your device, use `nix flake show` to see options):
 
 ```shell
-$ nix build github:anduril/jetpack-nixos#flash-scripts.flash-xavier-agx-devkit
+$ nix build github:anduril/jetpack-nixos#flash-xavier-agx-devkit
 $ sudo ./result/bin/flash-xavier-agx-devkit
 ```
 

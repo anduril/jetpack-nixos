@@ -32,19 +32,23 @@
       x86_64-linux = {
         # TODO: Untested
         iso_minimal = self.nixosConfigurations.installer_minimal_cross.config.system.build.isoImage;
+
+        inherit (x86_packages)
+          board-automation python-jetson;
+        inherit (x86_packages.cudaPackages)
+          nsight_systems_host nsight_compute_host;
       }
       # Flashing and board automation scripts _only_ work on x86_64-linux
-      // {
-        inherit (x86_packages) flash-scripts board-automation python-jetson;
-        inherit (x86_packages.cudaPackages) nsight_systems_host nsight_compute_host;
-      };
+      // x86_packages.flashScripts
+      // x86_packages.initrdFlashScripts;
 
       aarch64-linux = {
         iso_minimal = self.nixosConfigurations.installer_minimal.config.system.build.isoImage;
       };
     };
 
-    legacyPackages.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.pkgsCross.aarch64-multiplatform.callPackage ./default.nix {};
+    # Not everything here should be cross-compiled to aarch64-linux
+    legacyPackages.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.callPackage ./default.nix {};
     legacyPackages.aarch64-linux = nixpkgs.legacyPackages.aarch64-linux.callPackage ./default.nix {};
   };
 }

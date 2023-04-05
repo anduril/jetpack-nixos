@@ -19,6 +19,8 @@ let
       perl
     ]; # BUP_payload needs python2 :(  Others need python3
 
+    patches = [ ./flash.sh.patch ./bup-bl-only.patch ];
+
     postPatch = ''
       for filename in bootloader/BUP_generator.py bootloader/rollback/rollback_parser.py; do
         substituteInPlace $filename \

@@ -51,9 +51,8 @@ in
         };
 
         flashArgs = mkOption {
-          type = types.str;
+          type = types.listOf types.str;
           description = "Arguments to apply to flashing script";
-          default = "${cfg.flashScriptOverrides.targetBoard} mmcblk0p1";
         };
 
         partitionTemplate = mkOption {
@@ -74,14 +73,26 @@ in
         internal = true;
         description = "Script to flash the xavier device";
       };
+
+      devicePkgs = mkOption {
+        type = types.attrsOf types.anything;
+        readOnly = true;
+        internal = true;
+        description = "Flashing packages associated with this NixOS configuration";
+      };
     };
   };
 
-  config = {
+  config = let
     # Totally ugly reimport of nixpkgs so we can get a native x86 version. This
     # is probably not the right way to do it, since overlays wouldn't get
     # applied in the new import of nixpkgs.
-    hardware.nvidia-jetpack.flashScript = ((import pkgs.path { system = "x86_64-linux"; }).callPackage ../default.nix {}).flashScriptFromNixos config;
+    devicePkgs = ((import pkgs.path { system = "x86_64-linux"; }).callPackage ../default.nix {}).devicePkgsFromNixosConfig config;
+  in {
+    hardware.nvidia-jetpack.flashScript = devicePkgs.flashScript; # Left for backwards-compatibility
+    hardware.nvidia-jetpack.devicePkgs = devicePkgs;
+
+    hardware.nvidia-jetpack.flashScriptOverrides.flashArgs = [ cfg.flashScriptOverrides.targetBoard "mmcblk0p1" ];
 
     hardware.nvidia-jetpack.bootloader.edk2NvidiaPatches = [
       # Have UEFI use the device tree compiled into the firmware, instead of
