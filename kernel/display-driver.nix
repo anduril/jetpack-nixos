@@ -17,6 +17,13 @@ stdenv.mkDerivation rec {
 
   sourceRoot = "nv-kernel-display-driver-5f54f1d/NVIDIA-kernel-module-source-TempVersion";
 
+  patches = [
+    # This is needed because of nixos-unstable change from GCC 9 to 12. This
+    # change has been backported from jetson_35.3.1, and because of that,
+    # it should also be removed when moving to jetson_35.3.1
+    ./add-mno-outline-atomics-for-aarch64.patch
+  ];
+
   nativeBuildInputs = kernel.moduleBuildDependencies;
 
   makeFlags = kernel.makeFlags ++ [

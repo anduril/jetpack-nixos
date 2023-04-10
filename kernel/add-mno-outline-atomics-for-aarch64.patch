@@ -1,0 +1,15 @@
+diff --git a/src/nvidia/Makefile b/src/nvidia/Makefile
+index 17f680e..a38eeed 100644
+--- a/src/nvidia/Makefile
++++ b/src/nvidia/Makefile
+@@ -79,6 +79,7 @@ ifeq ($(TARGET_ARCH),aarch64)
+   CFLAGS += -mgeneral-regs-only
+   CFLAGS += -march=armv8-a
+   CFLAGS += -mstrict-align
++  CONDITIONAL_CFLAGS += $(call TEST_CC_ARG, -mno-outline-atomics)
+ endif
+ 
+ #CFLAGS += -ffunction-sections
+-- 
+2.38.4
+
