@@ -7,7 +7,7 @@
   dtbsDir ? null,
 
   # Optional package containing uefi_jetson.efi to replace prebuilt version
-  jetson-firmware ? null,
+  uefi-firmware ? null,
 }:
 ''
   set -euo pipefail
@@ -33,15 +33,15 @@
 
   ${lib.optionalString (partitionTemplate != null) "cp ${partitionTemplate} flash.xml"}
   ${lib.optionalString (dtbsDir != null) "cp -r ${dtbsDir}/. kernel/dtb/"}
-  ${lib.optionalString (jetson-firmware != null) ''
-  cp ${jetson-firmware}/uefi_jetson.bin bootloader/uefi_jetson.bin
+  ${lib.optionalString (uefi-firmware != null) ''
+  cp ${uefi-firmware}/uefi_jetson.bin bootloader/uefi_jetson.bin
 
   # For normal NixOS usage, we'd probably use systemd-boot or GRUB instead,
   # but lets replace the upstream L4TLauncher EFI payload anyway
-  cp ${jetson-firmware}/L4TLauncher.efi bootloader/BOOTAA64.efi
+  cp ${uefi-firmware}/L4TLauncher.efi bootloader/BOOTAA64.efi
 
   # Replace additional dtbos
-  cp ${jetson-firmware}/dtbs/*.dtbo kernel/dtb/
+  cp ${uefi-firmware}/dtbs/*.dtbo kernel/dtb/
   ''}
 
   ${preFlashCommands}

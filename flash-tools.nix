@@ -1,6 +1,7 @@
 { stdenv, lib, makeWrapper, bzip2_1_1, fetchurl, python3, python2, perl, xxd,
   libxml2, coreutils, gnugrep, gnused, gnutar, gawk, which, gzip, cpio,
   bintools-unwrapped, findutils, util-linux, dosfstools, lz4, gcc, dtc,
+  runtimeShell,
 
   bspSrc, l4tVersion,
 }:
