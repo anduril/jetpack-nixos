@@ -8,6 +8,9 @@
 
   # Optional package containing uefi_jetson.efi to replace prebuilt version
   jetson-firmware ? null,
+
+  # Optional package containing tos.img to replace prebuilt version
+  tosImage ? null,
 }:
 ''
   set -euo pipefail
@@ -42,6 +45,9 @@
 
   # Replace additional dtbos
   cp ${jetson-firmware}/dtbs/*.dtbo kernel/dtb/
+  ''}
+  ${lib.optionalString (tosImage != null) ''
+  cp ${tosImage}/tos.img bootloader/tos-optee_${tosImage.platform}.img
   ''}
 
   ${preFlashCommands}

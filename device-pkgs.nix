@@ -1,5 +1,5 @@
 { lib, runCommand, writeScript, writeShellScriptBin, makeInitrd, makeModulesClosure,
-  flashFromDevice, jetson-firmware, flash-tools,
+  flashFromDevice, jetson-firmware, flash-tools, buildTOS,
   l4tVersion,
   pkgsAarch64,
 }:
@@ -50,6 +50,16 @@ let
   inherit (cfg.flashScriptOverrides)
     flashArgs partitionTemplate;
 
+  tosImage = buildTOS {
+    platform = {
+      orin-agx = "t234";
+      orin-nx = "t234";
+      xavier-agx = "t194";
+      xavier-nx = "t194";
+      xavier-nx-emmc = "t194";
+    }.${cfg.som};
+  };
+
   mkFlashScript = args: import ./flash-script.nix ({
     inherit lib flashArgs partitionTemplate;
 
@@ -63,6 +73,8 @@ let
       errorLevelInfo = cfg.bootloader.errorLevelInfo;
       edk2NvidiaPatches = cfg.bootloader.edk2NvidiaPatches;
     };
+
+    inherit tosImage;
 
     dtbsDir = config.hardware.deviceTree.package;
   } // args);
@@ -165,5 +177,6 @@ let
     cp -r bootloader/payloads_*/* $out/
   '');
 in {
+  inherit (tosImage) nvLuksSrv hwKeyAgent;
   inherit flashScript initrdFlashScript signedFirmware bup;
 }
