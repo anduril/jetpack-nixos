@@ -63,7 +63,7 @@ let
   };
   kernelPackages = (pkgs.linuxPackagesFor kernel).extend kernelPackagesOverlay;
 
-  rtkernel = callPackage ./kernel { inherit (l4t) l4t-xusb-firmware; realtime = true; };
+  rtkernel = callPackage ./kernel { inherit (l4t) l4t-xusb-firmware; kernelPatches = [];  realtime = true; };
   rtkernelPackages = (pkgs.linuxPackagesFor rtkernel).extend kernelPackagesOverlay;
 
   nxJetsonBenchmarks = pkgs.callPackage ./jetson-benchmarks/default.nix {
