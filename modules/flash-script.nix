@@ -48,6 +48,12 @@ in
           description = "Target board to use when flashing (should match .conf in BSP package)";
         };
 
+        configFileName = mkOption {
+          type = types.str;
+          default = cfg.flashScriptOverrides.targetBoard;
+          description = "Name of configuration file to use when flashing (excluding .conf suffix).  Defaults to targetBoard";
+        };
+
         flashArgs = mkOption {
           type = types.listOf types.str;
           description = "Arguments to apply to flashing script";
@@ -91,7 +97,7 @@ in
     hardware.nvidia-jetpack.devicePkgs = devicePkgs; # Left for backwards-compatibility
     system.build.jetsonDevicePkgs = devicePkgs;
 
-    hardware.nvidia-jetpack.flashScriptOverrides.flashArgs = lib.mkAfter [ cfg.flashScriptOverrides.targetBoard "mmcblk0p1" ];
+    hardware.nvidia-jetpack.flashScriptOverrides.flashArgs = lib.mkAfter [ cfg.flashScriptOverrides.configFileName "mmcblk0p1" ];
 
     hardware.nvidia-jetpack.bootloader.edk2NvidiaPatches = [
       # Have UEFI use the device tree compiled into the firmware, instead of
