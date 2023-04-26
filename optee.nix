@@ -7,6 +7,7 @@
 , pkg-config
 , libuuid
 , dtc
+, nukeReferences
 }:
 
 let
@@ -197,6 +198,7 @@ let
 
       image = buildPackages.runCommand "tos.img"
         {
+          nativeBuildInputs = [ nukeReferences ];
           passthru = { inherit platform nvLuksSrv hwKeyAgent; };
         } ''
         mkdir -p $out
@@ -206,6 +208,9 @@ let
           --dtb ${opteeDTB}/*.dtb \
           --tostype optee \
           $out/tos.img
+
+        # Get rid of any string references to source(s)
+        nuke-refs $out/*
       '';
     in
     image;
