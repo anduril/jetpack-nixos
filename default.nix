@@ -36,7 +36,8 @@ let
     ${lib.concatStringsSep "\n" (lib.mapAttrsToList (n: p: "echo Unpacking ${n}; dpkg -x ${p.src} $out/${n}") debs.t234)}
   '';
 
-  jetson-firmware = (pkgsAarch64.callPackages ./jetson-firmware.nix { inherit l4tVersion; }).jetson-firmware;
+  inherit (pkgsAarch64.callPackages ./uefi-firmware.nix { inherit l4tVersion; })
+    edk2-jetson uefi-firmware;
 
   flash-tools = callPackage ./flash-tools.nix {
     inherit bspSrc l4tVersion;
@@ -102,10 +103,14 @@ let
 
   # Packages whose contents are paramterized by NixOS configuration
   devicePkgsFromNixosConfig = callPackage ./device-pkgs.nix {
-    inherit l4tVersion pkgsAarch64 flash-tools flashFromDevice jetson-firmware;
+    inherit l4tVersion pkgsAarch64 flash-tools flashFromDevice edk2-jetson uefi-firmware bspSrc;
   };
 
   devicePkgs = lib.mapAttrs (n: c: devicePkgsFromNixosConfig (pkgs.nixos c).config) supportedConfigurations;
+
+  otaUtils = callPackage ./ota-utils {
+    inherit tegra-eeprom-tool l4tVersion;
+  };
 in rec {
   inherit jetpackVersion l4tVersion cudaVersion;
 
@@ -123,6 +128,9 @@ in rec {
 
   inherit nxJetsonBenchmarks xavierAgxJetsonBenchmarks orinAgxJetsonBenchmarks;
 
+  inherit edk2-jetson uefi-firmware;
+  inherit otaUtils;
+
   # TODO: Source packages. source_sync.sh from bspSrc
   # OPTEE
   #   nv-tegra.nvidia.com/tegra/optee-src/atf.git
@@ -136,7 +144,7 @@ in rec {
   devicePkgs = lib.mapAttrs (n: c: devicePkgsFromNixosConfig (pkgs.nixos c).config) supportedNixOSConfigurations;
 
   flash-generic = callPackage ./flash-script.nix {
-    inherit flash-tools jetson-firmware;
+    inherit flash-tools uefi-firmware;
     flashCommands = ''
       ${runtimeShell}
     '';
@@ -150,6 +158,6 @@ in rec {
 
   flashScripts = lib.mapAttrs' (n: c: lib.nameValuePair "flash-${n}" c.flashScript) devicePkgs;
   initrdFlashScripts = lib.mapAttrs' (n: c: lib.nameValuePair "initrd-flash-${n}" c.initrdFlashScript) devicePkgs;
+  uefiCapsuleUpdates = lib.mapAttrs' (n: c: lib.nameValuePair "uefi-capsule-update-${n}" c.uefiCapsuleUpdate) devicePkgs;
 }
 // l4t
-// callPackage ./jetson-firmware.nix { inherit l4tVersion; }

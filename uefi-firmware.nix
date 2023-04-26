@@ -13,7 +13,7 @@
 }:
 
 let
-  # TODO: Move this generation out of jetson-firmware.nix, because this .nix
+  # TODO: Move this generation out of uefi-firmware.nix, because this .nix
   # file is callPackage'd using an aarch64 version of nixpkgs, and we don't
   # want to have to recompilie imagemagick
   bootLogoVariants = runCommand "uefi-bootlogo" { nativeBuildInputs = [ buildPackages.buildPackages.imagemagick ]; } ''
@@ -76,7 +76,7 @@ let
     sha256 = "sha256-28xndaIEsVwbD7jIesSO6MKO662jRXVX/y0IdmVTKoc=";
   };
 
-  my_edk2 = edk2.overrideAttrs (_: { src = edk2-src; });
+  edk2-jetson = edk2.overrideAttrs (_: { src = edk2-src; });
   pythonEnv = buildPackages.python3.withPackages (ps: [ ps.tkinter ]);
   targetArch = if stdenv.isi686 then
     "IA32"
@@ -94,11 +94,11 @@ let
 
   buildTarget = if debugMode then "DEBUG" else "RELEASE";
 
-  edk2-jetson =
+  jetson-edk2-uefi =
     # TODO: edk2.mkDerivation doesn't have a way to override the edk version used!
     # Make it not via passthru ?
     stdenv.mkDerivation  {
-      name = "edk2-jetson";
+      pname = "jetson-edk2-uefi";
       version = l4tVersion;
 
       # Initialize the build dir with the build tools from edk2
@@ -123,7 +123,7 @@ let
 
       prePatch = ''
         rm -rf BaseTools
-        cp -r ${my_edk2}/BaseTools BaseTools
+        cp -r ${edk2-jetson}/BaseTools BaseTools
         chmod -R u+w BaseTools
       '';
 
@@ -154,26 +154,26 @@ let
       '';
     };
 
-    jetson-firmware = runCommand "jetson-firmware" {
-      nativeBuildInputs = [ python3 nukeReferences ];
-    } ''
-      mkdir -p $out
-      python3 ${edk2-nvidia}/Silicon/NVIDIA/Tools/FormatUefiBinary.py \
-        ${edk2-jetson}/FV/UEFI_NS.Fv \
-        $out/uefi_jetson.bin
+  uefi-firmware = runCommand "uefi-firmware-${l4tVersion}" {
+    nativeBuildInputs = [ python3 nukeReferences ];
+  } ''
+    mkdir -p $out
+    python3 ${edk2-nvidia}/Silicon/NVIDIA/Tools/FormatUefiBinary.py \
+      ${jetson-edk2-uefi}/FV/UEFI_NS.Fv \
+      $out/uefi_jetson.bin
 
-      python3 ${edk2-nvidia}/Silicon/NVIDIA/Tools/FormatUefiBinary.py \
-        ${edk2-jetson}/AARCH64/L4TLauncher.efi \
-        $out/L4TLauncher.efi
+    python3 ${edk2-nvidia}/Silicon/NVIDIA/Tools/FormatUefiBinary.py \
+      ${jetson-edk2-uefi}/AARCH64/L4TLauncher.efi \
+      $out/L4TLauncher.efi
 
-      mkdir -p $out/dtbs
-      for filename in ${edk2-jetson}/AARCH64/Silicon/NVIDIA/Tegra/DeviceTree/DeviceTree/OUTPUT/*.dtb; do
-        cp $filename $out/dtbs/$(basename "$filename" ".dtb").dtbo
-      done
+    mkdir -p $out/dtbs
+    for filename in ${jetson-edk2-uefi}/AARCH64/Silicon/NVIDIA/Tegra/DeviceTree/DeviceTree/OUTPUT/*.dtb; do
+      cp $filename $out/dtbs/$(basename "$filename" ".dtb").dtbo
+    done
 
-      # Get rid of any string references to source(s)
-      nuke-refs $out/uefi_jetson.bin
+    # Get rid of any string references to source(s)
+    nuke-refs $out/uefi_jetson.bin
   '';
 in {
-  inherit edk2-jetson jetson-firmware;
+  inherit edk2-jetson uefi-firmware;
 }

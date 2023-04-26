@@ -9,7 +9,15 @@ let
     cp ${tegra-eeprom-tool-static}/bin/tegra-boardspec $out/bin
   '';
 in
-writeScriptBin "flash-from-device" (''
+runCommand "flash-from-device" {} ''
+  mkdir -p $out/bin
+
+  cat > $out/bin/flash-from-device <<EOF
   #!${pkgsAarch64.pkgsStatic.busybox}/bin/sh
   export PATH="${lib.makeBinPath [ pkgsAarch64.pkgsStatic.busybox staticDeps ]}:$PATH"
-'' + (builtins.readFile ./flash-from-device.sh))
+  EOF
+  cat ${./flash-from-device.sh} >> $out/bin/flash-from-device
+  substituteInPlace $out/bin/flash-from-device \
+    --replace "ota_helpers_func" "${./ota_helpers.func}"
+  chmod +x $out/bin/flash-from-device
+''
