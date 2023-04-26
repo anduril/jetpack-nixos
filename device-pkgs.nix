@@ -1,4 +1,4 @@
-{ lib, callPackage, runCommand, writeScript, writeShellScriptBin, makeInitrd, makeModulesClosure,
+{ lib, callPackage, runCommand, writeScript, writeShellApplication, makeInitrd, makeModulesClosure,
   flashFromDevice, edk2-jetson, uefi-firmware, flash-tools, buildTOS,
   python3, bspSrc, openssl,
   l4tVersion,
@@ -77,7 +77,10 @@ let
   } // args);
 
   # Generate a flash script using the built configuration options set in a NixOS configuration
-  flashScript = writeShellScriptBin "flash-${hostName}" (mkFlashScript {});
+  flashScript = writeShellApplication {
+    name = "flash-${hostName}";
+    text = (mkFlashScript {});
+  };
 
   # TODO: The flash script should not have the kernel output in its runtime closure
   initrdFlashScript = let
@@ -118,21 +121,24 @@ let
         { object = "${modulesClosure}/lib/firmware"; symlink = "/lib/firmware"; }
       ];
     };
-  in writeShellScriptBin "initrd-flash-${hostName}" (mkFlashScript {
-    preFlashCommands = ''
-      cp ${config.boot.kernelPackages.kernel}/Image kernel/Image
-      cp ${initrd}/initrd bootloader/l4t_initrd.img
+  in writeShellApplication {
+    name = "initrd-flash-${hostName}";
+    text = mkFlashScript {
+      preFlashCommands = ''
+        cp ${config.boot.kernelPackages.kernel}/Image kernel/Image
+        cp ${initrd}/initrd bootloader/l4t_initrd.img
 
-      export CMDLINE="initrd=initrd console=ttyTCU0,115200"
-      export INITRD_IN_BOOTIMG="yes"
-    '';
-    flashArgs = [ "--rcm-boot" ] ++ cfg.flashScriptOverrides.flashArgs;
-    postFlashCommands = ''
-      echo
-      echo "Jetson device should now be flashing and will reboot when complete."
-      echo "You may watch the progress of this on the device's serial port"
-    '';
-  });
+        export CMDLINE="initrd=initrd console=ttyTCU0,115200"
+        export INITRD_IN_BOOTIMG="yes"
+      '';
+      flashArgs = [ "--rcm-boot" ] ++ cfg.flashScriptOverrides.flashArgs;
+      postFlashCommands = ''
+        echo
+        echo "Jetson device should now be flashing and will reboot when complete."
+        echo "You may watch the progress of this on the device's serial port"
+      '';
+    };
+  };
 
   # This must be built on x86_64-linux
   signedFirmware = runCommand "signed-${hostName}-${l4tVersion}" {} (mkFlashScript {
