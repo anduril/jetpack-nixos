@@ -95,6 +95,43 @@ Concretely, that means that you cannot modify the EFI variables from Linux, so U
 You may need to enter the firmware menu and reorder it manually so NixOS will boot first.
 (See [this issue](https://forums.developer.nvidia.com/t/using-uefi-runtime-variables-on-xavier-agx/227970))
 
+### Updating firmware from device
+
+Recent versions of Jetpack (>=5.1) support updating the device firmware from
+the device using the UEFI Capsule update mechanism.
+This can be done as a more convenient alternative to phyiscally attaching to the device and re-running the flash script.
+
+To determine if the currently running firmware matches the software, run, `ota-check-firmware`:
+```
+$ ota-check-firmware
+Current firmware version is: 35.2.1
+Current software version is: 35.2.1
+```
+
+If these versions do not match, you can update your firmware using the UEFI Capsule update mechanism. The procedure to do so is below:
+
+To build a capsule update file, build the
+`config.system.build.devicePkgs.uefiCapsuleUpdate` attribute from your NixOS build. For the standard devkit configurations supported in this repository, one could also run (for example),
+`nix build .#uefi-capsule-update-xavier-nx-emmc-devkit`. Unfortunately, due to some limitations from nvidia's scripts, this build needs to happen on an `x86_64-linux` machine. This will produce a file that you can scp (no need for `nix copy`) to the device to update.
+
+Once the file is on the device, run:
+```
+$ sudo ota-apply-capsule-update example.Cap
+$ sudo reboot
+```
+(Assuming `example.Cap` is the file you copied to the device.) While the device is rebooting, do not disconnect power.  You should be able to see a progress bar while the update is being applied. The capsule update works by updating the non-current slot A/B firmware partitions, and then rebooting into the new slot. So, if the new firmware does not boot up to UEFI, it should theoretically rollback to the original firmware.
+
+After rebooting, you can run `ota-check-firmware` to see if the firmware version had changed.
+Additionally, you can get more detailed information on the status of the firmware update by running:
+```
+$ sudo nvbootctrl dump-slots-info
+```
+The Capsule update status is one of the following integers:
+- 0 - No Capsule update
+- 1 - Capsule update successfully
+- 2 - Capsule install successfully but boot new firmware failed
+- 3 - Capsule install failed
+
 ## Additional Links
 
 Much of this is inspired by the great work done by [OpenEmbedded for Tegra](https://github.com/OE4T).
