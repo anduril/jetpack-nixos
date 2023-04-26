@@ -1,5 +1,6 @@
-{ lib, runCommand, writeScript, writeShellScriptBin, makeInitrd, makeModulesClosure,
-  flashFromDevice, jetson-firmware, flash-tools, buildTOS,
+{ lib, callPackage, runCommand, writeScript, writeShellScriptBin, makeInitrd, makeModulesClosure,
+  flashFromDevice, edk2-jetson, uefi-firmware, flash-tools, buildTOS,
+  python3, bspSrc, openssl,
   l4tVersion,
   pkgsAarch64,
 }:
@@ -17,20 +18,16 @@ let
     ];
     xavier-nx = [ # Dev variant
       { boardid="3668"; boardsku="0000"; fab="100"; boardrev=""; fuselevel="fuselevel_production"; chiprev="2"; }
-      { boardid="3668"; boardsku="0000"; fab="200"; boardrev=""; fuselevel="fuselevel_production"; chiprev="2"; }
-      { boardid="3668"; boardsku="0000"; fab="300"; boardrev=""; fuselevel="fuselevel_production"; chiprev="2"; }
+      { boardid="3668"; boardsku="0000"; fab="301"; boardrev=""; fuselevel="fuselevel_production"; chiprev="2"; }
     ];
     xavier-nx-emmc = [ # Prod variant
       { boardid="3668"; boardsku="0001"; fab="100"; boardrev=""; fuselevel="fuselevel_production"; chiprev="2"; }
-      { boardid="3668"; boardsku="0001"; fab="200"; boardrev=""; fuselevel="fuselevel_production"; chiprev="2"; }
-      { boardid="3668"; boardsku="0001"; fab="300"; boardrev=""; fuselevel="fuselevel_production"; chiprev="2"; }
-      { boardid="3668"; boardsku="0001"; fab="300"; boardrev=""; fuselevel="fuselevel_production"; chiprev="2"; }
       { boardid="3668"; boardsku="0003"; fab="301"; boardrev=""; fuselevel="fuselevel_production"; chiprev="2"; }
     ];
 
     orin-agx = [
-      { boardid="3701"; boardsku="0000"; fab="000"; boardrev=""; fuselevel="fuselevel_production"; chiprev=""; }
-      { boardid="3701"; boardsku="0004"; fab="000"; boardrev=""; fuselevel="fuselevel_production"; chiprev=""; } # 32GB
+      { boardid="3701"; boardsku="0000"; fab="300"; boardrev=""; fuselevel="fuselevel_production"; chiprev=""; }
+      { boardid="3701"; boardsku="0004"; fab="300"; boardrev=""; fuselevel="fuselevel_production"; chiprev=""; } # 32GB
       { boardid="3701"; boardsku="0005"; fab="000"; boardrev=""; fuselevel="fuselevel_production"; chiprev=""; } # 64GB
     ];
 
@@ -67,7 +64,7 @@ let
       postPatch = postPatch + cfg.flashScriptOverrides.postPatch;
     });
 
-    jetson-firmware = jetson-firmware.override {
+    uefi-firmware = uefi-firmware.override {
       bootLogo = cfg.bootloader.logo;
       debugMode = cfg.bootloader.debugMode;
       errorLevelInfo = cfg.bootloader.errorLevelInfo;
@@ -167,6 +164,7 @@ let
 
   # Bootloader Update Package (BUP)
   # TODO: Try to make this run on aarch64-linux?
+  # TODO: Maybe generate this ourselves from signedFirmware so we dont have multiple scripts using the same keys to sign the same artifacts
   bup = runCommand "bup-${hostName}-${l4tVersion}" {} ((mkFlashScript {
     flashCommands = let
     in lib.concatMapStringsSep "\n" (v: with v;
@@ -176,7 +174,16 @@ let
     mkdir -p $out
     cp -r bootloader/payloads_*/* $out/
   '');
+
+  # TODO: This step could probably also be done on aarch64-linux too.  That would be valuable to allow Jetsons to be able to update themselves.
+  # See l4t_generate_soc_bup.sh
+  # python ${edk2-jetson}/BaseTools/BinWrappers/PosixLike/GenerateCapsule -v --encode --monotonic-count 1
+  # ${bspSrc}
+  # TODO: improve soc arch (t234) condition
+  uefiCapsuleUpdate = runCommand "uefi-${hostName}-${l4tVersion}.Cap" { nativeBuildInputs = [ python3 openssl ]; } ''
+    bash ${bspSrc}/generate_capsule/l4t_generate_soc_capsule.sh -i ${bup}/bl_only_payload -o $out ${if (lib.hasPrefix "orin-" cfg.som) then "t234" else "t194"}
+  '';
 in {
   inherit (tosImage) nvLuksSrv hwKeyAgent;
-  inherit flashScript initrdFlashScript signedFirmware bup;
+  inherit flashScript initrdFlashScript signedFirmware bup uefiCapsuleUpdate;
 }

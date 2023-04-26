@@ -9,9 +9,6 @@ let
     mkOption
     types;
 
-  # Ugly reimport of nixpkgs. This is probably not the right way to do this.
-  pkgsx86 = import pkgs.path { system = "x86_64-linux"; };
-
   cfg = config.hardware.nvidia-jetpack;
 in
 {
@@ -46,8 +43,15 @@ in
 
       flashScriptOverrides = {
         targetBoard = mkOption {
-          type = types.str;
+          type = types.nullOr types.str;
+          default = null;
           description = "Target board to use when flashing (should match .conf in BSP package)";
+        };
+
+        configFileName = mkOption {
+          type = types.str;
+          default = cfg.flashScriptOverrides.targetBoard;
+          description = "Name of configuration file to use when flashing (excluding .conf suffix).  Defaults to targetBoard";
         };
 
         flashArgs = mkOption {
@@ -90,15 +94,34 @@ in
     devicePkgs = ((import pkgs.path { system = "x86_64-linux"; }).callPackage ../default.nix {}).devicePkgsFromNixosConfig config;
   in {
     hardware.nvidia-jetpack.flashScript = devicePkgs.flashScript; # Left for backwards-compatibility
-    hardware.nvidia-jetpack.devicePkgs = devicePkgs;
+    hardware.nvidia-jetpack.devicePkgs = devicePkgs; # Left for backwards-compatibility
+    system.build.jetsonDevicePkgs = devicePkgs;
 
-    hardware.nvidia-jetpack.flashScriptOverrides.flashArgs = [ cfg.flashScriptOverrides.targetBoard "mmcblk0p1" ];
+    hardware.nvidia-jetpack.flashScriptOverrides.flashArgs = lib.mkAfter [ cfg.flashScriptOverrides.configFileName "mmcblk0p1" ];
 
     hardware.nvidia-jetpack.bootloader.edk2NvidiaPatches = [
       # Have UEFI use the device tree compiled into the firmware, instead of
       # using one from the kernel-dtb partition.
       # See: https://github.com/anduril/jetpack-nixos/pull/18
       ../edk2-uefi-dtb.patch
+
+      # Ensure termination of TnSpec variables
+      # https://github.com/NVIDIA/edk2-nvidia/pull/37
+      (pkgs.fetchpatch {
+        url = "https://github.com/NVIDIA/edk2-nvidia/commit/df0ff1aff5ecd9f343ce5409234c9ef071124d44.patch";
+        sha256 = "sha256-8J+Ip1n7np+VWtdeA0RoKHT3fdo8rsDxKXGkVSROnvA=";
+      })
     ];
+
+    systemd.services = lib.mkIf (cfg.flashScriptOverrides.targetBoard != null) {
+      setup-jetson-efi-variables = {
+        enable = true;
+        description = "Setup Jetson OTA UEFI variables";
+        wantedBy = [ "multi-user.target" ];
+        after = [ "opt-nvidia-esp.mount" ];
+        serviceConfig.Type = "oneshot";
+        serviceConfig.ExecStart = "${pkgs.nvidia-jetpack.otaUtils}/bin/ota-setup-efivars ${cfg.flashScriptOverrides.targetBoard}";
+      };
+    };
   };
 }

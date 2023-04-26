@@ -38,16 +38,21 @@ in {
     # Remove unnecessary partitions to make it more like
     # flash_t194_uefi_sdmmc_min.xml, except also keep the A/B slots on each
     # partition
-    partitionsToRemove = [
+    basePartitionsToRemove = [
       "kernel" "kernel-dtb" "reserved_for_chain_A_user"
       "kernel_b" "kernel-dtb_b" "reserved_for_chain_B_user"
       "APP" # Original rootfs
-      "RECNAME" "RECDTB-NAME" "RP1" "RP2" "RECROOTFS" # Recovery
-      "esp" # L4TLauncher
+      "RECNAME" "RECNAME_alt" "RECDTB-NAME" "RECDTB-NAME_alt" "RP1" "RP2" "RECROOTFS" # Recovery
+      "esp_alt"
     ];
-    xpathMatch = lib.concatMapStringsSep " or " (p: "@name = \"${p}\"") partitionsToRemove;
+    # Keep the esp partition on eMMC for the Xavier AGX, which needs to have it exist on the Xavier AGX to update UEFI vars via DefaultVariableDxe
+    # https://forums.developer.nvidia.com/t/setting-uefi-variables-using-the-defaultvariabledxe-only-works-if-esp-is-on-emmc-but-not-on-an-nvme-drive/250254
+    xavierAgxPartitionsToRemove = basePartitionsToRemove;
+    defaultPartitionsToRemove = basePartitionsToRemove ++ [ "esp" ];
     # It's unclear why cross-compiles appear to need pkgs.buildPackages.xmlstarlet instead of just xmlstarlet in nativeBuildInputs
-    filterPartitions = basefile: pkgs.runCommand "flash.xml" { nativeBuildInputs = [ pkgs.buildPackages.xmlstarlet ]; } ''
+    filterPartitions = partitionsToRemove: basefile: let
+      xpathMatch = lib.concatMapStringsSep " or " (p: "@name = \"${p}\"") partitionsToRemove;
+    in pkgs.runCommand "flash.xml" { nativeBuildInputs = [ pkgs.buildPackages.xmlstarlet ]; } ''
       xmlstarlet ed -d '//partition[${xpathMatch}]' ${basefile} >$out
     '';
   in mkMerge [
@@ -64,7 +69,7 @@ in {
 
     (mkIf (cfg.som == "orin-nx") {
       targetBoard = mkDefault "p3509-a02+p3767-0000";
-      partitionTemplate = mkDefault (filterPartitions "${pkgs.nvidia-jetpack.bspSrc}/bootloader/t186ref/cfg/flash_t234_qspi.xml");
+      partitionTemplate = mkDefault (filterPartitions defaultPartitionsToRemove "${pkgs.nvidia-jetpack.bspSrc}/bootloader/t186ref/cfg/flash_t234_qspi.xml");
     })
 
     (mkIf (cfg.som == "xavier-agx") {
@@ -72,17 +77,17 @@ in {
       # Remove unnecessary partitions to make it more like
       # flash_t194_uefi_sdmmc_min.xml, except also keep the A/B slots of
       # each partition
-      partitionTemplate = mkDefault (filterPartitions "${pkgs.nvidia-jetpack.bspSrc}/bootloader/t186ref/cfg/flash_t194_sdmmc.xml");
+      partitionTemplate = mkDefault (filterPartitions xavierAgxPartitionsToRemove "${pkgs.nvidia-jetpack.bspSrc}/bootloader/t186ref/cfg/flash_t194_sdmmc.xml");
     })
 
     (mkIf (cfg.som == "xavier-nx") {
       targetBoard = mkDefault "jetson-xavier-nx-devkit";
-      partitionTemplate = mkDefault (filterPartitions "${pkgs.nvidia-jetpack.bspSrc}/bootloader/t186ref/cfg/flash_l4t_t194_spi_sd_p3668.xml");
+      partitionTemplate = mkDefault (filterPartitions defaultPartitionsToRemove "${pkgs.nvidia-jetpack.bspSrc}/bootloader/t186ref/cfg/flash_l4t_t194_spi_sd_p3668.xml");
     })
 
     (mkIf (cfg.som == "xavier-nx-emmc") {
       targetBoard = mkDefault "jetson-xavier-nx-devkit-emmc";
-      partitionTemplate = mkDefault (filterPartitions "${pkgs.nvidia-jetpack.bspSrc}/bootloader/t186ref/cfg/flash_l4t_t194_spi_emmc_p3668.xml");
+      partitionTemplate = mkDefault (filterPartitions defaultPartitionsToRemove "${pkgs.nvidia-jetpack.bspSrc}/bootloader/t186ref/cfg/flash_l4t_t194_spi_emmc_p3668.xml");
     })
   ];
 
@@ -99,4 +104,19 @@ in {
       };
     }
   ];
+
+  fileSystems = lib.mkIf (cfg.som == "xavier-agx") {
+    # On Xavier AGX, setting UEFI variables requires having the ESP partition on the eMMC:
+    # https://forums.developer.nvidia.com/t/setting-uefi-variables-using-the-defaultvariabledxe-only-works-if-esp-is-on-emmc-but-not-on-an-nvme-drive/250254
+    # We don't mount this at /boot, because we still want to allow the user to have their ESP part on NVMe, or whatever else.
+    "/opt/nvidia/esp" = lib.mkDefault {
+      device = "/dev/disk/by-partlabel/esp";
+      fsType = "vfat";
+      options = [ "nofail" ];
+      # Since we have NO_ESP_IMG=1 while formatting, the script doesn't
+      # actually create an FS here, so we'll do it automatically
+      autoFormat = true;
+      formatOptions = "-F 32 -n ESP";
+    };
+  };
 }

@@ -1,0 +1,120 @@
+# See also: nvidia-l4t-init/opt/nvidia/nv-l4t-bootloader-config.sh
+# and meta-tegra recipes-bsp/tools/setup-nv-boot-control
+
+generate_compat_spec() {
+    local boardspec=$1
+    local boardid=$(echo "$boardspec" | cut -d- -f1)
+    local fab=$(echo "$boardspec" | cut -d- -f2)
+    local boardsku=$(echo "$boardspec" | cut -d- -f3)
+    local boardrev=$(echo "$boardspec" | cut -d- -f4)
+    local fuselevel=$(echo "$boardspec" | cut -d- -f5)
+    local chiprev=$(echo "$boardspec" | cut -d- -f6)
+
+    case "${boardid}" in
+        # Xavier AGX
+        2888)
+            if [[ "${fab}" == "400" ]]; then
+                if [[ "${boardsku}" == "0004" ]]; then
+                    boardrev=""
+                else
+                    if [[ "${boardrev}" == "D.0" ]] || [[ "${boardrev}" < "D.0" ]] ; then
+                        boardrev="D.0"
+                    else
+                        boardrev="E.0"
+                    fi
+                    boardsku="0001"
+                fi
+            elif [[ "${fab}" == "600" ]] && [[ "${boardsku}" == "0008" ]]; then
+                boardrev=""
+            fi
+        ;;
+
+        # Xavier NX
+        3668)
+            if [[ "${fab}" != "301" ]]; then
+                fab="100"
+            fi
+            boardsku=""
+            boardrev=""
+            chiprev=""
+        ;;
+
+        # Orin AGX
+        3701)
+            if [[ "${boardsku}" == "0000" ]] || [[ "${boardsku}" == "0004" ]]; then
+                if [[ "${fab}" == "000" ]] || [[ "${fab}" == "TS"* ]] || [[ "${fab}" == "EB"* ]] || [[ ($((fab)) -gt 0 && $((fab)) -lt 300) ]]; then
+                    fab="000"
+                else
+                    fab="300"
+                fi
+            fi
+            if [[ "${boardsku}" == "0005" ]]; then
+                fab=""
+            fi
+            boardrev=""
+            chiprev=""
+        ;;
+
+        # Orin NX/Nano
+        3767)
+            if [[ "${boardsku}" == "0000" ]] || [[ "${boardsku}" == "0002" ]]; then
+                if [[ "${fab}" != "TS"* ]] && [[ "${fab}" != "EB"* ]]; then
+                    fab="000"
+                fi
+            else
+                fab=""
+            fi
+            boardrev=""
+            chiprev=""
+        ;;
+
+        *)
+            echo "Unknown boardid: ${boardid}"
+            exit 1
+    esac
+
+    echo "$boardid-$fab-$boardsku-$boardrev-$fuselevel-$chiprev"
+}
+
+noRuntimeUefiWrites=
+espDir=
+detect_can_write_runtime_uefi_vars() {
+    local boardspec=$1
+
+    # All AGX Xaviers except industrial variants have firmware on emmc instead of qspi
+    boardid=$(echo "$boardspec" | cut -d- -f1)
+    boardsku=$(echo "$boardspec" | cut -d- -f3)
+    noRuntimeUefiWrites=
+    if [[ "$boardid" == "2888" ]] && [[ "$boardsku" != "0008" ]]; then
+        noRuntimeUefiWrites=true
+        espDir=/opt/nvidia/esp
+    else
+        espDir=/boot
+    fi
+}
+
+# Call detect_can_write_runtime_uefi_vars before running this
+set_efi_var() {
+    local name=$1
+    local value=$2
+
+    local filepath
+
+    if [[ -n "$noRuntimeUefiWrites" ]]; then
+        if ! mountpoint -q "$espDir"; then
+            echo "$espDir is not mounted"
+            exit 1
+        fi
+
+        mkdir -p "$espDir"/EFI/NVDA/Variables
+        filepath="$espDir"/EFI/NVDA/Variables/"$name"
+    else
+        filepath=/sys/firmware/efi/efivars/"$name"
+
+        if [[ -e "$filepath" ]]; then
+            chattr -i "$filepath"
+        fi
+    fi
+
+    printf "$value" > $filepath
+}

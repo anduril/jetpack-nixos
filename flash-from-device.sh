@@ -5,23 +5,24 @@
 
 set -euo pipefail
 
+source @ota_helpers_func@
+
 signed_images=$1
 
 matching_boardspec=
 
 find_matching_spec() {
-    boardspec=$(tegra-boardspec)
-    my_boardid=$(echo "$boardspec" | cut -d- -f1)
-    my_fab=$(echo "$boardspec" | cut -d- -f2)
-    my_boardsku=$(echo "$boardspec" | cut -d- -f3)
-    my_boardrev=$(echo "$boardspec" | cut -d- -f4)
-    my_fuselevel=$(echo "$boardspec" | cut -d- -f5)
-    my_chiprev=$(echo "$boardspec" | cut -d- -f6)
+    local boardspec=$(tegra-boardspec)
 
-    # Ignore FAB for everything except Xaviers. It doesn't appear to be necessary. And the TegraPlatformCompatSpec that gets created ignores it.
-    if [[ "$my_boardid" != "2888" ]] && [[ "$my_boardid" != "3668" ]]; then
-        my_fab=
-    fi
+    # Generate the "compat" boardspec for this one to match against
+    boardspec=$(generate_compat_spec "$boardspec")
+
+    local my_boardid=$(echo "$boardspec" | cut -d- -f1)
+    local my_fab=$(echo "$boardspec" | cut -d- -f2)
+    local my_boardsku=$(echo "$boardspec" | cut -d- -f3)
+    local my_boardrev=$(echo "$boardspec" | cut -d- -f4)
+    local my_fuselevel=$(echo "$boardspec" | cut -d- -f5)
+    local my_chiprev=$(echo "$boardspec" | cut -d- -f6)
 
     for dirpath in "$signed_images"/*; do
         curspec=$(basename "$dirpath")
@@ -42,6 +43,12 @@ find_matching_spec() {
         matching_boardspec=$curspec
         break
     done
+
+    if [[ -z "$matching_boardspec" ]]; then
+        echo "Could not find a matching boardspec in signed firmware directory for: $boardspec"
+        echo "Are you sure you created the right signed firmware for this type of device?"
+        exit 1
+    fi
 }
 
 program_spi_partition() {
@@ -211,11 +218,6 @@ write_partitions() {
 }
 
 find_matching_spec
-if [[ -z "$matching_boardspec" ]]; then
-    echo "Could not find a matching boardspec in signed firmware directory for: $boardspec"
-    echo "Are you sure you created the right signed firmware for this type of device?"
-    exit 1
-fi
 
 # Enter directory containing firmware
 cd "$signed_images"/"$matching_boardspec"
