@@ -1,0 +1,39 @@
+diff --git a/optee/samples/hwkey-agent/host/Makefile b/optee/samples/hwkey-agent/host/Makefile
+index b7c2113..613c3e7 100644
+--- a/optee/samples/hwkey-agent/host/Makefile
++++ b/optee/samples/hwkey-agent/host/Makefile
+@@ -19,7 +19,7 @@ OBJS = $(patsubst %.c,$(O)/%.o,$(SRCS))
+ BINARY = nvhwkey-app
+ 
+ .PHONY: all install
+-all: $(BINARY) install
++all: $(BINARY)
+ 
+ $(BINARY): $(OBJS)
+ 	$(CC) -o $(O)/$@ $< $(LDADD)
+diff --git a/optee/samples/luks-srv/host/Makefile b/optee/samples/luks-srv/host/Makefile
+index c9a2dcc..2c3087e 100644
+--- a/optee/samples/luks-srv/host/Makefile
++++ b/optee/samples/luks-srv/host/Makefile
+@@ -11,19 +11,17 @@ CC ?= $(CROSS_COMPILE)gcc
+ LD ?= $(CROSS_COMPILE)ld
+ STRIP ?= $(CROSS_COMPILE)strip
+ 
+-CFLAGS += -Wall -I../ta/include -I./include
++CFLAGS += -Wall -I../ta/include
+ CFLAGS += -I$(OPTEE_CLIENT_EXPORT)/include
+ CFLAGS += -fstack-protector-strong
+-LDADD += -pthread -lpthread
+ LDADD += -lteec -L$(OPTEE_CLIENT_EXPORT)/lib
+-LDFLAGS := -static
+ 
+ SRCS = luks_srv_ca.c
+ OBJS = $(patsubst %.c,$(O)/%.o,$(SRCS))
+ BINARY = nvluks-srv-app
+ 
+ .PHONY: all install
+-all: $(BINARY) install
++all: $(BINARY)
+ 
+ $(BINARY): $(OBJS)
+ 	$(CC) $(LDFLAGS) -o $(O)/$@ $< $(LDADD)

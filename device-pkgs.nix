@@ -1,5 +1,5 @@
 { lib, callPackage, runCommand, writeScript, writeShellApplication, makeInitrd, makeModulesClosure,
-  flashFromDevice, edk2-jetson, uefi-firmware, flash-tools,
+  flashFromDevice, edk2-jetson, uefi-firmware, flash-tools, buildTOS,
   python3, bspSrc, openssl,
   l4tVersion,
   pkgsAarch64,
@@ -47,6 +47,16 @@ let
   inherit (cfg.flashScriptOverrides)
     flashArgs partitionTemplate;
 
+  tosImage = buildTOS {
+    platform = {
+      orin-agx = "t234";
+      orin-nx = "t234";
+      xavier-agx = "t194";
+      xavier-nx = "t194";
+      xavier-nx-emmc = "t194";
+    }.${cfg.som};
+  };
+
   mkFlashScript = args: import ./flash-script.nix ({
     inherit lib flashArgs partitionTemplate;
 
@@ -60,6 +70,8 @@ let
       errorLevelInfo = cfg.bootloader.errorLevelInfo;
       edk2NvidiaPatches = cfg.bootloader.edk2NvidiaPatches;
     };
+
+    inherit tosImage;
 
     dtbsDir = config.hardware.deviceTree.package;
   } // args);
@@ -178,5 +190,6 @@ let
     bash ${bspSrc}/generate_capsule/l4t_generate_soc_capsule.sh -i ${bup}/bl_only_payload -o $out ${if (lib.hasPrefix "orin-" cfg.som) then "t234" else "t194"}
   '';
 in {
+  inherit (tosImage) nvLuksSrv hwKeyAgent;
   inherit flashScript initrdFlashScript signedFirmware bup uefiCapsuleUpdate;
 }

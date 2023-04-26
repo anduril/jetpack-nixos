@@ -156,6 +156,15 @@ in
       wantedBy = [ "multi-user.target" ];
     };
 
+    systemd.services.tee-supplicant = {
+      description = "Userspace supplicant for OPTEE-OS";
+      serviceConfig = {
+        ExecStart = "${pkgs.nvidia-jetpack.opteeClient}/bin/tee-supplicant";
+        Restart = "always";
+      };
+      wantedBy = [ "multi-user.target" ];
+    };
+
     environment.systemPackages = with pkgs.nvidia-jetpack; [
       l4t-tools
       otaUtils # Tools for UEFI capsule updates

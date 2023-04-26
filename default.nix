@@ -39,6 +39,10 @@ let
   inherit (pkgsAarch64.callPackages ./uefi-firmware.nix { inherit l4tVersion; })
     edk2-jetson uefi-firmware;
 
+  inherit (pkgsAarch64.callPackages ./optee.nix {
+    inherit l4tVersion bspSrc;
+  }) buildTOS opteeClient;
+
   flash-tools = callPackage ./flash-tools.nix {
     inherit bspSrc l4tVersion;
   };
@@ -103,7 +107,7 @@ let
 
   # Packages whose contents are paramterized by NixOS configuration
   devicePkgsFromNixosConfig = callPackage ./device-pkgs.nix {
-    inherit l4tVersion pkgsAarch64 flash-tools flashFromDevice edk2-jetson uefi-firmware bspSrc;
+    inherit l4tVersion pkgsAarch64 flash-tools flashFromDevice edk2-jetson uefi-firmware buildTOS bspSrc;
   };
 
   devicePkgs = lib.mapAttrs (n: c: devicePkgsFromNixosConfig (pkgs.nixos c).config) supportedConfigurations;
@@ -126,15 +130,14 @@ in rec {
   inherit kernel kernelPackages;
   inherit rtkernel rtkernelPackages;
 
+  inherit opteeClient;
+
   inherit nxJetsonBenchmarks xavierAgxJetsonBenchmarks orinAgxJetsonBenchmarks;
 
   inherit edk2-jetson uefi-firmware;
   inherit otaUtils;
 
   # TODO: Source packages. source_sync.sh from bspSrc
-  # OPTEE
-  #   nv-tegra.nvidia.com/tegra/optee-src/atf.git
-  #   nv-tegra.nvidia.com/tegra/optee-src/nv-optee.git
   # GST plugins
 
   inherit flashFromDevice;
