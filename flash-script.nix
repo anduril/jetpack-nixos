@@ -51,7 +51,7 @@
 '' + (if (flashCommands != "") then ''
   ${flashCommands}
 '' else ''
-  ./flash.sh ${lib.optionalString (partitionTemplate != null) "-c flash.xml"} $@ ${builtins.toString flashArgs}
+  ./flash.sh ${lib.optionalString (partitionTemplate != null) "-c flash.xml"} "$@" ${builtins.toString flashArgs}
 '') + ''
   ${postFlashCommands}
 ''
