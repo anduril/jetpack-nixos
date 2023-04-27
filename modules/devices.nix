@@ -24,7 +24,7 @@ let
     "xavier-nx" ="${pkgs.nvidia-jetpack.l4t-nvfancontrol}/etc/nvpower/nvfancontrol/nvfancontrol_p3668.conf";
     "xavier-nx-emmc" ="${pkgs.nvidia-jetpack.l4t-nvfancontrol}/etc/nvpower/nvfancontrol/nvfancontrol_p3668.conf";
   };
-in {
+in lib.mkMerge [{
   # Turn on nvpmodel if we have a config for it.
   services.nvpmodel.enable = mkIf (cfg.som != null && nvpModelConf ? "${cfg.som}") (mkDefault true);
   services.nvpmodel.configFile = mkIf (cfg.som != null && nvpModelConf ? "${cfg.som}") (mkDefault nvpModelConf.${cfg.som});
@@ -104,19 +104,19 @@ in {
       };
     }
   ];
-
-  fileSystems = lib.mkIf (cfg.som == "xavier-agx") {
-    # On Xavier AGX, setting UEFI variables requires having the ESP partition on the eMMC:
-    # https://forums.developer.nvidia.com/t/setting-uefi-variables-using-the-defaultvariabledxe-only-works-if-esp-is-on-emmc-but-not-on-an-nvme-drive/250254
-    # We don't mount this at /boot, because we still want to allow the user to have their ESP part on NVMe, or whatever else.
-    "/opt/nvidia/esp" = lib.mkDefault {
-      device = "/dev/disk/by-partlabel/esp";
-      fsType = "vfat";
-      options = [ "nofail" ];
-      # Since we have NO_ESP_IMG=1 while formatting, the script doesn't
-      # actually create an FS here, so we'll do it automatically
-      autoFormat = true;
-      formatOptions = "-F 32 -n ESP";
-    };
-  };
 }
+(lib.mkIf (cfg.som == "xavier-agx" && cfg.mountFirmwareEsp) {
+  # On Xavier AGX, setting UEFI variables requires having the ESP partition on the eMMC:
+  # https://forums.developer.nvidia.com/t/setting-uefi-variables-using-the-defaultvariabledxe-only-works-if-esp-is-on-emmc-but-not-on-an-nvme-drive/250254
+  # We don't mount this at /boot, because we still want to allow the user to have their ESP part on NVMe, or whatever else.
+  fileSystems."/opt/nvidia/esp" = lib.mkDefault {
+    device = "/dev/disk/by-partlabel/esp";
+    fsType = "vfat";
+    options = [ "nofail" ];
+    # Since we have NO_ESP_IMG=1 while formatting, the script doesn't
+    # actually create an FS here, so we'll do it automatically
+    autoFormat = true;
+    formatOptions = "-F 32 -n ESP";
+  };
+})
+]

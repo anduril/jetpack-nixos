@@ -61,6 +61,13 @@ in
         type = types.bool;
         description = "Enable PREEMPT_RT patches";
       };
+
+      mountFirmwareEsp = mkOption {
+        default = true;
+        type = types.bool;
+        description = "Whether to mount the ESP partition on eMMC under /opt/nvidia/esp on Xavier AGX platforms. Needed for capsule updates";
+        internal = true;
+      };
     };
   };
 
