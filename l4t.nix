@@ -198,6 +198,7 @@ let
 
   l4t-nvpmodel = buildFromDeb {
     name = "nvidia-l4t-nvpmodel";
+    buildInputs = [ l4t-core ];
   };
 
   l4t-nvsci = buildFromDeb {

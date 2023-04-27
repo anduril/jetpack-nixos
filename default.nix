@@ -11,7 +11,6 @@ let
   # https://developer.nvidia.com/embedded/jetson-linux-archive
   # https://repo.download.nvidia.com/jetson/
 
-
   src = fetchurl {
     url = "https://developer.download.nvidia.com/embedded/L4T/r35_Release_v3.1/release/Jetson_Linux_R35.3.1_aarch64.tbz2";
     sha256 = "sha256-gKVVBKLOnNwKMo7bb9BpBhXE/96cKzL05k4KGjQyouI=";
@@ -65,7 +64,7 @@ let
 
   kernel = callPackage ./kernel { inherit (l4t) l4t-xusb-firmware; kernelPatches = []; };
   kernelPackagesOverlay = self: super: {
-    nvidia-display-driver = self.callPackage ./kernel/display-driver.nix {};
+    nvidia-display-driver = self.callPackage ./kernel/display-driver.nix { inherit l4tVersion; };
   };
   kernelPackages = (pkgs.linuxPackagesFor kernel).extend kernelPackagesOverlay;
 

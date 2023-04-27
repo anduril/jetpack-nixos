@@ -3,11 +3,12 @@
 , lib
 , fetchgit
 , kernel
+, l4tVersion
 }:
 
 stdenv.mkDerivation rec {
   pname = "nvidia-display-driver";
-  version = "jetson_35.3.1";
+  version = "jetson_${l4tVersion}";
 
   src = fetchgit {
     url = "https://nv-tegra.nvidia.com/tegra/kernel-src/nv-kernel-display-driver.git";
@@ -16,13 +17,6 @@ stdenv.mkDerivation rec {
   };
 
   setSourceRoot = "sourceRoot=$(echo */NVIDIA-kernel-module-source-TempVersion)";
-
-  patches = [
-    # This is needed because of nixos-unstable change from GCC 9 to 12. This
-    # change has been backported from jetson_35.3.1, and because of that,
-    # it should also be removed when moving to jetson_35.3.1
-    ./add-mno-outline-atomics-for-aarch64.patch
-  ];
 
   nativeBuildInputs = kernel.moduleBuildDependencies;
 

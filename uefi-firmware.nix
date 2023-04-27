@@ -51,8 +51,8 @@ let
   _edk2-nvidia = fetchFromGitHub {
     owner = "NVIDIA";
     repo = "edk2-nvidia";
-    rev = "r${l4tVersion}";
-    sha256 = "sha256-SbxBKYkd/y64DzbCY178tz4byVUodWUwC0/FnGajIMM=";
+    rev = "b8a8b034c1ba72c12ec84d951601ddf58cef20e1"; # Latest on r35.3.1-updates as of 2023-04-27
+    sha256 = "sha256-dKvwU0trUdIko4BxSlwdo38VLO6DOKHekVS7mdV0IPk=";
   };
   edk2-nvidia =
     if (errorLevelInfo || bootLogo != null)

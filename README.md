@@ -99,7 +99,7 @@ You may need to enter the firmware menu and reorder it manually so NixOS will bo
 
 Recent versions of Jetpack (>=5.1) support updating the device firmware from
 the device using the UEFI Capsule update mechanism.
-This can be done as a more convenient alternative to phyiscally attaching to the device and re-running the flash script.
+This can be done as a more convenient alternative to physically attaching to the device and re-running the flash script.
 
 To determine if the currently running firmware matches the software, run, `ota-check-firmware`:
 ```

@@ -14,13 +14,13 @@ let
   atfSrc = fetchgit {
     url = "https://nv-tegra.nvidia.com/r/tegra/optee-src/atf";
     rev = "jetson_${l4tVersion}";
-    sha256 = "sha256-feG/GtT2CRTxCiEdSMSjCM5yDxO5kYFTClqT3YGgdVs=";
+    sha256 = "sha256-9ml28qXN0B04ZocBr04x4tBzJ3iLgqGoVBveSkSCrgk=";
   };
 
   nvopteeSrc = fetchgit {
     url = "https://nv-tegra.nvidia.com/r/tegra/optee-src/nv-optee";
     rev = "jetson_${l4tVersion}";
-    sha256 = "sha256-vNyzvYzMyZgqS3n42DaIT5mIrRX3BOrTsL2SkQSskiY=";
+    sha256 = "sha256-44RBXFNUlqZoq3OY/OFwhiU4Qxi4xQNmetFmlrr6jzY=";
   };
 
   opteeClient = stdenv.mkDerivation {
