@@ -1,7 +1,7 @@
 { lib, fetchurl }:
 
 let
-  debsJSON = lib.importJSON ./r35.2.json;
+  debsJSON = lib.importJSON ./r35.3.json;
   baseURL = "https://repo.download.nvidia.com/jetson";
   repos = [ "t194" "t234" "common" ];
 
