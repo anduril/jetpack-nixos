@@ -1,5 +1,7 @@
 { callPackage, callPackages, stdenv, stdenvNoCC, lib, runCommand, fetchurl,
   bzip2_1_1, dpkg,  pkgs, dtc, python3, runtimeShell,
+
+  debsOverrides ? lib.id, # Function to pass debs though to override. Should be replaced with something more standard
 }:
 
 let
@@ -16,7 +18,7 @@ let
     sha256 = "sha256-gKVVBKLOnNwKMo7bb9BpBhXE/96cKzL05k4KGjQyouI=";
   };
 
-  debs = import ./debs { inherit lib fetchurl; };
+  debs = debsOverrides (import ./debs { inherit lib fetchurl; });
 
   jetpackVersion = "5.1.1";
   l4tVersion = "35.3.1";
