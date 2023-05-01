@@ -51,8 +51,8 @@ let
   _edk2-nvidia = fetchFromGitHub {
     owner = "NVIDIA";
     repo = "edk2-nvidia";
-    rev = "r${l4tVersion}";
-    sha256 = "sha256-W2kt3r2ymmAj/bKahjEfc8B9orI1o4GYCkByDJ6JORA=";
+    rev = "b8a8b034c1ba72c12ec84d951601ddf58cef20e1"; # Latest on r35.3.1-updates as of 2023-04-27
+    sha256 = "sha256-dKvwU0trUdIko4BxSlwdo38VLO6DOKHekVS7mdV0IPk=";
   };
   edk2-nvidia =
     if (errorLevelInfo || bootLogo != null)
@@ -72,8 +72,8 @@ let
   edk2-nvidia-non-osi = fetchFromGitHub {
     owner = "NVIDIA";
     repo = "edk2-nvidia-non-osi";
-    rev = "r35.2.1";
-    sha256 = "sha256-28xndaIEsVwbD7jIesSO6MKO662jRXVX/y0IdmVTKoc=";
+    rev = "r${l4tVersion}";
+    sha256 = "sha256-27PTl+svZUocmU6r/8FdqqI9rwHAi+6zSFs4fBA13Ks=";
   };
 
   edk2-jetson = edk2.overrideAttrs (_: { src = edk2-src; });

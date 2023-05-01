@@ -1,0 +1,24 @@
+diff -Naur bsp-5.1.1/bootloader/l4t_bup_gen.func bsp-5.1.1-new/bootloader/l4t_bup_gen.func
+--- bsp-5.1.1/bootloader/l4t_bup_gen.func	1969-12-31 16:00:01.000000000 -0800
++++ bsp-5.1.1-new/bootloader/l4t_bup_gen.func	2023-04-27 15:38:42.531828490 -0700
+@@ -23,7 +23,6 @@
+ 
+ declare -A ENTRY_LIST
+ ENTRY_LIST[bl]=""
+-ENTRY_LIST[kernel]=""
+ 
+ PART_NAME=""
+ IMAGE_SIGNED=0
+diff -Naur bsp-5.1.1/flash.sh bsp-5.1.1-new/flash.sh
+--- bsp-5.1.1/flash.sh	1969-12-31 16:00:01.000000000 -0800
++++ bsp-5.1.1-new/flash.sh	2023-04-27 15:36:47.766684941 -0700
+@@ -2431,6 +2431,9 @@
+ 			cmdline+="${string} ";
+ 		fi
+ 	done
++
++	# Just use the cmdline as-is, needed for RCM-boot in jetpack-nixos
++	cmdline="${CMDLINE}"
+ fi;
+ 
+ ##########################################################################

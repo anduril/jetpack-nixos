@@ -12,14 +12,14 @@ let
   # https://repo.download.nvidia.com/jetson/
 
   src = fetchurl {
-    url = "https://developer.download.nvidia.com/embedded/L4T/r35_Release_v2.1/release/Jetson_Linux_R35.2.1_aarch64.tbz2";
-    sha256 = "sha256-mVm809553iMaj7VBGfnNtXp1NULUTZlONGZkAoFC1A0=";
+    url = "https://developer.download.nvidia.com/embedded/L4T/r35_Release_v3.1/release/Jetson_Linux_R35.3.1_aarch64.tbz2";
+    sha256 = "sha256-gKVVBKLOnNwKMo7bb9BpBhXE/96cKzL05k4KGjQyouI=";
   };
 
   debs = import ./debs { inherit lib fetchurl; };
 
-  jetpackVersion = "5.1.0";
-  l4tVersion = "35.2.1";
+  jetpackVersion = "5.1.1";
+  l4tVersion = "35.3.1";
   cudaVersion = "11.4";
 
   # we use a more recent version of bzip2 here because we hit this bug extracting nvidia's archives:
@@ -64,7 +64,7 @@ let
 
   kernel = callPackage ./kernel { inherit (l4t) l4t-xusb-firmware; kernelPatches = []; };
   kernelPackagesOverlay = self: super: {
-    nvidia-display-driver = self.callPackage ./kernel/display-driver.nix {};
+    nvidia-display-driver = self.callPackage ./kernel/display-driver.nix { inherit l4tVersion; };
   };
   kernelPackages = (pkgs.linuxPackagesFor kernel).extend kernelPackagesOverlay;
 

@@ -104,13 +104,6 @@ in
       # using one from the kernel-dtb partition.
       # See: https://github.com/anduril/jetpack-nixos/pull/18
       ../edk2-uefi-dtb.patch
-
-      # Ensure termination of TnSpec variables
-      # https://github.com/NVIDIA/edk2-nvidia/pull/37
-      (pkgs.fetchpatch {
-        url = "https://github.com/NVIDIA/edk2-nvidia/commit/df0ff1aff5ecd9f343ce5409234c9ef071124d44.patch";
-        sha256 = "sha256-8J+Ip1n7np+VWtdeA0RoKHT3fdo8rsDxKXGkVSROnvA=";
-      })
     ];
 
     systemd.services = lib.mkIf (cfg.flashScriptOverrides.targetBoard != null) {
