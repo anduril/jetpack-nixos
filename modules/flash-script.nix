@@ -15,6 +15,8 @@ in
   options = {
     hardware.nvidia-jetpack = {
       bootloader = {
+        autoUpdate = lib.mkEnableOption "automatic updates for Jetson firmware";
+
         logo = mkOption {
           type = types.nullOr types.path;
           # This NixOS default logo is made available under a CC-BY license. See the repo for details.
@@ -113,5 +115,24 @@ in
         serviceConfig.ExecStart = "${pkgs.nvidia-jetpack.otaUtils}/bin/ota-setup-efivars ${cfg.flashScriptOverrides.targetBoard}";
       };
     };
+
+    boot.loader.systemd-boot.extraInstallCommands = lib.mkIf (cfg.bootloader.autoUpdate && cfg.som != null) ''
+      # Jetpack 5.0 didn't expose this DMI variable,
+      if [[ ! -f /sys/devices/virtual/dmi/id/bios_version ]]; then
+        echo "Unable to determine current Jetson firmware version."
+        echo "You should reflash the firmware with the new version to ensure compatibility"
+      else
+        CUR_VER=$(cat /sys/devices/virtual/dmi/id/bios_version)
+        NEW_VER=${pkgs.nvidia-jetpack.l4tVersion}
+
+        if [[ "$CUR_VER" != "$NEW_VER" ]]; then
+          echo "Current Jetson firmware version is: $CUR_VER"
+          echo "New Jetson firmware version is: $NEW_VER"
+          echo
+
+          ${pkgs.nvidia-jetpack.otaUtils}/bin/ota-apply-capsule-update ${config.system.build.jetsonDevicePkgs.uefiCapsuleUpdate}
+        fi
+      fi
+    '';
   };
 }
