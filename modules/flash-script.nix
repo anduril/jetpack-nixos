@@ -88,10 +88,7 @@ in
   };
 
   config = let
-    # Totally ugly reimport of nixpkgs so we can get a native x86 version. This
-    # is probably not the right way to do it, since overlays wouldn't get
-    # applied in the new import of nixpkgs.
-    devicePkgs = ((import pkgs.path { system = "x86_64-linux"; }).callPackage ../default.nix {}).devicePkgsFromNixosConfig config;
+    devicePkgs = pkgs.nvidia-jetpack.devicePkgsFromNixosConfig config;
   in {
     hardware.nvidia-jetpack.flashScript = devicePkgs.flashScript; # Left for backwards-compatibility
     hardware.nvidia-jetpack.devicePkgs = devicePkgs; # Left for backwards-compatibility
