@@ -22,4 +22,6 @@ sync /boot/EFI/UpdateCapsule/TEGRA_BL.Cap
 
 set_efi_var OsIndications-8be4df61-93ca-11d2-aa0d-00e098032b8c "\x07\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00"
 
-echo "UEFI will now attempt an update during the next reboot"
+echo "New Jetson firmware will be applied during the next reboot."
+echo "The next reboot may take an extra 5 minutes or so."
+echo "Do not disconnect power during the reboot, or the firmware upgrade will not be applied"

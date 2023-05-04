@@ -97,9 +97,10 @@ You may need to enter the firmware menu and reorder it manually so NixOS will bo
 
 ### Updating firmware from device
 
-Recent versions of Jetpack (>=5.1) support updating the device firmware from
-the device using the UEFI Capsule update mechanism.
+Recent versions of Jetpack (>=5.1) support updating the device firmware from the device using the UEFI Capsule update mechanism.
 This can be done as a more convenient alternative to physically attaching to the device and re-running the flash script.
+These updates can be performed automatically after a `nixos-rebuild boot` if the `hardware.nvidia-jetpack.bootloader.autoUpdate` setting is set to true and systemd-boot is used.
+Otherwise, the instructions to apply the update manually are below.
 
 To determine if the currently running firmware matches the software, run, `ota-check-firmware`:
 ```
@@ -111,8 +112,8 @@ Current software version is: 35.2.1
 If these versions do not match, you can update your firmware using the UEFI Capsule update mechanism. The procedure to do so is below:
 
 To build a capsule update file, build the
-`config.system.build.devicePkgs.uefiCapsuleUpdate` attribute from your NixOS build. For the standard devkit configurations supported in this repository, one could also run (for example),
-`nix build .#uefi-capsule-update-xavier-nx-emmc-devkit`. Unfortunately, due to some limitations from nvidia's scripts, this build needs to happen on an `x86_64-linux` machine. This will produce a file that you can scp (no need for `nix copy`) to the device to update.
+`config.system.build.jetsonDevicePkgs.uefiCapsuleUpdate` attribute from your NixOS build. For the standard devkit configurations supported in this repository, one could also run (for example),
+`nix build .#uefi-capsule-update-xavier-nx-emmc-devkit`. This will produce a file that you can scp (no need for `nix copy`) to the device to update.
 
 Once the file is on the device, run:
 ```
