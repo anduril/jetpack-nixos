@@ -1,12 +1,19 @@
 { stdenv, lib, makeWrapper, bzip2_1_1, fetchurl, python3, python2, perl, xxd,
   libxml2, coreutils, gnugrep, gnused, gnutar, gawk, which, gzip, cpio,
   bintools-unwrapped, findutils, util-linux, dosfstools, lz4, gcc, dtc, qemu,
-  runtimeShell,
+  runtimeShell, fetchzip,
 
   bspSrc, l4tVersion,
 }:
 
 let
+  # This "overlay" can be found here: https://developer.nvidia.com/embedded/jetson-linux-r3521
+  # It includes the tegra_v3_oemkey.yaml file which was missing in Jetpack 5.1, and still isn't in Jetpack 5.1.1 :(
+  secureboot_overlay =  fetchzip {
+    url = "https://developer.download.nvidia.com/embedded/L4T/r35_Release_v2.1/secureboot_overlay_35.2.1.tbz2";
+    sha256 = "sha256-mgtgI/MNTHRbmiJdfg6Nl1ZnEw6Swniaej2/5z/bpoI=";
+  };
+
   flash-tools = stdenv.mkDerivation {
     pname = "flash-tools";
     version = l4tVersion;
@@ -20,7 +27,7 @@ let
       perl
     ]; # BUP_payload needs python2 :(  Others need python3
 
-    patches = [ ./flash-tools.patch ];
+    patches = [ ./flash-tools.patch ./flash-tools-secureboot.patch ];
 
     postPatch = ''
       for filename in bootloader/BUP_generator.py bootloader/rollback/rollback_parser.py; do
@@ -44,6 +51,9 @@ let
       rm -rf nv_tegra
       mkdir nv_tegra
       mv bsp_version nv_tegra
+
+      # This file was missing from Jetpack 5.1, and still isn't in Jetpack 5.1.1 :(
+      cp ${secureboot_overlay}/bootloader/tegrasign_v3_oemkey.yaml bootloader/
     '' + (lib.optionalString (!stdenv.hostPlatform.isx86) ''
       # Wrap x86 binaries in qemu
       pushd bootloader/ >/dev/null
