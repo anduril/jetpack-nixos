@@ -52,6 +52,10 @@ let
       installPhase = ''
         cp -r . $out
       '';
+
+      meta = {
+        platforms = [ "aarch64-linux" ];
+      } // (args.meta or {});
     });
 
   l4t-camera = buildFromDeb {
@@ -110,6 +114,7 @@ let
   # TODO: Make nvwifibt systemd scripts work
   l4t-firmware = buildFromDeb {
     name = "nvidia-l4t-firmware";
+    meta.platforms = [ "aarch64-linux" "x86_64-linux" ];
   };
 
   l4t-gbm = buildFromDeb {
@@ -233,6 +238,7 @@ let
   l4t-xusb-firmware = buildFromDeb {
     name = "nvidia-l4t-xusb-firmware";
     autoPatchelf = false;
+    meta.platforms = [ "aarch64-linux" "x86_64-linux" ];
   };
 in {
   inherit
