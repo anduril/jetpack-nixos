@@ -1,5 +1,5 @@
 { stdenv, lib, fetchurl, dpkg, pkg-config, autoAddOpenGLRunpathHook, freeimage,
-  cmake, opencv, opencv2, libX11, libdrm, libglvnd, python2, coreutils, gnused,
+  cmake, opencv, opencv2, libX11, libdrm, libglvnd, python3, coreutils, gnused,
   libGL, libXau, wayland, libxkbcommon, libffi,
   writeShellApplication,
 
@@ -209,7 +209,7 @@ let
     unpackCmd = "dpkg -x $src source";
     sourceRoot = "source/usr/src/jetson_multimedia_api";
 
-    nativeBuildInputs = [ dpkg python2 ];
+    nativeBuildInputs = [ dpkg python3 ];
     buildInputs = [ libX11 libdrm  libglvnd opencv2 ]
       ++ (with l4t; [ l4t-cuda l4t-multimedia l4t-camera ])
       ++ (with cudaPackages; [ cudatoolkit tensorrt ]);
@@ -230,7 +230,7 @@ let
         --replace /usr/local/cuda "${cudaPackages.cudatoolkit}"
 
       substituteInPlace samples/08_video_dec_drm/Makefile \
-        --replace /usr/bin/python "${python2}/bin/python"
+        --replace /usr/bin/python "${python3}/bin/python"
     '';
 
     installPhase = ''

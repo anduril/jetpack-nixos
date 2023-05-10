@@ -1,4 +1,4 @@
-{ stdenv, lib, makeWrapper, bzip2_1_1, fetchurl, python3, python2, perl, xxd,
+{ stdenv, lib, makeWrapper, bzip2_1_1, fetchurl, python3, perl, xxd,
   libxml2, coreutils, gnugrep, gnused, gnutar, gawk, which, gzip, cpio,
   bintools-unwrapped, findutils, util-linux, dosfstools, lz4, gcc, dtc, qemu,
   runtimeShell, fetchzip,
@@ -23,18 +23,12 @@ let
     nativeBuildInputs = [ makeWrapper ];
     buildInputs = [
       (python3.withPackages (p: with p; [ pyyaml ]))
-      python2
       perl
-    ]; # BUP_payload needs python2 :(  Others need python3
+    ];
 
     patches = [ ./flash-tools.patch ./flash-tools-secureboot.patch ];
 
     postPatch = ''
-      for filename in bootloader/BUP_generator.py bootloader/rollback/rollback_parser.py; do
-        substituteInPlace $filename \
-          --replace "#!/usr/bin/python" "#!/usr/bin/env python2"
-      done
-
       # Needed in Jetpack 5
       substituteInPlace flash.sh \
         --replace /usr/bin/xmllint ${libxml2}/bin/xmllint
