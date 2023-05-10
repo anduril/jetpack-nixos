@@ -34,28 +34,23 @@ let
   };
 
   buildOptee = lib.makeOverridable ({ pname ? "optee-os"
-                                    , platform
+                                    , socType
                                     , earlyTaPaths ? [ ]
                                     , extraMakeFlags ? [ ]
                                     }:
     let
-      stmmPath = {
-        t194 = "${bspSrc}/bootloader/standalonemm_optee_t194.bin";
-        t234 = "${bspSrc}/bootloader/standalonemm_optee_t234.bin";
-      }.${platform};
-
       nvCccPrebuilt = {
         t194 = "";
         t234 = "${nvopteeSrc}/optee/optee_os/prebuilt/t234/libcommon_crypto.a";
-      }.${platform};
+      }.${socType};
 
       makeFlags = [
         "-C optee/optee_os"
         "CROSS_COMPILE64=${stdenv.cc.targetPrefix}"
         "PLATFORM=tegra"
-        "PLATFORM_FLAVOR=${platform}"
+        "PLATFORM_FLAVOR=${socType}"
         "CFG_WITH_STMM_SP=y"
-        "CFG_STMM_PATH=${stmmPath}"
+        "CFG_STMM_PATH=${bspSrc}/bootloader/standalonemm_optee_${socType}.bin"
         "NV_CCC_PREBUILT=${nvCccPrebuilt}"
         "O=$(out)"
       ]
@@ -135,9 +130,9 @@ let
     '';
   };
 
-  buildOpteeDTB = lib.makeOverridable ({ platform }:
+  buildOpteeDTB = lib.makeOverridable ({ socType }:
     let
-      flavor = lib.replaceStrings [ "t" ] [ "" ] platform;
+      flavor = lib.replaceStrings [ "t" ] [ "" ] socType;
     in
     buildPackages.runCommand "tegra-${flavor}-optee.dtb"
       {
@@ -147,7 +142,7 @@ let
       dtc -I dts -O dtb -o $out/tegra${flavor}-optee.dtb ${nvopteeSrc}/optee/tegra${flavor}-optee.dts
     '');
 
-  buildArmTrustedFirmware = lib.makeOverridable ({ platform }:
+  buildArmTrustedFirmware = lib.makeOverridable ({ socType }:
     stdenv.mkDerivation {
       pname = "arm-trusted-firmware";
       version = atfSrc.rev;
@@ -160,7 +155,7 @@ let
         "LOG_LEVEL=20"
         "PLAT=tegra"
         "SPD=opteed"
-        "TARGET_SOC=${platform}"
+        "TARGET_SOC=${socType}"
         "V=0"
         # binutils 2.39 regression
         # `warning: /build/source/build/rk3399/release/bl31/bl31.elf has a LOAD segment with RWX permissions`
@@ -172,7 +167,7 @@ let
         runHook preInstall
 
         mkdir -p $out
-        cp ./build/tegra/${platform}/release/bl31.bin $out/bl31.bin
+        cp ./build/tegra/${socType}/release/bl31.bin $out/bl31.bin
 
         runHook postInstall
       '';
@@ -180,7 +175,7 @@ let
       meta.platforms = [ "aarch64-linux" ];
     });
 
-  buildTOS = { platform }@args:
+  buildTOS = { socType }@args:
     let
       armTrustedFirmware = buildArmTrustedFirmware args;
 
@@ -199,7 +194,7 @@ let
       image = buildPackages.runCommand "tos.img"
         {
           nativeBuildInputs = [ nukeReferences ];
-          passthru = { inherit platform nvLuksSrv hwKeyAgent; };
+          passthru = { inherit socType nvLuksSrv hwKeyAgent; };
         } ''
         mkdir -p $out
         ${buildPackages.python3}/bin/python3 ${bspSrc}/nv_tegra/tos-scripts/gen_tos_part_img.py \

@@ -47,7 +47,7 @@
   cp ${uefi-firmware}/dtbs/*.dtbo kernel/dtb/
   ''}
   ${lib.optionalString (tosImage != null) ''
-  cp ${tosImage}/tos.img bootloader/tos-optee_${tosImage.platform}.img
+  cp ${tosImage}/tos.img bootloader/tos-optee_${tosImage.socType}.img
   ''}
 
   ${preFlashCommands}

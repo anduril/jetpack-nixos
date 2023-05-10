@@ -44,18 +44,15 @@ let
   cfg = config.hardware.nvidia-jetpack;
   hostName = config.networking.hostName;
 
+  socType =
+    if lib.hasPrefix "orin-" cfg.som then "t234"
+    else if lib.hasPrefix "xavier-" cfg.som then "t194"
+    else throw "Unknown SoC type";
+
   inherit (cfg.flashScriptOverrides)
     flashArgs partitionTemplate;
 
-  tosImage = buildTOS {
-    platform = {
-      orin-agx = "t234";
-      orin-nx = "t234";
-      xavier-agx = "t194";
-      xavier-nx = "t194";
-      xavier-nx-emmc = "t194";
-    }.${cfg.som};
-  };
+  tosImage = buildTOS { inherit socType; };
 
   mkFlashScript = args: import ./flash-script.nix ({
     inherit lib flashArgs partitionTemplate;
@@ -187,7 +184,7 @@ let
   # ${bspSrc}
   # TODO: improve soc arch (t234) condition
   uefiCapsuleUpdate = runCommand "uefi-${hostName}-${l4tVersion}.Cap" { nativeBuildInputs = [ python3 openssl ]; } ''
-    bash ${bspSrc}/generate_capsule/l4t_generate_soc_capsule.sh -i ${bup}/bl_only_payload -o $out ${if (lib.hasPrefix "orin-" cfg.som) then "t234" else "t194"}
+    bash ${bspSrc}/generate_capsule/l4t_generate_soc_capsule.sh -i ${bup}/bl_only_payload -o $out ${socType}
   '';
 in {
   inherit (tosImage) nvLuksSrv hwKeyAgent;
