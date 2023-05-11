@@ -113,9 +113,9 @@ let
         cp -r . $out
       '';
 
-      passthru.meta = {
-        license = with lib.licenses; [ unfree ];
-      };
+      meta = {
+        platforms = [ "aarch64-linux" ];
+      } // (args.meta or {});
     });
 
   # Combine all the debs that originated from the same source package and build
@@ -199,7 +199,7 @@ let
     libcusparse = buildFromSourcePackage { name = "libcusparse"; };
     libnpp = buildFromSourcePackage { name = "libnpp"; };
     libcudla = buildFromSourcePackage { name = "libcudla"; buildInputs = [ l4t.l4t-cuda ]; };
-    nsight_compute_target =  buildFromDebs {
+    nsight_compute_target = buildFromDebs {
       name = "nsight-compute-target";
       version = nsight_compute_version;
       srcs = debs.common."nsight-compute-${nsight_compute_version}".src;
@@ -216,6 +216,7 @@ let
         mkdir -p bin
         ln -sfv ../target/linux-v4l_l4t-t210-a64/ncu ./bin/ncu
       '';
+      meta.platforms = [ "x86_64-linux" "aarch64-linux" ]; # TODO: Determine correct platform
     };
     nsight_compute_host = let
       nsight_out = buildFromDebs {
@@ -235,6 +236,7 @@ let
           mkdir -p bin
           ln -sfv ../host/linux-desktop-glibc_2_11_3-x64/ncu-ui ./bin/ncu-ui
         '';
+        meta.platforms = [ "x86_64-linux" "aarch64-linux" ]; # TODO: Determine correct platform
       };
     # ncu-ui has some hardcoded /usr access so use fhs instead of trying to patchelf
     # it also comes with its own qt6 .so, trying to use Nix qt6 libs results in weird
@@ -264,7 +266,7 @@ let
         ${nsight_out}/bin/ncu-ui $*
       '';
     };
-    nsight_systems_target =  buildFromDebs {
+    nsight_systems_target = buildFromDebs {
       name = "nsight-systems-target";
       version = nsight_system_version;
       srcs = debs.common."nsight-systems-${nsight_system_version}".src;
@@ -278,6 +280,7 @@ let
         ln -sfv ../target-linux-tegra-armv8/nsys ./bin/nsys
         ln -sfv ../target-linux-tegra-armv8/nsys-launcher ./bin/nsys-launcher
       '';
+      meta.platforms = [ "x86_64-linux" "aarch64-linux" ]; # TODO: Determine correct platform
     };
     nsight_systems_host = let
       nsight_out = buildFromDebs {
@@ -304,6 +307,7 @@ let
           # things out
           ln -sfv ../host-linux-x64/nsys-ui ./bin/nsys-ui
         '';
+        meta.platforms = [ "x86_64-linux" "aarch64-linux" ]; # TODO: Determine correct platform
       };
     # nsys-ui has some hardcoded /usr access so use fhs instead of trying to patchelf
     # it also comes with its own qt6 .so, trying to use Nix qt6 libs results in weird
