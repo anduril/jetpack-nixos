@@ -118,5 +118,15 @@ in lib.mkMerge [{
     autoFormat = true;
     formatOptions = "-F 32 -n ESP";
   };
+
+  systemd.tmpfiles.rules = [ "d /opt/nvidia/esp/EFI/NVDA/Variables 0755 root root -" ];
+
+  nixpkgs.overlays = [
+    (final: prev: {
+      efitools = prev.efitools.overrideAttrs (old: {
+        patches = (old.patches or []) ++ [ ./efitools-nvidia-ro-efivars.patch ];
+      });
+    })
+  ];
 })
 ]
