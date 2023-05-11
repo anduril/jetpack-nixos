@@ -1,5 +1,5 @@
 { lib, stdenv, buildPackages, fetchFromGitHub, runCommand, edk2, acpica-tools,
-  dtc, python3, bc, imagemagick, applyPatches, nukeReferences,
+  dtc, python3, bc, util-linux, imagemagick, applyPatches, nukeReferences,
   l4tVersion,
 
   # Optional path to a boot logo that will be converted and cropped into the format required
@@ -105,7 +105,7 @@ let
       src = edk2-src;
 
       depsBuildBuild = [ buildPackages.stdenv.cc ];
-      nativeBuildInputs = [ bc pythonEnv acpica-tools dtc ];
+      nativeBuildInputs = [ bc pythonEnv acpica-tools dtc util-linux ];
       strictDeps = true;
 
       NIX_CFLAGS_COMPILE = [ "-Wno-error=format-security" ];
