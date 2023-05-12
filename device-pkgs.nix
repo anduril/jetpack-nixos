@@ -62,10 +62,10 @@ let
     });
 
     uefi-firmware = uefi-firmware.override {
-      bootLogo = cfg.bootloader.logo;
-      debugMode = cfg.bootloader.debugMode;
-      errorLevelInfo = cfg.bootloader.errorLevelInfo;
-      edk2NvidiaPatches = cfg.bootloader.edk2NvidiaPatches;
+      bootLogo = cfg.firmware.uefi.logo;
+      debugMode = cfg.firmware.uefi.debugMode;
+      errorLevelInfo = cfg.firmware.uefi.errorLevelInfo;
+      edk2NvidiaPatches = cfg.firmware.uefi.edk2NvidiaPatches;
     };
 
     inherit tosImage;

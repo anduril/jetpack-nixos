@@ -12,34 +12,51 @@ let
   cfg = config.hardware.nvidia-jetpack;
 in
 {
+  imports = with lib; [
+    (mkRenamedOptionModule [ "hardware" "nvidia-jetpack" "bootloader" "autoUpdate" ] [ "hardware" "nvidia-jetpack" "firmware" "autoUpdate" ])
+    (mkRenamedOptionModule [ "hardware" "nvidia-jetpack" "bootloader" "logo" ] [ "hardware" "nvidia-jetpack" "firmware" "uefi" "logo" ])
+    (mkRenamedOptionModule [ "hardware" "nvidia-jetpack" "bootloader" "debugMode" ] [ "hardware" "nvidia-jetpack" "firmware" "uefi" "debugMode" ])
+    (mkRenamedOptionModule [ "hardware" "nvidia-jetpack" "bootloader" "errorLevelInfo" ] [ "hardware" "nvidia-jetpack" "firmware" "uefi" "errorLevelInfo" ])
+    (mkRenamedOptionModule [ "hardware" "nvidia-jetpack" "bootloader" "edk2NvidiaPatches" ] [ "hardware" "nvidia-jetpack" "firmware" "uefi" "edk2NvidiaPatches" ])
+  ];
+
   options = {
     hardware.nvidia-jetpack = {
-      bootloader = {
+      firmware = {
         autoUpdate = lib.mkEnableOption "automatic updates for Jetson firmware";
 
-        logo = mkOption {
-          type = types.nullOr types.path;
-          # This NixOS default logo is made available under a CC-BY license. See the repo for details.
-          default = pkgs.fetchurl {
-            url = "https://raw.githubusercontent.com/NixOS/nixos-artwork/e7d4050f2bb39a8c73a31a89e3d55f55536541c3/logo/nixos.svg";
-            sha256 = "sha256-E+qpO9SSN44xG5qMEZxBAvO/COPygmn8r50HhgCRDSw=";
+        uefi = {
+          logo = mkOption {
+            type = types.nullOr types.path;
+            # This NixOS default logo is made available under a CC-BY license. See the repo for details.
+            default = pkgs.fetchurl {
+              url = "https://raw.githubusercontent.com/NixOS/nixos-artwork/e7d4050f2bb39a8c73a31a89e3d55f55536541c3/logo/nixos.svg";
+              sha256 = "sha256-E+qpO9SSN44xG5qMEZxBAvO/COPygmn8r50HhgCRDSw=";
+            };
+            description = "Optional path to a boot logo that will be converted and cropped into the format required";
           };
-          description = "Optional path to a boot logo that will be converted and cropped into the format required";
+
+          debugMode = mkOption {
+            type = types.bool;
+            default = false;
+          };
+
+          errorLevelInfo = mkOption {
+            type = types.bool;
+            default = cfg.firmware.uefi.debugMode;
+          };
+
+          edk2NvidiaPatches = mkOption {
+            type = types.listOf types.path;
+            default = [];
+          };
         };
 
-        debugMode = mkOption {
-          type = types.bool;
-          default = false;
-        };
-
-        errorLevelInfo = mkOption {
-          type = types.bool;
-          default = cfg.bootloader.debugMode;
-        };
-
-        edk2NvidiaPatches = mkOption {
-          type = types.listOf types.path;
-          default = [];
+        optee = {
+          patches = mkOption {
+            type = types.listOf types.path;
+            default = [];
+          };
         };
       };
 
@@ -98,7 +115,7 @@ in
 
     hardware.nvidia-jetpack.flashScriptOverrides.flashArgs = lib.mkAfter [ cfg.flashScriptOverrides.configFileName "mmcblk0p1" ];
 
-    hardware.nvidia-jetpack.bootloader.edk2NvidiaPatches = [
+    hardware.nvidia-jetpack.firmware.uefi.edk2NvidiaPatches = [
       # Have UEFI use the device tree compiled into the firmware, instead of
       # using one from the kernel-dtb partition.
       # See: https://github.com/anduril/jetpack-nixos/pull/18
