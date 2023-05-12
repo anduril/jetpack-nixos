@@ -116,7 +116,7 @@ in
       };
     };
 
-    boot.loader.systemd-boot.extraInstallCommands = lib.mkIf (cfg.bootloader.autoUpdate && cfg.som != null) ''
+    boot.loader.systemd-boot.extraInstallCommands = lib.mkIf (cfg.bootloader.autoUpdate && cfg.som != null && cfg.flashScriptOverrides.targetBoard != null) ''
       # Jetpack 5.0 didn't expose this DMI variable,
       if [[ ! -f /sys/devices/virtual/dmi/id/bios_version ]]; then
         echo "Unable to determine current Jetson firmware version."
@@ -129,6 +129,13 @@ in
           echo "Current Jetson firmware version is: $CUR_VER"
           echo "New Jetson firmware version is: $NEW_VER"
           echo
+
+          # Set efi vars here as well as in systemd service, in case we're
+          # upgrading from an older nixos generation that doesn't have the
+          # systemd service. Plus, this ota-setup-efivars will be from the
+          # generation we're switching to, which can contain additional
+          # fixes/improvements.
+          ${pkgs.nvidia-jetpack.otaUtils}/bin/ota-setup-efivars ${cfg.flashScriptOverrides.targetBoard}
 
           ${pkgs.nvidia-jetpack.otaUtils}/bin/ota-apply-capsule-update ${config.system.build.jetsonDevicePkgs.uefiCapsuleUpdate}
         fi

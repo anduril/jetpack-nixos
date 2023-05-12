@@ -102,7 +102,7 @@ set_efi_var() {
 
     if [[ -n "$noRuntimeUefiWrites" ]]; then
         if ! mountpoint -q "$espDir"; then
-            echo "$espDir is not mounted"
+            echo "$espDir is not mounted. Unable to set EFI variable."
             exit 1
         fi
 
