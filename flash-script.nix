@@ -2,6 +2,8 @@
 
   preFlashCommands ? "", flashCommands ? "", postFlashCommands ? "", flashArgs ? [], partitionTemplate ? null,
 
+  socType ? null,
+
   # Optional directory containing DTBs to be used by flashing script, which can
   # be used by the bootloader(s) and passed to the kernel.
   dtbsDir ? null,
@@ -47,7 +49,7 @@
   cp ${uefi-firmware}/dtbs/*.dtbo kernel/dtb/
   ''}
   ${lib.optionalString (tosImage != null) ''
-  cp ${tosImage}/tos.img bootloader/tos-optee_${tosImage.socType}.img
+  cp ${tosImage}/tos.img bootloader/tos-optee_${socType}.img
   ''}
 
   ${preFlashCommands}

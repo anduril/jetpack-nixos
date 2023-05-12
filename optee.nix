@@ -197,7 +197,7 @@ let
       image = buildPackages.runCommand "tos.img"
         {
           nativeBuildInputs = [ nukeReferences ];
-          passthru = { inherit socType nvLuksSrv hwKeyAgent; };
+          passthru = { inherit nvLuksSrv hwKeyAgent; };
         } ''
         mkdir -p $out
         ${buildPackages.python3}/bin/python3 ${bspSrc}/nv_tegra/tos-scripts/gen_tos_part_img.py \

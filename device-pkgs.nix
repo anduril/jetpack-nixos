@@ -44,8 +44,8 @@ let
   cfg = config.hardware.nvidia-jetpack;
   hostName = config.networking.hostName;
 
-  socType =
-    if lib.hasPrefix "orin-" cfg.som then "t234"
+  socType = if cfg.som == null then null
+    else if lib.hasPrefix "orin-" cfg.som then "t234"
     else if lib.hasPrefix "xavier-" cfg.som then "t194"
     else throw "Unknown SoC type";
 
@@ -70,6 +70,8 @@ let
       errorLevelInfo = cfg.firmware.uefi.errorLevelInfo;
       edk2NvidiaPatches = cfg.firmware.uefi.edk2NvidiaPatches;
     };
+
+    inherit socType;
 
     inherit tosImage;
 
