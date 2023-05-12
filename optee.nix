@@ -37,6 +37,8 @@ let
                                     , socType
                                     , earlyTaPaths ? [ ]
                                     , extraMakeFlags ? [ ]
+                                    , opteePatches ? [ ]
+                                    , ...
                                     }:
     let
       nvCccPrebuilt = {
@@ -60,6 +62,7 @@ let
       inherit pname;
       version = nvopteeSrc.rev;
       src = nvopteeSrc;
+      patches = opteePatches;
       postPatch = ''
         patchShebangs $(find optee/optee_os -type d -name scripts -printf '%p ')
       '';
@@ -130,7 +133,7 @@ let
     '';
   };
 
-  buildOpteeDTB = lib.makeOverridable ({ socType }:
+  buildOpteeDTB = lib.makeOverridable ({ socType, ... }:
     let
       flavor = lib.replaceStrings [ "t" ] [ "" ] socType;
     in
@@ -142,7 +145,7 @@ let
       dtc -I dts -O dtb -o $out/tegra${flavor}-optee.dtb ${nvopteeSrc}/optee/tegra${flavor}-optee.dts
     '');
 
-  buildArmTrustedFirmware = lib.makeOverridable ({ socType }:
+  buildArmTrustedFirmware = lib.makeOverridable ({ socType, ... }:
     stdenv.mkDerivation {
       pname = "arm-trusted-firmware";
       version = atfSrc.rev;
@@ -175,7 +178,7 @@ let
       meta.platforms = [ "aarch64-linux" ];
     });
 
-  buildTOS = { socType }@args:
+  buildTOS = { socType, ... }@args:
     let
       armTrustedFirmware = buildArmTrustedFirmware args;
 

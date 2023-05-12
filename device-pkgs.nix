@@ -52,7 +52,10 @@ let
   inherit (cfg.flashScriptOverrides)
     flashArgs partitionTemplate;
 
-  tosImage = buildTOS { inherit socType; };
+  tosImage = buildTOS {
+    inherit socType;
+    opteePatches = cfg.firmware.optee.patches;
+  };
 
   mkFlashScript = args: import ./flash-script.nix ({
     inherit lib flashArgs partitionTemplate;
