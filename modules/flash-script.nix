@@ -57,6 +57,11 @@ in
             type = types.listOf types.path;
             default = [];
           };
+
+          extraMakeFlags = mkOption {
+            type = types.listOf types.str;
+            default = [];
+          };
         };
       };
 

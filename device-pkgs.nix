@@ -55,6 +55,7 @@ let
   tosImage = buildTOS {
     inherit socType;
     opteePatches = cfg.firmware.optee.patches;
+    extraMakeFlags = cfg.firmware.optee.extraMakeFlags;
   };
 
   mkFlashScript = args: import ./flash-script.nix ({

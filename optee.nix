@@ -81,10 +81,10 @@ let
       meta.platforms = [ "aarch64-linux" ];
     });
 
-  buildOpteeTaDevKit = args: buildOptee ({
+  buildOpteeTaDevKit = args: buildOptee (args // {
     pname = "optee-ta-dev-kit";
-    extraMakeFlags = [ "ta_dev_kit" ];
-  } // args);
+    extraMakeFlags = (args.extraMakeFlags or []) ++ [ "ta_dev_kit" ];
+  });
 
   buildNvLuksSrv = args: stdenv.mkDerivation {
     pname = "nvluks-srv";
