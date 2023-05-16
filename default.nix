@@ -40,7 +40,7 @@ let
     edk2-jetson uefi-firmware;
 
   inherit (pkgsAarch64.callPackages ./optee.nix {
-    inherit l4tVersion bspSrc;
+    inherit bspSrc l4tVersion;
   }) buildTOS opteeClient;
 
   flash-tools = callPackage ./flash-tools.nix {

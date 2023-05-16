@@ -25,7 +25,7 @@ let
 
   opteeClient = stdenv.mkDerivation {
     pname = "optee_client";
-    version = nvopteeSrc.rev;
+    version = l4tVersion;
     src = nvopteeSrc;
     nativeBuildInputs = [ pkg-config ];
     buildInputs = [ libuuid ];
@@ -60,7 +60,7 @@ let
     in
     stdenv.mkDerivation {
       inherit pname;
-      version = nvopteeSrc.rev;
+      version = l4tVersion;
       src = nvopteeSrc;
       patches = opteePatches;
       postPatch = ''
@@ -88,7 +88,7 @@ let
 
   buildNvLuksSrv = args: stdenv.mkDerivation {
     pname = "nvluks-srv";
-    version = nvopteeSrc.rev;
+    version = l4tVersion;
     src = nvopteeSrc;
     patches = [ ./0001-nvoptee-no-install-makefile.patch ];
     nativeBuildInputs = [ (buildPackages.python3.withPackages (p: [ p.cryptography ])) ];
@@ -112,7 +112,7 @@ let
 
   buildHwKeyAgent = args: stdenv.mkDerivation {
     pname = "hwkey-agent";
-    version = nvopteeSrc.rev;
+    version = l4tVersion;
     src = nvopteeSrc;
     patches = [ ./0001-nvoptee-no-install-makefile.patch ];
     nativeBuildInputs = [ (buildPackages.python3.withPackages (p: [ p.cryptography ])) ];
@@ -148,7 +148,7 @@ let
   buildArmTrustedFirmware = lib.makeOverridable ({ socType, ... }:
     stdenv.mkDerivation {
       pname = "arm-trusted-firmware";
-      version = atfSrc.rev;
+      version = l4tVersion;
       src = atfSrc;
       makeFlags = [
         "-C arm-trusted-firmware"

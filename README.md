@@ -2,9 +2,9 @@
 
 This repository packages components from NVIDIA's [Jetpack SDK](https://developer.nvidia.com/embedded/jetpack) for use with NixOS, including:
  * Platform firmware flashing scripts
- * A 5.10 Linux kernel from NVIDIA, which includes some open-source drivers like nvgpu (built from source)
- * An [EDK2-based UEFI firmware](https://github.com/NVIDIA/edk2-nvidia) (built from source)
- * ARM Trusted Firmware / OP-TEE (could be built from source, but not yet implemented)
+ * A 5.10 Linux kernel from NVIDIA, which includes some open-source drivers like nvgpu
+ * An [EDK2-based UEFI firmware](https://github.com/NVIDIA/edk2-nvidia)
+ * ARM Trusted Firmware / OP-TEE
  * Additional packages for:
    - GPU computing: CUDA, CuDNN, TensorRT
    - Multimedia: hardware accelerated encoding/decoding with V4L2 and gstreamer plugins
