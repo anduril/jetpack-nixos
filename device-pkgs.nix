@@ -75,6 +75,7 @@ let
     inherit socType;
 
     inherit tosImage;
+    eksFile = cfg.firmware.eksFile;
 
     dtbsDir = config.hardware.deviceTree.package;
   } // args);

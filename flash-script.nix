@@ -13,6 +13,9 @@
 
   # Optional package containing tos.img to replace prebuilt version
   tosImage ? null,
+
+  # Optional EKS file containing encrypted keyblob
+  eksFile ? null,
 }:
 ''
   set -euo pipefail
@@ -50,6 +53,9 @@
   ''}
   ${lib.optionalString (tosImage != null) ''
   cp ${tosImage}/tos.img bootloader/tos-optee_${socType}.img
+  ''}
+  ${lib.optionalString (eksFile != null) ''
+  cp ${eksFile} bootloader/eks_${socType}.img
   ''}
 
   ${preFlashCommands}

@@ -63,6 +63,11 @@ in
             default = [];
           };
         };
+
+        eksFile = mkOption {
+          type = types.nullOr types.path;
+          default = null;
+        };
       };
 
       flashScriptOverrides = {
