@@ -68,6 +68,29 @@ in
           type = types.nullOr types.path;
           default = null;
         };
+
+        # See: https://docs.nvidia.com/jetson/archives/r35.3.1/DeveloperGuide/text/SD/Security/SecureBoot.html#prepare-an-sbk-key
+        secureBoot = {
+          pkcFile = mkOption {
+            type = types.nullOr types.path;
+            default = null;
+            description = "Path to Public Key Cryptography (PKC) .pem file used to validate authenticity and integrity of firmware partitions. Do not include this file in your /nix/store. Instead, use a sandbox exception to provide access to the key";
+            example = "/run/keys/jetson/xavier_pkc.pem";
+          };
+
+          sbkFile = mkOption {
+            type = types.nullOr types.path;
+            default = null;
+            description = "Path to Secure Boot Key (SBK) file used to encrypt firmware partitions. Do not include this file in your /nix/store.  Instead, use a sandbox exception to provide access to the key";
+            example = "/run/keys/jetson/xavier_skb.key";
+          };
+
+          requiredSystemFeatures = lib.mkOption {
+            type = types.listOf types.str;
+            default = [ ];
+            description = "Additional requiredSystemFeatures to add to derivations which make use of secure boot keys";
+          };
+        };
       };
 
       flashScriptOverrides = {
@@ -123,7 +146,11 @@ in
     hardware.nvidia-jetpack.devicePkgs = devicePkgs; # Left for backwards-compatibility
     system.build.jetsonDevicePkgs = devicePkgs;
 
-    hardware.nvidia-jetpack.flashScriptOverrides.flashArgs = lib.mkAfter [ cfg.flashScriptOverrides.configFileName "mmcblk0p1" ];
+    hardware.nvidia-jetpack.flashScriptOverrides.flashArgs = lib.mkAfter (
+      lib.optional (cfg.firmware.secureBoot.pkcFile != null) "-u ${cfg.firmware.secureBoot.pkcFile}" ++
+      lib.optional (cfg.firmware.secureBoot.sbkFile != null) "-v ${cfg.firmware.secureBoot.sbkFile}" ++
+      [ cfg.flashScriptOverrides.configFileName "mmcblk0p1" ]
+    );
 
     hardware.nvidia-jetpack.firmware.uefi.edk2NvidiaPatches = [
       # Have UEFI use the device tree compiled into the firmware, instead of

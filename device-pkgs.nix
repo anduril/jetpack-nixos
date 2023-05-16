@@ -144,8 +144,9 @@ let
     };
   };
 
-  # This must be built on x86_64-linux
-  signedFirmware = runCommand "signed-${hostName}-${l4tVersion}" {} (mkFlashScript {
+  signedFirmware = runCommand "signed-${hostName}-${l4tVersion}" {
+    inherit (cfg.firmware.secureBoot) requiredSystemFeatures;
+  } (mkFlashScript {
     flashCommands = lib.concatMapStringsSep "\n" (v: with v; ''
       BOARDID=${boardid} BOARDSKU=${boardsku} FAB=${fab} BOARDREV=${boardrev} FUSELEVEL=${fuselevel} CHIPREV=${chiprev} ./flash.sh ${lib.optionalString (partitionTemplate != null) "-c flash.xml"} --no-root-check --no-flash --sign ${builtins.toString flashArgs}
 
@@ -173,9 +174,10 @@ let
   });
 
   # Bootloader Update Package (BUP)
-  # TODO: Try to make this run on aarch64-linux?
   # TODO: Maybe generate this ourselves from signedFirmware so we dont have multiple scripts using the same keys to sign the same artifacts
-  bup = runCommand "bup-${hostName}-${l4tVersion}" {} ((mkFlashScript {
+  bup = runCommand "bup-${hostName}-${l4tVersion}" {
+    inherit (cfg.firmware.secureBoot) requiredSystemFeatures;
+  } ((mkFlashScript {
     flashCommands = let
     in lib.concatMapStringsSep "\n" (v: with v;
       "BOARDID=${boardid} BOARDSKU=${boardsku} FAB=${fab} BOARDREV=${boardrev} FUSELEVEL=${fuselevel} CHIPREV=${chiprev} ./flash.sh ${lib.optionalString (partitionTemplate != null) "-c flash.xml"} --no-flash --bup --multi-spec ${builtins.toString flashArgs}"
@@ -185,11 +187,8 @@ let
     cp -r bootloader/payloads_*/* $out/
   '');
 
-  # TODO: This step could probably also be done on aarch64-linux too.  That would be valuable to allow Jetsons to be able to update themselves.
   # See l4t_generate_soc_bup.sh
   # python ${edk2-jetson}/BaseTools/BinWrappers/PosixLike/GenerateCapsule -v --encode --monotonic-count 1
-  # ${bspSrc}
-  # TODO: improve soc arch (t234) condition
   uefiCapsuleUpdate = runCommand "uefi-${hostName}-${l4tVersion}.Cap" { nativeBuildInputs = [ python3 openssl ]; } ''
     bash ${bspSrc}/generate_capsule/l4t_generate_soc_capsule.sh -i ${bup}/bl_only_payload -o $out ${socType}
   '';
