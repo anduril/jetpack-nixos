@@ -133,6 +133,16 @@ The Capsule update status is one of the following integers:
 - 2 - Capsule install successfully but boot new firmware failed
 - 3 - Capsule install failed
 
+### UEFI Capsule Authentication
+
+To ensure only authenticated capsule updates are applied to the device, you can
+build the UEFI firmware and each subsequent capsule update using your own signing keys.
+An overview of the key generation can be found at [EDK2 Capsule Signing](https://github.com/tianocore/tianocore.github.io/wiki/Capsule-Based-System-Firmware-Update-Generate-Keys).
+
+To include your own signing keys in the EDK2 build and capsule update, make
+sure the option `hardware.nvidia-jetpack.firmware.uefi.capsuleAuthentication.enable`
+is turned on and each signing key option is set.
+
 ## Additional Links
 
 Much of this is inspired by the great work done by [OpenEmbedded for Tegra](https://github.com/OE4T).

@@ -1,5 +1,5 @@
 { lib, stdenv, buildPackages, fetchFromGitHub, runCommand, edk2, acpica-tools,
-  dtc, python3, bc, imagemagick, applyPatches, nukeReferences,
+  dtc, python3, bc, imagemagick, unixtools, applyPatches, nukeReferences,
   l4tVersion,
 
   # Optional path to a boot logo that will be converted and cropped into the format required
@@ -10,6 +10,12 @@
 
   debugMode ? false,
   errorLevelInfo ? debugMode, # Enables a bunch more info messages
+
+  # The root certificate (in DER format) for authenticating capsule updates. By
+  # default, EDK2 authenticates using a test keypair commited upstream.
+  publicCertificateDerFile ? null,
+
+  requiredSystemFeatures ? [],
 }:
 
 let
@@ -48,26 +54,22 @@ let
     sha256 = "sha256-EPtI63jYhEIo4uVTH3lUt9NC/lK5vPVacUAc5qgmz9M=";
   };
 
-  _edk2-nvidia = fetchFromGitHub {
-    owner = "NVIDIA";
-    repo = "edk2-nvidia";
-    rev = "ad78b07af65d41bb96839f0bbe67bb445e04272f"; # Latest on r35.3.1-updates as of 2023-05-01
-    sha256 = "sha256-PdrisHYkmBXGvfkNboVvKJnBqORiM8sUsGySj7n5Y5c=";
+  edk2-nvidia = applyPatches {
+    src = fetchFromGitHub {
+      owner = "NVIDIA";
+      repo = "edk2-nvidia";
+      rev = "ad78b07af65d41bb96839f0bbe67bb445e04272f"; # Latest on r35.3.1-updates as of 2023-05-01
+      sha256 = "sha256-PdrisHYkmBXGvfkNboVvKJnBqORiM8sUsGySj7n5Y5c=";
+    };
+    patches = edk2NvidiaPatches ++ [ ./capsule-authentication.patch ];
+    postPatch = lib.optionalString errorLevelInfo ''
+      sed -i 's#PcdDebugPrintErrorLevel|.*#PcdDebugPrintErrorLevel|0x8000004F#' Platform/NVIDIA/NVIDIA.common.dsc.inc
+    '' + lib.optionalString (bootLogo != null) ''
+      cp ${bootLogoVariants}/logo1080.bmp Silicon/NVIDIA/Assets/nvidiagray1080.bmp
+      cp ${bootLogoVariants}/logo720.bmp Silicon/NVIDIA/Assets/nvidiagray720.bmp
+      cp ${bootLogoVariants}/logo480.bmp Silicon/NVIDIA/Assets/nvidiagray480.bmp
+    '';
   };
-  edk2-nvidia =
-    if (errorLevelInfo || bootLogo != null)
-    then applyPatches {
-      src = _edk2-nvidia;
-      patches = edk2NvidiaPatches;
-      postPatch = lib.optionalString errorLevelInfo ''
-        sed -i 's#PcdDebugPrintErrorLevel|.*#PcdDebugPrintErrorLevel|0x8000004F#' Platform/NVIDIA/NVIDIA.common.dsc.inc
-      '' + lib.optionalString (bootLogo != null) ''
-        cp ${bootLogoVariants}/logo1080.bmp Silicon/NVIDIA/Assets/nvidiagray1080.bmp
-        cp ${bootLogoVariants}/logo720.bmp Silicon/NVIDIA/Assets/nvidiagray720.bmp
-        cp ${bootLogoVariants}/logo480.bmp Silicon/NVIDIA/Assets/nvidiagray480.bmp
-      '';
-    }
-    else _edk2-nvidia;
 
   edk2-nvidia-non-osi = fetchFromGitHub {
     owner = "NVIDIA";
@@ -105,7 +107,7 @@ let
       src = edk2-src;
 
       depsBuildBuild = [ buildPackages.stdenv.cc ];
-      nativeBuildInputs = [ bc pythonEnv acpica-tools dtc ];
+      nativeBuildInputs = [ bc pythonEnv acpica-tools dtc unixtools.whereis ];
       strictDeps = true;
 
       NIX_CFLAGS_COMPILE = [ "-Wno-error=format-security" ];
@@ -131,6 +133,13 @@ let
         runHook preConfigure
         export WORKSPACE="$PWD"
         source ./edksetup.sh BaseTools
+
+        ${lib.optionalString (publicCertificateDerFile != null) ''
+        echo Using ${publicCertificateDerFile} as public certificate for capsule verification
+        python3 BaseTools/Scripts/BinToPcd.py -p gEfiSecurityPkgTokenSpaceGuid.PcdPkcs7CertBuffer -i ${publicCertificateDerFile} -o PublicCapsuleKey.cer.gEfiSecurityPkgTokenSpaceGuid.PcdPkcs7CertBuffer.inc
+        python3 BaseTools/Scripts/BinToPcd.py -x -p gFmpDevicePkgTokenSpaceGuid.PcdFmpDevicePkcs7CertBufferXdr -i ${publicCertificateDerFile} -o PublicCapsuleKey.cer.gFmpDevicePkgTokenSpaceGuid.PcdFmpDevicePkcs7CertBufferXdr.inc
+        ''}
+
         runHook postConfigure
       '';
 
@@ -142,6 +151,7 @@ let
         build -a ${targetArch} -b ${buildTarget} -t ${buildType} -p Platform/NVIDIA/Jetson/Jetson.dsc -n $NIX_BUILD_CORES \
           -D BUILDID_STRING=${l4tVersion} \
           -D BUILD_DATE_TIME="$(date --utc --iso-8601=seconds --date=@$SOURCE_DATE_EPOCH)" \
+          ${lib.optionalString (publicCertificateDerFile != null) "-D CUSTOM_CAPSULE_CERT"} \
           $buildFlags
 
         runHook postBuild

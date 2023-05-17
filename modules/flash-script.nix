@@ -4,8 +4,7 @@
 # You could do the overrides yourself if you'd prefer.
 let
   inherit (lib)
-    mkDefault
-    mkIf
+    mkEnableOption
     mkOption
     types;
 
@@ -49,6 +48,55 @@ in
           edk2NvidiaPatches = mkOption {
             type = types.listOf types.path;
             default = [];
+          };
+
+          capsuleAuthentication = {
+            enable = mkEnableOption "capsule update authentication";
+
+            publicCertificateDerFile = mkOption {
+              type = lib.types.path;
+              description = lib.mdDoc ''
+                The path to the public certificate (in DER format) that will be
+                used for validating capsule updates. Capsule files must be signed
+                with a private key in the same certificate chain. This file will
+                be included in the EDK2 build.
+              '';
+            };
+
+            trustedPublicCertPemFile = mkOption {
+              type = lib.types.path;
+              description = lib.mdDoc ''
+                The path to the public certificate (in PEM format) that will be
+                used when signing capsule payloads.
+              '';
+            };
+
+            otherPublicCertPemFile = mkOption {
+              type = lib.types.path;
+              description = lib.mdDoc ''
+                The path to another public certificate (in PEM format) that will
+                be used when signing capsule payloads. This can be the same as
+                `trustedPublicCertPem`, but it can also be an intermediate
+                certificate further down in the chain of your PKI.
+              '';
+            };
+
+            signerPrivateCertPemFile = mkOption {
+              type = lib.types.path;
+              description = lib.mdDoc ''
+                The path to the private certificate (in PEM format) that will be
+                used for signing capsule payloads.
+              '';
+            };
+
+            requiredSystemFeatures = lib.mkOption {
+              type = types.listOf types.str;
+              default = [ ];
+              description = lib.mdDoc ''
+                Additional `requiredSystemFeatures` to add to derivations which
+                make use of capsule authentication private keys.
+              '';
+            };
           };
         };
 
