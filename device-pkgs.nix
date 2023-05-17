@@ -8,51 +8,22 @@
 config:
 
 let
-  # These are from l4t_generate_soc_bup.sh, plus some additional ones found in the wild.
-  variants = rec {
-    xavier-agx = [
-      { boardid="2888"; boardsku="0001"; fab="400"; boardrev="D.0"; fuselevel="fuselevel_production"; chiprev="2"; }
-      { boardid="2888"; boardsku="0001"; fab="400"; boardrev="E.0"; fuselevel="fuselevel_production"; chiprev="2"; }
-      { boardid="2888"; boardsku="0004"; fab="400"; boardrev=""; fuselevel="fuselevel_production"; chiprev="2"; }
-      { boardid="2888"; boardsku="0005"; fab="402"; boardrev=""; fuselevel="fuselevel_production"; chiprev="2"; }
-    ];
-    xavier-nx = [ # Dev variant
-      { boardid="3668"; boardsku="0000"; fab="100"; boardrev=""; fuselevel="fuselevel_production"; chiprev="2"; }
-      { boardid="3668"; boardsku="0000"; fab="301"; boardrev=""; fuselevel="fuselevel_production"; chiprev="2"; }
-    ];
-    xavier-nx-emmc = [ # Prod variant
-      { boardid="3668"; boardsku="0001"; fab="100"; boardrev=""; fuselevel="fuselevel_production"; chiprev="2"; }
-      { boardid="3668"; boardsku="0003"; fab="301"; boardrev=""; fuselevel="fuselevel_production"; chiprev="2"; }
-    ];
-
-    orin-agx = [
-      { boardid="3701"; boardsku="0000"; fab="300"; boardrev=""; fuselevel="fuselevel_production"; chiprev=""; }
-      { boardid="3701"; boardsku="0004"; fab="300"; boardrev=""; fuselevel="fuselevel_production"; chiprev=""; } # 32GB
-      { boardid="3701"; boardsku="0005"; fab="000"; boardrev=""; fuselevel="fuselevel_production"; chiprev=""; } # 64GB
-    ];
-
-    orin-nano = [
-      { boardid = "3767"; boardsku = "0000"; fab="000"; boardrev=""; fuselevel="fuselevel_production"; chiprev=""; } # Orin NX 16GB
-      { boardid = "3767"; boardsku = "0001"; fab="000"; boardrev=""; fuselevel="fuselevel_production"; chiprev=""; } # Orin NX 8GB
-      { boardid = "3767"; boardsku = "0003"; fab="000"; boardrev=""; fuselevel="fuselevel_production"; chiprev=""; } # Orin Nano 8GB
-      { boardid = "3767"; boardsku = "0005"; fab="000"; boardrev=""; fuselevel="fuselevel_production"; chiprev=""; } #
-      { boardid = "3767"; boardsku = "0004"; fab="000"; boardrev=""; fuselevel="fuselevel_production"; chiprev=""; } # Orin Nano 4GB
-    ];
-    orin-nx = orin-nano;
-  };
-
   cfg = config.hardware.nvidia-jetpack;
   hostName = config.networking.hostName;
 
-  socType =
-    if lib.hasPrefix "orin-" cfg.som then "t234"
+  socType = if cfg.som == null then null
+    else if lib.hasPrefix "orin-" cfg.som then "t234"
     else if lib.hasPrefix "xavier-" cfg.som then "t194"
     else throw "Unknown SoC type";
 
   inherit (cfg.flashScriptOverrides)
     flashArgs partitionTemplate;
 
-  tosImage = buildTOS { inherit socType; };
+  tosImage = buildTOS {
+    inherit socType;
+    opteePatches = cfg.firmware.optee.patches;
+    extraMakeFlags = cfg.firmware.optee.extraMakeFlags;
+  };
 
   mkFlashScript = args: import ./flash-script.nix ({
     inherit lib flashArgs partitionTemplate;
@@ -62,13 +33,16 @@ let
     });
 
     uefi-firmware = uefi-firmware.override {
-      bootLogo = cfg.bootloader.logo;
-      debugMode = cfg.bootloader.debugMode;
-      errorLevelInfo = cfg.bootloader.errorLevelInfo;
-      edk2NvidiaPatches = cfg.bootloader.edk2NvidiaPatches;
+      bootLogo = cfg.firmware.uefi.logo;
+      debugMode = cfg.firmware.uefi.debugMode;
+      errorLevelInfo = cfg.firmware.uefi.errorLevelInfo;
+      edk2NvidiaPatches = cfg.firmware.uefi.edk2NvidiaPatches;
     };
 
+    inherit socType;
+
     inherit tosImage;
+    eksFile = cfg.firmware.eksFile;
 
     dtbsDir = config.hardware.deviceTree.package;
   } // args);
@@ -137,8 +111,9 @@ let
     };
   };
 
-  # This must be built on x86_64-linux
-  signedFirmware = runCommand "signed-${hostName}-${l4tVersion}" {} (mkFlashScript {
+  signedFirmware = runCommand "signed-${hostName}-${l4tVersion}" {
+    inherit (cfg.firmware.secureBoot) requiredSystemFeatures;
+  } (mkFlashScript {
     flashCommands = lib.concatMapStringsSep "\n" (v: with v; ''
       BOARDID=${boardid} BOARDSKU=${boardsku} FAB=${fab} BOARDREV=${boardrev} FUSELEVEL=${fuselevel} CHIPREV=${chiprev} ./flash.sh ${lib.optionalString (partitionTemplate != null) "-c flash.xml"} --no-root-check --no-flash --sign ${builtins.toString flashArgs}
 
@@ -162,27 +137,25 @@ let
       done < bootloader/signed/flash.idx
 
       rm -rf bootloader/signed
-    '') variants.${cfg.som};
+    '') cfg.firmware.variants;
   });
 
   # Bootloader Update Package (BUP)
-  # TODO: Try to make this run on aarch64-linux?
   # TODO: Maybe generate this ourselves from signedFirmware so we dont have multiple scripts using the same keys to sign the same artifacts
-  bup = runCommand "bup-${hostName}-${l4tVersion}" {} ((mkFlashScript {
+  bup = runCommand "bup-${hostName}-${l4tVersion}" {
+    inherit (cfg.firmware.secureBoot) requiredSystemFeatures;
+  } ((mkFlashScript {
     flashCommands = let
     in lib.concatMapStringsSep "\n" (v: with v;
       "BOARDID=${boardid} BOARDSKU=${boardsku} FAB=${fab} BOARDREV=${boardrev} FUSELEVEL=${fuselevel} CHIPREV=${chiprev} ./flash.sh ${lib.optionalString (partitionTemplate != null) "-c flash.xml"} --no-flash --bup --multi-spec ${builtins.toString flashArgs}"
-    ) variants.${cfg.som};
+    ) cfg.firmware.variants;
   }) + ''
     mkdir -p $out
     cp -r bootloader/payloads_*/* $out/
   '');
 
-  # TODO: This step could probably also be done on aarch64-linux too.  That would be valuable to allow Jetsons to be able to update themselves.
   # See l4t_generate_soc_bup.sh
   # python ${edk2-jetson}/BaseTools/BinWrappers/PosixLike/GenerateCapsule -v --encode --monotonic-count 1
-  # ${bspSrc}
-  # TODO: improve soc arch (t234) condition
   uefiCapsuleUpdate = runCommand "uefi-${hostName}-${l4tVersion}.Cap" { nativeBuildInputs = [ python3 openssl ]; } ''
     bash ${bspSrc}/generate_capsule/l4t_generate_soc_capsule.sh -i ${bup}/bl_only_payload -o $out ${socType}
   '';

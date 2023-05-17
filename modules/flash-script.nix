@@ -12,34 +12,114 @@ let
   cfg = config.hardware.nvidia-jetpack;
 in
 {
+  imports = with lib; [
+    (mkRenamedOptionModule [ "hardware" "nvidia-jetpack" "bootloader" "autoUpdate" ] [ "hardware" "nvidia-jetpack" "firmware" "autoUpdate" ])
+    (mkRenamedOptionModule [ "hardware" "nvidia-jetpack" "bootloader" "logo" ] [ "hardware" "nvidia-jetpack" "firmware" "uefi" "logo" ])
+    (mkRenamedOptionModule [ "hardware" "nvidia-jetpack" "bootloader" "debugMode" ] [ "hardware" "nvidia-jetpack" "firmware" "uefi" "debugMode" ])
+    (mkRenamedOptionModule [ "hardware" "nvidia-jetpack" "bootloader" "errorLevelInfo" ] [ "hardware" "nvidia-jetpack" "firmware" "uefi" "errorLevelInfo" ])
+    (mkRenamedOptionModule [ "hardware" "nvidia-jetpack" "bootloader" "edk2NvidiaPatches" ] [ "hardware" "nvidia-jetpack" "firmware" "uefi" "edk2NvidiaPatches" ])
+  ];
+
   options = {
     hardware.nvidia-jetpack = {
-      bootloader = {
+      firmware = {
         autoUpdate = lib.mkEnableOption "automatic updates for Jetson firmware";
 
-        logo = mkOption {
-          type = types.nullOr types.path;
-          # This NixOS default logo is made available under a CC-BY license. See the repo for details.
-          default = pkgs.fetchurl {
-            url = "https://raw.githubusercontent.com/NixOS/nixos-artwork/e7d4050f2bb39a8c73a31a89e3d55f55536541c3/logo/nixos.svg";
-            sha256 = "sha256-E+qpO9SSN44xG5qMEZxBAvO/COPygmn8r50HhgCRDSw=";
+        uefi = {
+          logo = mkOption {
+            type = types.nullOr types.path;
+            # This NixOS default logo is made available under a CC-BY license. See the repo for details.
+            default = pkgs.fetchurl {
+              url = "https://raw.githubusercontent.com/NixOS/nixos-artwork/e7d4050f2bb39a8c73a31a89e3d55f55536541c3/logo/nixos.svg";
+              sha256 = "sha256-E+qpO9SSN44xG5qMEZxBAvO/COPygmn8r50HhgCRDSw=";
+            };
+            description = "Optional path to a boot logo that will be converted and cropped into the format required";
           };
-          description = "Optional path to a boot logo that will be converted and cropped into the format required";
+
+          debugMode = mkOption {
+            type = types.bool;
+            default = false;
+          };
+
+          errorLevelInfo = mkOption {
+            type = types.bool;
+            default = cfg.firmware.uefi.debugMode;
+          };
+
+          edk2NvidiaPatches = mkOption {
+            type = types.listOf types.path;
+            default = [];
+          };
         };
 
-        debugMode = mkOption {
-          type = types.bool;
-          default = false;
+        optee = {
+          patches = mkOption {
+            type = types.listOf types.path;
+            default = [];
+          };
+
+          extraMakeFlags = mkOption {
+            type = types.listOf types.str;
+            default = [];
+          };
         };
 
-        errorLevelInfo = mkOption {
-          type = types.bool;
-          default = cfg.bootloader.debugMode;
+        eksFile = mkOption {
+          type = types.nullOr types.path;
+          default = null;
         };
 
-        edk2NvidiaPatches = mkOption {
-          type = types.listOf types.path;
-          default = [];
+        # See: https://docs.nvidia.com/jetson/archives/r35.3.1/DeveloperGuide/text/SD/Security/SecureBoot.html#prepare-an-sbk-key
+        secureBoot = {
+          pkcFile = mkOption {
+            type = types.nullOr types.path;
+            default = null;
+            description = "Path to Public Key Cryptography (PKC) .pem file used to validate authenticity and integrity of firmware partitions. Do not include this file in your /nix/store. Instead, use a sandbox exception to provide access to the key";
+            example = "/run/keys/jetson/xavier_pkc.pem";
+          };
+
+          sbkFile = mkOption {
+            type = types.nullOr types.path;
+            default = null;
+            description = "Path to Secure Boot Key (SBK) file used to encrypt firmware partitions. Do not include this file in your /nix/store.  Instead, use a sandbox exception to provide access to the key";
+            example = "/run/keys/jetson/xavier_skb.key";
+          };
+
+          requiredSystemFeatures = lib.mkOption {
+            type = types.listOf types.str;
+            default = [ ];
+            description = "Additional requiredSystemFeatures to add to derivations which make use of secure boot keys";
+          };
+        };
+
+        # Firmware variants. For most normal usage, you shouldn't need to set this option
+        variants = lib.mkOption {
+          internal = true;
+          type = types.listOf (types.submodule ({ config, name, ... }: {
+            options = {
+              boardid = lib.mkOption {
+                type = types.str;
+              };
+              boardsku = lib.mkOption {
+                type = types.str;
+              };
+              fab = lib.mkOption {
+                type = types.str;
+              };
+              boardrev = lib.mkOption {
+                type = types.str;
+                default = "";
+              };
+              fuselevel = lib.mkOption {
+                type = types.str; # TODO: Enum?
+                default = "fuselevel_production";
+              };
+              chiprev = lib.mkOption {
+                type = types.str;
+                default = "";
+              };
+            };
+          }));
         };
       };
 
@@ -96,14 +176,51 @@ in
     hardware.nvidia-jetpack.devicePkgs = devicePkgs; # Left for backwards-compatibility
     system.build.jetsonDevicePkgs = devicePkgs;
 
-    hardware.nvidia-jetpack.flashScriptOverrides.flashArgs = lib.mkAfter [ cfg.flashScriptOverrides.configFileName "mmcblk0p1" ];
+    hardware.nvidia-jetpack.flashScriptOverrides.flashArgs = lib.mkAfter (
+      lib.optional (cfg.firmware.secureBoot.pkcFile != null) "-u ${cfg.firmware.secureBoot.pkcFile}" ++
+      lib.optional (cfg.firmware.secureBoot.sbkFile != null) "-v ${cfg.firmware.secureBoot.sbkFile}" ++
+      [ cfg.flashScriptOverrides.configFileName "mmcblk0p1" ]
+    );
 
-    hardware.nvidia-jetpack.bootloader.edk2NvidiaPatches = [
+    hardware.nvidia-jetpack.firmware.uefi.edk2NvidiaPatches = [
       # Have UEFI use the device tree compiled into the firmware, instead of
       # using one from the kernel-dtb partition.
       # See: https://github.com/anduril/jetpack-nixos/pull/18
       ../edk2-uefi-dtb.patch
     ];
+
+    # These are from l4t_generate_soc_bup.sh, plus some additional ones found in the wild.
+    hardware.nvidia-jetpack.firmware.variants = lib.mkOptionDefault (rec {
+      xavier-agx = [
+        { boardid="2888"; boardsku="0001"; fab="400"; boardrev="D.0"; fuselevel="fuselevel_production"; chiprev="2"; }
+        { boardid="2888"; boardsku="0001"; fab="400"; boardrev="E.0"; fuselevel="fuselevel_production"; chiprev="2"; } # 16GB
+        { boardid="2888"; boardsku="0004"; fab="400"; boardrev=""; fuselevel="fuselevel_production"; chiprev="2"; } # 32GB
+        { boardid="2888"; boardsku="0005"; fab="402"; boardrev=""; fuselevel="fuselevel_production"; chiprev="2"; } # 64GB
+      ];
+      xavier-nx = [ # Dev variant
+        { boardid="3668"; boardsku="0000"; fab="100"; boardrev=""; fuselevel="fuselevel_production"; chiprev="2"; }
+        { boardid="3668"; boardsku="0000"; fab="301"; boardrev=""; fuselevel="fuselevel_production"; chiprev="2"; }
+      ];
+      xavier-nx-emmc = [ # Prod variant
+        { boardid="3668"; boardsku="0001"; fab="100"; boardrev=""; fuselevel="fuselevel_production"; chiprev="2"; }
+        { boardid="3668"; boardsku="0003"; fab="301"; boardrev=""; fuselevel="fuselevel_production"; chiprev="2"; }
+      ];
+
+      orin-agx = [
+        { boardid="3701"; boardsku="0000"; fab="300"; boardrev=""; fuselevel="fuselevel_production"; chiprev=""; }
+        { boardid="3701"; boardsku="0004"; fab="300"; boardrev=""; fuselevel="fuselevel_production"; chiprev=""; } # 32GB
+        { boardid="3701"; boardsku="0005"; fab="000"; boardrev=""; fuselevel="fuselevel_production"; chiprev=""; } # 64GB
+      ];
+
+      orin-nano = [
+        { boardid = "3767"; boardsku = "0000"; fab="000"; boardrev=""; fuselevel="fuselevel_production"; chiprev=""; } # Orin NX 16GB
+        { boardid = "3767"; boardsku = "0001"; fab="000"; boardrev=""; fuselevel="fuselevel_production"; chiprev=""; } # Orin NX 8GB
+        { boardid = "3767"; boardsku = "0003"; fab="000"; boardrev=""; fuselevel="fuselevel_production"; chiprev=""; } # Orin Nano 8GB
+        { boardid = "3767"; boardsku = "0005"; fab="000"; boardrev=""; fuselevel="fuselevel_production"; chiprev=""; } # Orin Nano devkit module
+        { boardid = "3767"; boardsku = "0004"; fab="000"; boardrev=""; fuselevel="fuselevel_production"; chiprev=""; } # Orin Nano 4GB
+      ];
+      orin-nx = orin-nano;
+    }.${cfg.som} or (throw "Unable to set default firmware variants since som is unset"));
 
     systemd.services = lib.mkIf (cfg.flashScriptOverrides.targetBoard != null) {
       setup-jetson-efi-variables = {

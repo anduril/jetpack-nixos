@@ -25,7 +25,7 @@ let
 
   opteeClient = stdenv.mkDerivation {
     pname = "optee_client";
-    version = nvopteeSrc.rev;
+    version = l4tVersion;
     src = nvopteeSrc;
     nativeBuildInputs = [ pkg-config ];
     buildInputs = [ libuuid ];
@@ -37,6 +37,8 @@ let
                                     , socType
                                     , earlyTaPaths ? [ ]
                                     , extraMakeFlags ? [ ]
+                                    , opteePatches ? [ ]
+                                    , ...
                                     }:
     let
       nvCccPrebuilt = {
@@ -58,8 +60,9 @@ let
     in
     stdenv.mkDerivation {
       inherit pname;
-      version = nvopteeSrc.rev;
+      version = l4tVersion;
       src = nvopteeSrc;
+      patches = opteePatches;
       postPatch = ''
         patchShebangs $(find optee/optee_os -type d -name scripts -printf '%p ')
       '';
@@ -78,14 +81,14 @@ let
       meta.platforms = [ "aarch64-linux" ];
     });
 
-  buildOpteeTaDevKit = args: buildOptee ({
+  buildOpteeTaDevKit = args: buildOptee (args // {
     pname = "optee-ta-dev-kit";
-    extraMakeFlags = [ "ta_dev_kit" ];
-  } // args);
+    extraMakeFlags = (args.extraMakeFlags or []) ++ [ "ta_dev_kit" ];
+  });
 
   buildNvLuksSrv = args: stdenv.mkDerivation {
     pname = "nvluks-srv";
-    version = nvopteeSrc.rev;
+    version = l4tVersion;
     src = nvopteeSrc;
     patches = [ ./0001-nvoptee-no-install-makefile.patch ];
     nativeBuildInputs = [ (buildPackages.python3.withPackages (p: [ p.cryptography ])) ];
@@ -109,7 +112,7 @@ let
 
   buildHwKeyAgent = args: stdenv.mkDerivation {
     pname = "hwkey-agent";
-    version = nvopteeSrc.rev;
+    version = l4tVersion;
     src = nvopteeSrc;
     patches = [ ./0001-nvoptee-no-install-makefile.patch ];
     nativeBuildInputs = [ (buildPackages.python3.withPackages (p: [ p.cryptography ])) ];
@@ -130,7 +133,7 @@ let
     '';
   };
 
-  buildOpteeDTB = lib.makeOverridable ({ socType }:
+  buildOpteeDTB = lib.makeOverridable ({ socType, ... }:
     let
       flavor = lib.replaceStrings [ "t" ] [ "" ] socType;
     in
@@ -142,10 +145,10 @@ let
       dtc -I dts -O dtb -o $out/tegra${flavor}-optee.dtb ${nvopteeSrc}/optee/tegra${flavor}-optee.dts
     '');
 
-  buildArmTrustedFirmware = lib.makeOverridable ({ socType }:
+  buildArmTrustedFirmware = lib.makeOverridable ({ socType, ... }:
     stdenv.mkDerivation {
       pname = "arm-trusted-firmware";
-      version = atfSrc.rev;
+      version = l4tVersion;
       src = atfSrc;
       makeFlags = [
         "-C arm-trusted-firmware"
@@ -175,7 +178,7 @@ let
       meta.platforms = [ "aarch64-linux" ];
     });
 
-  buildTOS = { socType }@args:
+  buildTOS = { socType, ... }@args:
     let
       armTrustedFirmware = buildArmTrustedFirmware args;
 
@@ -194,7 +197,7 @@ let
       image = buildPackages.runCommand "tos.img"
         {
           nativeBuildInputs = [ nukeReferences ];
-          passthru = { inherit socType nvLuksSrv hwKeyAgent; };
+          passthru = { inherit nvLuksSrv hwKeyAgent; };
         } ''
         mkdir -p $out
         ${buildPackages.python3}/bin/python3 ${bspSrc}/nv_tegra/tos-scripts/gen_tos_part_img.py \

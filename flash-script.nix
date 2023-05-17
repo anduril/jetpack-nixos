@@ -2,6 +2,8 @@
 
   preFlashCommands ? "", flashCommands ? "", postFlashCommands ? "", flashArgs ? [], partitionTemplate ? null,
 
+  socType ? null,
+
   # Optional directory containing DTBs to be used by flashing script, which can
   # be used by the bootloader(s) and passed to the kernel.
   dtbsDir ? null,
@@ -11,6 +13,9 @@
 
   # Optional package containing tos.img to replace prebuilt version
   tosImage ? null,
+
+  # Optional EKS file containing encrypted keyblob
+  eksFile ? null,
 }:
 ''
   set -euo pipefail
@@ -47,7 +52,10 @@
   cp ${uefi-firmware}/dtbs/*.dtbo kernel/dtb/
   ''}
   ${lib.optionalString (tosImage != null) ''
-  cp ${tosImage}/tos.img bootloader/tos-optee_${tosImage.socType}.img
+  cp ${tosImage}/tos.img bootloader/tos-optee_${socType}.img
+  ''}
+  ${lib.optionalString (eksFile != null) ''
+  cp ${eksFile} bootloader/eks_${socType}.img
   ''}
 
   ${preFlashCommands}

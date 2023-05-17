@@ -1,5 +1,5 @@
 { callPackage, callPackages, stdenv, stdenvNoCC, lib, runCommand, fetchurl,
-  bzip2_1_1, dpkg,  pkgs, dtc, python3, runtimeShell,
+  bzip2_1_1, dpkg,  pkgs, dtc, python3, runtimeShell, writeShellApplication
 }:
 
 let
@@ -40,7 +40,7 @@ let
     edk2-jetson uefi-firmware;
 
   inherit (pkgsAarch64.callPackages ./optee.nix {
-    inherit l4tVersion bspSrc;
+    inherit bspSrc l4tVersion;
   }) buildTOS opteeClient;
 
   flash-tools = callPackage ./flash-tools.nix {
@@ -147,17 +147,20 @@ in rec {
 
   devicePkgs = lib.mapAttrs (n: c: devicePkgsFromNixosConfig (pkgs.nixos c).config) supportedNixOSConfigurations;
 
-  flash-generic = callPackage ./flash-script.nix {
-    inherit flash-tools uefi-firmware;
-    flashCommands = ''
-      ${runtimeShell}
-    '';
-    # Use cross-compiled machine here so we don't have to depend on aarch64 builders
-    # TODO: Do a smaller cross-compiled version from old jetpack dir
-    dtbsDir = (pkgsAarch64.nixos {
-      imports = [ ./modules/default.nix ];
-      hardware.nvidia-jetpack.enable = true;
-    }).config.hardware.deviceTree.package;
+  flash-generic = writeShellApplication {
+    name = "flash-generic";
+    text = callPackage ./flash-script.nix {
+      inherit flash-tools uefi-firmware;
+      flashCommands = ''
+        ${runtimeShell}
+      '';
+      # Use cross-compiled machine here so we don't have to depend on aarch64 builders
+      # TODO: Do a smaller cross-compiled version from old jetpack dir
+      dtbsDir = (pkgsAarch64.nixos {
+        imports = [ ./modules/default.nix ];
+        hardware.nvidia-jetpack.enable = true;
+      }).config.hardware.deviceTree.package;
+    };
   };
 
   flashScripts = lib.mapAttrs' (n: c: lib.nameValuePair "flash-${n}" c.flashScript) devicePkgs;
