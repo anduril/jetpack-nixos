@@ -58,8 +58,8 @@ let
     src = fetchFromGitHub {
       owner = "NVIDIA";
       repo = "edk2-nvidia";
-      rev = "ad78b07af65d41bb96839f0bbe67bb445e04272f"; # Latest on r35.3.1-updates as of 2023-05-01
-      sha256 = "sha256-PdrisHYkmBXGvfkNboVvKJnBqORiM8sUsGySj7n5Y5c=";
+      rev = "2c81e0fc74f703012dd3b2f18da5be256e142fe3"; # Latest on r35.3.1-updates as of 2023-05-17
+      sha256 = "sha256-Qh1g+8a7ZcFG4VmwH+xDix6dpZ881HaNRE/FJoaRljw=";
     };
     patches = edk2NvidiaPatches ++ [ ./capsule-authentication.patch ];
     postPatch = lib.optionalString errorLevelInfo ''
