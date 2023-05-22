@@ -189,6 +189,11 @@ in
           description = "Arguments to apply to flashing script";
         };
 
+        fuseArgs = mkOption {
+          type = types.listOf types.str;
+          description = "Arguments to apply to fusing script. DO NOT INCLUDE private files in fuseArgs (such as the odmfuse.xml file). Instead provide them at runtime on the command line";
+        };
+
         partitionTemplate = mkOption {
           type = types.path;
           description = ".xml file describing partition template to use when flashing";
@@ -229,6 +234,8 @@ in
       lib.optional (cfg.firmware.secureBoot.sbkFile != null) "-v ${cfg.firmware.secureBoot.sbkFile}" ++
       [ cfg.flashScriptOverrides.configFileName "mmcblk0p1" ]
     );
+
+    hardware.nvidia-jetpack.flashScriptOverrides.fuseArgs = lib.mkAfter [ cfg.flashScriptOverrides.configFileName ];
 
     hardware.nvidia-jetpack.firmware.uefi.edk2NvidiaPatches = [
       # Have UEFI use the device tree compiled into the firmware, instead of

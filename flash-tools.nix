@@ -1,7 +1,7 @@
 { stdenv, lib, makeWrapper, bzip2_1_1, fetchurl, python3, perl, xxd,
   libxml2, coreutils, gnugrep, gnused, gnutar, gawk, which, gzip, cpio,
   bintools-unwrapped, findutils, util-linux, dosfstools, lz4, gcc, dtc, qemu,
-  runtimeShell, fetchzip,
+  runtimeShell, fetchzip, bc, openssl,
 
   bspSrc, l4tVersion,
 }:
@@ -80,7 +80,7 @@ let
     # running
     passthru.flashDeps = [
       coreutils gnugrep gnused gnutar gawk xxd which gzip cpio bintools-unwrapped
-      findutils python3 util-linux dosfstools lz4
+      findutils python3 util-linux dosfstools lz4 bc openssl
 
       # Needed by bootloader/tegraflash_impl_t234.py
       gcc dtc

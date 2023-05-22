@@ -17,7 +17,7 @@ let
     else throw "Unknown SoC type";
 
   inherit (cfg.flashScriptOverrides)
-    flashArgs partitionTemplate;
+    flashArgs fuseArgs partitionTemplate;
 
   tosImage = buildTOS {
     inherit socType;
@@ -25,6 +25,7 @@ let
     extraMakeFlags = cfg.firmware.optee.extraMakeFlags;
   };
 
+  # TODO: Unify with fuseScript below
   mkFlashScript = args: import ./flash-script.nix ({
     inherit lib flashArgs partitionTemplate;
 
@@ -175,9 +176,26 @@ let
       -o $out \
       ${socType}
   '');
+
+  # TODO: Unify with fuse-script using the correct parameterization
+  fuseScript = writeShellApplication {
+    name = "fuse-${hostName}";
+    text = import ./fuse-script.nix {
+      inherit lib;
+      flash-tools = flash-tools.overrideAttrs ({ postPatch ? "", ... }: {
+        postPatch = postPatch + cfg.flashScriptOverrides.postPatch;
+      });
+      inherit fuseArgs;
+
+      chipId = if cfg.som == null then null
+        else if lib.hasPrefix "orin-" cfg.som then "0x23"
+        else if lib.hasPrefix "xavier-" cfg.som then "0x19"
+        else throw "Unknown SoC type";
+    };
+  };
 in {
   inherit (tosImage) nvLuksSrv hwKeyAgent;
-  inherit flashScript initrdFlashScript tosImage signedFirmware bup;
+  inherit flashScript initrdFlashScript tosImage signedFirmware bup fuseScript;
   uefiCapsuleUpdate = mkUefiCapsuleUpdate (lib.optionalAttrs cfg.firmware.uefi.capsuleAuthentication.enable {
     inherit (cfg.firmware.uefi.capsuleAuthentication)
       trustedPublicCertPemFile
