@@ -313,5 +313,11 @@ in
         fi
       fi
     '';
+
+    environment.systemPackages = lib.mkIf (cfg.bootloader.autoUpdate && cfg.som != null && cfg.flashScriptOverrides.targetBoard != null) [
+      (pkgs.writeShellScriptBin "ota-apply-capsule-update-included" ''
+        ${pkgs.nvidia-jetpack.otaUtils}/bin/ota-apply-capsule-update ${config.system.build.jetsonDevicePkgs.uefiCapsuleUpdate}
+      '')
+    ];
   };
 }
