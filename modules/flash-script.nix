@@ -288,7 +288,7 @@ in
       };
     };
 
-    boot.loader.systemd-boot.extraInstallCommands = lib.mkIf (cfg.bootloader.autoUpdate && cfg.som != null && cfg.flashScriptOverrides.targetBoard != null) ''
+    boot.loader.systemd-boot.extraInstallCommands = lib.mkIf (cfg.firmware.autoUpdate && cfg.som != null && cfg.flashScriptOverrides.targetBoard != null) ''
       # Jetpack 5.0 didn't expose this DMI variable,
       if [[ ! -f /sys/devices/virtual/dmi/id/bios_version ]]; then
         echo "Unable to determine current Jetson firmware version."
@@ -314,7 +314,7 @@ in
       fi
     '';
 
-    environment.systemPackages = lib.mkIf (cfg.bootloader.autoUpdate && cfg.som != null && cfg.flashScriptOverrides.targetBoard != null) [
+    environment.systemPackages = lib.mkIf (cfg.firmware.autoUpdate && cfg.som != null && cfg.flashScriptOverrides.targetBoard != null) [
       (pkgs.writeShellScriptBin "ota-apply-capsule-update-included" ''
         ${pkgs.nvidia-jetpack.otaUtils}/bin/ota-apply-capsule-update ${config.system.build.jetsonDevicePkgs.uefiCapsuleUpdate}
       '')
