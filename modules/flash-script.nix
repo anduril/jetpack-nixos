@@ -50,6 +50,28 @@ in
             default = [];
           };
 
+          secureBoot = {
+            enrollDefaultKeys = lib.mkEnableOption "enroll default UEFI keys";
+            defaultPkEslFile = mkOption {
+              type = lib.types.path;
+              description = lib.mdDoc ''
+                The path to the UEFI PK EFI Signature List (ESL).
+              '';
+            };
+            defaultKekEslFile = mkOption {
+              type = lib.types.path;
+              description = lib.mdDoc ''
+                The path to the UEFI KEK Signature List (ESL).
+              '';
+            };
+            defaultDbEslFile = mkOption {
+              type = lib.types.path;
+              description = lib.mdDoc ''
+                The path to the UEFI DB Signature List (ESL).
+              '';
+            };
+          };
+
           capsuleAuthentication = {
             enable = mkEnableOption "capsule update authentication";
 

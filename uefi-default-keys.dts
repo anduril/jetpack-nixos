@@ -1,0 +1,40 @@
+/dts-v1/;
+/plugin/;
+/ {
+    overlay-name = "UEFI default Keys";
+    fragment@0 {
+        target-path = "/";
+        board_config {
+            sw-modules = "uefi";
+        };
+        __overlay__ {
+            firmware {
+                uefi {
+                    variables {
+                        gNVIDIAPublicVariableGuid {
+                            EnrollDefaultSecurityKeys {
+                                data = [01];
+                                non-volatile;
+                            };
+                        };
+
+                        gEfiGlobalVariableGuid {
+                            dbDefault {
+                                data = [@dbDefault@];
+                                non-volatile;
+                            };
+                            KEKDefault {
+                                data = [@kekDefault@];
+                                non-volatile;
+                            };
+                            PKDefault {
+                                data = [@pkDefault@];
+                                non-volatile;
+                            };
+                        };
+                    };
+                };
+            };
+        };
+    };
+};

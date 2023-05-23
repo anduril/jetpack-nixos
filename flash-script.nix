@@ -16,6 +16,9 @@
 
   # Optional EKS file containing encrypted keyblob
   eksFile ? null,
+
+  # Additional DTB overlays to use during device flashing
+  additionalDtbOverlays ? [],
 }:
 ''
   set -euo pipefail
@@ -38,6 +41,8 @@
   export NO_ROOTFS=1
   export NO_RECOVERY_IMG=1
   export NO_ESP_IMG=1
+
+  export ADDITIONAL_DTB_OVERLAY=''${ADDITIONAL_DTB_OVERLAY:+$ADDITIONAL_DTB_OVERLAY,}${lib.concatStringsSep "," additionalDtbOverlays}
 
   ${lib.optionalString (partitionTemplate != null) "cp ${partitionTemplate} flash.xml"}
   ${lib.optionalString (dtbsDir != null) "cp -r ${dtbsDir}/. kernel/dtb/"}

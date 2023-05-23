@@ -1,6 +1,6 @@
 { lib, callPackage, runCommand, writeScript, writeShellApplication, makeInitrd, makeModulesClosure,
   flashFromDevice, edk2-jetson, uefi-firmware, flash-tools, buildTOS,
-  python3, bspSrc, openssl,
+  python3, bspSrc, openssl, dtc,
   l4tVersion,
   pkgsAarch64,
 }:
@@ -25,6 +25,14 @@ let
     extraMakeFlags = cfg.firmware.optee.extraMakeFlags;
   };
 
+  uefiDefaultKeysDtbo = runCommand "UefiDefaultSecurityKeys.dtbo" { nativeBuildInputs = [ dtc ]; } ''
+    export pkDefault=$(od -t x1 -An "${cfg.firmware.uefi.secureBoot.defaultPkEslFile}")
+    export kekDefault=$(od -t x1 -An "${cfg.firmware.uefi.secureBoot.defaultKekEslFile}")
+    export dbDefault=$(od -t x1 -An "${cfg.firmware.uefi.secureBoot.defaultDbEslFile}")
+    substituteAll ${./uefi-default-keys.dts} keys.dts
+    dtc -I dts -O dtb keys.dts -o $out
+  '';
+
   # TODO: Unify with fuseScript below
   mkFlashScript = args: import ./flash-script.nix ({
     inherit lib flashArgs partitionTemplate;
@@ -48,6 +56,8 @@ let
 
     inherit tosImage;
     eksFile = cfg.firmware.eksFile;
+
+    additionalDtbOverlays = lib.optional (cfg.firmware.uefi.secureBoot.enrollDefaultKeys) uefiDefaultKeysDtbo;
 
     dtbsDir = config.hardware.deviceTree.package;
   } // args);
