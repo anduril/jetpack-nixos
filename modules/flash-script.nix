@@ -289,14 +289,16 @@ in
         { boardid="3701"; boardsku="0005"; fab="000"; boardrev=""; fuselevel="fuselevel_production"; chiprev=""; } # 64GB
       ];
 
-      orin-nano = [
+      orin-nx = [
         { boardid = "3767"; boardsku = "0000"; fab="000"; boardrev=""; fuselevel="fuselevel_production"; chiprev=""; } # Orin NX 16GB
         { boardid = "3767"; boardsku = "0001"; fab="000"; boardrev=""; fuselevel="fuselevel_production"; chiprev=""; } # Orin NX 8GB
-        { boardid = "3767"; boardsku = "0003"; fab="000"; boardrev=""; fuselevel="fuselevel_production"; chiprev=""; } # Orin Nano 8GB
-        { boardid = "3767"; boardsku = "0005"; fab="000"; boardrev=""; fuselevel="fuselevel_production"; chiprev=""; } # Orin Nano devkit module
-        { boardid = "3767"; boardsku = "0004"; fab="000"; boardrev=""; fuselevel="fuselevel_production"; chiprev=""; } # Orin Nano 4GB
       ];
-      orin-nx = orin-nano;
+
+      orin-nano = [
+        { boardid = "3767"; boardsku = "0003"; fab="000"; boardrev=""; fuselevel="fuselevel_production"; chiprev=""; } # Orin Nano 8GB
+        { boardid = "3767"; boardsku = "0004"; fab="000"; boardrev=""; fuselevel="fuselevel_production"; chiprev=""; } # Orin Nano 4GB
+        { boardid = "3767"; boardsku = "0005"; fab="000"; boardrev=""; fuselevel="fuselevel_production"; chiprev=""; } # Orin Nano devkit module
+      ];
     }.${cfg.som} or (throw "Unable to set default firmware variants since som is unset"));
 
     systemd.services = lib.mkIf (cfg.flashScriptOverrides.targetBoard != null) {
