@@ -14,8 +14,6 @@
   # The root certificate (in DER format) for authenticating capsule updates. By
   # default, EDK2 authenticates using a test keypair commited upstream.
   publicCertificateDerFile ? null,
-
-  requiredSystemFeatures ? [],
 }:
 
 let
