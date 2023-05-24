@@ -108,7 +108,12 @@ let
       nativeBuildInputs = [ bc pythonEnv acpica-tools dtc unixtools.whereis ];
       strictDeps = true;
 
-      NIX_CFLAGS_COMPILE = [ "-Wno-error=format-security" ];
+      NIX_CFLAGS_COMPILE = [
+        "-Wno-error=format-security" # TODO: Fix underlying issue
+
+        # Workaround for ../Silicon/NVIDIA/Drivers/EqosDeviceDxe/nvethernetrm/osi/core/osi_hal.c:1428: undefined reference to `__aarch64_ldadd4_sync'
+        "-mno-outline-atomics"
+      ];
 
       ${"GCC5_${targetArch}_PREFIX"} = stdenv.cc.targetPrefix;
 
