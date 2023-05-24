@@ -47,9 +47,7 @@ let
       errorLevelInfo = cfg.firmware.uefi.errorLevelInfo;
       edk2NvidiaPatches = cfg.firmware.uefi.edk2NvidiaPatches;
     } // lib.optionalAttrs cfg.firmware.uefi.capsuleAuthentication.enable {
-      inherit (cfg.firmware.uefi.capsuleAuthentication)
-        publicCertificateDerFile
-        requiredSystemFeatures;
+      inherit (cfg.firmware.uefi.capsuleAuthentication) publicCertificateDerFile;
     });
 
     inherit socType;
