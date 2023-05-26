@@ -75,21 +75,13 @@ in
           capsuleAuthentication = {
             enable = mkEnableOption "capsule update authentication";
 
-            publicCertificateDerFile = mkOption {
+            trustedPublicCertPemFile = mkOption {
               type = lib.types.path;
               description = lib.mdDoc ''
                 The path to the public certificate (in DER format) that will be
                 used for validating capsule updates. Capsule files must be signed
                 with a private key in the same certificate chain. This file will
                 be included in the EDK2 build.
-              '';
-            };
-
-            trustedPublicCertPemFile = mkOption {
-              type = lib.types.path;
-              description = lib.mdDoc ''
-                The path to the public certificate (in PEM format) that will be
-                used when signing capsule payloads.
               '';
             };
 
