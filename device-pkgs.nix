@@ -47,7 +47,7 @@ let
       errorLevelInfo = cfg.firmware.uefi.errorLevelInfo;
       edk2NvidiaPatches = cfg.firmware.uefi.edk2NvidiaPatches;
     } // lib.optionalAttrs cfg.firmware.uefi.capsuleAuthentication.enable {
-      inherit (cfg.firmware.uefi.capsuleAuthentication) publicCertificateDerFile;
+      inherit (cfg.firmware.uefi.capsuleAuthentication) trustedPublicCertPemFile;
     });
 
     inherit socType;
@@ -170,16 +170,16 @@ let
   # See l4t_generate_soc_bup.sh
   # python ${edk2-jetson}/BaseTools/BinWrappers/PosixLike/GenerateCapsule -v --encode --monotonic-count 1
   # NOTE: providing null public certs here will use the test certs in the EDK2 repo
-  mkUefiCapsuleUpdate = lib.makeOverridable ({
-    trustedPublicCertPemFile ? null,
-    otherPublicCertPemFile ? null,
-    signerPrivateCertPemFile ? null,
-    requiredSystemFeatures ? [ ],
-  }: runCommand "uefi-${hostName}-${l4tVersion}.Cap" { nativeBuildInputs = [ python3 openssl ]; inherit requiredSystemFeatures; } ''
+  uefiCapsuleUpdate = runCommand "uefi-${hostName}-${l4tVersion}.Cap" {
+    nativeBuildInputs = [ python3 openssl ];
+    inherit (cfg.firmware.secureBoot) requiredSystemFeatures;
+  } (''
     bash ${bspSrc}/generate_capsule/l4t_generate_soc_capsule.sh \
-      ${lib.optionalString (trustedPublicCertPemFile != null) "--trusted-public-cert ${trustedPublicCertPemFile}"} \
-      ${lib.optionalString (otherPublicCertPemFile != null) "--other-public-cert ${otherPublicCertPemFile}"} \
-      ${lib.optionalString (signerPrivateCertPemFile != null) "--signer-private-cert ${signerPrivateCertPemFile}"} \
+  '' + (lib.optionalString cfg.firmware.uefi.capsuleAuthentication.enable ''
+      --trusted-public-cert ${cfg.firmware.uefi.capsuleAuthentication.trustedPublicCertPemFile} \
+      --other-public-cert ${cfg.firmware.uefi.capsuleAuthentication.otherPublicCertPemFile} \
+      --signer-private-cert ${cfg.firmware.uefi.capsuleAuthentication.signerPrivateCertPemFile} \
+    '') + ''
       -i ${bup}/bl_only_payload \
       -o $out \
       ${socType}
@@ -203,12 +203,5 @@ let
   };
 in {
   inherit (tosImage) nvLuksSrv hwKeyAgent;
-  inherit flashScript initrdFlashScript tosImage signedFirmware bup fuseScript;
-  uefiCapsuleUpdate = mkUefiCapsuleUpdate (lib.optionalAttrs cfg.firmware.uefi.capsuleAuthentication.enable {
-    inherit (cfg.firmware.uefi.capsuleAuthentication)
-      trustedPublicCertPemFile
-      otherPublicCertPemFile
-      signerPrivateCertPemFile
-      requiredSystemFeatures;
-  });
+  inherit flashScript initrdFlashScript tosImage signedFirmware bup fuseScript uefiCapsuleUpdate;
 }

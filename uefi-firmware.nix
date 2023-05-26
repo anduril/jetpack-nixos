@@ -11,9 +11,9 @@
   debugMode ? false,
   errorLevelInfo ? debugMode, # Enables a bunch more info messages
 
-  # The root certificate (in DER format) for authenticating capsule updates. By
+  # The root certificate (in PEM format) for authenticating capsule updates. By
   # default, EDK2 authenticates using a test keypair commited upstream.
-  publicCertificateDerFile ? null,
+  trustedPublicCertPemFile ? null,
 }:
 
 let
@@ -137,10 +137,11 @@ let
         export WORKSPACE="$PWD"
         source ./edksetup.sh BaseTools
 
-        ${lib.optionalString (publicCertificateDerFile != null) ''
-        echo Using ${publicCertificateDerFile} as public certificate for capsule verification
-        python3 BaseTools/Scripts/BinToPcd.py -p gEfiSecurityPkgTokenSpaceGuid.PcdPkcs7CertBuffer -i ${publicCertificateDerFile} -o PublicCapsuleKey.cer.gEfiSecurityPkgTokenSpaceGuid.PcdPkcs7CertBuffer.inc
-        python3 BaseTools/Scripts/BinToPcd.py -x -p gFmpDevicePkgTokenSpaceGuid.PcdFmpDevicePkcs7CertBufferXdr -i ${publicCertificateDerFile} -o PublicCapsuleKey.cer.gFmpDevicePkgTokenSpaceGuid.PcdFmpDevicePkcs7CertBufferXdr.inc
+        ${lib.optionalString (trustedPublicCertPemFile != null) ''
+        echo Using ${trustedPublicCertPemFile} as public certificate for capsule verification
+        ${lib.getExe buildPackages.openssl} x509 -outform DER -in ${trustedPublicCertPemFile} -out PublicCapsuleKey.cer
+        python3 BaseTools/Scripts/BinToPcd.py -p gEfiSecurityPkgTokenSpaceGuid.PcdPkcs7CertBuffer -i PublicCapsuleKey.cer -o PublicCapsuleKey.cer.gEfiSecurityPkgTokenSpaceGuid.PcdPkcs7CertBuffer.inc
+        python3 BaseTools/Scripts/BinToPcd.py -x -p gFmpDevicePkgTokenSpaceGuid.PcdFmpDevicePkcs7CertBufferXdr -i PublicCapsuleKey.cer -o PublicCapsuleKey.cer.gFmpDevicePkgTokenSpaceGuid.PcdFmpDevicePkcs7CertBufferXdr.inc
         ''}
 
         runHook postConfigure
@@ -154,7 +155,7 @@ let
         build -a ${targetArch} -b ${buildTarget} -t ${buildType} -p Platform/NVIDIA/Jetson/Jetson.dsc -n $NIX_BUILD_CORES \
           -D BUILDID_STRING=${l4tVersion} \
           -D BUILD_DATE_TIME="$(date --utc --iso-8601=seconds --date=@$SOURCE_DATE_EPOCH)" \
-          ${lib.optionalString (publicCertificateDerFile != null) "-D CUSTOM_CAPSULE_CERT"} \
+          ${lib.optionalString (trustedPublicCertPemFile != null) "-D CUSTOM_CAPSULE_CERT"} \
           $buildFlags
 
         runHook postBuild
