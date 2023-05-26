@@ -172,7 +172,7 @@ let
   # NOTE: providing null public certs here will use the test certs in the EDK2 repo
   uefiCapsuleUpdate = runCommand "uefi-${hostName}-${l4tVersion}.Cap" {
     nativeBuildInputs = [ python3 openssl ];
-    inherit (cfg.firmware.secureBoot) requiredSystemFeatures;
+    inherit (cfg.firmware.uefi.capsuleAuthentication) requiredSystemFeatures;
   } (''
     bash ${bspSrc}/generate_capsule/l4t_generate_soc_capsule.sh \
   '' + (lib.optionalString cfg.firmware.uefi.capsuleAuthentication.enable ''
