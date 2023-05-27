@@ -203,5 +203,6 @@ let
   };
 in {
   inherit (tosImage) nvLuksSrv hwKeyAgent;
+  inherit mkFlashScript;
   inherit flashScript initrdFlashScript tosImage signedFirmware bup fuseScript uefiCapsuleUpdate;
 }
