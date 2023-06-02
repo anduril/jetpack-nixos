@@ -83,14 +83,14 @@ let
 
   buildOpteeTaDevKit = args: buildOptee (args // {
     pname = "optee-ta-dev-kit";
-    extraMakeFlags = (args.extraMakeFlags or []) ++ [ "ta_dev_kit" ];
+    extraMakeFlags = (args.extraMakeFlags or [ ]) ++ [ "ta_dev_kit" ];
   });
 
   buildNvLuksSrv = args: stdenv.mkDerivation {
     pname = "nvluks-srv";
     version = l4tVersion;
     src = nvopteeSrc;
-    patches = [ ./0001-nvoptee-no-install-makefile.patch ];
+    patches = [ ./0001-nvoptee-no-install-makefile.patch ./0002-Exit-with-non-zero-status-code-on-TEEC_InvokeCommand.patch ];
     nativeBuildInputs = [ (buildPackages.python3.withPackages (p: [ p.cryptography ])) ];
     makeFlags = [
       "-C optee/samples/luks-srv"

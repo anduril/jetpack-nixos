@@ -1,0 +1,29 @@
+From 68c3bd1bfdbe2683db7c9b7aad0dc6990b8a7225 Mon Sep 17 00:00:00 2001
+From: Jared Baur <jbaur@anduril.com>
+Date: Fri, 2 Jun 2023 10:47:13 -0700
+Subject: [PATCH] Exit with non-zero status code on TEEC_InvokeCommand
+
+This makes the status of TEEC_InvokeCommand consistent with other
+failure modes of the program.
+---
+ optee/samples/luks-srv/host/luks_srv_ca.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/optee/samples/luks-srv/host/luks_srv_ca.c b/optee/samples/luks-srv/host/luks_srv_ca.c
+index 49bc029..2a19749 100644
+--- a/optee/samples/luks-srv/host/luks_srv_ca.c
++++ b/optee/samples/luks-srv/host/luks_srv_ca.c
+@@ -140,9 +140,8 @@ static void luks_srv_app_handler(struct arguments *argus, luks_ca_ctx_t *ctx)
+ 	/* Send command to TA. */
+ 	rc = TEEC_InvokeCommand(&ctx->sess, cmd_id, &op, &origin);
+ 	if (rc != TEEC_SUCCESS) {
+-		printf("TEEC_InvokeCommand failed 0x%x origin 0x%x\n", rc,
++		errx(1, "TEEC_InvokeCommand failed 0x%x origin 0x%x\n", rc,
+ 		       origin);
+-		return;
+ 	}
+ 
+ 	if ((LUKS_SRV_TA_CMD_GET_UNIQUE_PASS == cmd_id) ||
+-- 
+2.40.1
+
