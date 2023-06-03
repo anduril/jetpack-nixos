@@ -111,10 +111,8 @@ let
 
   # Packages whose contents are paramterized by NixOS configuration
   devicePkgsFromNixosConfig = callPackage ./device-pkgs.nix {
-    inherit l4tVersion pkgsAarch64 flash-tools flashFromDevice edk2-jetson uefi-firmware buildTOS bspSrc;
+    inherit l4tVersion pkgsAarch64 flash-tools flashFromDevice edk2-jetson uefi-firmware buildTOS opteeClient bspSrc;
   };
-
-  devicePkgs = lib.mapAttrs (n: c: devicePkgsFromNixosConfig (pkgs.nixos c).config) supportedConfigurations;
 
   otaUtils = callPackage ./ota-utils {
     inherit tegra-eeprom-tool l4tVersion;
@@ -133,8 +131,6 @@ in rec {
 
   inherit kernel kernelPackages;
   inherit rtkernel rtkernelPackages;
-
-  inherit opteeClient;
 
   inherit nxJetsonBenchmarks xavierAgxJetsonBenchmarks orinAgxJetsonBenchmarks;
 

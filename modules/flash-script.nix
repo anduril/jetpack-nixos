@@ -115,6 +115,25 @@ in
         };
 
         optee = {
+          supplicantExtraArgs = mkOption {
+            type = types.listOf types.str;
+            default = [];
+            description = lib.mdDoc ''
+              Extra arguments to pass to tee-supplicant.
+            '';
+          };
+
+          clientLoadPath = mkOption {
+            type = types.path;
+            default = "/var/lib/optee";
+            description = lib.mdDoc ''
+              The path tee-supplicant will use to search for trusted
+              applications. Note that trusted applications must be placed in
+              the TA directory (specified with tee-supplicant's --ta-dir flag),
+              under this load path.
+            '';
+          };
+
           patches = mkOption {
             type = types.listOf types.path;
             default = [];

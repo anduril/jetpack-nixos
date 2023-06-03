@@ -1,5 +1,5 @@
 { lib, callPackage, runCommand, writeScript, writeShellApplication, makeInitrd, makeModulesClosure,
-  flashFromDevice, edk2-jetson, uefi-firmware, flash-tools, buildTOS,
+  flashFromDevice, edk2-jetson, uefi-firmware, flash-tools, buildTOS, opteeClient,
   python3, bspSrc, openssl, dtc,
   l4tVersion,
   pkgsAarch64,
@@ -25,6 +25,15 @@ let
     opteePatches = cfg.firmware.optee.patches;
     extraMakeFlags = cfg.firmware.optee.extraMakeFlags;
   };
+
+  teeSupplicant = opteeClient.overrideAttrs (old: {
+    pname = "tee-supplicant";
+    buildFlags = (old.buildFlags or []) ++ [ "CFG_TEE_CLIENT_LOAD_PATH=${cfg.firmware.optee.clientLoadPath}" ];
+    # remove unneeded headers
+    postInstall = ''
+      rm -rf $out/include
+    '';
+  });
 
   uefiDefaultKeysDtbo = runCommand "UefiDefaultSecurityKeys.dtbo" { nativeBuildInputs = [ dtc ]; } ''
     export pkDefault=$(od -t x1 -An "${cfg.firmware.uefi.secureBoot.defaultPkEslFile}")
@@ -205,5 +214,5 @@ let
 in {
   inherit (tosImage) nvLuksSrv hwKeyAgent;
   inherit mkFlashScript;
-  inherit flashScript initrdFlashScript tosImage signedFirmware bup fuseScript uefiCapsuleUpdate;
+  inherit flashScript initrdFlashScript tosImage teeSupplicant signedFirmware bup fuseScript uefiCapsuleUpdate;
 }

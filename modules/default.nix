@@ -166,7 +166,7 @@ in
     systemd.services.tee-supplicant = {
       description = "Userspace supplicant for OPTEE-OS";
       serviceConfig = {
-        ExecStart = "${pkgs.nvidia-jetpack.opteeClient}/bin/tee-supplicant";
+        ExecStart = "${config.hardware.nvidia-jetpack.devicePkgs.teeSupplicant}/bin/tee-supplicant ${lib.escapeShellArgs cfg.firmware.optee.supplicantExtraArgs}";
         Restart = "always";
       };
       wantedBy = [ "multi-user.target" ];
