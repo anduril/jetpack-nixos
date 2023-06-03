@@ -214,8 +214,5 @@ let
     image;
 in
 {
-  inherit
-    opteeClient
-    buildTOS
-    ;
+  inherit buildTOS opteeClient;
 }
