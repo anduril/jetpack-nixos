@@ -38,6 +38,7 @@ let
                                     , earlyTaPaths ? [ ]
                                     , extraMakeFlags ? [ ]
                                     , opteePatches ? [ ]
+                                    , taPublicKeyFile ? null
                                     , ...
                                     }:
     let
@@ -56,6 +57,7 @@ let
         "NV_CCC_PREBUILT=${nvCccPrebuilt}"
         "O=$(out)"
       ]
+      ++ (lib.optional (taPublicKeyFile != null) "TA_PUBLIC_KEY=${taPublicKeyFile}")
       ++ extraMakeFlags;
     in
     stdenv.mkDerivation {
