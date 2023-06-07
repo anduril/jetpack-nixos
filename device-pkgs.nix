@@ -21,6 +21,7 @@ let
 
   tosImage = buildTOS {
     inherit socType;
+    inherit (cfg.firmware.optee) taPublicKeyFile;
     opteePatches = cfg.firmware.optee.patches;
     extraMakeFlags = cfg.firmware.optee.extraMakeFlags;
   };

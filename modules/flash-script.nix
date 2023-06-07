@@ -124,6 +124,17 @@ in
             type = types.listOf types.str;
             default = [];
           };
+
+          taPublicKeyFile = mkOption {
+            type = types.nullOr types.path;
+            default = null;
+            description = lib.mdDoc ''
+              The public key to build into optee OS that will be used for
+              verifying loaded runtime TAs. If not provided, TAs are verified
+              with the public key derived from the private key in optee's
+              source tree.
+            '';
+          };
         };
 
         eksFile = mkOption {
