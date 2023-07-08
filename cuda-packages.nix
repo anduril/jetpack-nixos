@@ -1,3 +1,6 @@
+let
+  nsight_system_version = "2022.5.2";
+in
 { lib,
   stdenv,
   runCommand,
@@ -25,6 +28,20 @@
   noto-fonts,
   buildFHSUserEnv,
   requireFile,
+  nsightSystemSrcs ? (
+    if stdenv.hostPlatform.system == "x86_64-linux" then requireFile rec {
+        name = "NsightSystems-linux-public-2022.5.2.120-3231674.deb";
+        sha256 = "011f1vxrmxnip02zmlsb224cc01nviva2070qadkwhmz409sjxag";
+        message = ''
+          For Jetpack 5.1, Nvidia doesn't upload the corresponding nsight system x86_64 version to the deb repo, so it need to be fetched using sdkmanager
+
+          Once you have obtained the file, please use the following commands and re-run the installation:
+
+          nix-prefetch-url file://path/to/${name}
+        '';
+      }
+    else if stdenv.hostPlatform.system == "aarch64-linux" then debs.common."nsight-systems-${nsight_system_version}".src
+    else throw "Unsupported architecture"),
 
   debs,
   cudaVersion,
@@ -128,7 +145,6 @@ let
     srcs = builtins.map (deb: deb.src) (debsForSourcePackage name);
   } // args);
 
-  nsight_system_version = "2022.5.2";
   nsight_compute_version = "2022.2.1";
   cudaPackages = {
     cuda_cccl = buildFromSourcePackage { name = "cuda-thrust"; };
@@ -293,20 +309,7 @@ let
     nsight_systems_host = let
       nsight_out = buildFromDebs {
         name = "nsight-systems-host";
-        srcs = 
-          if stdenv.hostPlatform.system == "x86_64-linux" then requireFile rec {
-            name = "NsightSystems-linux-public-2022.5.2.120-3231674.deb";
-            sha256 = "011f1vxrmxnip02zmlsb224cc01nviva2070qadkwhmz409sjxag";
-            message = ''
-              For Jetpack 5.1, Nvidia doesn't upload the corresponding nsight system x86_64 version to the deb repo, so it need to be fetched using sdkmanager
-
-              Once you have obtained the file, please use the following commands and re-run the installation:
-
-              nix-prefetch-url file://path/to/${name}
-            '';
-          } 
-          else if stdenv.hostPlatform.system == "aarch64-linux" then debs.common."nsight-systems-${nsight_system_version}".src
-          else throw "Unsupported architecture";
+        srcs = nsightSystemSrcs;
         version = nsight_system_version;
         phases = [ "unpackPhase" "patchPhase" "installPhase" ];
         postPatch =
