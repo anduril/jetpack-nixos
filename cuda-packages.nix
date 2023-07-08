@@ -22,6 +22,7 @@
   xkeyboard_config,
   nspr,
   ncurses5,
+  noto-fonts,
   buildFHSUserEnv,
   requireFile,
 
@@ -216,7 +217,7 @@ let
         mkdir -p bin
         ln -sfv ../target/linux-v4l_l4t-t210-a64/ncu ./bin/ncu
       '';
-      meta.platforms = [ "x86_64-linux" "aarch64-linux" ]; # TODO: Determine correct platform
+      meta.platforms = [ "aarch64-linux" ];
     };
     nsight_compute_host = let
       nsight_out = buildFromDebs {
@@ -224,19 +225,25 @@ let
         version = nsight_compute_version;
         srcs = debs.common."nsight-compute-${nsight_compute_version}".src;
         dontAutoPatchelf = true;
-        postPatch = ''
-          mkdir -p host
-          cp -r "opt/nvidia/nsight-compute/${nsight_compute_version}/host/linux-desktop-glibc_2_11_3-x64" host
-          cp -r "opt/nvidia/nsight-compute/${nsight_compute_version}/extras" .
-          cp -r "opt/nvidia/nsight-compute/${nsight_compute_version}/sections" .
-          rm -r opt
+        postPatch = 
+        let
+          mkPostPatch = arch : ''
+            mkdir -p host
+            cp -r "opt/nvidia/nsight-compute/${nsight_compute_version}/host/${arch}" host
+            cp -r "opt/nvidia/nsight-compute/${nsight_compute_version}/extras" .
+            cp -r "opt/nvidia/nsight-compute/${nsight_compute_version}/sections" .
+            rm -r opt
 
-          # ncu requires that it remains under its original directory so symlink instead of copying
-          # things out
-          mkdir -p bin
-          ln -sfv ../host/linux-desktop-glibc_2_11_3-x64/ncu-ui ./bin/ncu-ui
-        '';
-        meta.platforms = [ "x86_64-linux" "aarch64-linux" ]; # TODO: Determine correct platform
+            # ncu requires that it remains under its original directory so symlink instead of copying
+            # things out
+            mkdir -p bin
+            ln -sfv ../host/${arch}/ncu-ui ./bin/ncu-ui
+          '';
+        in 
+          if stdenv.hostPlatform.system == "x86_64-linux" then mkPostPatch "linux-desktop-glibc_2_11_3-x64"
+          else if stdenv.hostPlatform.system == "aarch64-linux" then mkPostPatch "linux-v4l_l4t-t210-a64"
+          else throw "Unsupported architecture";
+        meta.platforms = [ "x86_64-linux" "aarch64-linux" ];
       };
     # ncu-ui has some hardcoded /usr access so use fhs instead of trying to patchelf
     # it also comes with its own qt6 .so, trying to use Nix qt6 libs results in weird
@@ -248,6 +255,7 @@ let
           ncurses5
           xorg.libxcb
           fontconfig
+          noto-fonts
           dbus
           nss
           xorg.libXcomposite
@@ -280,34 +288,42 @@ let
         ln -sfv ../target-linux-tegra-armv8/nsys ./bin/nsys
         ln -sfv ../target-linux-tegra-armv8/nsys-launcher ./bin/nsys-launcher
       '';
-      meta.platforms = [ "x86_64-linux" "aarch64-linux" ]; # TODO: Determine correct platform
+      meta.platforms = [ "aarch64-linux" ];
     };
     nsight_systems_host = let
       nsight_out = buildFromDebs {
         name = "nsight-systems-host";
-        srcs = requireFile rec {
-          name = "NsightSystems-linux-public-2022.5.2.120-3231674.deb";
-          sha256 = "011f1vxrmxnip02zmlsb224cc01nviva2070qadkwhmz409sjxag";
-          message = ''
-            For Jetpack 5.1, Nvidia doesn't upload the corresponding nsight system x86_64 version to the deb repo, so it need to be fetched using sdkmanager
+        srcs = 
+          if stdenv.hostPlatform.system == "x86_64-linux" then requireFile rec {
+            name = "NsightSystems-linux-public-2022.5.2.120-3231674.deb";
+            sha256 = "011f1vxrmxnip02zmlsb224cc01nviva2070qadkwhmz409sjxag";
+            message = ''
+              For Jetpack 5.1, Nvidia doesn't upload the corresponding nsight system x86_64 version to the deb repo, so it need to be fetched using sdkmanager
 
-            Once you have obtained the file, please use the following commands and re-run the installation:
+              Once you have obtained the file, please use the following commands and re-run the installation:
 
-            nix-prefetch-url file://path/to/${name}
-          '';
-        };
+              nix-prefetch-url file://path/to/${name}
+            '';
+          } 
+          else if stdenv.hostPlatform.system == "aarch64-linux" then debs.common."nsight-systems-${nsight_system_version}".src
+          else throw "Unsupported architecture";
         version = nsight_system_version;
         phases = [ "unpackPhase" "patchPhase" "installPhase" ];
-        postPatch = ''
-          mv opt/nvidia/nsight-systems/${nsight_system_version}/host-linux-x64 .
-          rm -r opt
+        postPatch =
+          let mkPostPatch = arch : ''
+            mv opt/nvidia/nsight-systems/${nsight_system_version}/host-${arch} .
+            rm -r opt
 
-          mkdir -p bin
-          # nsys requires that it remains under its original directory so symlink instead of copying
-          # things out
-          ln -sfv ../host-linux-x64/nsys-ui ./bin/nsys-ui
-        '';
-        meta.platforms = [ "x86_64-linux" "aarch64-linux" ]; # TODO: Determine correct platform
+            mkdir -p bin
+            # nsys requires that it remains under its original directory so symlink instead of copying
+            # things out
+            ln -sfv ../host-${arch}/nsys-ui ./bin/nsys-ui
+          '';
+          in
+            if stdenv.hostPlatform.system == "x86_64-linux" then mkPostPatch "linux-x64"
+            else if stdenv.hostPlatform.system == "aarch64-linux" then mkPostPatch "linux-armv8"
+            else throw "Unsupported architecture";
+        meta.platforms = [ "x86_64-linux" "aarch64-linux" ];
       };
     # nsys-ui has some hardcoded /usr access so use fhs instead of trying to patchelf
     # it also comes with its own qt6 .so, trying to use Nix qt6 libs results in weird
@@ -319,6 +335,7 @@ let
           ncurses5
           xorg.libxcb
           fontconfig
+          noto-fonts
           dbus
           nss
           xorg.libXcomposite
