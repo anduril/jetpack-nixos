@@ -229,6 +229,12 @@ in
           default = "";
           description = "Additional commands to run when building flash-tools";
         };
+
+        additionalDtbOverlays = mkOption {
+          type = types.listOf types.path;
+          default = [];
+          description = "A list of paths to compiled .dtbo files to include with the UEFI image while flashing. These overlays are applied by UEFI at runtime";
+        };
       };
 
       flashScript = mkOption {
@@ -258,7 +264,17 @@ in
       lib.optional (cfg.firmware.secureBoot.pkcFile != null) "-u ${cfg.firmware.secureBoot.pkcFile}" ++
       lib.optional (cfg.firmware.secureBoot.sbkFile != null) "-v ${cfg.firmware.secureBoot.sbkFile}" ++
       [ cfg.flashScriptOverrides.configFileName "mmcblk0p1" ]
-    );
+      );
+
+    hardware.nvidia-jetpack.flashScriptOverrides.additionalDtbOverlays = let
+      uefiDefaultKeysDtbo = pkgs.runCommand "UefiDefaultSecurityKeys.dtbo" { nativeBuildInputs = with pkgs.buildPackages; [ dtc ]; } ''
+        export pkDefault=$(od -t x1 -An "${cfg.firmware.uefi.secureBoot.defaultPkEslFile}")
+        export kekDefault=$(od -t x1 -An "${cfg.firmware.uefi.secureBoot.defaultKekEslFile}")
+        export dbDefault=$(od -t x1 -An "${cfg.firmware.uefi.secureBoot.defaultDbEslFile}")
+        substituteAll ${../uefi-default-keys.dts} keys.dts
+        dtc -I dts -O dtb keys.dts -o $out
+      '';
+    in lib.optional cfg.firmware.uefi.secureBoot.enrollDefaultKeys uefiDefaultKeysDtbo;
 
     hardware.nvidia-jetpack.flashScriptOverrides.fuseArgs = lib.mkAfter [ cfg.flashScriptOverrides.configFileName ];
 

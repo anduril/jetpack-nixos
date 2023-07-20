@@ -17,7 +17,7 @@ let
     else throw "Unknown SoC type";
 
   inherit (cfg.flashScriptOverrides)
-    flashArgs fuseArgs partitionTemplate;
+    flashArgs fuseArgs partitionTemplate additionalDtbOverlays;
 
   tosImage = buildTOS {
     inherit socType;
@@ -38,6 +38,8 @@ let
   mkFlashScript = args: import ./flash-script.nix ({
     inherit lib flashArgs partitionTemplate;
 
+    inherit (cfg.flashScriptOverrides) additionalDtbOverlays;
+
     flash-tools = flash-tools.overrideAttrs ({ postPatch ? "", ... }: {
       postPatch = postPatch + cfg.flashScriptOverrides.postPatch;
     });
@@ -55,8 +57,6 @@ let
 
     inherit tosImage;
     eksFile = cfg.firmware.eksFile;
-
-    additionalDtbOverlays = lib.optional (cfg.firmware.uefi.secureBoot.enrollDefaultKeys) uefiDefaultKeysDtbo;
 
     dtbsDir = config.hardware.deviceTree.package;
   } // args);
