@@ -216,6 +216,7 @@ let
     libcusparse = buildFromSourcePackage { name = "libcusparse"; };
     libnpp = buildFromSourcePackage { name = "libnpp"; };
     libcudla = buildFromSourcePackage { name = "libcudla"; buildInputs = [ l4t.l4t-cuda ]; };
+
     nsight_compute_target = buildFromDebs {
       name = "nsight-compute-target";
       version = nsight_compute_version;

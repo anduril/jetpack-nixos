@@ -1,0 +1,114 @@
+diff --git a/src/common.h b/src/common.h
+index 015452f..4790e2c 100644
+--- a/src/common.h
++++ b/src/common.h
+@@ -24,6 +24,8 @@
+ #define LDCONFIG_PATH             "/sbin/ldconfig"
+ #define LDCONFIG_ALT_PATH         "/sbin/ldconfig.real"
+ 
++#define JETSON_FROM_ROOT          "NIXOS_ROOT"
++
+ #define LIB_DIR                   "/lib64"
+ #define USR_BIN_DIR               "/usr/bin"
+ #define USR_LIB_DIR               "/usr/lib64"
+diff --git a/src/jetson_mount.c b/src/jetson_mount.c
+index 1c5d9de..9100f0b 100644
+--- a/src/jetson_mount.c
++++ b/src/jetson_mount.c
+@@ -50,7 +50,7 @@ mount_jetson_files(struct error *err, const char *root, const struct nvc_contain
+                     !match_jetson_directory_flags(paths[i], cnt->flags))
+                         continue;
+ 
+-                if (path_new(err, src, root) < 0)
++                if (path_new(err, src, JETSON_FROM_ROOT) < 0)
+                         goto fail;
+                 if (path_new(err, dst, cnt->cfg.rootfs) < 0)
+                         goto fail;
+@@ -94,7 +94,7 @@ create_jetson_symlinks(struct error *err, const char *root, const struct nvc_con
+                 if (!match_jetson_symlink_flags(paths[i], cnt->flags))
+                         continue;
+ 
+-                if (path_new(err, src, root) < 0)
++                if (path_new(err, src, JETSON_FROM_ROOT) < 0)
+                         return (-1);
+                 if (path_new(err, dst, cnt->cfg.rootfs) < 0)
+                         return (-1);
+diff --git a/src/nvc_info.c b/src/nvc_info.c
+index fd0e60f..4d4d3e7 100644
+--- a/src/nvc_info.c
++++ b/src/nvc_info.c
+@@ -42,7 +42,7 @@ static int lookup_binaries(struct error *, struct nvc_driver_info *, const char
+ static int lookup_ipcs(struct error *, struct nvc_driver_info *, const char *, int32_t);
+ 
+ static int lookup_jetson(struct error *, struct nvc_driver_info *, const char *);
+-static int parse_file(struct error *, const char *, const char *, struct nvc_jetson_info *);
++static int parse_file(struct error *, const char *, const char *, const char *, struct nvc_jetson_info *);
+ static int lookup_jetson_devices(struct error *, struct nvc_jetson_info *, const char *);
+ static int lookup_jetson_dirs(struct error *, struct nvc_jetson_info *, const char *);
+ static int lookup_jetson_libs(struct error *, struct nvc_jetson_info *, const char *);
+@@ -404,13 +404,13 @@ lookup_jetson_libs(struct error *err, struct nvc_jetson_info *info, const char *
+         char path[PATH_MAX];
+ 
+         for (size_t i = 0; i < info->nlibs; ++i) {
+-                if (path_resolve(err, path, root, info->libs[i]) < 0)
++                if (path_resolve(err, path, JETSON_FROM_ROOT, info->libs[i]) < 0)
+                         return (-1);
+ 
+                 free(info->libs[i]);
+                 info->libs[i] = NULL;
+ 
+-                if (select_libraries(err, info, root, NULL, path) < 0) {
++                if (select_libraries(err, info, JETSON_FROM_ROOT, NULL, path) < 0) {
+                         log_infof("missing library %s", path);
+                         continue;
+                 }
+@@ -432,7 +432,7 @@ lookup_jetson_dirs(struct error *err, struct nvc_jetson_info *info, const char *
+         struct stat s;
+ 
+         for (size_t i = 0; i < info->ndirs; ++i) {
+-                if (path_resolve(err, path, root, info->dirs[i]) < 0)
++                if (path_resolve(err, path, JETSON_FROM_ROOT, info->dirs[i]) < 0)
+                         return (-1);
+ 
+                 free(info->dirs[i]);
+@@ -510,7 +510,7 @@ lookup_jetson_devices(struct error *err, struct nvc_jetson_info *info, const cha
+ }
+ 
+ static int
+-parse_file(struct error *err, const char *path, const char *root, struct nvc_jetson_info *jetson)
++parse_file(struct error *err, const char *path, const char *root, const char *nixos_root, struct nvc_jetson_info *jetson)
+ {
+         struct csv ctx;
+         int rv = -1;
+@@ -525,16 +525,16 @@ parse_file(struct error *err, const char *path, const char *root, struct nvc_jet
+         if (csv_parse(&ctx, jetson) < 0)
+                 goto fail;
+ 
+-        if (lookup_jetson_libs(err, jetson, root) < 0)
++        if (lookup_jetson_libs(err, jetson, nixos_root) < 0)
+                 goto fail;
+ 
+-        if (lookup_jetson_dirs(err, jetson, root) < 0)
++        if (lookup_jetson_dirs(err, jetson, nixos_root) < 0)
+                 goto fail;
+ 
+         if (lookup_jetson_devices(err, jetson, root) < 0)
+                 goto fail;
+ 
+-        if (lookup_jetson_symlinks(err, jetson, root) < 0)
++        if (lookup_jetson_symlinks(err, jetson, nixos_root) < 0)
+                 goto fail;
+ 
+         rv = 0;
+@@ -572,7 +572,7 @@ lookup_jetson(struct error *err, struct nvc_driver_info *info, const char *root)
+                 if ((file_info->path = xstrdup(err, files[i])) == NULL)
+                         goto fail;
+ 
+-                if (parse_file(err, files[i], root, &file_info->info) < 0)
++                if (parse_file(err, files[i], root, JETSON_FROM_ROOT, &file_info->info) < 0)
+                         goto fail;
+ 
+                 if ((tmp = jetson_info_append(err, &file_info->info, dst)) == NULL)
+-- 
+2.38.5
+

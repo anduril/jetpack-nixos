@@ -1,0 +1,29 @@
+diff --git a/src/common.h b/src/common.h
+index 015452f..92da1c8 100644
+--- a/src/common.h
++++ b/src/common.h
+@@ -20,7 +20,7 @@
+ #define PROC_OVERFLOW_UID         "/proc/sys/kernel/overflowuid"
+ #define PROC_OVERFLOW_GID         "/proc/sys/kernel/overflowgid"
+ 
+-#define LDCACHE_PATH              "/etc/ld.so.cache"
++#define LDCACHE_PATH              "/tmp/ld.so.cache"
+ #define LDCONFIG_PATH             "/sbin/ldconfig"
+ #define LDCONFIG_ALT_PATH         "/sbin/ldconfig.real"
+ 
+diff --git a/src/nvc_ldcache.c b/src/nvc_ldcache.c
+index f2507f8..a4e2dc5 100644
+--- a/src/nvc_ldcache.c
++++ b/src/nvc_ldcache.c
+@@ -331,7 +331,7 @@ nvc_ldcache_update(struct nvc_context *ctx, const struct nvc_container *cnt)
+         if (validate_args(ctx, cnt != NULL) < 0)
+                 return (-1);
+ 
+-        argv = (char * []){cnt->cfg.ldconfig, cnt->cfg.libs_dir, cnt->cfg.libs32_dir, NULL};
++        argv = (char * []){cnt->cfg.ldconfig, "-C", "/tmp/ld.so.cache", cnt->cfg.libs_dir, cnt->cfg.libs32_dir, NULL};
+         if (*argv[0] == '@') {
+                 /*
+                  * We treat this path specially to be relative to the host filesystem.
+-- 
+2.38.5
+

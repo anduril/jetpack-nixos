@@ -1,0 +1,24 @@
+diff --git a/Makefile b/Makefile
+index 709102b..2c50cc6 100644
+--- a/Makefile
++++ b/Makefile
+@@ -201,7 +201,7 @@ $(LIB_STATIC_OBJ): $(LIB_OBJS)
+ 
+ all: CPPFLAGS += -DNDEBUG
+ all: STRIP  := @echo skipping: strip
+-all: shared static
++all: shared
+ 
+ # Run with ASAN_OPTIONS="protect_shadow_gap=0" to avoid CUDA OOM errors
+ debug: CFLAGS += -pedantic -fsanitize=undefined -fno-omit-frame-pointer -fno-common -fsanitize=address
+@@ -228,7 +228,6 @@ install: all
+ 	# Install header files
+ 	$(INSTALL) -m 644 $(LIB_INCS) $(DESTDIR)$(includedir)
+ 	# Install library files
+-	$(INSTALL) -m 644 $(LIB_STATIC) $(DESTDIR)$(libdir)
+ 	$(INSTALL) -m 755 $(LIB_SHARED) $(DESTDIR)$(libdir)
+ 	$(LN) -sf $(LIB_SONAME) $(DESTDIR)$(libdir)/$(LIB_SYMLINK)
+ 	$(LDCONFIG) -n $(DESTDIR)$(libdir)
+-- 
+2.38.5
+
