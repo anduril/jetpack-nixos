@@ -20,8 +20,8 @@ in pkgsAarch64.buildLinux (args // {
     src = fetchFromGitHub {
       owner = "OE4T";
       repo = "linux-tegra-5.10";
-      rev = "26cfd067b9113af207849146b86607a10fedd5c6"; # latest on oe4t-patches-l4t-r35.3.ga as of 2023-03-29
-      sha256 = "sha256-3HGnrfBJY+38zXA3YISK/DCh3w/7dZtH3If9GaBr4a8=";
+      rev = "7191dccf8670635906182cc2da862d9c0fdcb93a"; # latest on oe4t-patches-l4t-r35.3.ga as of 2023-07-27
+      sha256 = "sha256-s71v4Bzc2jF9l65FY7OlrB/zi8Vkty+dBxZry8MyBno=";
     };
     # Remove device tree overlays with some incorrect "remote-endpoint" nodes.
     # They are strings, but should be phandles. Otherwise, it fails to compile
@@ -83,7 +83,7 @@ in pkgsAarch64.buildLinux (args // {
     # https://lkml.iu.edu/hypermail/linux/kernel/2012.3/03853.html
     # https://lore.kernel.org/lkml/CAE1WUT75gu9G62Q9uAALGN6vLX=o7vZ9uhqtVWnbUV81DgmFPw@mail.gmail.com/
     # Could probably also be fixed by updating the GCC version used by default on ARM
-    DEBUG_INFO_BTF = lib.mkForce no;
+    #DEBUG_INFO_BTF = lib.mkForce no;
 
     # Override the default CMA_SIZE_MBYTES=32M setting in common-config.nix with the default from tegra_defconfig
     # Otherwise, nvidia's driver craps out
