@@ -1,4 +1,4 @@
-{ lib, stdenv, buildPackages, fetchFromGitHub, runCommand, edk2, acpica-tools,
+{ lib, stdenv, buildPackages, fetchFromGitHub, fetchpatch, runCommand, edk2, acpica-tools,
   dtc, python3, bc, imagemagick, unixtools, applyPatches, nukeReferences,
   l4tVersion,
 
@@ -59,7 +59,13 @@ let
       rev = "2c81e0fc74f703012dd3b2f18da5be256e142fe3"; # Latest on r35.3.1-updates as of 2023-05-17
       sha256 = "sha256-Qh1g+8a7ZcFG4VmwH+xDix6dpZ881HaNRE/FJoaRljw=";
     };
-    patches = edk2NvidiaPatches ++ [ ./capsule-authentication.patch ];
+    patches = edk2NvidiaPatches ++ [
+      (fetchpatch {
+        url = "https://github.com/NVIDIA/edk2-nvidia/commit/9604259b0d11c049f6a3eb5365a3ae10cfb9e6d9.patch";
+        hash = "sha256-v/WEwcSNjBXeN0eXVzzl31dn6mq78wIm0u5lW1jGcdE=";
+      })
+      ./capsule-authentication.patch
+    ];
     postPatch = lib.optionalString errorLevelInfo ''
       sed -i 's#PcdDebugPrintErrorLevel|.*#PcdDebugPrintErrorLevel|0x8000004F#' Platform/NVIDIA/NVIDIA.common.dsc.inc
     '' + lib.optionalString (bootLogo != null) ''
