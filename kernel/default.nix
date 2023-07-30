@@ -57,6 +57,26 @@ in pkgsAarch64.buildLinux (args // {
         USB_XHCI_TEGRA y
       '';
     }
+
+    # Fix "FAILED: load BTF from vmlinux: Unknown error -22" by including a
+    # number of patches from the 5.10 LTS branch. Unclear exactly which one is needed.
+    # See also: https://github.com/NixOS/nixpkgs/pull/194551
+    { patch = ./0001-bpf-Generate-BTF_KIND_FLOAT-when-linking-vmlinux.patch; }
+    { patch = ./0002-kbuild-Quote-OBJCOPY-var-to-avoid-a-pahole-call-brea.patch; }
+    { patch = ./0003-kbuild-skip-per-CPU-BTF-generation-for-pahole-v1.18-.patch; }
+    { patch = ./0004-kbuild-Unify-options-for-BTF-generation-for-vmlinux-.patch; }
+    { patch = ./0005-kbuild-Add-skip_encoding_btf_enum64-option-to-pahole.patch; }
+
+    # Fix "FAILED: resolved symbol udp_sock"
+    # This is caused by having multiple structs of the same name in the BTF output.
+    # For example, `bpftool btf dump file vmlinux | grep "STRUCT 'udp_sock'"`
+    #   [507] STRUCT 'file' size=256 vlen=22
+    #   [121957] STRUCT 'file' size=256 vlen=22
+    # Without this patch, resolve_btfids doesn't handle this case and
+    # miscounts, leading to the failure. The underlying cause of why we have
+    # multiple structs of the same name is still unresolved as of 2023-07-29
+    { patch = ./0006-tools-resolve_btfids-Warn-when-having-multiple-IDs-f.patch; }
+
   ] ++ kernelPatches;
 
   structuredExtraConfig = with lib.kernel; {
@@ -76,14 +96,6 @@ in pkgsAarch64.buildLinux (args // {
     # the kernel will have already tried loading!
     EXTRA_FIRMWARE_DIR = freeform "${l4t-xusb-firmware}/lib/firmware";
     EXTRA_FIRMWARE = freeform "nvidia/tegra194/xusb.bin";
-
-    # Fix issue resulting in this error message:
-    # FAILED unresolved symbol udp_sock
-    #
-    # https://lkml.iu.edu/hypermail/linux/kernel/2012.3/03853.html
-    # https://lore.kernel.org/lkml/CAE1WUT75gu9G62Q9uAALGN6vLX=o7vZ9uhqtVWnbUV81DgmFPw@mail.gmail.com/
-    # Could probably also be fixed by updating the GCC version used by default on ARM
-    #DEBUG_INFO_BTF = lib.mkForce no;
 
     # Override the default CMA_SIZE_MBYTES=32M setting in common-config.nix with the default from tegra_defconfig
     # Otherwise, nvidia's driver craps out
