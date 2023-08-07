@@ -1,7 +1,7 @@
-{ lib, fetchurl }:
+{ lib, fetchurl, l4tVersion }:
 
 let
-  debsJSON = lib.importJSON ./r35.3.json;
+  debsJSON = lib.importJSON (./. + "/r${lib.versions.majorMinor l4tVersion}.json");
   baseURL = "https://repo.download.nvidia.com/jetson";
   repos = [ "t194" "t234" "common" ];
 

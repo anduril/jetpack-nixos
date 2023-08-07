@@ -13,7 +13,7 @@ stdenv.mkDerivation rec {
   src = fetchgit {
     url = "https://nv-tegra.nvidia.com/tegra/kernel-src/nv-kernel-display-driver.git";
     rev = version;
-    sha256 = "sha256-nXLrls3r9wRrZUGQIPZZS34hSt7ccsb4TZfaiIebMSU=";
+    sha256 = "sha256-6CThvNEyZNVy53lV3xbRN2QpOBiuxV2jGys5ITCf3v0=";
   };
 
   setSourceRoot = "sourceRoot=$(echo */NVIDIA-kernel-module-source-TempVersion)";

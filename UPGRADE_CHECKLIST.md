@@ -1,6 +1,7 @@
 ### Updating
-- [ ] Update `l4tVersion`, `bspVersion`, and `cudaVersion` in default.nix
+- [ ] Update `l4tVersion`, `jetpackVersion`, and `cudaVersion` in default.nix
 - [ ] Update branch/revision/sha256s in:
+    - [ ] `default.nix`
     - [ ] `kernel/default.nix`
     - [ ] `kernel/display-driver.nix`
     - [ ] `uefi-firmware.nix`

@@ -1,6 +1,6 @@
-diff -Naur bsp-5.1.1/bootloader/l4t_bup_gen.func bsp-5.1.1-new/bootloader/l4t_bup_gen.func
---- bsp-5.1.1/bootloader/l4t_bup_gen.func	1969-12-31 16:00:01.000000000 -0800
-+++ bsp-5.1.1-new/bootloader/l4t_bup_gen.func	2023-04-27 15:38:42.531828490 -0700
+diff -Naur bsp-5.1.2/bootloader/l4t_bup_gen.func bsp-5.1.2-new/bootloader/l4t_bup_gen.func
+--- bsp-5.1.2/bootloader/l4t_bup_gen.func	1969-12-31 16:00:01.000000000 -0800
++++ bsp-5.1.2-new/bootloader/l4t_bup_gen.func	2023-08-06 22:42:06.120107569 -0700
 @@ -23,7 +23,6 @@
  
  declare -A ENTRY_LIST
@@ -9,22 +9,22 @@ diff -Naur bsp-5.1.1/bootloader/l4t_bup_gen.func bsp-5.1.1-new/bootloader/l4t_bu
  
  PART_NAME=""
  IMAGE_SIGNED=0
-diff -Naur bsp-5.1.1/bootloader/tegraflash_impl_t234.py bsp-5.1.1-new/bootloader/tegraflash_impl_t234.py
---- bsp-5.1.1/bootloader/tegraflash_impl_t234.py	1969-12-31 16:00:01.000000000 -0800
-+++ bsp-5.1.1-new/bootloader/tegraflash_impl_t234.py	2023-05-08 10:58:50.257272841 -0700
-@@ -1853,7 +1853,7 @@
+diff -Naur bsp-5.1.2/bootloader/tegraflash_impl_t234.py bsp-5.1.2-new/bootloader/tegraflash_impl_t234.py
+--- bsp-5.1.2/bootloader/tegraflash_impl_t234.py	1969-12-31 16:00:01.000000000 -0800
++++ bsp-5.1.2-new/bootloader/tegraflash_impl_t234.py	2023-08-06 22:40:37.923500980 -0700
+@@ -1861,7 +1861,7 @@
              xml_tree = ElementTree.parse(file)
              mode = xml_tree.getroot().get('mode')
  
 -            for file_nodes in xml_tree.getiterator('file'):
 +            for file_nodes in xml_tree.iter('file'):
-                 filename = file_nodes.get('name')
-                 if 'dce' in filename:
-                     continue
-diff -Naur bsp-5.1.1/flash.sh bsp-5.1.1-new/flash.sh
---- bsp-5.1.1/flash.sh	1969-12-31 16:00:01.000000000 -0800
-+++ bsp-5.1.1-new/flash.sh	2023-04-27 15:36:47.766684941 -0700
-@@ -2431,6 +2431,9 @@
+                 # To dinf encryptcompress node - Marcos
+                 sbknode = file_nodes.find('sbk')
+                 if sbknode is None:
+diff -Naur bsp-5.1.2/flash.sh bsp-5.1.2-new/flash.sh
+--- bsp-5.1.2/flash.sh	1969-12-31 16:00:01.000000000 -0800
++++ bsp-5.1.2-new/flash.sh	2023-08-06 22:43:04.708431157 -0700
+@@ -2585,6 +2585,9 @@
  			cmdline+="${string} ";
  		fi
  	done

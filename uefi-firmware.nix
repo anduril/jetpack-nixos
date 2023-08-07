@@ -35,7 +35,7 @@ let
     repo = "edk2";
     rev = "r${l4tVersion}-edk2-stable202208";
     fetchSubmodules = true;
-    sha256 = "sha256-PTbNxbncfSvxLW2XmdRHzUy+w5+1Blpk62DJpxDmedA=";
+    sha256 = "sha256-A4nICu2g4Kprdmb0KVfuo8d5I5P7nAri5bzB4j9vUb4=";
   };
 
   edk2-platforms = fetchFromGitHub {
@@ -56,8 +56,8 @@ let
     src = fetchFromGitHub {
       owner = "NVIDIA";
       repo = "edk2-nvidia";
-      rev = "2c81e0fc74f703012dd3b2f18da5be256e142fe3"; # Latest on r35.3.1-updates as of 2023-05-17
-      sha256 = "sha256-Qh1g+8a7ZcFG4VmwH+xDix6dpZ881HaNRE/FJoaRljw=";
+      rev = "f8041c84264ac06b764cd6945559a6c22e0e18aa"; # Latest on r35.4.1-updates as of 2023-08-06
+      sha256 = "sha256-PRjN1/nQWF4LWFiyXYKJTA5OA1jydttxq9DFm6QDMFw=";
     };
     patches = edk2NvidiaPatches ++ [
       (fetchpatch {
@@ -79,7 +79,7 @@ let
     owner = "NVIDIA";
     repo = "edk2-nvidia-non-osi";
     rev = "r${l4tVersion}";
-    sha256 = "sha256-27PTl+svZUocmU6r/8FdqqI9rwHAi+6zSFs4fBA13Ks=";
+    sha256 = "sha256-h0EW5j5/pq0c48alz7w2+g4RCU2yQdYOtDiNFH9VI3M=";
   };
 
   edk2-jetson = edk2.overrideAttrs (_: { src = edk2-src; });
