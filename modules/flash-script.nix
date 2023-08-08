@@ -308,6 +308,10 @@ in
         { boardid="3701"; boardsku="0005"; fab="000"; boardrev=""; fuselevel="fuselevel_production"; chiprev=""; } # 64GB
       ];
 
+      orin-agx-industrial = [
+        { boardid="3701"; boardsku="0008"; fab="300"; boardrev=""; fuselevel="fuselevel_production"; chiprev=""; }
+      ];
+
       orin-nx = [
         { boardid = "3767"; boardsku = "0000"; fab="000"; boardrev=""; fuselevel="fuselevel_production"; chiprev=""; } # Orin NX 16GB
         { boardid = "3767"; boardsku = "0001"; fab="000"; boardrev=""; fuselevel="fuselevel_production"; chiprev=""; } # Orin NX 8GB

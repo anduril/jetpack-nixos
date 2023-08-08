@@ -46,7 +46,7 @@ in
         # You can add your own som or carrierBoard by merging the enum type
         # with additional possibilies in an external NixOS module. See:
         # "Extensible option types" in the NixOS manual
-        type = types.nullOr (types.enum [ "orin-agx" "orin-nx" "orin-nano" "xavier-agx" "xavier-nx" "xavier-nx-emmc" ]);
+        type = types.nullOr (types.enum [ "orin-agx" "orin-agx-industrial" "orin-nx" "orin-nano" "xavier-agx" "xavier-nx" "xavier-nx-emmc" ]);
         description = "Jetson SoM (System-on-Module) to target. Can be null to target a generic jetson device, but some things may not work.";
       };
 

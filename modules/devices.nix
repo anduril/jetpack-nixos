@@ -11,6 +11,7 @@ let
 
   nvpModelConf = {
     orin-agx = "${pkgs.nvidia-jetpack.l4t-nvpmodel}/etc/nvpmodel/nvpmodel_p3701_0000.conf";
+    orin-agx-industrial = "${pkgs.nvidia-jetpack.l4t-nvpmodel}/etc/nvpmodel/nvpmodel_p3701_0008.conf";
     orin-nx = "${pkgs.nvidia-jetpack.l4t-nvpmodel}/etc/nvpmodel/nvpmodel_p3767_0000.conf";
     orin-nano = "${pkgs.nvidia-jetpack.l4t-nvpmodel}/etc/nvpmodel/nvpmodel_p3767_0003.conf";
     xavier-agx = "${pkgs.nvidia-jetpack.l4t-nvpmodel}/etc/nvpmodel/nvpmodel_t194.conf";
@@ -20,6 +21,7 @@ let
 
   nvfancontrolConf = rec {
     orin-agx = "${pkgs.nvidia-jetpack.l4t-nvfancontrol}/etc/nvpower/nvfancontrol/nvfancontrol_p3701_0000.conf";
+    orin-agx-industrial = "${pkgs.nvidia-jetpack.l4t-nvfancontrol}/etc/nvpower/nvfancontrol/nvfancontrol_p3701_0008.conf";
     orin-nx = "${pkgs.nvidia-jetpack.l4t-nvfancontrol}/etc/nvpower/nvfancontrol/nvfancontrol_p3767_0000.conf";
     orin-nano = "${pkgs.nvidia-jetpack.l4t-nvfancontrol}/etc/nvpower/nvfancontrol/nvfancontrol_p3767_0000.conf";
     xavier-agx = "${pkgs.nvidia-jetpack.l4t-nvfancontrol}/etc/nvpower/nvfancontrol/nvfancontrol_p2888.conf";
@@ -63,6 +65,14 @@ in lib.mkMerge [{
       # We don't flash the sdmmc with kernel/initrd/etc at all. Just let it be a
       # regular NixOS machine instead of having some weird partition structure.
       partitionTemplate = mkDefault "${pkgs.nvidia-jetpack.bspSrc}/bootloader/t186ref/cfg/flash_t234_qspi.xml";
+    })
+
+    (mkIf (cfg.som == "orin-agx-industrial") {
+      targetBoard = mkDefault "jetson-agx-orin-devkit-industrial";
+      # Remove the sdmmc part of this flash.xmo file. The industrial spi part is still different
+      partitionTemplate = mkDefault (pkgs.runCommand "flash.xml" { nativeBuildInputs = [ pkgs.buildPackages.xmlstarlet ]; } ''
+        xmlstarlet ed -d '//device[@type="sdmmc_user"]' ${pkgs.nvidia-jetpack.bspSrc}/bootloader/t186ref/cfg/flash_t234_qspi_sdmmc_industrial.xml >$out
+      '');
     })
 
     (mkIf (cfg.som == "orin-nx" || cfg.som == "orin-nano") {
