@@ -9,7 +9,7 @@ let
   isNative = pkgs.stdenv.isAarch64;
   pkgsAarch64 = if isNative then pkgs else pkgs.pkgsCross.aarch64-multiplatform;
 in pkgsAarch64.buildLinux (args // {
-  version = "5.10.104" + lib.optionalString realtime "-rt63";
+  version = "5.10.120" + lib.optionalString realtime "-rt70";
   extraMeta.branch = "5.10";
 
   defconfig = "tegra_defconfig";
