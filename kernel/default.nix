@@ -20,8 +20,8 @@ in pkgsAarch64.buildLinux (args // {
     src = fetchFromGitHub {
       owner = "OE4T";
       repo = "linux-tegra-5.10";
-      rev = "7191dccf8670635906182cc2da862d9c0fdcb93a"; # latest on oe4t-patches-l4t-r35.3.ga as of 2023-07-27
-      sha256 = "sha256-s71v4Bzc2jF9l65FY7OlrB/zi8Vkty+dBxZry8MyBno=";
+      rev = "76678311c10b59a385a6d74152f3a0b976ae2a67"; # latest on oe4t-patches-l4t-r35.4.ga as of 2023-09-27
+      sha256 = "sha256-jHqIYDztVs/yw/oMxr4oPabxXk+l+CPlRrODEaduBgg=";
     };
     # Remove device tree overlays with some incorrect "remote-endpoint" nodes.
     # They are strings, but should be phandles. Otherwise, it fails to compile

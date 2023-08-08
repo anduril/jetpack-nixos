@@ -56,11 +56,13 @@ let
     src = fetchFromGitHub {
       owner = "NVIDIA";
       repo = "edk2-nvidia";
-      rev = "f8041c84264ac06b764cd6945559a6c22e0e18aa"; # Latest on r35.4.1-updates as of 2023-08-06
-      sha256 = "sha256-PRjN1/nQWF4LWFiyXYKJTA5OA1jydttxq9DFm6QDMFw=";
+      rev = "8444db349648a77ed8e2e3047a93004c9cadb2d3"; # Latest on r35.4.1-updates as of 2023-08-07
+      sha256 = "sha256-jHyyg5Ywg/tQg39oY1EwHPBjUTE7r7C9q0HO1vqCL6s=";
     };
     patches = edk2NvidiaPatches ++ [
       (fetchpatch {
+        # https://github.com/NVIDIA/edk2-nvidia/pull/68
+        name = "fix-disabled-serial.patch";
         url = "https://github.com/NVIDIA/edk2-nvidia/commit/9604259b0d11c049f6a3eb5365a3ae10cfb9e6d9.patch";
         hash = "sha256-v/WEwcSNjBXeN0eXVzzl31dn6mq78wIm0u5lW1jGcdE=";
       })
