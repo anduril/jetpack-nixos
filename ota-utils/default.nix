@@ -23,5 +23,7 @@ stdenvNoCC.mkDerivation {
 
     substituteInPlace $out/bin/ota-check-firmware \
       --replace "@l4tVersion@" "${l4tVersion}"
+
+    patchShebangs $out/bin/*
   '';
 }
