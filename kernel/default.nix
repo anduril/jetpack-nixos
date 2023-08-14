@@ -130,6 +130,10 @@ in pkgsAarch64.buildLinux (args // {
     MD_RAID1 = module;
     MD_RAID10 = module;
     MD_RAID456 = module;
+
+    # TODO: Disable Tegra SE use for now because it causes kernel errors when used
+    # See https://github.com/anduril/jetpack-nixos/issues/114
+    DEV_TEGRA_SE_USE_HOST1X_INTERFACE = no;
   } // (lib.optionalAttrs realtime {
     PREEMPT_VOLUNTARY = lib.mkForce no; # Disable the one set in common-config.nix
     # These are the options enabled/disabled by scripts/rt-patch.sh
