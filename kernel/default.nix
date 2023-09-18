@@ -134,6 +134,8 @@ in pkgsAarch64.buildLinux (args // {
     # TODO: Disable Tegra SE use for now because it causes kernel errors when used
     # See https://github.com/anduril/jetpack-nixos/issues/114
     DEV_TEGRA_SE_USE_HOST1X_INTERFACE = no;
+
+    CONFIG_USB_TEGRA_XUDC = yes;
   } // (lib.optionalAttrs realtime {
     PREEMPT_VOLUNTARY = lib.mkForce no; # Disable the one set in common-config.nix
     # These are the options enabled/disabled by scripts/rt-patch.sh
