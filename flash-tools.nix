@@ -35,7 +35,7 @@ let
       perl
     ];
 
-    patches = [ ./flash-tools.patch ./flash-tools-secureboot.patch ];
+    patches = [ ./flash-tools.patch ./flash-tools-secureboot.patch ./disable_eeprom_read.patch ];
 
     postPatch = ''
       # Needed in Jetpack 5
