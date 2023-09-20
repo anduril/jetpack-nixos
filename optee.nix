@@ -27,6 +27,7 @@ let
     pname = "optee_client";
     version = l4tVersion;
     src = nvopteeSrc;
+    patches = [ ./0001-Don-t-prepend-foo-bar-baz-to-TEEC_LOAD_PATH.patch ];
     nativeBuildInputs = [ pkg-config ];
     buildInputs = [ libuuid ];
     makeFlags = [ "-C optee/optee_client" "DESTDIR=$(out)" "SBINDIR=/bin" "LIBDIR=/lib" "INCLUDEDIR=/include" ];

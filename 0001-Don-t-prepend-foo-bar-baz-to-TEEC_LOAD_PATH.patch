@@ -1,0 +1,36 @@
+From 0a29db5517155f9f6c0b756d61781512b1424a03 Mon Sep 17 00:00:00 2001
+From: Mika Tammi <mika.tammi@unikie.com>
+Date: Sat, 23 Sep 2023 00:37:42 +0300
+Subject: Don't prepend /foo:/bar::/baz to TEEC_LOAD_PATH
+
+Signed-off-by: Mika Tammi <mika.tammi@unikie.com>
+---
+ optee/optee_client/tee-supplicant/src/tee_supplicant.c | 8 +-------
+ 1 file changed, 1 insertion(+), 7 deletions(-)
+
+diff --git a/optee/optee_client/tee-supplicant/src/tee_supplicant.c b/optee/optee_client/tee-supplicant/src/tee_supplicant.c
+index 97d2bf4..d240220 100644
+--- a/optee/optee_client/tee-supplicant/src/tee_supplicant.c
++++ b/optee/optee_client/tee-supplicant/src/tee_supplicant.c
+@@ -717,17 +717,11 @@ static void *thread_main(void *a)
+ 	return NULL;
+ }
+ 
+-#define TEEC_TEST_LOAD_PATH "/foo:/bar::/baz"
+-
+ static void set_ta_path(void)
+ {
+ 	char *p = NULL;
+ 	char *saveptr = NULL;
+-	const char *path = (char *)
+-#ifdef TEEC_TEST_LOAD_PATH
+-		TEEC_TEST_LOAD_PATH ":"
+-#endif
+-		TEEC_LOAD_PATH;
++	const char *path = (char *)TEEC_LOAD_PATH;
+ 	size_t n = 0;
+ 
+ 	ta_path_str = strdup(path);
+-- 
+2.40.1
+
