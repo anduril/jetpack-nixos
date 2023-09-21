@@ -1,5 +1,5 @@
 { lib, callPackage, runCommand, writeScript, writeShellApplication, makeInitrd, makeModulesClosure,
-  flashFromDevice, edk2-jetson, uefi-firmware, flash-tools, buildTOS, opteeClient,
+  flashFromDevice, edk2-jetson, uefi-firmware, flash-tools, buildTOS, buildOpteeTaDevKit, opteeClient,
   python3, bspSrc, openssl, dtc,
   l4tVersion,
   pkgsAarch64,
@@ -19,12 +19,14 @@ let
   inherit (cfg.flashScriptOverrides)
     flashArgs fuseArgs partitionTemplate additionalDtbOverlays;
 
-  tosImage = buildTOS {
+  tosArgs = {
     inherit socType;
     inherit (cfg.firmware.optee) taPublicKeyFile;
     opteePatches = cfg.firmware.optee.patches;
     extraMakeFlags = cfg.firmware.optee.extraMakeFlags;
   };
+  tosImage = buildTOS tosArgs;
+  taDevKit = buildOpteeTaDevKit tosArgs;
 
   teeSupplicant = opteeClient.overrideAttrs (old: {
     pname = "tee-supplicant";
@@ -214,5 +216,5 @@ let
 in {
   inherit (tosImage) nvLuksSrv hwKeyAgent;
   inherit mkFlashScript;
-  inherit flashScript initrdFlashScript tosImage teeSupplicant signedFirmware bup fuseScript uefiCapsuleUpdate;
+  inherit flashScript initrdFlashScript tosImage taDevKit teeSupplicant signedFirmware bup fuseScript uefiCapsuleUpdate;
 }
