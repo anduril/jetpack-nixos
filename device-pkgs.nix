@@ -37,14 +37,6 @@ let
     '';
   });
 
-  uefiDefaultKeysDtbo = runCommand "UefiDefaultSecurityKeys.dtbo" { nativeBuildInputs = [ dtc ]; } ''
-    export pkDefault=$(od -t x1 -An "${cfg.firmware.uefi.secureBoot.defaultPkEslFile}")
-    export kekDefault=$(od -t x1 -An "${cfg.firmware.uefi.secureBoot.defaultKekEslFile}")
-    export dbDefault=$(od -t x1 -An "${cfg.firmware.uefi.secureBoot.defaultDbEslFile}")
-    substituteAll ${./uefi-default-keys.dts} keys.dts
-    dtc -I dts -O dtb keys.dts -o $out
-  '';
-
   # TODO: Unify with fuseScript below
   mkFlashScript = args: import ./flash-script.nix ({
     inherit lib flashArgs partitionTemplate;
