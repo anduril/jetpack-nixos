@@ -264,6 +264,9 @@ let
       echo " * Running jpeg_decode"
       ${multimedia-samples}/bin/jpeg_decode num_files 1 ${multimedia-samples}/data/Picture/nvidia-logo.jpg "$WORKDIR"/nvidia-logo.yuv
       echo
+      echo " * Running video_decode"
+      ${multimedia-samples}/bin/video_convert H264 --disable-rendering ${multimedia-samples}/data/Video/sample_outdoor_car_1080p_10fps.h264
+      echo
       echo " * Running video_convert"
       ${multimedia-samples}/bin/video_convert "$WORKDIR"/nvidia-logo.yuv 1920 1080 YUV420 "$WORKDIR"/test.yuv 1920 1080 YUYV
       echo
