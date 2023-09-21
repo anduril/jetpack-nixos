@@ -217,5 +217,5 @@ let
     image;
 in
 {
-  inherit buildTOS opteeClient;
+  inherit buildTOS buildOpteeTaDevKit opteeClient;
 }
