@@ -158,6 +158,14 @@ in
             '';
           };
 
+          clientExtraMakeFlags = mkOption {
+            type = types.listOf types.str;
+            default = [];
+            description = lib.mdDoc ''
+              Extra make flags to pass OP-TEE's client build.
+           '';
+          };
+
           patches = mkOption {
             type = types.listOf types.path;
             default = [];
@@ -166,6 +174,9 @@ in
           extraMakeFlags = mkOption {
             type = types.listOf types.str;
             default = [];
+            description = lib.mdDoc ''
+              Extra make flags to pass OP-TEE's OS build.
+           '';
           };
 
           taPublicKeyFile = mkOption {

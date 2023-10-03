@@ -36,7 +36,9 @@ let
 
   teeSupplicant = opteeClient.overrideAttrs (old: {
     pname = "tee-supplicant";
-    buildFlags = (old.buildFlags or []) ++ [ "CFG_TEE_CLIENT_LOAD_PATH=${cfg.firmware.optee.clientLoadPath}" ];
+    buildFlags = (old.buildFlags or [])
+      ++ [ "CFG_TEE_CLIENT_LOAD_PATH=${cfg.firmware.optee.clientLoadPath}" ]
+      ++ cfg.firmware.optee.clientExtraMakeFlags;
     # remove unneeded headers
     postInstall = ''
       rm -rf $out/include
