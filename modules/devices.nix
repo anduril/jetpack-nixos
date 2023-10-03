@@ -110,13 +110,19 @@ in lib.mkMerge [{
   # https://forums.developer.nvidia.com/t/setting-uefi-variables-using-the-defaultvariabledxe-only-works-if-esp-is-on-emmc-but-not-on-an-nvme-drive/250254
   # We don't mount this at /boot, because we still want to allow the user to have their ESP part on NVMe, or whatever else.
   fileSystems."/opt/nvidia/esp" = lib.mkDefault {
-    device = "/dev/disk/by-partlabel/esp";
-    fsType = "vfat";
-    options = [ "nofail" ];
-    # Since we have NO_ESP_IMG=1 while formatting, the script doesn't
-    # actually create an FS here, so we'll do it automatically
-    autoFormat = true;
-    formatOptions = "-F 32 -n ESP";
+    config = {
+      device = "/dev/disk/by-partlabel/esp";
+      fsType = "vfat";
+      options = [ "nofail" ];
+      # Since we have NO_ESP_IMG=1 while formatting, the script doesn't
+      # actually create an FS here, so we'll do it automatically
+      autoFormat = true;
+      formatOptions =
+        if (lib.versionAtLeast config.system.nixos.release "23.05") then
+          null
+        else
+          "-F 32 -n ESP";
+    };
   };
 })
 ]
