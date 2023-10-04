@@ -24,6 +24,13 @@ in
       firmware = {
         autoUpdate = lib.mkEnableOption "automatic updates for Jetson firmware";
 
+        bootOrder = mkOption {
+          # https://github.com/NVIDIA/edk2-nvidia/blob/71fc2f6de48f3e9f01214b4e9464dd03620b876b/Silicon/NVIDIA/Library/PlatformBootOrderLib/PlatformBootOrderLib.c#L26
+          type = types.nullOr (types.listOf (types.enum [ "scsi" "usb" "sata" "pxev4" "httpv4" "pxev6" "httpv6" "nvme" "ufs" "sd" "emmc" "cdrom" "boot.img" "virtual" "shell" ]));
+          default = null;
+          description = "The default boot order";
+        };
+
         uefi = {
           logo = mkOption {
             type = types.nullOr types.path;
@@ -285,15 +292,23 @@ in
       [ cfg.flashScriptOverrides.configFileName "mmcblk0p1" ]
       );
 
-    hardware.nvidia-jetpack.flashScriptOverrides.additionalDtbOverlays = let
-      uefiDefaultKeysDtbo = pkgs.runCommand "UefiDefaultSecurityKeys.dtbo" { nativeBuildInputs = with pkgs.buildPackages; [ dtc ]; } ''
-        export pkDefault=$(od -t x1 -An "${cfg.firmware.uefi.secureBoot.defaultPkEslFile}")
-        export kekDefault=$(od -t x1 -An "${cfg.firmware.uefi.secureBoot.defaultKekEslFile}")
-        export dbDefault=$(od -t x1 -An "${cfg.firmware.uefi.secureBoot.defaultDbEslFile}")
-        substituteAll ${./uefi-default-keys.dts} keys.dts
-        dtc -I dts -O dtb keys.dts -o $out
-      '';
-    in lib.optional cfg.firmware.uefi.secureBoot.enrollDefaultKeys uefiDefaultKeysDtbo;
+      hardware.nvidia-jetpack.flashScriptOverrides.additionalDtbOverlays =
+        let
+          bootOrder = pkgs.runCommand "DefaultBootOrder.dtbo" { nativeBuildInputs = with pkgs.buildPackages; [ dtc ]; } ''
+            export bootOrder=${lib.concatStringsSep "," cfg.firmware.bootOrder}
+            substituteAll ${./uefi-boot-order.dts} keys.dts
+            dtc -I dts -O dtb keys.dts -o $out
+          '';
+          uefiDefaultKeysDtbo = pkgs.runCommand "UefiDefaultSecurityKeys.dtbo" { nativeBuildInputs = with pkgs.buildPackages; [ dtc ]; } ''
+            export pkDefault=$(od -t x1 -An "${cfg.firmware.uefi.secureBoot.defaultPkEslFile}")
+            export kekDefault=$(od -t x1 -An "${cfg.firmware.uefi.secureBoot.defaultKekEslFile}")
+            export dbDefault=$(od -t x1 -An "${cfg.firmware.uefi.secureBoot.defaultDbEslFile}")
+            substituteAll ${./uefi-default-keys.dts} keys.dts
+            dtc -I dts -O dtb keys.dts -o $out
+          '';
+      in
+      (lib.optional (cfg.firmware.bootOrder != null) bootOrder) ++
+        (lib.optional cfg.firmware.uefi.secureBoot.enrollDefaultKeys uefiDefaultKeysDtbo);
 
     hardware.nvidia-jetpack.flashScriptOverrides.fuseArgs = lib.mkAfter [ cfg.flashScriptOverrides.configFileName ];
 

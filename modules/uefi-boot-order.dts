@@ -1,0 +1,28 @@
+/dts-v1/;
+/plugin/;
+
+/ {
+	overlay-name = "UEFI Boot order";
+
+	fragment@0 {
+		target-path = "/";
+		board_config {
+			sw-modules = "uefi";
+		};
+
+		__overlay__ {
+			firmware {
+				uefi {
+					variables {
+						gNVIDIATokenSpaceGuid {
+							DefaultBootPriority {
+								data = "@bootOrder@";
+								locked;
+							};
+						};
+					};
+				};
+			};
+		};
+	};
+};
