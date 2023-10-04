@@ -1,4 +1,4 @@
-{ lib, callPackage, runCommand, writeScript, writeShellApplication, makeInitrd, makeModulesClosure,
+{ lib, callPackage, runCommand, writeScript, writeShellApplication, symlinkJoin, writeText, makeInitrd, expect, makeModulesClosure,
   flashFromDevice, edk2-jetson, uefi-firmware, flash-tools, buildTOS, opteeClient,
   python3, bspSrc, openssl, dtc,
   l4tVersion,
@@ -86,11 +86,10 @@ let
       allowMissing = false;
     };
     jetpack-init = writeScript "init" ''
-      #!${pkgsAarch64.pkgsStatic.busybox}/bin/sh
-      export PATH=${pkgsAarch64.pkgsStatic.busybox}/bin
+      #!/bin/sh
       mkdir -p /proc /dev /sys
       mount -t proc proc -o nosuid,nodev,noexec /proc
-      mount -t devtmpfs none -o nosuid /dev
+      mount -t devtmpfs devtmpfs -o nosuid /dev
       mount -t sysfs sysfs -o nosuid,nodev,noexec /sys
 
       for mod in ${builtins.toString modules}; do
@@ -102,19 +101,53 @@ let
         sync
         reboot -f
       else
-        echo "Flashing platform firmware unsuccessful. Entering console"
-        exec ${pkgsAarch64.pkgsStatic.busybox}/bin/sh
+        echo "Flashing platform firmware unsuccessful"
+        /bin/sh
+        # don't kernel panic on shell exit
+        echo "Shell exited. Rebooting now"
+        sleep 2
+        reboot -f
       fi
     '';
+    binDir = symlinkJoin {
+      name = "jetson-initrd-flash-bin";
+      paths = [ pkgsAarch64.pkgsStatic.busybox ];
+    };
     initrd = makeInitrd {
-      contents = let
-        kernel = config.boot.kernelPackages.kernel;
-      in [
+      contents = [
+        { object = "${binDir}/bin"; symlink = "/bin"; }
         { object = jetpack-init; symlink = "/init"; }
         { object = "${modulesClosure}/lib/modules"; symlink = "/lib/modules"; }
         { object = "${modulesClosure}/lib/firmware"; symlink = "/lib/firmware"; }
       ];
     };
+    expectScript = writeText "expect-initrd-flash-finish" ''
+      # device
+      set modem [lindex $argv 0]
+
+      # serial port parameters
+      exec stty -F $modem 115200 sane
+
+      # connect
+      send_user "connecting to $modem, exit with ~.\n"
+      spawn -open [open $modem w+]
+
+      expect_before {
+        timeout { puts "timeout"; exit 1 }
+        eof     { puts "eof"; exit 1 }
+      }
+
+      set timeout 600
+      expect {
+        "Flashing platform firmware successful" { exit 0 }
+        "Flashing platform firmware unsuccessful" { puts "\nDebug shell at $modem"; exit 1 }
+      }
+    '';
+    defaultHostSerialPath = {
+      "xavier-agx" = "/dev/ttyUSB3";
+      "orin-agx" = "/dev/ttyACM0";
+    }.${cfg.som} or "/dev/ttyUSB0";
+
   in writeShellApplication {
     name = "initrd-flash-${hostName}";
     text = mkFlashScript {
@@ -129,7 +162,7 @@ let
       postFlashCommands = ''
         echo
         echo "Jetson device should now be flashing and will reboot when complete."
-        echo "You may watch the progress of this on the device's serial port"
+        ${expect}/bin/expect -f ${expectScript} "''${1:-${defaultHostSerialPath}}"
       '';
     };
   };
@@ -168,8 +201,7 @@ let
   bup = runCommand "bup-${hostName}-${l4tVersion}" {
     inherit (cfg.firmware.secureBoot) requiredSystemFeatures;
   } ((mkFlashScript {
-    flashCommands = let
-    in lib.concatMapStringsSep "\n" (v: with v;
+    flashCommands = lib.concatMapStringsSep "\n" (v: with v;
       "BOARDID=${boardid} BOARDSKU=${boardsku} FAB=${fab} BOARDREV=${boardrev} FUSELEVEL=${fuselevel} CHIPREV=${chiprev} ./flash.sh ${lib.optionalString (partitionTemplate != null) "-c flash.xml"} --no-flash --bup --multi-spec ${builtins.toString flashArgs}"
     ) cfg.firmware.variants;
   }) + ''
