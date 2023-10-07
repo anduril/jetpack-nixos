@@ -17,7 +17,7 @@ let
     else throw "Unknown SoC type";
 
   inherit (cfg.flashScriptOverrides)
-    flashArgs fuseArgs partitionTemplate additionalDtbOverlays;
+    flashArgs fuseArgs partitionTemplate;
 
   tosArgs = {
     inherit socType;
@@ -101,9 +101,7 @@ let
       fi
     '';
     initrd = makeInitrd {
-      contents = let
-        kernel = config.boot.kernelPackages.kernel;
-      in [
+      contents = [
         { object = jetpack-init; symlink = "/init"; }
         { object = "${modulesClosure}/lib/modules"; symlink = "/lib/modules"; }
         { object = "${modulesClosure}/lib/firmware"; symlink = "/lib/firmware"; }
@@ -162,8 +160,7 @@ let
   bup = runCommand "bup-${hostName}-${l4tVersion}" {
     inherit (cfg.firmware.secureBoot) requiredSystemFeatures;
   } ((mkFlashScript {
-    flashCommands = let
-    in lib.concatMapStringsSep "\n" (v: with v;
+    flashCommands = lib.concatMapStringsSep "\n" (v: with v;
       "BOARDID=${boardid} BOARDSKU=${boardsku} FAB=${fab} BOARDREV=${boardrev} FUSELEVEL=${fuselevel} CHIPREV=${chiprev} ./flash.sh ${lib.optionalString (partitionTemplate != null) "-c flash.xml"} --no-flash --bup --multi-spec ${builtins.toString flashArgs}"
     ) cfg.firmware.variants;
   }) + ''
