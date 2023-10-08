@@ -290,22 +290,15 @@ in
         export pkDefault=$(od -t x1 -An "${cfg.firmware.uefi.secureBoot.defaultPkEslFile}")
         export kekDefault=$(od -t x1 -An "${cfg.firmware.uefi.secureBoot.defaultKekEslFile}")
         export dbDefault=$(od -t x1 -An "${cfg.firmware.uefi.secureBoot.defaultDbEslFile}")
-        substituteAll ${../uefi-default-keys.dts} keys.dts
+        substituteAll ${./uefi-default-keys.dts} keys.dts
         dtc -I dts -O dtb keys.dts -o $out
       '';
     in lib.optional cfg.firmware.uefi.secureBoot.enrollDefaultKeys uefiDefaultKeysDtbo;
 
     hardware.nvidia-jetpack.flashScriptOverrides.fuseArgs = lib.mkAfter [ cfg.flashScriptOverrides.configFileName ];
 
-    hardware.nvidia-jetpack.firmware.uefi.edk2NvidiaPatches = [
-      # Have UEFI use the device tree compiled into the firmware, instead of
-      # using one from the kernel-dtb partition.
-      # See: https://github.com/anduril/jetpack-nixos/pull/18
-      ../edk2-uefi-dtb.patch
-    ];
-
     # These are from l4t_generate_soc_bup.sh, plus some additional ones found in the wild.
-    hardware.nvidia-jetpack.firmware.variants = lib.mkOptionDefault (rec {
+    hardware.nvidia-jetpack.firmware.variants = lib.mkOptionDefault ({
       xavier-agx = [
         { boardid="2888"; boardsku="0001"; fab="400"; boardrev="D.0"; fuselevel="fuselevel_production"; chiprev="2"; }
         { boardid="2888"; boardsku="0001"; fab="400"; boardrev="E.0"; fuselevel="fuselevel_production"; chiprev="2"; } # 16GB

@@ -64,7 +64,13 @@ let
         url = "https://github.com/NVIDIA/edk2-nvidia/commit/9604259b0d11c049f6a3eb5365a3ae10cfb9e6d9.patch";
         hash = "sha256-IfnTrQnkxFXbeHDfmQd4Umpbp9MKZI1OKi7H1Ujg8K8=";
       })
+
       ./capsule-authentication.patch
+
+      # Have UEFI use the device tree compiled into the firmware, instead of
+      # using one from the kernel-dtb partition.
+      # See: https://github.com/anduril/jetpack-nixos/pull/18
+      ./edk2-uefi-dtb.patch
     ];
     postPatch = lib.optionalString errorLevelInfo ''
       sed -i 's#PcdDebugPrintErrorLevel|.*#PcdDebugPrintErrorLevel|0x8000004F#' Platform/NVIDIA/NVIDIA.common.dsc.inc
