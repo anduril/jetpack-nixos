@@ -1,7 +1,7 @@
-From 507f96036e6af6bcec7f4e0435ed11ba0f65619a Mon Sep 17 00:00:00 2001
+From 538e7a31b33cfafbeddf2f8113001fce57861dea Mon Sep 17 00:00:00 2001
 From: Jiri Olsa <jolsa@kernel.org>
 Date: Wed, 6 Jan 2021 00:42:19 +0100
-Subject: [PATCH 6/6] tools/resolve_btfids: Warn when having multiple IDs for
+Subject: [PATCH 6/7] tools/resolve_btfids: Warn when having multiple IDs for
  single type
 
 The kernel image can contain multiple types (structs/unions)
@@ -89,5 +89,5 @@ index f32c059fbfb4..c3f808a393d1 100644
  	}
  
 -- 
-2.39.1
+2.40.1
 

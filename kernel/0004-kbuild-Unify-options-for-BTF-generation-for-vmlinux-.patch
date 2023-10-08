@@ -1,7 +1,7 @@
-From f3fd824d409bc429b661572e2ef01dfeb64ce326 Mon Sep 17 00:00:00 2001
+From dbf548b1489179a23f6b969404037121ccf682a7 Mon Sep 17 00:00:00 2001
 From: Jiri Olsa <jolsa@redhat.com>
 Date: Wed, 19 Oct 2022 10:56:03 +0200
-Subject: [PATCH 4/5] kbuild: Unify options for BTF generation for vmlinux and
+Subject: [PATCH 4/7] kbuild: Unify options for BTF generation for vmlinux and
  modules
 
 commit 9741e07ece7c247dd65e1aa01e16b683f01c05a8 upstream.
@@ -102,5 +102,5 @@ index 000000000000..27445cb72974
 +
 +echo ${extra_paholeopt}
 -- 
-2.39.1
+2.40.1
 
