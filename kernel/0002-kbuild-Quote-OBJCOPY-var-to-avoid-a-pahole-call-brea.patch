@@ -1,7 +1,7 @@
-From 688d9cbc5932cce17ed2f97b62eac880b4dab5f0 Mon Sep 17 00:00:00 2001
+From 43e4f3cb5539c9a49133c29aea08167c9237b2c0 Mon Sep 17 00:00:00 2001
 From: Javier Martinez Canillas <javierm@redhat.com>
 Date: Wed, 19 Oct 2022 10:56:01 +0200
-Subject: [PATCH 2/5] kbuild: Quote OBJCOPY var to avoid a pahole call break
+Subject: [PATCH 2/7] kbuild: Quote OBJCOPY var to avoid a pahole call break
  the build
 
 commit ff2e6efda0d5c51b33e2bcc0b0b981ac0a0ef214 upstream.
@@ -66,5 +66,5 @@ index 779fde480a99..94c548b11db9 100755
  	# Create ${2} which contains just .BTF section but no symbols. Add
  	# SHF_ALLOC because .BTF will be part of the vmlinux image. --strip-all
 -- 
-2.39.1
+2.40.1
 
