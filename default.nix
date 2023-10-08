@@ -36,34 +36,34 @@ let
     ${lib.concatStringsSep "\n" (lib.mapAttrsToList (n: p: "echo Unpacking ${n}; dpkg -x ${p.src} $out/${n}") debs.t234)}
   '';
 
-  inherit (pkgsAarch64.callPackages ./uefi-firmware.nix { inherit l4tVersion; })
+  inherit (pkgsAarch64.callPackages ./pkgs/uefi-firmware { inherit l4tVersion; })
     edk2-jetson uefi-firmware;
 
-  inherit (pkgsAarch64.callPackages ./optee.nix {
+  inherit (pkgsAarch64.callPackages ./pkgs/optee {
     # Nvidia's recommended toolchain is gcc9:
     # https://nv-tegra.nvidia.com/r/gitweb?p=tegra/optee-src/nv-optee.git;a=blob;f=optee/atf_and_optee_README.txt;h=591edda3d4ec96997e054ebd21fc8326983d3464;hb=5ac2ab218ba9116f1df4a0bb5092b1f6d810e8f7#l33
     stdenv = pkgsAarch64.gcc9Stdenv;
     inherit bspSrc l4tVersion;
   }) buildTOS buildOpteeTaDevKit opteeClient;
 
-  flash-tools = callPackage ./flash-tools.nix {
+  flash-tools = callPackage ./pkgs/flash-tools {
     inherit bspSrc l4tVersion;
   };
 
-  board-automation = callPackage ./board-automation.nix {
+  board-automation = callPackage ./pkgs/board-automation {
     inherit bspSrc l4tVersion;
   };
 
-  python-jetson = python3.pkgs.callPackage ./python-jetson.nix { };
+  python-jetson = python3.pkgs.callPackage ./pkgs/python-jetson { };
 
-  tegra-eeprom-tool = pkgsAarch64.callPackage ./tegra-eeprom-tool.nix { };
-  tegra-eeprom-tool-static = pkgsAarch64.pkgsStatic.callPackage ./tegra-eeprom-tool.nix { };
+  tegra-eeprom-tool = pkgsAarch64.callPackage ./pkgs/tegra-eeprom-tool { };
+  tegra-eeprom-tool-static = pkgsAarch64.pkgsStatic.callPackage ./pkgs/tegra-eeprom-tool { };
 
-  l4t = callPackages ./l4t.nix { inherit debs l4tVersion; };
+  l4t = callPackages ./pkgs/l4t { inherit debs l4tVersion; };
 
-  cudaPackages = callPackages ./cuda-packages.nix { inherit debs cudaVersion autoAddOpenGLRunpathHook l4t; };
+  cudaPackages = callPackages ./pkgs/cuda-packages { inherit debs cudaVersion autoAddOpenGLRunpathHook l4t; };
 
-  samples = callPackages ./samples.nix { inherit debs cudaVersion autoAddOpenGLRunpathHook l4t cudaPackages; };
+  samples = callPackages ./pkgs/samples { inherit debs cudaVersion autoAddOpenGLRunpathHook l4t cudaPackages; };
 
   kernel = callPackage ./kernel { inherit (l4t) l4t-xusb-firmware; kernelPatches = []; };
   kernelPackagesOverlay = self: super: {
@@ -74,15 +74,15 @@ let
   rtkernel = callPackage ./kernel { inherit (l4t) l4t-xusb-firmware; kernelPatches = [];  realtime = true; };
   rtkernelPackages = (pkgs.linuxPackagesFor rtkernel).extend kernelPackagesOverlay;
 
-  nxJetsonBenchmarks = pkgs.callPackage ./jetson-benchmarks/default.nix {
+  nxJetsonBenchmarks = pkgs.callPackage ./pkgs/jetson-benchmarks {
     targetSom = "nx";
     inherit cudaPackages;
   };
-  xavierAgxJetsonBenchmarks = pkgs.callPackage ./jetson-benchmarks/default.nix {
+  xavierAgxJetsonBenchmarks = pkgs.callPackage ./pkgs/jetson-benchmarks {
     targetSom = "xavier-agx";
     inherit cudaPackages;
   };
-  orinAgxJetsonBenchmarks = pkgs.callPackage ./jetson-benchmarks/default.nix {
+  orinAgxJetsonBenchmarks = pkgs.callPackage ./pkgs/jetson-benchmarks {
     targetSom = "orin-agx";
     inherit cudaPackages;
   };
@@ -105,16 +105,16 @@ let
     networking.hostName = "${c.som}-${c.carrierBoard}"; # Just so it sets the flash binary name.
   }) supportedConfigurations;
 
-  flashFromDevice = callPackage ./flash-from-device.nix {
+  flashFromDevice = callPackage ./pkgs/flash-from-device {
     inherit pkgsAarch64 tegra-eeprom-tool-static;
   };
 
-  # Packages whose contents are paramterized by NixOS configuration
-  devicePkgsFromNixosConfig = callPackage ./device-pkgs.nix {
+  # Packages whose contents are parameterized by NixOS configuration
+  devicePkgsFromNixosConfig = callPackage ./device-pkgs {
     inherit l4tVersion pkgsAarch64 flash-tools flashFromDevice edk2-jetson uefi-firmware buildTOS buildOpteeTaDevKit opteeClient bspSrc;
   };
 
-  otaUtils = callPackage ./ota-utils {
+  otaUtils = callPackage ./pkgs/ota-utils {
     inherit tegra-eeprom-tool l4tVersion;
   };
 in rec {
@@ -148,7 +148,7 @@ in rec {
 
   flash-generic = writeShellApplication {
     name = "flash-generic";
-    text = callPackage ./flash-script.nix {
+    text = callPackage ./device-pkgs/flash-script.nix {
       inherit flash-tools uefi-firmware;
       flashCommands = ''
         ${runtimeShell}
