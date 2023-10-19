@@ -1,6 +1,6 @@
 { lib, callPackage, runCommand, writeScript, writeShellApplication, makeInitrd, makeModulesClosure,
   flashFromDevice, edk2-jetson, uefi-firmware, flash-tools, buildTOS, buildOpteeTaDevKit, opteeClient,
-  python3, bspSrc, openssl, dtc,
+  python3, bspSrc, openssl_1_1, dtc,
   l4tVersion,
   pkgsAarch64,
 }:
@@ -172,7 +172,7 @@ let
   # python ${edk2-jetson}/BaseTools/BinWrappers/PosixLike/GenerateCapsule -v --encode --monotonic-count 1
   # NOTE: providing null public certs here will use the test certs in the EDK2 repo
   uefiCapsuleUpdate = runCommand "uefi-${hostName}-${l4tVersion}.Cap" {
-    nativeBuildInputs = [ python3 openssl ];
+    nativeBuildInputs = [ python3 openssl_1_1 ];
     inherit (cfg.firmware.uefi.capsuleAuthentication) requiredSystemFeatures;
   } (''
     bash ${bspSrc}/generate_capsule/l4t_generate_soc_capsule.sh \
