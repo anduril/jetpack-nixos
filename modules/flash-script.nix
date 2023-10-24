@@ -189,6 +189,12 @@ in
             default = [ ];
             description = "Additional requiredSystemFeatures to add to derivations which make use of secure boot keys";
           };
+
+          preSignCommands = lib.mkOption {
+            type = types.lines;
+            default = "";
+            description = "Additional commands to run before performing operation that involve signing. Can be used to set up environment to interact with an external HSM.";
+          };
         };
 
         # Firmware variants. For most normal usage, you shouldn't need to set this option
@@ -248,6 +254,12 @@ in
         partitionTemplate = mkOption {
           type = types.path;
           description = ".xml file describing partition template to use when flashing";
+        };
+
+        patches = mkOption {
+          type = types.listOf types.path;
+          default = [];
+          description = "Patches to apply to the flash-tools";
         };
 
         postPatch = mkOption {
