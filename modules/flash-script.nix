@@ -118,6 +118,12 @@ in
                 make use of capsule authentication private keys.
               '';
             };
+
+            preSignCommands = lib.mkOption {
+              type = types.lines;
+              default = "";
+              description = "Additional commands to run before performing operation that involve signing. Can be used to set up environment to interact with an external HSM.";
+            };
           };
         };
 

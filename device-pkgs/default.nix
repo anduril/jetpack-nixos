@@ -243,6 +243,7 @@ let
     nativeBuildInputs = [ python3 openssl_1_1 ];
     inherit (cfg.firmware.uefi.capsuleAuthentication) requiredSystemFeatures;
   } (''
+    ${cfg.firmware.uefi.capsuleAuthentication.preSignCommands}
     bash ${bspSrc}/generate_capsule/l4t_generate_soc_capsule.sh \
   '' + (lib.optionalString cfg.firmware.uefi.capsuleAuthentication.enable ''
       --trusted-public-cert ${cfg.firmware.uefi.capsuleAuthentication.trustedPublicCertPemFile} \
