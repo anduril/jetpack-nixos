@@ -228,7 +228,8 @@ let
   bup = runCommand "bup-${hostName}-${l4tVersion}" {
     inherit (cfg.firmware.secureBoot) requiredSystemFeatures;
   } ((mkFlashScript {
-    flashCommands = lib.concatMapStringsSep "\n" (v: with v;
+    # TODO: Remove preSignCommands when we switch to using signedFirmware directly
+    flashCommands = cfg.firmware.secureBoot.preSignCommands + lib.concatMapStringsSep "\n" (v: with v;
       "BOARDID=${boardid} BOARDSKU=${boardsku} FAB=${fab} BOARDREV=${boardrev} FUSELEVEL=${fuselevel} CHIPREV=${chiprev} ./flash.sh ${lib.optionalString (partitionTemplate != null) "-c flash.xml"} --no-flash --bup --multi-spec ${builtins.toString flashArgs}"
     ) cfg.firmware.variants;
   }) + ''
