@@ -1,6 +1,6 @@
 { lib, callPackage, runCommand, writeScript, writeShellApplication, makeInitrd, makeModulesClosure,
   flashFromDevice, edk2-jetson, uefi-firmware, flash-tools, buildTOS, buildOpteeTaDevKit, opteeClient,
-  python3, bspSrc, openssl_1_1, dtc,
+  python3, openssl_1_1, dtc,
 
   l4tVersion,
   pkgsAarch64,
@@ -245,7 +245,7 @@ let
     inherit (cfg.firmware.uefi.capsuleAuthentication) requiredSystemFeatures;
   } (''
     ${cfg.firmware.uefi.capsuleAuthentication.preSignCommands}
-    bash ${bspSrc}/generate_capsule/l4t_generate_soc_capsule.sh \
+    bash ${flash-tools-patched}/generate_capsule/l4t_generate_soc_capsule.sh \
   '' + (lib.optionalString cfg.firmware.uefi.capsuleAuthentication.enable ''
       --trusted-public-cert ${cfg.firmware.uefi.capsuleAuthentication.trustedPublicCertPemFile} \
       --other-public-cert ${cfg.firmware.uefi.capsuleAuthentication.otherPublicCertPemFile} \
