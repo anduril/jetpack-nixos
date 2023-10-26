@@ -331,7 +331,7 @@ in
     hardware.nvidia-jetpack.flashScriptOverrides.fuseArgs = lib.mkAfter [ cfg.flashScriptOverrides.configFileName ];
 
     # These are from l4t_generate_soc_bup.sh, plus some additional ones found in the wild.
-    hardware.nvidia-jetpack.firmware.variants = lib.mkOptionDefault ({
+    hardware.nvidia-jetpack.firmware.variants = if (cfg.som != null) then (lib.mkOptionDefault ({
       xavier-agx = [
         { boardid="2888"; boardsku="0001"; fab="400"; boardrev="D.0"; fuselevel="fuselevel_production"; chiprev="2"; }
         { boardid="2888"; boardsku="0001"; fab="400"; boardrev="E.0"; fuselevel="fuselevel_production"; chiprev="2"; } # 16GB
@@ -363,7 +363,7 @@ in
         { boardid = "3767"; boardsku = "0004"; fab="000"; boardrev=""; fuselevel="fuselevel_production"; chiprev=""; } # Orin Nano 4GB
         { boardid = "3767"; boardsku = "0005"; fab="000"; boardrev=""; fuselevel="fuselevel_production"; chiprev=""; } # Orin Nano devkit module
       ];
-    }.${cfg.som} or (throw "Unable to set default firmware variants since som is unset"));
+    }.${cfg.som})) else lib.mkOptionDefault [];
 
     systemd.services = lib.mkIf (cfg.flashScriptOverrides.targetBoard != null) {
       setup-jetson-efi-variables = {
