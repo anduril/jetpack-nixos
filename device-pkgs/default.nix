@@ -126,7 +126,7 @@ let
         cp ${kernelPath} kernel/Image
         cp ${initrdPath}/initrd bootloader/l4t_initrd.img
 
-        export CMDLINE="${lib.escapeShellArgs kernelCmdline}"
+        export CMDLINE="${builtins.toString kernelCmdline}"
         export INITRD_IN_BOOTIMG="yes"
       '';
       flashArgs = [ "--rcm-boot" ] ++ cfg.flashScriptOverrides.flashArgs;

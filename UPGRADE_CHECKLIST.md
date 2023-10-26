@@ -8,7 +8,7 @@
     - [ ] Grep for "sha256 = ", see if there is anything else not covered
 - [ ] Grep for the previous version strings e.g. "35.3.1"
 - [ ] Compare files from `unpackedDebs` before and after
-- [ ] Ensure the soc variants in device-pkgs/default.nix match those in jetson_board_spec.cfg from BSP
+- [ ] Ensure the soc variants in `modules/flash-script.nix` match those in jetson_board_spec.cfg from BSP
 - [ ] Ensure logic in ota-utils/ota_helpers.func matches nvidia-l4t-init/opt/nvidia/nv-l4t-bootloader-config.sh
 
 ### Testing
