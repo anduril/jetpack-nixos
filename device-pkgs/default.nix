@@ -183,11 +183,11 @@ let
   in writeShellApplication {
     name = "initrd-flash-${hostName}";
     text = ''
-      ${mkRcmBootScript {
+      ${lib.getExe (mkRcmBootScript {
         kernelPath = "${config.boot.kernelPackages.kernel}/Image";
         initrdPath = initrd;
         kernelCmdline = "initrd=initrd console=ttyTCU0,115200";
-      }}
+      })}
       echo
       echo "Jetson device should now be flashing and will reboot when complete."
       echo "You may watch the progress of this on the device's serial port"
