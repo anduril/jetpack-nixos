@@ -119,28 +119,28 @@ let
   };
 
   # Produces a script that boots a given kernel, initrd, and cmdline using the RCM boot method
-  mkRcmBootScript = { kernelPath, initrdPath, kernelCmdline }: writeShellApplication {
-    name = "rcm-boot";
-    text = mkFlashScriptAuto {
-      preFlashCommands = ''
-        cp ${kernelPath} kernel/Image
-        cp ${initrdPath}/initrd bootloader/l4t_initrd.img
+  mkRcmBootScript = { kernelPath, initrdPath, kernelCmdline }: mkFlashScriptAuto {
+    preFlashCommands = ''
+      cp ${kernelPath} kernel/Image
+      cp ${initrdPath}/initrd bootloader/l4t_initrd.img
 
-        export CMDLINE="${builtins.toString kernelCmdline}"
-        export INITRD_IN_BOOTIMG="yes"
-      '';
-      flashArgs = [ "--rcm-boot" ] ++ cfg.flashScriptOverrides.flashArgs;
-    };
+      export CMDLINE="${builtins.toString kernelCmdline}"
+      export INITRD_IN_BOOTIMG="yes"
+    '';
+    flashArgs = [ "--rcm-boot" ] ++ cfg.flashScriptOverrides.flashArgs;
   };
 
   # Produces a script which boots into this NixOS system via RCM mode
   # TODO: This doesn't work currently because `rcmBoot` would need to be built
   # on x86_64, and the machine in `config` should be aarch64-linux
-  rcmBoot = mkRcmBootScript {
-    # See nixpkgs nixos/modules/system/activatation/top-level.nix for standard usage of these paths
-    kernelPath = "${config.boot.kernelPackages.kernel}/${config.system.boot.loader.kernelFile}";
-    initrdPath = "${config.system.build.initialRamdisk}/${config.system.boot.loader.initrdFile}";
-    kernelCmdline = "init=${config.system.build.toplevel}/init initrd=initrd ${toString config.boot.kernelParams}";
+  rcmBoot = writeShellApplication {
+    name = "rcmboot-nixos";
+    text = mkRcmBootScript {
+      # See nixpkgs nixos/modules/system/activatation/top-level.nix for standard usage of these paths
+      kernelPath = "${config.boot.kernelPackages.kernel}/${config.system.boot.loader.kernelFile}";
+      initrdPath = "${config.system.build.initialRamdisk}/${config.system.boot.loader.initrdFile}";
+      kernelCmdline = "init=${config.system.build.toplevel}/init initrd=initrd ${toString config.boot.kernelParams}";
+    };
   };
 
   # TODO: The flash script should not have the kernel output in its runtime closure
