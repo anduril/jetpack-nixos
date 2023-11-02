@@ -1,7 +1,7 @@
 { lib, callPackage, runCommand, writeScript, writeShellApplication, makeInitrd, makeModulesClosure,
   flashFromDevice, edk2-jetson, uefi-firmware, flash-tools, buildTOS, buildOpteeTaDevKit, opteeClient,
   python3, openssl_1_1, dtc,
-
+  buildOpteePKCS11Ta,
   l4tVersion,
   pkgsAarch64,
 }:
@@ -30,13 +30,18 @@ let
     inherit (cfg.firmware.optee) taPublicKeyFile;
     opteePatches = cfg.firmware.optee.patches;
     extraMakeFlags = cfg.firmware.optee.extraMakeFlags;
+    supplicantArgs = cfg.firmware.optee.supplicantArgs;
   };
   tosImage = buildTOS tosArgs;
   taDevKit = buildOpteeTaDevKit tosArgs;
+  opteePKCS11Ta = buildOpteePKCS11Ta tosArgs;
 
   teeSupplicant = opteeClient.overrideAttrs (old:
     let
-      taPaths = lib.strings.removeSuffix ":"  (lib.concatMapStrings (x: x + ":") cfg.firmware.optee.clientLoadPath);
+      taPaths = lib.strings.removeSuffix ":" (
+        lib.optionalString cfg.firmware.optee.pkcs11support "${opteePKCS11Ta}:"
+        +
+        (lib.concatMapStrings (x: x + ":") cfg.firmware.optee.clientLoadPath));
     in {
       pname = "tee-supplicant";
       buildFlags = (old.buildFlags or []) ++ (if taPaths == "" then [] else [ "CFG_TEE_CLIENT_LOAD_PATH=${taPaths}" ]);
@@ -277,5 +282,5 @@ in {
   inherit (tosImage) nvLuksSrv hwKeyAgent;
   inherit mkFlashScript mkFlashCmdScript mkFlashScriptAuto;
   inherit flashScript initrdFlashScript tosImage taDevKit teeSupplicant signedFirmware bup fuseScript uefiCapsuleUpdate;
-  inherit mkRcmBootScript rcmBoot;
+  inherit mkRcmBootScript rcmBoot opteePKCS11Ta;
 }
