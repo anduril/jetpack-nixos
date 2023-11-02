@@ -137,13 +137,14 @@ in
           };
 
           clientLoadPath = mkOption {
-            type = types.path;
-            default = "/var/lib/optee";
+            type = types.listOf types.path;
+            default = [];
             description = lib.mdDoc ''
-              The path tee-supplicant will use to search for trusted
+              The path(s) tee-supplicant will use to search for trusted
               applications. Note that trusted applications must be placed in
               the TA directory (specified with tee-supplicant's --ta-dir flag),
-              under this load path.
+              under this load path. Default TA directory is optee_armtz. For
+              clarification: <tee-supplicant search dir>/optee_armtz.
             '';
           };
 

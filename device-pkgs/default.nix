@@ -34,14 +34,18 @@ let
   tosImage = buildTOS tosArgs;
   taDevKit = buildOpteeTaDevKit tosArgs;
 
-  teeSupplicant = opteeClient.overrideAttrs (old: {
-    pname = "tee-supplicant";
-    buildFlags = (old.buildFlags or []) ++ [ "CFG_TEE_CLIENT_LOAD_PATH=${cfg.firmware.optee.clientLoadPath}" ];
-    # remove unneeded headers
-    postInstall = ''
-      rm -rf $out/include
-    '';
-  });
+  teeSupplicant = opteeClient.overrideAttrs (old:
+    let
+      taPaths = lib.strings.removeSuffix ":"  (lib.concatMapStrings (x: x + ":") cfg.firmware.optee.clientLoadPath);
+    in {
+      pname = "tee-supplicant";
+      buildFlags = (old.buildFlags or []) ++ (if taPaths == "" then [] else [ "CFG_TEE_CLIENT_LOAD_PATH=${taPaths}" ]);
+      # remove unneeded headers
+      postInstall = ''
+        rm -rf $out/include
+      '';
+    }
+  );
 
   # TODO: Unify with fuseScript below
   mkFlashScript = args: import ./flash-script.nix ({
