@@ -34,6 +34,36 @@ let
     meta.platforms = [ "aarch64-linux" ];
   };
 
+
+  opteeXtest = args: let
+      taDir = lib.escapeShellArg args.supplicantArgs.taDir;
+    in stdenv.mkDerivation {
+      pname = "optee_xtest";
+      version = l4tVersion;
+      src = nvopteeSrc;
+      nativeBuildInputs = [ (buildPackages.python3.withPackages (p: [ p.cryptography ])) ];
+      postPatch = ''
+        patchShebangs --build $(find optee/optee_test -type d -name scripts -printf '%p ')
+      '';
+      makeFlags = [
+        "-C optee/optee_test"
+        "CROSS_COMPILE=${stdenv.cc.targetPrefix}"
+        "OPTEE_CLIENT_EXPORT=${opteeClient}"
+        "TA_DEV_KIT_DIR=${buildOpteeTaDevKit args}/export-ta_arm64"
+        "TA_DIR=$(out)/${taDir}"
+        "O=$(PWD)/out"
+      ];
+      installPhase = ''
+        runHook preInstall
+        install -Dm 755 ./out/xtest/xtest $out/bin/xtest
+        mkdir $out/${taDir}
+        find ./out -name "*.ta" -exec cp {} $out/${taDir}/ \;
+        mkdir $out/supp_plugin/
+        cp ./out/supp_plugin/f07bfc66-958c-4a15-99c0-260e4e7375dd.plugin $out/supp_plugin/
+        runHook postInstall
+      '';
+    };
+
   buildOpteePKCS11Ta = args: (buildOptee (args // {
     pname = "optee_pkcs11ta";
     buildpkcs11ta = true;
@@ -237,5 +267,5 @@ let
     image;
 in
 {
-  inherit buildTOS buildOpteeTaDevKit opteeClient buildOpteePKCS11Ta;
+  inherit buildTOS buildOpteeTaDevKit opteeClient buildOpteePKCS11Ta opteeXtest;
 }

@@ -182,7 +182,7 @@ in
     environment.systemPackages = with pkgs.nvidia-jetpack; [
       l4t-tools
       otaUtils # Tools for UEFI capsule updates
-    ];
+    ] ++ lib.optional cfg.firmware.optee.xtest config.hardware.nvidia-jetpack.devicePkgs.xtest;
 
     # Used by libEGL_nvidia.so.0
     environment.etc."egl/egl_external_platform.d".source = "/run/opengl-driver/share/egl/egl_external_platform.d/";

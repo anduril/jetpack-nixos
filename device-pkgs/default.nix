@@ -2,6 +2,7 @@
   flashFromDevice, edk2-jetson, uefi-firmware, flash-tools, buildTOS, buildOpteeTaDevKit, opteeClient,
   python3, openssl_1_1, dtc,
   buildOpteePKCS11Ta,
+  opteeXtest,
   l4tVersion,
   pkgsAarch64,
 }:
@@ -35,11 +36,14 @@ let
   tosImage = buildTOS tosArgs;
   taDevKit = buildOpteeTaDevKit tosArgs;
   opteePKCS11Ta = buildOpteePKCS11Ta tosArgs;
+  xtest = opteeXtest tosArgs;
 
   teeSupplicant = opteeClient.overrideAttrs (old:
     let
       taPaths = lib.strings.removeSuffix ":" (
         lib.optionalString cfg.firmware.optee.pkcs11support "${opteePKCS11Ta}:"
+        +
+        lib.optionalString cfg.firmware.optee.xtest "${xtest}:"
         +
         (lib.concatMapStrings (x: x + ":") cfg.firmware.optee.clientLoadPath));
     in {
@@ -282,5 +286,5 @@ in {
   inherit (tosImage) nvLuksSrv hwKeyAgent;
   inherit mkFlashScript mkFlashCmdScript mkFlashScriptAuto;
   inherit flashScript initrdFlashScript tosImage taDevKit teeSupplicant signedFirmware bup fuseScript uefiCapsuleUpdate;
-  inherit mkRcmBootScript rcmBoot opteePKCS11Ta;
+  inherit mkRcmBootScript rcmBoot opteePKCS11Ta xtest;
 }
