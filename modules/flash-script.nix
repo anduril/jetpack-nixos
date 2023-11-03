@@ -128,12 +128,27 @@ in
         };
 
         optee = {
-          supplicantExtraArgs = mkOption {
-            type = types.listOf types.str;
-            default = [];
-            description = lib.mdDoc ''
-              Extra arguments to pass to tee-supplicant.
-            '';
+          supplicantArgs = {
+
+            taDir = mkOption {
+              type = types.str;
+              default = "optee_armtz";
+              description = lib.mdDoc ''
+                Passes --ta-dir argument to tee-supplicant. Default
+                value is from optee's client source code. "optee_armtz"
+                is partially hardcoded. NOTE: If default changed, it
+                need to be changed also systemd.services.tee-supplicant!
+              '';
+            };
+
+            extraArgs = mkOption {
+              type = types.listOf types.str;
+              default = [];
+              description = lib.mdDoc ''
+                Extra arguments to pass to tee-supplicant.
+                NOTE: use for --ta-dir optee.supplicantArgs.taDir
+              '';
+            };
           };
 
           clientLoadPath = mkOption {

@@ -163,10 +163,17 @@ in
       wantedBy = [ "multi-user.target" ];
     };
 
-    systemd.services.tee-supplicant = {
+    systemd.services.tee-supplicant = let
+      supplicantArgs = lib.escapeShellArgs
+        (cfg.firmware.optee.supplicantArgs.extraArgs
+        ++
+        # "optee_armtz" is hardcode into optee client source code.
+        (if cfg.firmware.optee.supplicantArgs.taDir == "optee_armtz" then []
+         else [ "--ta-dir=${cfg.firmware.optee.supplicantArgs.taDir}" ]));
+    in {
       description = "Userspace supplicant for OPTEE-OS";
       serviceConfig = {
-        ExecStart = "${config.hardware.nvidia-jetpack.devicePkgs.teeSupplicant}/bin/tee-supplicant ${lib.escapeShellArgs cfg.firmware.optee.supplicantExtraArgs}";
+        ExecStart = "${config.hardware.nvidia-jetpack.devicePkgs.teeSupplicant}/bin/tee-supplicant ${supplicantArgs}";
         Restart = "always";
       };
       wantedBy = [ "multi-user.target" ];
