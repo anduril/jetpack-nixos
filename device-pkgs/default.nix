@@ -56,6 +56,7 @@ let
       debugMode = cfg.firmware.uefi.debugMode;
       errorLevelInfo = cfg.firmware.uefi.errorLevelInfo;
       edk2NvidiaPatches = cfg.firmware.uefi.edk2NvidiaPatches;
+      edk2UefiPatches = cfg.firmware.uefi.edk2UefiPatches;
     } // lib.optionalAttrs cfg.firmware.uefi.capsuleAuthentication.enable {
       inherit (cfg.firmware.uefi.capsuleAuthentication) trustedPublicCertPemFile;
     });
