@@ -8,6 +8,9 @@
   # Patches to apply to edk2-nvidia source tree
   edk2NvidiaPatches ? [],
 
+  # Patches to apply to edk2 source tree
+  edk2UefiPatches ? [],
+
   debugMode ? false,
   errorLevelInfo ? debugMode, # Enables a bunch more info messages
 
@@ -192,7 +195,7 @@ let
         chmod -R u+w BaseTools
       '';
 
-      patches = opensslPatches;
+      patches = opensslPatches ++ edk2UefiPatches;
 
       postPatch = ''
         # This has been taken from:

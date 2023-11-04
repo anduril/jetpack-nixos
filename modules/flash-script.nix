@@ -54,6 +54,17 @@ in
 
           edk2NvidiaPatches = mkOption {
             type = types.listOf types.path;
+            description = lib.mdDoc ''
+                Patches that will be applied to the edk2-nvidia repo
+              '';
+            default = [];
+          };
+
+          edk2UefiPatches = mkOption {
+            type = types.listOf types.path;
+            description = lib.mdDoc ''
+                Patches that will be applied to the nvidia edk2 repo which is nvidia's fork of the upstream edk2 repo
+              '';
             default = [];
           };
 
