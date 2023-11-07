@@ -139,22 +139,54 @@ in
         };
 
         optee = {
-          supplicantExtraArgs = mkOption {
-            type = types.listOf types.str;
-            default = [];
-            description = lib.mdDoc ''
-              Extra arguments to pass to tee-supplicant.
-            '';
+          supplicantArgs = {
+
+            taDir = mkOption {
+              type = types.str;
+              default = "optee_armtz";
+              description = lib.mdDoc ''
+                Passes --ta-dir argument to tee-supplicant. Default
+                value is from optee's client source code. "optee_armtz"
+                is partially hardcoded. NOTE: If default changed, it
+                need to be changed also systemd.services.tee-supplicant!
+              '';
+            };
+
+            extraArgs = mkOption {
+              type = types.listOf types.str;
+              default = [];
+              description = lib.mdDoc ''
+                Extra arguments to pass to tee-supplicant.
+                NOTE: use for --ta-dir optee.supplicantArgs.taDir
+              '';
+            };
           };
 
           clientLoadPath = mkOption {
-            type = types.path;
-            default = "/var/lib/optee";
+            type = types.listOf types.path;
+            default = [];
             description = lib.mdDoc ''
-              The path tee-supplicant will use to search for trusted
+              The path(s) tee-supplicant will use to search for trusted
               applications. Note that trusted applications must be placed in
               the TA directory (specified with tee-supplicant's --ta-dir flag),
-              under this load path.
+              under this load path. Default TA directory is optee_armtz. For
+              clarification: <tee-supplicant search dir>/optee_armtz.
+            '';
+          };
+
+          pkcs11support = mkOption {
+            type = types.bool;
+            default = false;
+            description = lib.mdDoc ''
+              Adds OP-TEE's PKCS#11 TA.
+            '';
+          };
+
+          xtest = mkOption {
+            type = types.bool;
+            default = false;
+            description = lib.mdDoc ''
+              Adds OP-TEE's xtest and related TA/Plugins
             '';
           };
 

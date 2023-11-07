@@ -34,12 +34,60 @@ let
     meta.platforms = [ "aarch64-linux" ];
   };
 
+
+  opteeXtest = args: let
+      taDir = lib.escapeShellArg args.supplicantArgs.taDir;
+    in stdenv.mkDerivation {
+      pname = "optee_xtest";
+      version = l4tVersion;
+      src = nvopteeSrc;
+      nativeBuildInputs = [ (buildPackages.python3.withPackages (p: [ p.cryptography ])) ];
+      postPatch = ''
+        patchShebangs --build $(find optee/optee_test -type d -name scripts -printf '%p ')
+      '';
+      makeFlags = [
+        "-C optee/optee_test"
+        "CROSS_COMPILE=${stdenv.cc.targetPrefix}"
+        "OPTEE_CLIENT_EXPORT=${opteeClient}"
+        "TA_DEV_KIT_DIR=${buildOpteeTaDevKit args}/export-ta_arm64"
+        "TA_DIR=$(out)/${taDir}"
+        "O=$(PWD)/out"
+      ];
+      installPhase = ''
+        runHook preInstall
+        install -Dm 755 ./out/xtest/xtest $out/bin/xtest
+        mkdir $out/${taDir}
+        find ./out -name "*.ta" -exec cp {} $out/${taDir}/ \;
+        mkdir $out/supp_plugin/
+        cp ./out/supp_plugin/f07bfc66-958c-4a15-99c0-260e4e7375dd.plugin $out/supp_plugin/
+        runHook postInstall
+      '';
+    };
+
+  buildOpteePKCS11Ta = args: (buildOptee (args // {
+    pname = "optee_pkcs11ta";
+    buildpkcs11ta = true;
+
+  })).overrideAttrs(_prev:
+    let
+      taDir = lib.escapeShellArg args.supplicantArgs.taDir;
+    in {
+      dontInstall = false;
+      installPhase = ''
+        runHook preInstall
+        mkdir -p $out/${taDir}
+        cp ./out/ta/pkcs11/fd02c9da-306c-48c7-a49c-bbd827ae86ee.ta $out/${taDir}/fd02c9da-306c-48c7-a49c-bbd827ae86ee.ta
+        runHook postInstall
+      '';
+  });
+
   buildOptee = lib.makeOverridable ({ pname ? "optee-os"
                                     , socType
                                     , earlyTaPaths ? [ ]
                                     , extraMakeFlags ? [ ]
                                     , opteePatches ? [ ]
                                     , taPublicKeyFile ? null
+                                    , buildpkcs11ta ? false
                                     , ...
                                     }:
     let
@@ -47,6 +95,8 @@ let
         t194 = "";
         t234 = "${nvopteeSrc}/optee/optee_os/prebuilt/t234/libcommon_crypto.a";
       }.${socType};
+
+      buildOutPath = if buildpkcs11ta then "$(PWD)/out" else "$(out)";
 
       makeFlags = [
         "-C optee/optee_os"
@@ -56,7 +106,7 @@ let
         "CFG_WITH_STMM_SP=y"
         "CFG_STMM_PATH=${bspSrc}/bootloader/standalonemm_optee_${socType}.bin"
         "NV_CCC_PREBUILT=${nvCccPrebuilt}"
-        "O=$(out)"
+        "O=${buildOutPath}"
       ]
       ++ (lib.optional (taPublicKeyFile != null) "TA_PUBLIC_KEY=${taPublicKeyFile}")
       ++ extraMakeFlags;
@@ -217,5 +267,5 @@ let
     image;
 in
 {
-  inherit buildTOS buildOpteeTaDevKit opteeClient;
+  inherit buildTOS buildOpteeTaDevKit opteeClient buildOpteePKCS11Ta opteeXtest;
 }
