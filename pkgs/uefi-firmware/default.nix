@@ -65,13 +65,13 @@ let
     patches = edk2NvidiaPatches ++ [
       (fetchpatch2 {
         url = "https://github.com/NVIDIA/edk2-nvidia/commit/9604259b0d11c049f6a3eb5365a3ae10cfb9e6d9.patch";
-        hash = "sha256-IfnTrQnkxFXbeHDfmQd4Umpbp9MKZI1OKi7H1Ujg8K8=";
+        hash = "sha256-wUJJLc8ijrVVm5HQGA7gTRJl7VI5LXkH18+f7m82S6o=";
       })
       # Fix Eqos driver to use correct TX clock name
       # PR: https://github.com/NVIDIA/edk2-nvidia/pull/76
       (fetchpatch2 {
         url = "https://github.com/NVIDIA/edk2-nvidia/commit/26f50dc3f0f041d20352d1656851c77f43c7238e.patch";
-        hash = "sha256-nDqLJIfTii/O2KM1yLzvXIpmu5h35PEw7DTSu1CJuDA=";
+        hash = "sha256-L+aCiGXntapsNqSkLm4NrDgH5Hx4ZP/CqOu3R41PaB0=";
       })
 
       ./capsule-authentication.patch

@@ -55,11 +55,10 @@
     url = "https://github.com/tianocore/edk2/commit/d79295b5c57fddfff207c5c97d70ba6de635e17a.patch";
     hash = "sha256-wJrQsvcwQbCptl58YMyi5dokFjoWKoqy08dYyszy9a0=";
   })
-
   # CryptoPkg/Library/OpensslLib: Add generated flag to Accel INF
   (fetchpatch2 {
     url = "https://github.com/tianocore/edk2/commit/0882d6a32d3db7c506823c317dc2f756d30f6a91.patch";
-    hash = "sha256-H59qcKYv72vMsROKImHPncEFBermt1Jchcxj0T6hDdI=";
+    hash = "sha256-H59qcKYv72vMsROKImHPncEFBermt1Jchcxj0T6hDdI";
   })
 
   # CryptoPkg/Library/OpensslLib: update auto-generated files
