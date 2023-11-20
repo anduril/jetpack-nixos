@@ -1,5 +1,6 @@
-{ lib, stdenv, buildPackages, fetchFromGitHub, fetchpatch2, runCommand, edk2, acpica-tools,
-  dtc, python3, bc, imagemagick, unixtools, applyPatches, nukeReferences,
+{ lib, stdenv, buildPackages, fetchFromGitHub, fetchpatch, fetchpatch2,
+  runCommand, edk2, acpica-tools, dtc, python3, bc, imagemagick, unixtools,
+  applyPatches, nukeReferences,
   l4tVersion,
 
   # Optional path to a boot logo that will be converted and cropped into the format required
@@ -63,15 +64,15 @@ let
       sha256 = "sha256-Qh1g+8a7ZcFG4VmwH+xDix6dpZ881HaNRE/FJoaRljw=";
     };
     patches = edk2NvidiaPatches ++ [
-      (fetchpatch2 {
+      (fetchpatch {
         url = "https://github.com/NVIDIA/edk2-nvidia/commit/9604259b0d11c049f6a3eb5365a3ae10cfb9e6d9.patch";
-        hash = "sha256-IfnTrQnkxFXbeHDfmQd4Umpbp9MKZI1OKi7H1Ujg8K8=";
+        hash = "sha256-v/WEwcSNjBXeN0eXVzzl31dn6mq78wIm0u5lW1jGcdE=";
       })
       # Fix Eqos driver to use correct TX clock name
       # PR: https://github.com/NVIDIA/edk2-nvidia/pull/76
-      (fetchpatch2 {
+      (fetchpatch {
         url = "https://github.com/NVIDIA/edk2-nvidia/commit/26f50dc3f0f041d20352d1656851c77f43c7238e.patch";
-        hash = "sha256-nDqLJIfTii/O2KM1yLzvXIpmu5h35PEw7DTSu1CJuDA=";
+        hash = "sha256-cc+eGLFHZ6JQQix1VWe/UOkGunAzPb8jM9SXa9ScIn8=";
       })
 
       ./capsule-authentication.patch
