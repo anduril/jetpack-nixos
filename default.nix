@@ -111,7 +111,7 @@ let
 
   # Packages whose contents are parameterized by NixOS configuration
   devicePkgsFromNixosConfig = callPackage ./device-pkgs {
-    inherit l4tVersion pkgsAarch64 flash-tools flashFromDevice edk2-jetson uefi-firmware buildTOS buildOpteeTaDevKit opteeClient;
+    inherit l4tVersion pkgsAarch64 flash-tools flashFromDevice edk2-jetson uefi-firmware buildTOS buildOpteeTaDevKit;
   };
 
   otaUtils = callPackage ./pkgs/ota-utils {
@@ -136,6 +136,8 @@ in rec {
 
   inherit edk2-jetson uefi-firmware;
   inherit otaUtils;
+
+  inherit opteeClient;
 
   # TODO: Source packages. source_sync.sh from bspSrc
   # GST plugins
