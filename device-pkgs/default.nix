@@ -1,5 +1,5 @@
 { lib, callPackage, runCommand, writeScript, writeShellApplication, makeInitrd, makeModulesClosure,
-  flashFromDevice, edk2-jetson, uefi-firmware, flash-tools, buildTOS, buildOpteeTaDevKit, opteeClient,
+  flashFromDevice, edk2-jetson, uefi-firmware, flash-tools, buildTOS, buildOpteeTaDevKit,
   python3, openssl, dtc,
 
   l4tVersion,
@@ -33,15 +33,6 @@ let
   };
   tosImage = buildTOS tosArgs;
   taDevKit = buildOpteeTaDevKit tosArgs;
-
-  teeSupplicant = opteeClient.overrideAttrs (old: {
-    pname = "tee-supplicant";
-    buildFlags = (old.buildFlags or []) ++ [ "CFG_TEE_CLIENT_LOAD_PATH=${cfg.firmware.optee.clientLoadPath}" ];
-    # remove unneeded headers
-    postInstall = ''
-      rm -rf $out/include
-    '';
-  });
 
   # TODO: Unify with fuseScript below
   mkFlashScript = args: import ./flash-script.nix ({
@@ -273,6 +264,6 @@ let
 in {
   inherit (tosImage) nvLuksSrv hwKeyAgent;
   inherit mkFlashScript mkFlashCmdScript mkFlashScriptAuto;
-  inherit flashScript initrdFlashScript tosImage taDevKit teeSupplicant signedFirmware bup fuseScript uefiCapsuleUpdate;
+  inherit flashScript initrdFlashScript tosImage taDevKit signedFirmware bup fuseScript uefiCapsuleUpdate;
   inherit mkRcmBootScript rcmBoot;
 }

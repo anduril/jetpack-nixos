@@ -141,31 +141,20 @@ in
         optee = {
           supplicantExtraArgs = mkOption {
             type = types.listOf types.str;
-            default = [];
+            default = [ ];
             description = lib.mdDoc ''
               Extra arguments to pass to tee-supplicant.
             '';
           };
 
-          clientLoadPath = mkOption {
-            type = types.path;
-            default = "/var/lib/optee";
-            description = lib.mdDoc ''
-              The path tee-supplicant will use to search for trusted
-              applications. Note that trusted applications must be placed in
-              the TA directory (specified with tee-supplicant's --ta-dir flag),
-              under this load path.
-            '';
-          };
-
           patches = mkOption {
             type = types.listOf types.path;
-            default = [];
+            default = [ ];
           };
 
           extraMakeFlags = mkOption {
             type = types.listOf types.str;
-            default = [];
+            default = [ ];
           };
 
           taPublicKeyFile = mkOption {
@@ -176,6 +165,25 @@ in
               verifying loaded runtime TAs. If not provided, TAs are verified
               with the public key derived from the private key in optee's
               source tree.
+            '';
+          };
+
+          trustedApplications = mkOption {
+            type = types.listOf types.package;
+            default = [ ];
+            description = lib.mdDoc ''
+              Trusted applications that will be loaded into the TEE on
+              supplicant startup.
+            '';
+          };
+
+          supplicantPlugins = mkOption {
+            type = types.listOf types.package;
+            default = [ ];
+            description = lib.mdDoc ''
+              A list of packages containing TEE supplicant plugins. TEE
+              supplicant will load each plugin file in the top level of each
+              package on startup.
             '';
           };
         };
