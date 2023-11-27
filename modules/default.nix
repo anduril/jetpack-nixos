@@ -124,23 +124,40 @@ in
     hardware.deviceTree.enable = true;
 
     hardware.opengl.package = pkgs.nvidia-jetpack.l4t-3d-core;
-    hardware.opengl.extraPackages = with pkgs.nvidia-jetpack; [
+    hardware.opengl.extraPackages =
+      with pkgs.nvidia-jetpack;
       # l4t-core provides - among others - libnvrm_gpu.so and libnvrm_mem.so.
-      # They are directly filled as DT_NEEDED in l4t-cuda's libcuda.so, thus the
-      # standard driver doesn't need them to be added here.
-      # However, this isn't the case for cuda_compat's driver currently, which
-      # is why we're including l4t-core here.
+      # The l4t-core/lib directory is directly set in the DT_RUNPATH of
+      # l4t-cuda's libcuda.so, thus the standard driver doesn't need them to be
+      # added in /run/opengl-driver.
       #
-      # libnvrm* libs should eventually be directly set as DT_NEEDED in
-      # cuda_compat's libcuda.so in the same way, but this requires more integration
-      # between vanilla Nixpkgs and jetpack-nixos. When that happens, please
-      # remove l4t-core below.
-      l4t-core
-      l4t-cuda
-      l4t-nvsci # cuda may use nvsci
-      l4t-gbm
-      l4t-wayland
-    ];
+      # However, this isn't the case for cuda_compat's driver currently, which
+      # is why we're including this derivation in extraPackages.
+      #
+      # To avoid exposing a bunch of other unrelated libraries from l4t-core,
+      # we're wrapping l4t-core in a derivation that only exposes the two
+      # required libraries.
+      #
+      # Those libraries should ideally be directly accessible from the
+      # DT_RUNPATH of cuda_compat's libcuda.so in the same way, but this
+      # requires more integration between upstream Nixpkgs and jetpack-nixos.
+      # When that happens, please remove l4tCoreWrapper below.
+      let l4tCoreWrapper = pkgs.stdenv.mkDerivation {
+        name = "l4t-core-wrapper";
+        phases = [ "installPhase" ];
+        installPhase = ''
+          mkdir -p $out/lib
+          ln -s ${l4t-core}/lib/libnvrm_gpu.so $out/lib/libnvrm_gpu.so
+          ln -s ${l4t-core}/lib/libnvrm_mem.so $out/lib/libnvrm_mem.so
+        '';
+      }; in
+      [
+        l4tCoreWrapper
+        l4t-cuda
+        l4t-nvsci # cuda may use nvsci
+        l4t-gbm
+        l4t-wayland
+      ];
 
     # libGLX_nvidia.so.0 complains without this
     hardware.opengl.setLdLibraryPath = true;
