@@ -125,10 +125,16 @@ in
 
     hardware.opengl.package = pkgs.nvidia-jetpack.l4t-3d-core;
     hardware.opengl.extraPackages = with pkgs.nvidia-jetpack; [
-      # l4t-core provides the libnvrm_gpu.so and libnvrm_mem.so, which are
-      # otherwise missing when using cuda_compat for the time being. Ideally,
-      # they should probably be directly set in a DT_NEEDED entry, as is the
-      # case currently with the `libcuda.so` provided by l4t-cuda
+      # l4t-core provides - among others - libnvrm_gpu.so and libnvrm_mem.so.
+      # They are directly filled as DT_NEEDED in l4t-cuda's libcuda.so, thus the
+      # standard driver doesn't need them to be added here.
+      # However, this isn't the case for cuda_compat's driver currently, which
+      # is why we're including l4t-core here.
+      #
+      # libnvrm* libs should eventually be directly set as DT_NEEDED in
+      # cuda_compat's libcuda.so in the same way, but this requires more integration
+      # between vanilla Nixpkgs and jetpack-nixos. When that happens, please
+      # remove l4t-core below.
       l4t-core
       l4t-cuda
       l4t-nvsci # cuda may use nvsci
