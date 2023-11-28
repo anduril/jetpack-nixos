@@ -131,9 +131,6 @@ in
       l4t-wayland
     ];
 
-    # libGLX_nvidia.so.0 complains without this
-    hardware.opengl.setLdLibraryPath = true;
-
     services.udev.packages = [
       (pkgs.runCommand "jetson-udev-rules" { } ''
         install -D -t $out/etc/udev/rules.d ${pkgs.nvidia-jetpack.l4t-init}/etc/udev/rules.d/99-tegra-devices.rules
