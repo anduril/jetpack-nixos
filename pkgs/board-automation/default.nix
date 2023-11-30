@@ -1,7 +1,6 @@
 { stdenv
 , bspSrc
 , l4tVersion
-, python2  # python2 is required for boardctl
 , python3  # python3 is required for nvtopo.py
 , makeWrapper
 }:
@@ -14,9 +13,10 @@ stdenv.mkDerivation {
 
   nativeBuildInputs = [ makeWrapper ];
   buildInputs = [
-    python2
     python3
   ];
+
+  patches = [ ./board-automation.patch ];
 
   dontConfigure = true;
   dontBuild = true;

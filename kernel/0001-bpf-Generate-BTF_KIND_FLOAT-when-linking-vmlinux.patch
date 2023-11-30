@@ -1,7 +1,7 @@
-From 7c9c4b52c818ed3ac6761b41e8a6c00ee63e8f9c Mon Sep 17 00:00:00 2001
+From f8b3221fd6c6b3e18c5bac8d2c75e13bfba65458 Mon Sep 17 00:00:00 2001
 From: Ilya Leoshkevich <iii@linux.ibm.com>
 Date: Wed, 19 Oct 2022 10:56:00 +0200
-Subject: [PATCH 1/5] bpf: Generate BTF_KIND_FLOAT when linking vmlinux
+Subject: [PATCH 1/8] bpf: Generate BTF_KIND_FLOAT when linking vmlinux
 
 commit db16c1fe92d7ba7d39061faef897842baee2c887  upstream.
 

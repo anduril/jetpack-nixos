@@ -223,6 +223,10 @@ let
         url = "https://raw.githubusercontent.com/OE4T/meta-tegra/af0a93313c13e9eac4e80082d8a8e8ac5f7ad6e8/recipes-multimedia/argus/files/0005-Remove-DO-NOT-USE-declarations-from-v4l2_nv_extensio.patch";
         sha256 = "sha256-IJ1teGEUxYDEPYSvYZbqdmUYg9tOORN7WGYpDaUUnHY=";
       })
+      (fetchurl {
+        url = "https://raw.githubusercontent.com/OE4T/meta-tegra/master/recipes-multimedia/argus/tegra-mmapi-samples/0004-samples-classes-fix-a-data-race-in-shutting-down-deq.patch";
+        sha256 = "sha256-mkS2eKuDvXDhHkIglUGcYbEWGxCP5gRSdmEvuVw/chI=";
+      })
     ];
 
     postPatch = ''
@@ -259,6 +263,9 @@ let
 
       echo " * Running jpeg_decode"
       ${multimedia-samples}/bin/jpeg_decode num_files 1 ${multimedia-samples}/data/Picture/nvidia-logo.jpg "$WORKDIR"/nvidia-logo.yuv
+      echo
+      echo " * Running video_decode"
+      ${multimedia-samples}/bin/video_decode H264 --disable-rendering ${multimedia-samples}/data/Video/sample_outdoor_car_1080p_10fps.h264
       echo
       echo " * Running video_convert"
       ${multimedia-samples}/bin/video_convert "$WORKDIR"/nvidia-logo.yuv 1920 1080 YUV420 "$WORKDIR"/test.yuv 1920 1080 YUYV

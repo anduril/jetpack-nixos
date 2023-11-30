@@ -24,6 +24,13 @@ in
       firmware = {
         autoUpdate = lib.mkEnableOption "automatic updates for Jetson firmware";
 
+        bootOrder = mkOption {
+          # https://github.com/NVIDIA/edk2-nvidia/blob/71fc2f6de48f3e9f01214b4e9464dd03620b876b/Silicon/NVIDIA/Library/PlatformBootOrderLib/PlatformBootOrderLib.c#L26
+          type = types.nullOr (types.listOf (types.enum [ "scsi" "usb" "sata" "pxev4" "httpv4" "pxev6" "httpv6" "nvme" "ufs" "sd" "emmc" "cdrom" "boot.img" "virtual" "shell" ]));
+          default = null;
+          description = "The default boot order";
+        };
+
         uefi = {
           logo = mkOption {
             type = types.nullOr types.path;
@@ -47,6 +54,17 @@ in
 
           edk2NvidiaPatches = mkOption {
             type = types.listOf types.path;
+            description = lib.mdDoc ''
+                Patches that will be applied to the edk2-nvidia repo
+              '';
+            default = [];
+          };
+
+          edk2UefiPatches = mkOption {
+            type = types.listOf types.path;
+            description = lib.mdDoc ''
+                Patches that will be applied to the nvidia edk2 repo which is nvidia's fork of the upstream edk2 repo
+              '';
             default = [];
           };
 
@@ -111,18 +129,32 @@ in
                 make use of capsule authentication private keys.
               '';
             };
+
+            preSignCommands = lib.mkOption {
+              type = types.lines;
+              default = "";
+              description = "Additional commands to run before performing operation that involve signing. Can be used to set up environment to interact with an external HSM.";
+            };
           };
         };
 
         optee = {
+          supplicantExtraArgs = mkOption {
+            type = types.listOf types.str;
+            default = [ ];
+            description = lib.mdDoc ''
+              Extra arguments to pass to tee-supplicant.
+            '';
+          };
+
           patches = mkOption {
             type = types.listOf types.path;
-            default = [];
+            default = [ ];
           };
 
           extraMakeFlags = mkOption {
             type = types.listOf types.str;
-            default = [];
+            default = [ ];
           };
 
           taPublicKeyFile = mkOption {
@@ -133,6 +165,25 @@ in
               verifying loaded runtime TAs. If not provided, TAs are verified
               with the public key derived from the private key in optee's
               source tree.
+            '';
+          };
+
+          trustedApplications = mkOption {
+            type = types.listOf types.package;
+            default = [ ];
+            description = lib.mdDoc ''
+              Trusted applications that will be loaded into the TEE on
+              supplicant startup.
+            '';
+          };
+
+          supplicantPlugins = mkOption {
+            type = types.listOf types.package;
+            default = [ ];
+            description = lib.mdDoc ''
+              A list of packages containing TEE supplicant plugins. TEE
+              supplicant will load each plugin file in the top level of each
+              package on startup.
             '';
           };
         };
@@ -162,6 +213,12 @@ in
             type = types.listOf types.str;
             default = [ ];
             description = "Additional requiredSystemFeatures to add to derivations which make use of secure boot keys";
+          };
+
+          preSignCommands = lib.mkOption {
+            type = types.lines;
+            default = "";
+            description = "Additional commands to run before performing operation that involve signing. Can be used to set up environment to interact with an external HSM.";
           };
         };
 
@@ -224,6 +281,12 @@ in
           description = ".xml file describing partition template to use when flashing";
         };
 
+        patches = mkOption {
+          type = types.listOf types.path;
+          default = [];
+          description = "Patches to apply to the flash-tools";
+        };
+
         postPatch = mkOption {
           type = types.lines;
           default = "";
@@ -266,27 +329,28 @@ in
       [ cfg.flashScriptOverrides.configFileName "mmcblk0p1" ]
       );
 
-    hardware.nvidia-jetpack.flashScriptOverrides.additionalDtbOverlays = let
-      uefiDefaultKeysDtbo = pkgs.runCommand "UefiDefaultSecurityKeys.dtbo" { nativeBuildInputs = with pkgs.buildPackages; [ dtc ]; } ''
-        export pkDefault=$(od -t x1 -An "${cfg.firmware.uefi.secureBoot.defaultPkEslFile}")
-        export kekDefault=$(od -t x1 -An "${cfg.firmware.uefi.secureBoot.defaultKekEslFile}")
-        export dbDefault=$(od -t x1 -An "${cfg.firmware.uefi.secureBoot.defaultDbEslFile}")
-        substituteAll ${../uefi-default-keys.dts} keys.dts
-        dtc -I dts -O dtb keys.dts -o $out
-      '';
-    in lib.optional cfg.firmware.uefi.secureBoot.enrollDefaultKeys uefiDefaultKeysDtbo;
+      hardware.nvidia-jetpack.flashScriptOverrides.additionalDtbOverlays =
+        let
+          bootOrder = pkgs.runCommand "DefaultBootOrder.dtbo" { nativeBuildInputs = with pkgs.buildPackages; [ dtc ]; } ''
+            export bootOrder=${lib.concatStringsSep "," cfg.firmware.bootOrder}
+            substituteAll ${./uefi-boot-order.dts} keys.dts
+            dtc -I dts -O dtb keys.dts -o $out
+          '';
+          uefiDefaultKeysDtbo = pkgs.runCommand "UefiDefaultSecurityKeys.dtbo" { nativeBuildInputs = with pkgs.buildPackages; [ dtc ]; } ''
+            export pkDefault=$(od -t x1 -An "${cfg.firmware.uefi.secureBoot.defaultPkEslFile}")
+            export kekDefault=$(od -t x1 -An "${cfg.firmware.uefi.secureBoot.defaultKekEslFile}")
+            export dbDefault=$(od -t x1 -An "${cfg.firmware.uefi.secureBoot.defaultDbEslFile}")
+            substituteAll ${./uefi-default-keys.dts} keys.dts
+            dtc -I dts -O dtb keys.dts -o $out
+          '';
+      in
+      (lib.optional (cfg.firmware.bootOrder != null) bootOrder) ++
+        (lib.optional cfg.firmware.uefi.secureBoot.enrollDefaultKeys uefiDefaultKeysDtbo);
 
     hardware.nvidia-jetpack.flashScriptOverrides.fuseArgs = lib.mkAfter [ cfg.flashScriptOverrides.configFileName ];
 
-    hardware.nvidia-jetpack.firmware.uefi.edk2NvidiaPatches = [
-      # Have UEFI use the device tree compiled into the firmware, instead of
-      # using one from the kernel-dtb partition.
-      # See: https://github.com/anduril/jetpack-nixos/pull/18
-      ../edk2-uefi-dtb.patch
-    ];
-
     # These are from l4t_generate_soc_bup.sh, plus some additional ones found in the wild.
-    hardware.nvidia-jetpack.firmware.variants = lib.mkOptionDefault (rec {
+    hardware.nvidia-jetpack.firmware.variants = if (cfg.som != null) then (lib.mkOptionDefault ({
       xavier-agx = [
         { boardid="2888"; boardsku="0001"; fab="400"; boardrev="D.0"; fuselevel="fuselevel_production"; chiprev="2"; }
         { boardid="2888"; boardsku="0001"; fab="400"; boardrev="E.0"; fuselevel="fuselevel_production"; chiprev="2"; } # 16GB
@@ -322,7 +386,7 @@ in
         { boardid = "3767"; boardsku = "0004"; fab="000"; boardrev=""; fuselevel="fuselevel_production"; chiprev=""; } # Orin Nano 4GB
         { boardid = "3767"; boardsku = "0005"; fab="000"; boardrev=""; fuselevel="fuselevel_production"; chiprev=""; } # Orin Nano devkit module
       ];
-    }.${cfg.som} or (throw "Unable to set default firmware variants since som is unset"));
+    }.${cfg.som})) else lib.mkOptionDefault [];
 
     systemd.services = lib.mkIf (cfg.flashScriptOverrides.targetBoard != null) {
       setup-jetson-efi-variables = {

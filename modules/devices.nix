@@ -126,7 +126,11 @@ in lib.mkMerge [{
     # Since we have NO_ESP_IMG=1 while formatting, the script doesn't
     # actually create an FS here, so we'll do it automatically
     autoFormat = true;
-    formatOptions = "-F 32 -n ESP";
+    formatOptions =
+      if (lib.versionAtLeast config.system.nixos.release "23.05") then
+        null
+      else
+        "-F 32 -n ESP";
   };
 })
 ]

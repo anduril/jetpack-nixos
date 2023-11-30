@@ -2,15 +2,22 @@
 
 let
   inherit (lib)
-    mkDefault
     mkEnableOption
-    mkForce
     mkIf
     mkOption
-    mkOptionDefault
     types;
 
   cfg = config.hardware.nvidia-jetpack;
+
+  teeApplications = pkgs.symlinkJoin {
+    name = "tee-applications";
+    paths = cfg.firmware.optee.trustedApplications;
+  };
+
+  supplicantPlugins = pkgs.symlinkJoin {
+    name = "tee-supplicant-plugins";
+    paths = cfg.firmware.optee.supplicantPlugins;
+  };
 in
 {
   imports = [
@@ -120,14 +127,15 @@ in
     hardware.opengl.extraPackages = with pkgs.nvidia-jetpack; [
       l4t-cuda
       l4t-nvsci # cuda may use nvsci
-      l4t-gbm l4t-wayland
+      l4t-gbm
+      l4t-wayland
     ];
 
     # libGLX_nvidia.so.0 complains without this
     hardware.opengl.setLdLibraryPath = true;
 
     services.udev.packages = [
-      (pkgs.runCommand "jetson-udev-rules" {} ''
+      (pkgs.runCommand "jetson-udev-rules" { } ''
         install -D -t $out/etc/udev/rules.d ${pkgs.nvidia-jetpack.l4t-init}/etc/udev/rules.d/99-tegra-devices.rules
         sed -i \
           -e '/camera_device_detect/d' \
@@ -163,14 +171,22 @@ in
       wantedBy = [ "multi-user.target" ];
     };
 
-    systemd.services.tee-supplicant = {
-      description = "Userspace supplicant for OPTEE-OS";
-      serviceConfig = {
-        ExecStart = "${pkgs.nvidia-jetpack.opteeClient}/bin/tee-supplicant";
-        Restart = "always";
+    systemd.services.tee-supplicant =
+      let
+        args = lib.escapeShellArgs ([
+          "--ta-path=${teeApplications}"
+          "--plugin-path=${supplicantPlugins}"
+        ]
+        ++ cfg.firmware.optee.supplicantExtraArgs);
+      in
+      {
+        description = "Userspace supplicant for OPTEE-OS";
+        serviceConfig = {
+          ExecStart = "${pkgs.nvidia-jetpack.opteeClient}/bin/tee-supplicant ${args}";
+          Restart = "always";
+        };
+        wantedBy = [ "multi-user.target" ];
       };
-      wantedBy = [ "multi-user.target" ];
-    };
 
     environment.systemPackages = with pkgs.nvidia-jetpack; [
       l4t-tools

@@ -1,7 +1,7 @@
-From 688d9cbc5932cce17ed2f97b62eac880b4dab5f0 Mon Sep 17 00:00:00 2001
+From b2e3bf9aa750b790af9b5c64b24298dfdcf91a52 Mon Sep 17 00:00:00 2001
 From: Javier Martinez Canillas <javierm@redhat.com>
 Date: Wed, 19 Oct 2022 10:56:01 +0200
-Subject: [PATCH 2/5] kbuild: Quote OBJCOPY var to avoid a pahole call break
+Subject: [PATCH 2/8] kbuild: Quote OBJCOPY var to avoid a pahole call break
  the build
 
 commit ff2e6efda0d5c51b33e2bcc0b0b981ac0a0ef214 upstream.

@@ -8,6 +8,7 @@
 , libuuid
 , dtc
 , nukeReferences
+, fetchpatch
 }:
 
 let
@@ -27,9 +28,25 @@ let
     pname = "optee_client";
     version = l4tVersion;
     src = nvopteeSrc;
+    patches = [
+      ./0001-Don-t-prepend-foo-bar-baz-to-TEEC_LOAD_PATH.patch
+      (fetchpatch {
+        name = "tee-supplicant-Allow-for-TA-load-path-to-be-specified-at-runtime.patch";
+        url = "https://github.com/OP-TEE/optee_client/commit/f3845d8bee3645eedfcc494be4db034c3c69e9ab.patch";
+        stripLen = 1;
+        extraPrefix = "optee/optee_client/";
+        hash = "sha256-XjFpMbyXy74sqnc8l+EgTaPXqwwHcvni1Z68ShokTGc=";
+      })
+    ];
     nativeBuildInputs = [ pkg-config ];
     buildInputs = [ libuuid ];
-    makeFlags = [ "-C optee/optee_client" "DESTDIR=$(out)" "SBINDIR=/bin" "LIBDIR=/lib" "INCLUDEDIR=/include" ];
+    makeFlags = [
+      "-C optee/optee_client"
+      "DESTDIR=$(out)"
+      "SBINDIR=/sbin"
+      "LIBDIR=/lib"
+      "INCLUDEDIR=/include"
+    ];
     meta.platforms = [ "aarch64-linux" ];
   };
 
@@ -216,8 +233,5 @@ let
     image;
 in
 {
-  inherit
-    opteeClient
-    buildTOS
-    ;
+  inherit buildTOS buildOpteeTaDevKit opteeClient;
 }
