@@ -1,5 +1,6 @@
 { lib, stdenv, buildPackages, fetchFromGitHub, fetchpatch, fetchpatch2,
   runCommand, edk2, acpica-tools, dtc, python3, bc, imagemagick, unixtools,
+  libuuid,
   applyPatches, nukeReferences,
   l4tVersion,
 
@@ -115,6 +116,8 @@ let
 
   edk2-jetson = edk2.overrideAttrs (prev: {
     src = edk2-src;
+
+    depsBuildBuild = prev.depsBuildBuild ++ [ libuuid ];
 
     patches =
       # Remove this one patch (CryptoPkg/OpensslLib: Upgrade OpenSSL to 1.1.1t)
