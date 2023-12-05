@@ -133,10 +133,17 @@ let
   l4t-cuda = buildFromDeb {
     name = "nvidia-l4t-cuda";
     buildInputs = [ l4t-core ];
+
     postPatch = ''
       # Additional libcuda symlinks
       ln -sf libcuda.so.1.1 lib/libcuda.so.1
       ln -sf libcuda.so.1.1 lib/libcuda.so
+    '';
+
+    # libcuda.so actually depends on libnvcucompat.so at runtime (probably
+    # through `dlopen`), so we need to tell Nix about this.
+    postFixup = ''
+        patchelf --add-needed libnvcucompat.so $out/lib/libcuda.so
     '';
   };
 
