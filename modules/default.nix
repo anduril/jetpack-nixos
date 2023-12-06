@@ -57,6 +57,19 @@ in
         description = "Jetson SoM (System-on-Module) to target. Can be null to target a generic jetson device, but some things may not work.";
       };
 
+      sku = mkOption {
+        default = null;
+        # "Extensible option types" in the NixOS manual
+        type = types.nullOr types.string;
+        example = "0001";
+        description = "Specific SKU of a given SOM. This can be
+        helpful to fine-tune configuration of a given device. For
+        example, Orin NX devices come in 8GB and 16GB flavors which
+        differ in the number of supported cores. Configuring the SKU
+        for this SOM would ensure things like nvpmodel work
+        correctly.";
+      };
+
       carrierBoard = mkOption {
         default = null;
         type = types.nullOr (types.enum [ "devkit" ]);
