@@ -87,15 +87,12 @@ in
       else pkgs.nvidia-jetpack.kernelPackages;
 
     boot.kernelParams = [
-      "console=tty0" # Output to HDMI/DP
-      "fbcon=map:0" # Needed for HDMI/DP
-      "video=efifb:off" # Disable efifb driver, which crashes Xavier AGX/NX
-
+      "console=tty0" # Output to HDMI/DP. May need fbcon=map:0 as well
       "console=ttyTCU0,115200" # Provides console on "Tegra Combined UART" (TCU)
 
       # Needed on Orin at least, but upstream has it for both
       "nvidia.rm_firmware_active=all"
-    ];
+    ] ++ lib.optional (lib.hasPrefix "xavier-" cfg.som) "video=efifb:off"; # Disable efifb driver, which crashes Xavier AGX/NX
 
     boot.initrd.includeDefaultModules = false; # Avoid a bunch of modules we may not get from tegra_defconfig
     boot.initrd.availableKernelModules = [ "xhci-tegra" ]; # Make sure USB firmware makes it into initrd
@@ -131,9 +128,6 @@ in
       l4t-wayland
     ];
 
-    # libGLX_nvidia.so.0 complains without this
-    hardware.opengl.setLdLibraryPath = true;
-
     services.udev.packages = [
       (pkgs.runCommand "jetson-udev-rules" { } ''
         install -D -t $out/etc/udev/rules.d ${pkgs.nvidia-jetpack.l4t-init}/etc/udev/rules.d/99-tegra-devices.rules
@@ -144,7 +138,10 @@ in
       '')
     ];
 
-    services.xserver.drivers = lib.mkBefore (lib.singleton {
+    # Force the driver, since otherwise the fbdev or modesetting X11 drivers
+    # may be used, which don't work and can interfere with the correct
+    # selection of GLX drivers.
+    services.xserver.drivers = lib.mkForce (lib.singleton {
       name = "nvidia";
       modules = [ pkgs.nvidia-jetpack.l4t-3d-core ];
       display = true;
@@ -152,6 +149,14 @@ in
         Option "AllowEmptyInitialConfiguration" "true"
       '';
     });
+
+    # If we aren't using modesetting, we won't have a DRM device with the
+    # "master-of-seat" tag, so "loginctl show-seat seat0" reports
+    # "CanGraphical=false" and consequently lightdm doesn't start. We override
+    # that here.
+    services.xserver.displayManager.lightdm.extraConfig = lib.optionalString (!cfg.modesetting.enable) ''
+      logind-check-graphical = false
+    '';
 
     # Used by libjetsonpower.so, which is used by nvfancontrol at least.
     environment.etc."nvpower/libjetsonpower".source = "${pkgs.nvidia-jetpack.l4t-tools}/etc/nvpower/libjetsonpower";

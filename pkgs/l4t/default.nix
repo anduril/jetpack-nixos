@@ -66,6 +66,22 @@ let
   l4t-core = buildFromDeb {
     name = "nvidia-l4t-core";
     buildInputs = [ stdenv.cc.cc.lib expat libglvnd ];
+
+    # Some libraries, like libEGL_nvidia.so.0 from l3t-3d-core use a dlopen
+    # wrapper called NvOsLibraryLoad, which originates in libnvos.so in this
+    # l4t-core. Unfortunately, calling dlopen from libnvos.so instead of the
+    # original library/executable means that dlopen will use the DT_RUNPATH
+    # from libnvos.so instead of the binary/library which called it. We
+    # typically just need /run/opengl-driver/lib anyway, so lets add it to
+    # libnvos.so here instead.
+    #
+    # We append a postFixupHook since we need to have this happen after
+    # autoPatchelfHook, which itself also runs as a postFixupHook
+    preFixup = ''
+      postFixupHooks+=('
+        patchelf --add-rpath /run/opengl-driver/lib $out/lib/libnvos.so
+      ')
+    '';
   };
 
   l4t-3d-core = buildFromDeb {
@@ -85,18 +101,31 @@ let
 
       mv lib/tegra-egl/* lib
       rm -rf lib/tegra-egl
+      rm -f lib/nvidia.json
 
       # Make some symlinks also done by OE4T
       ln -sf libnvidia-ptxjitcompiler.so.${l4tVersion} lib/libnvidia-ptxjitcompiler.so.1
       ln -sf libnvidia-ptxjitcompiler.so.${l4tVersion} lib/libnvidia-ptxjitcompiler.so
     '';
 
-    # Re-add needed paths to RPATH
-    autoPatchelf = false;
-    postFixup = ''
-      for lib in $(find "$out/lib" -name '*.so*'); do
-        patchelf $lib --set-rpath $out/lib:${lib.makeLibraryPath [ l4t-core libglvnd egl-wayland xorg.libX11 xorg.libXext ]}
-      done
+    # We append a postFixupHook since we need to have this happen after
+    # autoPatchelfHook, which itself also runs as a postFixupHook
+    # TODO: Replace this with appendRunpaths which is available in 23.11
+    preFixup = ''
+      postFixupHooks+=('
+        patchelf --add-rpath ${lib.makeLibraryPath [ libglvnd ]} \
+          $out/lib/libEGL_nvidia.so.0 \
+          $out/lib/libGLX_nvidia.so.0 \
+          $out/lib/libnvidia-vulkan-producer.so
+
+        patchelf --add-rpath ${lib.makeLibraryPath (with xorg; [ libX11 libXext libxcb ])} \
+          $out/lib/libGLX_nvidia.so.0 \
+          $out/lib/libnvidia-glsi.so.* \
+
+        for lib in $(find "$out/lib" -name "*.so*"); do
+          patchelf $lib --add-rpath $out/lib
+        done
+      ')
     '';
   };
 
