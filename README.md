@@ -173,6 +173,18 @@ To include your own signing keys in the EDK2 build and capsule update, make
 sure the option `hardware.nvidia-jetpack.firmware.uefi.capsuleAuthentication.enable`
 is turned on and each signing key option is set.
 
+### Non-Devkit BSP Support
+
+If you want to add support for non-devkit boards (e.g ConnectTech)
+create a new config and use the
+`hardware.nvidia-jetpack.flashScriptOverrides` options. Specifically,
+to copy custom BSP (Board Support Package) files into the flash script
+directory use the
+`hardware.nvidia-jetpack.flashScriptOverrides.postPatch` option. In
+addition, most BSP's will have a specific `.conf` file that the Nvidia
+`./flash.sh` uses to configure the board so you will need to set
+`hardware.nvidia-jetpack.flashScriptOverrides.targetBoard`.
+
 ## Additional Links
 
 Much of this is inspired by the great work done by [OpenEmbedded for Tegra](https://github.com/OE4T).
