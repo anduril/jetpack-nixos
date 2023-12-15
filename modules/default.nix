@@ -51,18 +51,23 @@ in
       };
 
       som = mkOption {
-        default = null;
         # You can add your own som or carrierBoard by merging the enum type
         # with additional possibilies in an external NixOS module. See:
         # "Extensible option types" in the NixOS manual
-        type = types.nullOr (types.enum [ "orin-agx" "orin-nx" "orin-nano" "xavier-agx" "xavier-nx" "xavier-nx-emmc" ]);
-        description = "Jetson SoM (System-on-Module) to target. Can be null to target a generic jetson device, but some things may not work.";
+        # The "generic" value signals that jetpack-nixos should try to maximize compatility across all varisnts. This may lead
+        type = types.enum [ "generic" "orin-agx" "orin-nx" "orin-nano" "xavier-agx" "xavier-nx" "xavier-nx-emmc" ];
+        default = "generic";
+        description = lib.mdDoc ''
+          Jetson SoM (System-on-Module) to target. Can be set to "generic" to target a generic jetson device, but some things may not work.
+        '';
       };
 
       carrierBoard = mkOption {
-        default = null;
-        type = types.nullOr (types.enum [ "devkit" ]);
-        description = "Jetson carrier board to target.";
+        type = types.enum [ "generic" "devkit" ];
+        default = "generic";
+        description = lib.mdDoc ''
+          Jetson carrier board to target. Can be set to "generic" to target a generic jetson carrier board, but some things may not work.
+        '';
       };
 
       kernel.realtime = mkOption {
