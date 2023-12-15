@@ -58,17 +58,17 @@ in
           edk2NvidiaPatches = mkOption {
             type = types.listOf types.path;
             description = lib.mdDoc ''
-                Patches that will be applied to the edk2-nvidia repo
-              '';
-            default = [];
+              Patches that will be applied to the edk2-nvidia repo
+            '';
+            default = [ ];
           };
 
           edk2UefiPatches = mkOption {
             type = types.listOf types.path;
             description = lib.mdDoc ''
-                Patches that will be applied to the nvidia edk2 repo which is nvidia's fork of the upstream edk2 repo
-              '';
-            default = [];
+              Patches that will be applied to the nvidia edk2 repo which is nvidia's fork of the upstream edk2 repo
+            '';
+            default = [ ];
           };
 
           secureBoot = {
@@ -290,7 +290,7 @@ in
 
         patches = mkOption {
           type = types.listOf types.path;
-          default = [];
+          default = [ ];
           description = "Patches to apply to the flash-tools";
         };
 
@@ -302,7 +302,7 @@ in
 
         additionalDtbOverlays = mkOption {
           type = types.listOf types.path;
-          default = [];
+          default = [ ];
           description = "A list of paths to compiled .dtbo files to include with the UEFI image while flashing. These overlays are applied by UEFI at runtime";
         };
       };
@@ -323,17 +323,19 @@ in
     };
   };
 
-  config = let
-    devicePkgs = pkgs.nvidia-jetpack.devicePkgsFromNixosConfig config;
-  in {
-    hardware.nvidia-jetpack.flashScript = devicePkgs.flashScript; # Left for backwards-compatibility
-    hardware.nvidia-jetpack.devicePkgs = devicePkgs; # Left for backwards-compatibility
-    system.build.jetsonDevicePkgs = devicePkgs;
+  config =
+    let
+      devicePkgs = pkgs.nvidia-jetpack.devicePkgsFromNixosConfig config;
+    in
+    {
+      hardware.nvidia-jetpack.flashScript = devicePkgs.flashScript; # Left for backwards-compatibility
+      hardware.nvidia-jetpack.devicePkgs = devicePkgs; # Left for backwards-compatibility
+      system.build.jetsonDevicePkgs = devicePkgs;
 
-    hardware.nvidia-jetpack.flashScriptOverrides.flashArgs = lib.mkAfter (
-      lib.optional (cfg.firmware.secureBoot.pkcFile != null) "-u ${cfg.firmware.secureBoot.pkcFile}" ++
-      lib.optional (cfg.firmware.secureBoot.sbkFile != null) "-v ${cfg.firmware.secureBoot.sbkFile}" ++
-      [ cfg.flashScriptOverrides.configFileName "mmcblk0p1" ]
+      hardware.nvidia-jetpack.flashScriptOverrides.flashArgs = lib.mkAfter (
+        lib.optional (cfg.firmware.secureBoot.pkcFile != null) "-u ${cfg.firmware.secureBoot.pkcFile}" ++
+        lib.optional (cfg.firmware.secureBoot.sbkFile != null) "-v ${cfg.firmware.secureBoot.sbkFile}" ++
+        [ cfg.flashScriptOverrides.configFileName "mmcblk0p1" ]
       );
 
       hardware.nvidia-jetpack.flashScriptOverrides.additionalDtbOverlays =
@@ -350,88 +352,94 @@ in
             substituteAll ${./uefi-default-keys.dts} keys.dts
             dtc -I dts -O dtb keys.dts -o $out
           '';
-      in
-      (lib.optional (cfg.firmware.bootOrder != null) bootOrder) ++
+        in
+        (lib.optional (cfg.firmware.bootOrder != null) bootOrder) ++
         (lib.optional cfg.firmware.uefi.secureBoot.enrollDefaultKeys uefiDefaultKeysDtbo);
 
-    hardware.nvidia-jetpack.flashScriptOverrides.fuseArgs = lib.mkAfter [ cfg.flashScriptOverrides.configFileName ];
+      hardware.nvidia-jetpack.flashScriptOverrides.fuseArgs = lib.mkAfter [ cfg.flashScriptOverrides.configFileName ];
 
-    # These are from l4t_generate_soc_bup.sh, plus some additional ones found in the wild.
-    hardware.nvidia-jetpack.firmware.variants = if (cfg.som != null) then (lib.mkOptionDefault ({
-      xavier-agx = [
-        { boardid="2888"; boardsku="0001"; fab="400"; boardrev="D.0"; fuselevel="fuselevel_production"; chiprev="2"; }
-        { boardid="2888"; boardsku="0001"; fab="400"; boardrev="E.0"; fuselevel="fuselevel_production"; chiprev="2"; } # 16GB
-        { boardid="2888"; boardsku="0004"; fab="400"; boardrev=""; fuselevel="fuselevel_production"; chiprev="2"; } # 32GB
-        { boardid="2888"; boardsku="0005"; fab="402"; boardrev=""; fuselevel="fuselevel_production"; chiprev="2"; } # 64GB
-      ];
-      xavier-nx = [ # Dev variant
-        { boardid="3668"; boardsku="0000"; fab="100"; boardrev=""; fuselevel="fuselevel_production"; chiprev="2"; }
-        { boardid="3668"; boardsku="0000"; fab="301"; boardrev=""; fuselevel="fuselevel_production"; chiprev="2"; }
-      ];
-      xavier-nx-emmc = [ # Prod variant
-        { boardid="3668"; boardsku="0001"; fab="100"; boardrev=""; fuselevel="fuselevel_production"; chiprev="2"; }
-        { boardid="3668"; boardsku="0003"; fab="301"; boardrev=""; fuselevel="fuselevel_production"; chiprev="2"; }
-      ];
+      # These are from l4t_generate_soc_bup.sh, plus some additional ones found in the wild.
+      hardware.nvidia-jetpack.firmware.variants =
+        if (cfg.som != null) then
+          (lib.mkOptionDefault (
+            {
+              xavier-agx = [
+                { boardid = "2888"; boardsku = "0001"; fab = "400"; boardrev = "D.0"; fuselevel = "fuselevel_production"; chiprev = "2"; }
+                { boardid = "2888"; boardsku = "0001"; fab = "400"; boardrev = "E.0"; fuselevel = "fuselevel_production"; chiprev = "2"; } # 16GB
+                { boardid = "2888"; boardsku = "0004"; fab = "400"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = "2"; } # 32GB
+                { boardid = "2888"; boardsku = "0005"; fab = "402"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = "2"; } # 64GB
+              ];
+              xavier-nx = [
+                # Dev variant
+                { boardid = "3668"; boardsku = "0000"; fab = "100"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = "2"; }
+                { boardid = "3668"; boardsku = "0000"; fab = "301"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = "2"; }
+              ];
+              xavier-nx-emmc = [
+                # Prod variant
+                { boardid = "3668"; boardsku = "0001"; fab = "100"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = "2"; }
+                { boardid = "3668"; boardsku = "0003"; fab = "301"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = "2"; }
+              ];
 
-      orin-agx = [
-        { boardid="3701"; boardsku="0000"; fab="300"; boardrev=""; fuselevel="fuselevel_production"; chiprev=""; }
-        { boardid="3701"; boardsku="0004"; fab="300"; boardrev=""; fuselevel="fuselevel_production"; chiprev=""; } # 32GB
-        { boardid="3701"; boardsku="0005"; fab="000"; boardrev=""; fuselevel="fuselevel_production"; chiprev=""; } # 64GB
-      ];
+              orin-agx = [
+                { boardid = "3701"; boardsku = "0000"; fab = "300"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; }
+                { boardid = "3701"; boardsku = "0004"; fab = "300"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; } # 32GB
+                { boardid = "3701"; boardsku = "0005"; fab = "000"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; } # 64GB
+              ];
 
-      orin-nx = [
-        { boardid = "3767"; boardsku = "0000"; fab="000"; boardrev=""; fuselevel="fuselevel_production"; chiprev=""; } # Orin NX 16GB
-        { boardid = "3767"; boardsku = "0001"; fab="000"; boardrev=""; fuselevel="fuselevel_production"; chiprev=""; } # Orin NX 8GB
-      ];
+              orin-nx = [
+                { boardid = "3767"; boardsku = "0000"; fab = "000"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; } # Orin NX 16GB
+                { boardid = "3767"; boardsku = "0001"; fab = "000"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; } # Orin NX 8GB
+              ];
 
-      orin-nano = [
-        { boardid = "3767"; boardsku = "0003"; fab="000"; boardrev=""; fuselevel="fuselevel_production"; chiprev=""; } # Orin Nano 8GB
-        { boardid = "3767"; boardsku = "0004"; fab="000"; boardrev=""; fuselevel="fuselevel_production"; chiprev=""; } # Orin Nano 4GB
-        { boardid = "3767"; boardsku = "0005"; fab="000"; boardrev=""; fuselevel="fuselevel_production"; chiprev=""; } # Orin Nano devkit module
-      ];
-    }.${cfg.som})) else lib.mkOptionDefault [];
+              orin-nano = [
+                { boardid = "3767"; boardsku = "0003"; fab = "000"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; } # Orin Nano 8GB
+                { boardid = "3767"; boardsku = "0004"; fab = "000"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; } # Orin Nano 4GB
+                { boardid = "3767"; boardsku = "0005"; fab = "000"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; } # Orin Nano devkit module
+              ];
+            }.${cfg.som}
+          )) else lib.mkOptionDefault [ ];
 
-    systemd.services = lib.mkIf (cfg.flashScriptOverrides.targetBoard != null) {
-      setup-jetson-efi-variables = {
-        enable = true;
-        description = "Setup Jetson OTA UEFI variables";
-        wantedBy = [ "multi-user.target" ];
-        after = [ "opt-nvidia-esp.mount" ];
-        serviceConfig.Type = "oneshot";
-        serviceConfig.ExecStart = "${pkgs.nvidia-jetpack.otaUtils}/bin/ota-setup-efivars ${cfg.flashScriptOverrides.targetBoard}";
+      systemd.services = lib.mkIf (cfg.flashScriptOverrides.targetBoard != null) {
+        setup-jetson-efi-variables = {
+          enable = true;
+          description = "Setup Jetson OTA UEFI variables";
+          wantedBy = [ "multi-user.target" ];
+          after = [ "opt-nvidia-esp.mount" ];
+          serviceConfig.Type = "oneshot";
+          serviceConfig.ExecStart = "${pkgs.nvidia-jetpack.otaUtils}/bin/ota-setup-efivars ${cfg.flashScriptOverrides.targetBoard}";
+        };
       };
-    };
 
-    boot.loader.systemd-boot.extraInstallCommands = lib.mkIf (cfg.firmware.autoUpdate && cfg.som != null && cfg.flashScriptOverrides.targetBoard != null) ''
-      # Jetpack 5.0 didn't expose this DMI variable,
-      if [[ ! -f /sys/devices/virtual/dmi/id/bios_version ]]; then
-        echo "Unable to determine current Jetson firmware version."
-        echo "You should reflash the firmware with the new version to ensure compatibility"
-      else
-        CUR_VER=$(cat /sys/devices/virtual/dmi/id/bios_version)
-        NEW_VER=${pkgs.nvidia-jetpack.l4tVersion}
+      boot.loader.systemd-boot.extraInstallCommands = lib.mkIf (cfg.firmware.autoUpdate && cfg.som != null && cfg.flashScriptOverrides.targetBoard != null) ''
+        # Jetpack 5.0 didn't expose this DMI variable,
+        if [[ ! -f /sys/devices/virtual/dmi/id/bios_version ]]; then
+          echo "Unable to determine current Jetson firmware version."
+          echo "You should reflash the firmware with the new version to ensure compatibility"
+        else
+          CUR_VER=$(cat /sys/devices/virtual/dmi/id/bios_version)
+          NEW_VER=${pkgs.nvidia-jetpack.l4tVersion}
 
-        if [[ "$CUR_VER" != "$NEW_VER" ]]; then
-          echo "Current Jetson firmware version is: $CUR_VER"
-          echo "New Jetson firmware version is: $NEW_VER"
-          echo
+          if [[ "$CUR_VER" != "$NEW_VER" ]]; then
+            echo "Current Jetson firmware version is: $CUR_VER"
+            echo "New Jetson firmware version is: $NEW_VER"
+            echo
 
-          # Set efi vars here as well as in systemd service, in case we're
-          # upgrading from an older nixos generation that doesn't have the
-          # systemd service. Plus, this ota-setup-efivars will be from the
-          # generation we're switching to, which can contain additional
-          # fixes/improvements.
-          ${pkgs.nvidia-jetpack.otaUtils}/bin/ota-setup-efivars ${cfg.flashScriptOverrides.targetBoard}
+            # Set efi vars here as well as in systemd service, in case we're
+            # upgrading from an older nixos generation that doesn't have the
+            # systemd service. Plus, this ota-setup-efivars will be from the
+            # generation we're switching to, which can contain additional
+            # fixes/improvements.
+            ${pkgs.nvidia-jetpack.otaUtils}/bin/ota-setup-efivars ${cfg.flashScriptOverrides.targetBoard}
 
-          ${pkgs.nvidia-jetpack.otaUtils}/bin/ota-apply-capsule-update ${config.system.build.jetsonDevicePkgs.uefiCapsuleUpdate}
+            ${pkgs.nvidia-jetpack.otaUtils}/bin/ota-apply-capsule-update ${config.system.build.jetsonDevicePkgs.uefiCapsuleUpdate}
+          fi
         fi
-      fi
-    '';
+      '';
 
-    environment.systemPackages = lib.mkIf (cfg.firmware.autoUpdate && cfg.som != null && cfg.flashScriptOverrides.targetBoard != null) [
-      (pkgs.writeShellScriptBin "ota-apply-capsule-update-included" ''
-        ${pkgs.nvidia-jetpack.otaUtils}/bin/ota-apply-capsule-update ${config.system.build.jetsonDevicePkgs.uefiCapsuleUpdate}
-      '')
-    ];
-  };
+      environment.systemPackages = lib.mkIf (cfg.firmware.autoUpdate && cfg.som != null && cfg.flashScriptOverrides.targetBoard != null) [
+        (pkgs.writeShellScriptBin "ota-apply-capsule-update-included" ''
+          ${pkgs.nvidia-jetpack.otaUtils}/bin/ota-apply-capsule-update ${config.system.build.jetsonDevicePkgs.uefiCapsuleUpdate}
+        '')
+      ];
+    };
 }

@@ -1,4 +1,4 @@
-{ lib, flash-tools, chipId, fuseArgs ? [] }:
+{ lib, flash-tools, chipId, fuseArgs ? [ ] }:
 ''
   set -euo pipefail
 

@@ -1,24 +1,35 @@
-{ lib, stdenv, buildPackages, fetchFromGitHub, fetchpatch, fetchpatch2,
-  runCommand, edk2, acpica-tools, dtc, python3, bc, imagemagick, unixtools,
-  libuuid,
-  applyPatches, nukeReferences,
-  l4tVersion,
-
-  # Optional path to a boot logo that will be converted and cropped into the format required
-  bootLogo ? null,
-
-  # Patches to apply to edk2-nvidia source tree
-  edk2NvidiaPatches ? [],
-
-  # Patches to apply to edk2 source tree
-  edk2UefiPatches ? [],
-
-  debugMode ? false,
-  errorLevelInfo ? debugMode, # Enables a bunch more info messages
+{ lib
+, stdenv
+, buildPackages
+, fetchFromGitHub
+, fetchpatch
+, fetchpatch2
+, runCommand
+, edk2
+, acpica-tools
+, dtc
+, python3
+, bc
+, imagemagick
+, unixtools
+, libuuid
+, applyPatches
+, nukeReferences
+, l4tVersion
+, # Optional path to a boot logo that will be converted and cropped into the format required
+  bootLogo ? null
+, # Patches to apply to edk2-nvidia source tree
+  edk2NvidiaPatches ? [ ]
+, # Patches to apply to edk2 source tree
+  edk2UefiPatches ? [ ]
+, debugMode ? false
+, errorLevelInfo ? debugMode
+, # Enables a bunch more info messages
 
   # The root certificate (in PEM format) for authenticating capsule updates. By
   # default, EDK2 authenticates using a test keypair commited upstream.
-  trustedPublicCertPemFile ? null,
+  trustedPublicCertPemFile ? null
+,
 }:
 
 let
@@ -139,26 +150,28 @@ let
   });
 
   pythonEnv = buildPackages.python3.withPackages (ps: [ ps.tkinter ]);
-  targetArch = if stdenv.isi686 then
-    "IA32"
-  else if stdenv.isx86_64 then
-    "X64"
-  else if stdenv.isAarch64 then
-    "AARCH64"
-  else
-    throw "Unsupported architecture";
+  targetArch =
+    if stdenv.isi686 then
+      "IA32"
+    else if stdenv.isx86_64 then
+      "X64"
+    else if stdenv.isAarch64 then
+      "AARCH64"
+    else
+      throw "Unsupported architecture";
 
-  buildType = if stdenv.isDarwin then
+  buildType =
+    if stdenv.isDarwin then
       "CLANGPDB"
     else
-    "GCC5";
+      "GCC5";
 
   buildTarget = if debugMode then "DEBUG" else "RELEASE";
 
   jetson-edk2-uefi =
     # TODO: edk2.mkDerivation doesn't have a way to override the edk version used!
     # Make it not via passthru ?
-    stdenv.mkDerivation  {
+    stdenv.mkDerivation {
       pname = "jetson-edk2-uefi";
       version = l4tVersion;
 
@@ -181,7 +194,11 @@ let
       # From edk2-nvidia/Silicon/NVIDIA/edk2nv/stuart/settings.py
       PACKAGES_PATH = lib.concatStringsSep ":" [
         "${edk2-src}/BaseTools" # TODO: Is this needed?
-        edk2-src edk2-platforms edk2-non-osi edk2-nvidia edk2-nvidia-non-osi
+        edk2-src
+        edk2-platforms
+        edk2-non-osi
+        edk2-nvidia
+        edk2-nvidia-non-osi
         "${edk2-platforms}/Features/Intel/OutOfBandManagement"
       ];
 
@@ -245,9 +262,10 @@ let
       '';
     };
 
-  uefi-firmware = runCommand "uefi-firmware-${l4tVersion}" {
-    nativeBuildInputs = [ python3 nukeReferences ];
-  } ''
+  uefi-firmware = runCommand "uefi-firmware-${l4tVersion}"
+    {
+      nativeBuildInputs = [ python3 nukeReferences ];
+    } ''
     mkdir -p $out
     python3 ${edk2-nvidia}/Silicon/NVIDIA/Tools/FormatUefiBinary.py \
       ${jetson-edk2-uefi}/FV/UEFI_NS.Fv \
@@ -265,6 +283,7 @@ let
     # Get rid of any string references to source(s)
     nuke-refs $out/uefi_jetson.bin
   '';
-in {
+in
+{
   inherit edk2-jetson uefi-firmware;
 }

@@ -1,8 +1,24 @@
-{ stdenv, stdenvNoCC, lib, fetchurl, fetchpatch, fetchgit, autoPatchelfHook,
-  dpkg, expat, libglvnd, egl-wayland, xorg, mesa, wayland, pango, alsa-lib,
-  gst_all_1, gtk3, libv4l,
-
-  debs, l4tVersion
+{ stdenv
+, stdenvNoCC
+, lib
+, fetchurl
+, fetchpatch
+, fetchgit
+, autoPatchelfHook
+, dpkg
+, expat
+, libglvnd
+, egl-wayland
+, xorg
+, mesa
+, wayland
+, pango
+, alsa-lib
+, gst_all_1
+, gtk3
+, libv4l
+, debs
+, l4tVersion
 }:
 let
   # Wrapper around mkDerivation that has some sensible defaults to extract a .deb file from the L4T BSP pacckage
@@ -10,8 +26,14 @@ let
     # Nicely, the t194 and t234 packages are currently identical, so we just
     # use t194. No guarantee that will stay the same in the future, so we
     # should consider choosing the right package set based on the SoC.
-    { name, src ? debs.t234.${name}.src, version ? debs.t234.${name}.version,
-      sourceRoot ? "source", nativeBuildInputs ? [], autoPatchelf ? true, postPatch ? "", ...
+    { name
+    , src ? debs.t234.${name}.src
+    , version ? debs.t234.${name}.version
+    , sourceRoot ? "source"
+    , nativeBuildInputs ? [ ]
+    , autoPatchelf ? true
+    , postPatch ? ""
+    , ...
     }@args:
     stdenvNoCC.mkDerivation ((lib.filterAttrs (n: v: !(builtins.elem n [ "name" "autoPatchelf" ])) args) // {
       pname = name;
@@ -55,7 +77,7 @@ let
 
       meta = {
         platforms = [ "aarch64-linux" ];
-      } // (args.meta or {});
+      } // (args.meta or { });
     });
 
   l4t-camera = buildFromDeb {
@@ -143,7 +165,7 @@ let
     # libcuda.so actually depends on libnvcucompat.so at runtime (probably
     # through `dlopen`), so we need to tell Nix about this.
     postFixup = ''
-        patchelf --add-needed libnvcucompat.so $out/lib/libcuda.so
+      patchelf --add-needed libnvcucompat.so $out/lib/libcuda.so
     '';
   };
 
@@ -178,7 +200,7 @@ let
   # version. We need to rebuild it from source to ensure it can find nvidia's
   # v4l plugins in the right location. Nvidia's version has the path hardcoded.
   # See https://nv-tegra.nvidia.com/tegra/v4l2-src/v4l2_libs.git
-  _l4t-multimedia-v4l = libv4l.overrideAttrs ({ nativeBuildInputs ? [], patches ? [], postPatch ? "", ... }: {
+  _l4t-multimedia-v4l = libv4l.overrideAttrs ({ nativeBuildInputs ? [ ], patches ? [ ], postPatch ? "", ... }: {
     nativeBuildInputs = nativeBuildInputs ++ [ dpkg ];
     patches = patches ++ lib.singleton (fetchpatch {
       url = "https://raw.githubusercontent.com/OE4T/meta-tegra/master/recipes-multimedia/libv4l2/libv4l2-minimal/0003-Update-conversion-defaults-to-match-NVIDIA-sources.patch";
@@ -276,7 +298,8 @@ let
     autoPatchelf = false;
     meta.platforms = [ "aarch64-linux" "x86_64-linux" ];
   };
-in {
+in
+{
   inherit
     ### Debs from L4T BSP
     l4t-3d-core
