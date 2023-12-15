@@ -1,13 +1,32 @@
-{ stdenv, lib, fetchurl, dpkg, pkg-config, autoAddOpenGLRunpathHook, freeimage,
-  cmake, opencv, opencv2, libX11, libdrm, libglvnd, python3, coreutils, gnused,
-  libGL, libXau, wayland, libxkbcommon, libffi,
-  writeShellApplication,
-
-  l4t, cudaPackages,
-  cudaVersion, debs
+{ stdenv
+, lib
+, fetchurl
+, dpkg
+, pkg-config
+, autoAddOpenGLRunpathHook
+, freeimage
+, cmake
+, opencv
+, opencv2
+, libX11
+, libdrm
+, libglvnd
+, python3
+, coreutils
+, gnused
+, libGL
+, libXau
+, wayland
+, libxkbcommon
+, libffi
+, writeShellApplication
+, l4t
+, cudaPackages
+, cudaVersion
+, debs
 }:
 let
-  cudaVersionDashes = lib.replaceStrings [ "." ] [ "-"] cudaVersion;
+  cudaVersionDashes = lib.replaceStrings [ "." ] [ "-" ] cudaVersion;
 
   # This package is unfortunately not identical to the upstream cuda-samples
   # published at https://github.com/NVIDIA/cuda-samples, so we can't use
@@ -210,7 +229,7 @@ let
     sourceRoot = "source/usr/src/jetson_multimedia_api";
 
     nativeBuildInputs = [ dpkg python3 ];
-    buildInputs = [ libX11 libdrm  libglvnd opencv2 ]
+    buildInputs = [ libX11 libdrm libglvnd opencv2 ]
       ++ (with l4t; [ l4t-cuda l4t-multimedia l4t-camera ])
       ++ (with cudaPackages; [ cudatoolkit tensorrt ]);
 
@@ -344,14 +363,14 @@ let
         echo
       fi
     '';
-      # PVA is only available on Xaviers. If the Jetpack version of the
-      # firmware doesnt match the vpi2 version, it might fail with the
-      # following:
-      # [  435.318277] pva 16800000.pva1: invalid symbol id in descriptor for dst2 VMEM
-      # [  435.318467] pva 16800000.pva1: failed to map DMA desc info
+    # PVA is only available on Xaviers. If the Jetpack version of the
+    # firmware doesnt match the vpi2 version, it might fail with the
+    # following:
+    # [  435.318277] pva 16800000.pva1: invalid symbol id in descriptor for dst2 VMEM
+    # [  435.318467] pva 16800000.pva1: failed to map DMA desc info
   };
 
-  combined-test =  writeShellApplication {
+  combined-test = writeShellApplication {
     name = "combined-test";
     text = ''
       echo "====="
@@ -380,7 +399,8 @@ let
       ${vpi2-test}/bin/vpi2-test
     '';
   };
-in {
+in
+{
   inherit
     cuda-samples
     cuda-test

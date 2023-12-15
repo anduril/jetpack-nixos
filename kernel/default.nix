@@ -1,14 +1,19 @@
-{ pkgs, lib, fetchFromGitHub, l4t-xusb-firmware, realtime ? false,
-  kernelPatches ? [ ],
-  structuredExtraConfig ? {},
-  extraMeta ? {},
-  argsOverride ? {},
-  ...
+{ pkgs
+, lib
+, fetchFromGitHub
+, l4t-xusb-firmware
+, realtime ? false
+, kernelPatches ? [ ]
+, structuredExtraConfig ? { }
+, extraMeta ? { }
+, argsOverride ? { }
+, ...
 }@args:
 let
   isNative = pkgs.stdenv.isAarch64;
   pkgsAarch64 = if isNative then pkgs else pkgs.pkgsCross.aarch64-multiplatform;
-in pkgsAarch64.buildLinux (args // {
+in
+pkgsAarch64.buildLinux (args // {
   version = "5.10.104" + lib.optionalString realtime "-rt63";
   extraMeta.branch = "5.10";
 
@@ -36,7 +41,7 @@ in pkgsAarch64.buildLinux (args // {
         nvidia/platform/t19x/galen/kernel-dts/Makefile \
         nvidia/platform/t23x/concord/kernel-dts/Makefile
 
-      '' + lib.optionalString realtime ''
+    '' + lib.optionalString realtime ''
       for p in $(find $PWD/rt-patches -name \*.patch -type f | sort); do
         echo "Applying $p"
         patch -s -p1 < $p
@@ -44,7 +49,7 @@ in pkgsAarch64.buildLinux (args // {
     '';
   };
   autoModules = false;
-  features = {}; # TODO: Why is this needed in nixpkgs master (but not NixOS 22.05)?
+  features = { }; # TODO: Why is this needed in nixpkgs master (but not NixOS 22.05)?
 
   # As of 22.11, only kernel configs supplied through kernelPatches
   # can override configs specified in the platforms

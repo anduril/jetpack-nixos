@@ -1,3 +1,3 @@
 final: prev: {
-  nvidia-jetpack = final.callPackage ./default.nix {};
+  nvidia-jetpack = final.callPackage ./default.nix { };
 }

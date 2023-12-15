@@ -1,5 +1,17 @@
-{ callPackage, callPackages, stdenv, stdenvNoCC, lib, runCommand, fetchurl,
-  bzip2_1_1, dpkg,  pkgs, dtc, python3, runtimeShell, writeShellApplication
+{ callPackage
+, callPackages
+, stdenv
+, stdenvNoCC
+, lib
+, runCommand
+, fetchurl
+, bzip2_1_1
+, dpkg
+, pkgs
+, dtc
+, python3
+, runtimeShell
+, writeShellApplication
 }:
 
 let
@@ -72,13 +84,13 @@ let
 
   samples = callPackages ./pkgs/samples { inherit debs cudaVersion autoAddOpenGLRunpathHook l4t cudaPackages; };
 
-  kernel = callPackage ./kernel { inherit (l4t) l4t-xusb-firmware; kernelPatches = []; };
+  kernel = callPackage ./kernel { inherit (l4t) l4t-xusb-firmware; kernelPatches = [ ]; };
   kernelPackagesOverlay = self: super: {
     nvidia-display-driver = self.callPackage ./kernel/display-driver.nix { inherit l4tVersion; };
   };
   kernelPackages = (pkgs.linuxPackagesFor kernel).extend kernelPackagesOverlay;
 
-  rtkernel = callPackage ./kernel { inherit (l4t) l4t-xusb-firmware; kernelPatches = [];  realtime = true; };
+  rtkernel = callPackage ./kernel { inherit (l4t) l4t-xusb-firmware; kernelPatches = [ ]; realtime = true; };
   rtkernelPackages = (pkgs.linuxPackagesFor rtkernel).extend kernelPackagesOverlay;
 
   nxJetsonBenchmarks = pkgs.callPackage ./pkgs/jetson-benchmarks {
@@ -94,10 +106,11 @@ let
     inherit cudaPackages;
   };
 
-  supportedConfigurations = lib.listToAttrs (map (c: {
-    name = "${c.som}-${c.carrierBoard}";
-    value = c;
-  }) [
+  supportedConfigurations = lib.listToAttrs (map
+    (c: {
+      name = "${c.som}-${c.carrierBoard}";
+      value = c;
+    }) [
     { som = "orin-agx"; carrierBoard = "devkit"; }
     { som = "orin-nx"; carrierBoard = "devkit"; }
     { som = "orin-nano"; carrierBoard = "devkit"; }
@@ -106,11 +119,13 @@ let
     { som = "xavier-nx-emmc"; carrierBoard = "devkit"; }
   ]);
 
-  supportedNixOSConfigurations = lib.mapAttrs (n: c: {
-    imports = [ ./modules/default.nix ];
-    hardware.nvidia-jetpack = { enable = true; } // c;
-    networking.hostName = "${c.som}-${c.carrierBoard}"; # Just so it sets the flash binary name.
-  }) supportedConfigurations;
+  supportedNixOSConfigurations = lib.mapAttrs
+    (n: c: {
+      imports = [ ./modules/default.nix ];
+      hardware.nvidia-jetpack = { enable = true; } // c;
+      networking.hostName = "${c.som}-${c.carrierBoard}"; # Just so it sets the flash binary name.
+    })
+    supportedConfigurations;
 
   flashFromDevice = callPackage ./pkgs/flash-from-device {
     inherit pkgsAarch64 tegra-eeprom-tool-static;
@@ -183,4 +198,4 @@ rec {
   initrdFlashScripts = lib.mapAttrs' (n: c: lib.nameValuePair "initrd-flash-${n}" c.initrdFlashScript) devicePkgs;
   uefiCapsuleUpdates = lib.mapAttrs' (n: c: lib.nameValuePair "uefi-capsule-update-${n}" c.uefiCapsuleUpdate) devicePkgs;
 }
-// l4t
+  // l4t

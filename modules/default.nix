@@ -153,15 +153,17 @@ in
       # DT_RUNPATH of cuda_compat's libcuda.so in the same way, but this
       # requires more integration between upstream Nixpkgs and jetpack-nixos.
       # When that happens, please remove l4tCoreWrapper below.
-      let l4tCoreWrapper = pkgs.stdenv.mkDerivation {
-        name = "l4t-core-wrapper";
-        phases = [ "installPhase" ];
-        installPhase = ''
-          mkdir -p $out/lib
-          ln -s ${l4t-core}/lib/libnvrm_gpu.so $out/lib/libnvrm_gpu.so
-          ln -s ${l4t-core}/lib/libnvrm_mem.so $out/lib/libnvrm_mem.so
-        '';
-      }; in
+      let
+        l4tCoreWrapper = pkgs.stdenv.mkDerivation {
+          name = "l4t-core-wrapper";
+          phases = [ "installPhase" ];
+          installPhase = ''
+            mkdir -p $out/lib
+            ln -s ${l4t-core}/lib/libnvrm_gpu.so $out/lib/libnvrm_gpu.so
+            ln -s ${l4t-core}/lib/libnvrm_mem.so $out/lib/libnvrm_mem.so
+          '';
+        };
+      in
       [
         l4tCoreWrapper
         l4t-cuda
