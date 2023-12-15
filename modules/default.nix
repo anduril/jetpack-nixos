@@ -18,6 +18,8 @@ let
     name = "tee-supplicant-plugins";
     paths = cfg.firmware.optee.supplicantPlugins;
   };
+
+  nvidiaContainerRuntimeActive = with config.virtualisation; (docker.enable && docker.enableNvidia) || (podman.enable && podman.enableNvidia);
 in
 {
   imports = [
@@ -79,7 +81,14 @@ in
   };
 
   config = mkIf cfg.enable {
-    nixpkgs.overlays = [ (import ../overlay.nix) ];
+    assertions = [{
+      assertion = (config.virtualisation.docker.enable && config.virtualisation.docker.enableNvidia) -> lib.versionAtLeast config.virtualisation.docker.package.version "25";
+      message = "Docker version < 25 does not support CDI";
+    }];
+
+    nixpkgs.overlays = [
+      (import ../overlay.nix)
+    ];
 
     boot.kernelPackages =
       if cfg.kernel.realtime
@@ -225,6 +234,32 @@ in
       l4t-tools
       otaUtils # Tools for UEFI capsule updates
     ];
+
+    systemd.tmpfiles.rules = lib.optional nvidiaContainerRuntimeActive "d /var/run/cdi 0755 root root - -";
+
+    systemd.services.nvidia-cdi-generate = {
+      enable = nvidiaContainerRuntimeActive;
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        ExecStart =
+          let
+            exe = "${pkgs.nvidia-jetpack.nvidia-ctk}/bin/nvidia-ctk";
+          in
+          toString [
+            exe
+            "cdi"
+            "generate"
+            "--nvidia-ctk-path=${exe}" # it is odd that this is needed, should be the same as /proc/self/exe?
+            "--driver-root=${pkgs.nvidia-jetpack.containerDeps}" # the root where nvidia libs will be resolved from
+            "--dev-root=/" # the root where chardevs will be resolved from
+            "--mode=csv"
+            "--csv.file=${pkgs.nvidia-jetpack.l4tCsv}"
+            "--output=/var/run/cdi/jetpack-nixos" # a yaml file extension is added by the nvidia-ctk tool
+          ];
+      };
+      wantedBy = [ "multi-user.target" ];
+    };
 
     # Used by libEGL_nvidia.so.0
     environment.etc."egl/egl_external_platform.d".source = "/run/opengl-driver/share/egl/egl_external_platform.d/";
