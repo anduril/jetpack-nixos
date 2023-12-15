@@ -11,12 +11,12 @@ let
 
   teeApplications = pkgs.symlinkJoin {
     name = "tee-applications";
-    paths = cfg.firmware.optee.trustedApplications;
+    paths = cfg.firmware.optee.supplicant.trustedApplications;
   };
 
   supplicantPlugins = pkgs.symlinkJoin {
     name = "tee-supplicant-plugins";
-    paths = cfg.firmware.optee.supplicantPlugins;
+    paths = cfg.firmware.optee.supplicant.plugins;
   };
 
   nvidiaContainerRuntimeActive = with config.virtualisation; (docker.enable && docker.enableNvidia) || (podman.enable && podman.enableNvidia);
@@ -219,9 +219,9 @@ in
           "--ta-path=${teeApplications}"
           "--plugin-path=${supplicantPlugins}"
         ]
-        ++ cfg.firmware.optee.supplicantExtraArgs);
+        ++ cfg.firmware.optee.supplicant.extraArgs);
       in
-      {
+      lib.mkIf cfg.firmware.optee.supplicant.enable {
         description = "Userspace supplicant for OPTEE-OS";
         serviceConfig = {
           ExecStart = "${pkgs.nvidia-jetpack.opteeClient}/bin/tee-supplicant ${args}";
