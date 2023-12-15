@@ -29,11 +29,18 @@ let
     mv Linux_for_Tegra $out
   '';
 
-  # Just for convenience. Unused
+  # Here for convenience, to see what is in upstream Jetpack
   unpackedDebs = pkgs.runCommand "unpackedDebs" { nativeBuildInputs = [ dpkg ]; } ''
     mkdir -p $out
     ${lib.concatStringsSep "\n" (lib.mapAttrsToList (n: p: "echo Unpacking ${n}; dpkg -x ${p.src} $out/${n}") debs.common)}
     ${lib.concatStringsSep "\n" (lib.mapAttrsToList (n: p: "echo Unpacking ${n}; dpkg -x ${p.src} $out/${n}") debs.t234)}
+  '';
+
+  # Also just for convenience,
+  unpackedDebsFilenames = pkgs.runCommand "unpackedDebsFilenames" { nativeBuildInputs = [ dpkg ]; } ''
+    mkdir -p $out
+    ${lib.concatStringsSep "\n" (lib.mapAttrsToList (n: p: "echo Extracting file list from ${n}; dpkg --fsys-tarfile ${p.src} | tar --list > $out/${n}") debs.common)}
+    ${lib.concatStringsSep "\n" (lib.mapAttrsToList (n: p: "echo Extracting file list from ${n}; dpkg --fsys-tarfile ${p.src} | tar --list > $out/${n}") debs.t234)}
   '';
 
   inherit (pkgsAarch64.callPackages ./pkgs/uefi-firmware { inherit l4tVersion; })
@@ -117,11 +124,12 @@ let
   otaUtils = callPackage ./pkgs/ota-utils {
     inherit tegra-eeprom-tool l4tVersion;
   };
-in rec {
+in
+rec {
   inherit jetpackVersion l4tVersion cudaVersion;
 
   # Just for convenience
-  inherit bspSrc debs unpackedDebs;
+  inherit bspSrc debs unpackedDebs unpackedDebsFilenames;
 
   inherit cudaPackages samples;
   inherit flash-tools;
@@ -163,6 +171,13 @@ in rec {
       }).config.hardware.deviceTree.package;
     };
   };
+
+  l4tCsv = callPackage ./pkgs/containers/l4t-csv.nix { inherit bspSrc; };
+  genL4tJson = runCommand "l4t.json" { nativeBuildInputs = [ python3 ]; } ''
+    python3 ${./pkgs/containers/gen_l4t_json.py} ${l4tCsv} ${unpackedDebsFilenames} > $out
+  '';
+  containerDeps = callPackage ./pkgs/containers/deps.nix { inherit debs; };
+  nvidia-ctk = callPackage ./pkgs/containers/nvidia-ctk.nix { };
 
   flashScripts = lib.mapAttrs' (n: c: lib.nameValuePair "flash-${n}" c.flashScript) devicePkgs;
   initrdFlashScripts = lib.mapAttrs' (n: c: lib.nameValuePair "initrd-flash-${n}" c.initrdFlashScript) devicePkgs;

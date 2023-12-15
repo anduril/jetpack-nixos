@@ -173,6 +173,30 @@ To include your own signing keys in the EDK2 build and capsule update, make
 sure the option `hardware.nvidia-jetpack.firmware.uefi.capsuleAuthentication.enable`
 is turned on and each signing key option is set.
 
+### OCI Container Support
+
+You can run OCI containers with jetpack-nixos by enabling the following nixos options:
+
+```nix
+{
+  virtualisation.podman.enable = true;
+  virtualisation.podman.enableNvidia = true;
+}
+```
+
+To run a container with access to nvidia hardware, you must specify a device to
+passthrough to the container in the [CDI](https://github.com/cncf-tags/container-device-interface/blob/main/SPEC.md#overview)
+format. By default, there will be a single device setup of the kind
+"nvidia.com/gpu" named "all". To use this device, pass
+`--device=nvidia.com/gpu=all` when starting your container. If you need to
+configure more CDI devices on the NixOS host, just note that the path
+/var/run/cdi/jetpack-nixos.yaml will be taken by jetpack-nixos.
+
+As of December 2023, Docker does not have a released version that supports the
+CDI specification, so Podman is recommended for running containers on Jetson
+devices. Docker is set to get experimental CDI support in their version 25
+release.
+
 ## Additional Links
 
 Much of this is inspired by the great work done by [OpenEmbedded for Tegra](https://github.com/OE4T).

@@ -442,8 +442,5 @@ let
       dpkg-deb -x ${debs.common.libnvvpi2.src} source
       install -D -t $out/lib/firmware source/opt/nvidia/vpi2/lib64/priv/pva_auth_allowlist
     '';
-
-    # TODO:
-    #  libnvidia-container
   };
 in cudaPackages
