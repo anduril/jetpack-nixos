@@ -18,7 +18,7 @@ let
     xavier-nx-emmc = "${pkgs.nvidia-jetpack.l4t-nvpmodel}/etc/nvpmodel/nvpmodel_t194_p3668.conf";
   };
 
-  nvfancontrolConf = rec {
+  nvfancontrolConf = {
     orin-agx = "${pkgs.nvidia-jetpack.l4t-nvfancontrol}/etc/nvpower/nvfancontrol/nvfancontrol_p3701_0000.conf";
     orin-nx = "${pkgs.nvidia-jetpack.l4t-nvfancontrol}/etc/nvpower/nvfancontrol/nvfancontrol_p3767_0000.conf";
     orin-nano = "${pkgs.nvidia-jetpack.l4t-nvfancontrol}/etc/nvpower/nvfancontrol/nvfancontrol_p3767_0000.conf";
@@ -28,11 +28,11 @@ let
   };
 in lib.mkMerge [{
   # Turn on nvpmodel if we have a config for it.
-  services.nvpmodel.enable = mkIf (cfg.som != null && nvpModelConf ? "${cfg.som}") (mkDefault true);
-  services.nvpmodel.configFile = mkIf (cfg.som != null && nvpModelConf ? "${cfg.som}") (mkDefault nvpModelConf.${cfg.som});
+  services.nvpmodel.enable = mkIf (nvpModelConf ? "${cfg.som}") (mkDefault true);
+  services.nvpmodel.configFile = mkIf (nvpModelConf ? "${cfg.som}") (mkDefault nvpModelConf.${cfg.som});
 
   # Set fan control service if we have a config for it
-  services.nvfancontrol.configFile = mkIf (cfg.som != null && nvfancontrolConf ? "${cfg.som}") (mkDefault nvfancontrolConf.${cfg.som});
+  services.nvfancontrol.configFile = mkIf (nvfancontrolConf ? "${cfg.som}") (mkDefault nvfancontrolConf.${cfg.som});
   # Enable the fan control service if it's a devkit
   services.nvfancontrol.enable = mkIf (cfg.carrierBoard == "devkit") (mkDefault true);
 
