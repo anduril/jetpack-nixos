@@ -50,6 +50,12 @@
         };
       };
 
+      checks = nixpkgs.lib.mapAttrs
+        (system: _: {
+          formatting = nixpkgs.legacyPackages.${system}.callPackage ./ci/formatting.nix { };
+        })
+        self.legacyPackages;
+
       # Not everything here should be cross-compiled to aarch64-linux
       legacyPackages.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.callPackage ./default.nix { };
       legacyPackages.aarch64-linux = nixpkgs.legacyPackages.aarch64-linux.callPackage ./default.nix { };
