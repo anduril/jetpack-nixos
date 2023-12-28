@@ -3,6 +3,9 @@ let
 in
 { lib
 , stdenv
+, wrapCCWith
+, gcc9Stdenv
+, gcc
 , runCommand
 , dpkg
 , makeWrapper
@@ -12,8 +15,6 @@ in
 , expat
 , pkg-config
 , substituteAll
-, gcc9
-, gcc10
 , l4t
 , zlib
 , qt6
@@ -47,13 +48,22 @@ in
   )
 , debs
 , cudaVersion
-,
 }:
 
 let
   # We should use gcc10 to match CUDA 11.4, but we get link errors on opencv and torch2trt if we do
   # ../../lib/libopencv_core.so.4.5.4: undefined reference to `__aarch64_ldadd4_acq_rel
-  gccForCuda = gcc9;
+  #
+  # See also: pkgs/development/compilers/stdenv.nix
+  gccForCuda =
+    if lib.versions.major gcc.version == "9"
+    then gcc # Temporary workaround for 22.11 compatibility, until we drop it
+    else
+      wrapCCWith {
+        cc = gcc9Stdenv.cc.cc;
+        useCcForLibs = true;
+        gccForLibs = stdenv.cc.cc.lib;
+      };
 
   cudaVersionDashes = lib.replaceStrings [ "." ] [ "-" ] cudaVersion;
 
@@ -213,6 +223,9 @@ let
         for filepath in $(find include/ -name '*_v8.h'); do
           ln -s $(basename $filepath) ''${filepath%_v8.h}.h
         done
+
+        # TODO: Remove when https://github.com/NixOS/nixpkgs/pull/277213 is merged
+        chmod +x lib/*.so
       '';
       # Without --add-needed autoPatchelf forgets $ORIGIN
       postFixup = ''
