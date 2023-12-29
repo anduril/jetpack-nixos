@@ -1,7 +1,9 @@
-{ lib, stdenvNoCC, util-linux, e2fsprogs, tegra-eeprom-tool, l4tVersion }:
+{ lib, stdenvNoCC, bash, util-linux, e2fsprogs, tegra-eeprom-tool, l4tVersion }:
 
 stdenvNoCC.mkDerivation {
   name = "ota-utils";
+
+  depsBuildHost = [ bash ];
 
   dontUnpack = true;
   dontConfigure = true;
@@ -24,6 +26,7 @@ stdenvNoCC.mkDerivation {
     substituteInPlace $out/bin/ota-check-firmware \
       --replace "@l4tVersion@" "${l4tVersion}"
 
-    patchShebangs $out/bin/*
+    # patchShebangs does not seem to work here for some reason
+    substituteInPlace $out/bin/* --replace '#!/usr/bin/env bash' '#!${bash}/bin/bash'
   '';
 }

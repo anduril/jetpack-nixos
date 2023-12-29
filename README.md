@@ -95,8 +95,38 @@ Concretely, that means that you cannot modify the EFI variables from Linux, so U
 You may need to enter the firmware menu and reorder it manually so NixOS will boot first.
 (See [this issue](https://forums.developer.nvidia.com/t/using-uefi-runtime-variables-on-xavier-agx/227970))
 
-### Updating firmware from device
+### Graphical Output
+As of 2023-12-09, the status of graphical output on Jetsons is described below.
+If you have problems with configurations that are expected to work, try different ports (HDMI/DP/USB-C), different cables, and rebooting with the cables initially connected or disconnected.
 
+#### Linux Console
+On Orin AGX/NX/Nano, the Linux console does not seem to work at all on the HDMI/DisplayPort.
+This may be an upstream limitation (not jetpack-nixos specific).
+
+On Xavier AGX and Xavier NX, add `boot.kernelParams = [ "fbcon=map:<n>" ]`, replacing `<n>` with the an integer according to the following:
+
+Xavier AGX devkit:
+- 0 for front USB-C port (recovery port)
+- 1 for rear USB-C port (above power barrel jack)
+- 2 for rear HDMI port
+
+Xavier NX devkit:
+- 0 for DisplayPort
+- 1 for HDMI
+
+Given the unreliability of graphical console output on Jetson devices, I recommend using the serial port as the go-to for troubleshooting.
+
+#### X11
+Set `hardware.nvidia-jetpack.modesetting.enable = false;`.
+This is currently the default, but the default may change in the future.
+LightDM+i3 and LightDM+Gnome have been tested working. (Remember to add the user to the "video" group)
+GDM apparently does not currently work.
+
+#### Wayland
+Set `hardware.nvidia-jetpack.modesetting.enable = true;`
+Weston and sway have been tested working on Orin devices, but do not work on Xavier devices.
+
+### Updating firmware from device
 Recent versions of Jetpack (>=5.1) support updating the device firmware from the device using the UEFI Capsule update mechanism.
 This can be done as a more convenient alternative to physically attaching to the device and re-running the flash script.
 These updates can be performed automatically after a `nixos-rebuild boot` if the `hardware.nvidia-jetpack.bootloader.autoUpdate` setting is set to true and systemd-boot is used.
@@ -142,6 +172,30 @@ An overview of the key generation can be found at [EDK2 Capsule Signing](https:/
 To include your own signing keys in the EDK2 build and capsule update, make
 sure the option `hardware.nvidia-jetpack.firmware.uefi.capsuleAuthentication.enable`
 is turned on and each signing key option is set.
+
+### OCI Container Support
+
+You can run OCI containers with jetpack-nixos by enabling the following nixos options:
+
+```nix
+{
+  virtualisation.podman.enable = true;
+  virtualisation.podman.enableNvidia = true;
+}
+```
+
+To run a container with access to nvidia hardware, you must specify a device to
+passthrough to the container in the [CDI](https://github.com/cncf-tags/container-device-interface/blob/main/SPEC.md#overview)
+format. By default, there will be a single device setup of the kind
+"nvidia.com/gpu" named "all". To use this device, pass
+`--device=nvidia.com/gpu=all` when starting your container. If you need to
+configure more CDI devices on the NixOS host, just note that the path
+/var/run/cdi/jetpack-nixos.yaml will be taken by jetpack-nixos.
+
+As of December 2023, Docker does not have a released version that supports the
+CDI specification, so Podman is recommended for running containers on Jetson
+devices. Docker is set to get experimental CDI support in their version 25
+release.
 
 ## Additional Links
 

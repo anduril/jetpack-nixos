@@ -1,5 +1,17 @@
-{ callPackage, callPackages, stdenv, stdenvNoCC, lib, runCommand, fetchurl,
-  bzip2_1_1, dpkg,  pkgs, dtc, python3, runtimeShell, writeShellApplication
+{ callPackage
+, callPackages
+, stdenv
+, stdenvNoCC
+, lib
+, runCommand
+, fetchurl
+, bzip2_1_1
+, dpkg
+, pkgs
+, dtc
+, python3
+, runtimeShell
+, writeShellApplication
 }:
 
 let
@@ -29,11 +41,18 @@ let
     mv Linux_for_Tegra $out
   '';
 
-  # Just for convenience. Unused
+  # Here for convenience, to see what is in upstream Jetpack
   unpackedDebs = pkgs.runCommand "unpackedDebs" { nativeBuildInputs = [ dpkg ]; } ''
     mkdir -p $out
     ${lib.concatStringsSep "\n" (lib.mapAttrsToList (n: p: "echo Unpacking ${n}; dpkg -x ${p.src} $out/${n}") debs.common)}
     ${lib.concatStringsSep "\n" (lib.mapAttrsToList (n: p: "echo Unpacking ${n}; dpkg -x ${p.src} $out/${n}") debs.t234)}
+  '';
+
+  # Also just for convenience,
+  unpackedDebsFilenames = pkgs.runCommand "unpackedDebsFilenames" { nativeBuildInputs = [ dpkg ]; } ''
+    mkdir -p $out
+    ${lib.concatStringsSep "\n" (lib.mapAttrsToList (n: p: "echo Extracting file list from ${n}; dpkg --fsys-tarfile ${p.src} | tar --list > $out/${n}") debs.common)}
+    ${lib.concatStringsSep "\n" (lib.mapAttrsToList (n: p: "echo Extracting file list from ${n}; dpkg --fsys-tarfile ${p.src} | tar --list > $out/${n}") debs.t234)}
   '';
 
   inherit (pkgsAarch64.callPackages ./pkgs/uefi-firmware { inherit l4tVersion; })
@@ -65,13 +84,13 @@ let
 
   samples = callPackages ./pkgs/samples { inherit debs cudaVersion autoAddOpenGLRunpathHook l4t cudaPackages; };
 
-  kernel = callPackage ./kernel { inherit (l4t) l4t-xusb-firmware; kernelPatches = []; };
+  kernel = callPackage ./kernel { inherit (l4t) l4t-xusb-firmware; kernelPatches = [ ]; };
   kernelPackagesOverlay = self: super: {
     nvidia-display-driver = self.callPackage ./kernel/display-driver.nix { inherit l4tVersion; };
   };
   kernelPackages = (pkgs.linuxPackagesFor kernel).extend kernelPackagesOverlay;
 
-  rtkernel = callPackage ./kernel { inherit (l4t) l4t-xusb-firmware; kernelPatches = [];  realtime = true; };
+  rtkernel = callPackage ./kernel { inherit (l4t) l4t-xusb-firmware; kernelPatches = [ ]; realtime = true; };
   rtkernelPackages = (pkgs.linuxPackagesFor rtkernel).extend kernelPackagesOverlay;
 
   nxJetsonBenchmarks = pkgs.callPackage ./pkgs/jetson-benchmarks {
@@ -87,10 +106,11 @@ let
     inherit cudaPackages;
   };
 
-  supportedConfigurations = lib.listToAttrs (map (c: {
-    name = "${c.som}-${c.carrierBoard}";
-    value = c;
-  }) [
+  supportedConfigurations = lib.listToAttrs (map
+    (c: {
+      name = "${c.som}-${c.carrierBoard}";
+      value = c;
+    }) [
     { som = "orin-agx"; carrierBoard = "devkit"; }
     { som = "orin-agx-industrial"; carrierBoard = "devkit"; }
     { som = "orin-nx"; carrierBoard = "devkit"; }
@@ -100,11 +120,13 @@ let
     { som = "xavier-nx-emmc"; carrierBoard = "devkit"; }
   ]);
 
-  supportedNixOSConfigurations = lib.mapAttrs (n: c: {
-    imports = [ ./modules/default.nix ];
-    hardware.nvidia-jetpack = { enable = true; } // c;
-    networking.hostName = "${c.som}-${c.carrierBoard}"; # Just so it sets the flash binary name.
-  }) supportedConfigurations;
+  supportedNixOSConfigurations = lib.mapAttrs
+    (n: c: {
+      imports = [ ./modules/default.nix ];
+      hardware.nvidia-jetpack = { enable = true; } // c;
+      networking.hostName = "${c.som}-${c.carrierBoard}"; # Just so it sets the flash binary name.
+    })
+    supportedConfigurations;
 
   flashFromDevice = callPackage ./pkgs/flash-from-device {
     inherit pkgsAarch64 tegra-eeprom-tool-static;
@@ -118,11 +140,12 @@ let
   otaUtils = callPackage ./pkgs/ota-utils {
     inherit tegra-eeprom-tool l4tVersion;
   };
-in rec {
+in
+rec {
   inherit jetpackVersion l4tVersion cudaVersion;
 
   # Just for convenience
-  inherit bspSrc debs unpackedDebs;
+  inherit bspSrc debs unpackedDebs unpackedDebsFilenames;
 
   inherit cudaPackages samples;
   inherit flash-tools;
@@ -165,8 +188,15 @@ in rec {
     };
   };
 
+  l4tCsv = callPackage ./pkgs/containers/l4t-csv.nix { inherit bspSrc; };
+  genL4tJson = runCommand "l4t.json" { nativeBuildInputs = [ python3 ]; } ''
+    python3 ${./pkgs/containers/gen_l4t_json.py} ${l4tCsv} ${unpackedDebsFilenames} > $out
+  '';
+  containerDeps = callPackage ./pkgs/containers/deps.nix { inherit debs; };
+  nvidia-ctk = callPackage ./pkgs/containers/nvidia-ctk.nix { };
+
   flashScripts = lib.mapAttrs' (n: c: lib.nameValuePair "flash-${n}" c.flashScript) devicePkgs;
   initrdFlashScripts = lib.mapAttrs' (n: c: lib.nameValuePair "initrd-flash-${n}" c.initrdFlashScript) devicePkgs;
   uefiCapsuleUpdates = lib.mapAttrs' (n: c: lib.nameValuePair "uefi-capsule-update-${n}" c.uefiCapsuleUpdate) devicePkgs;
 }
-// l4t
+  // l4t

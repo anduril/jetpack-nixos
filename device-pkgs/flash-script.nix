@@ -1,24 +1,23 @@
-{ lib, flash-tools,
-
-  preFlashCommands ? "", flashCommands ? "", postFlashCommands ? "", flashArgs ? [], partitionTemplate ? null,
-
-  socType ? null,
-
-  # Optional directory containing DTBs to be used by flashing script, which can
+{ lib
+, flash-tools
+, preFlashCommands ? ""
+, flashCommands ? ""
+, postFlashCommands ? ""
+, flashArgs ? [ ]
+, partitionTemplate ? null
+, socType ? null
+, # Optional directory containing DTBs to be used by flashing script, which can
   # be used by the bootloader(s) and passed to the kernel.
-  dtbsDir ? null,
-
-  # Optional package containing uefi_jetson.efi to replace prebuilt version
-  uefi-firmware ? null,
-
-  # Optional package containing tos.img to replace prebuilt version
-  tosImage ? null,
-
-  # Optional EKS file containing encrypted keyblob
-  eksFile ? null,
-
-  # Additional DTB overlays to use during device flashing
-  additionalDtbOverlays ? [],
+  dtbsDir ? null
+, # Optional package containing uefi_jetson.efi to replace prebuilt version
+  uefi-firmware ? null
+, # Optional package containing tos.img to replace prebuilt version
+  tosImage ? null
+, # Optional EKS file containing encrypted keyblob
+  eksFile ? null
+, # Additional DTB overlays to use during device flashing
+  additionalDtbOverlays ? [ ]
+,
 }:
 ''
   set -euo pipefail

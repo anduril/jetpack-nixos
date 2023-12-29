@@ -2,14 +2,14 @@
 
 let
   # Make the package smaller so it doesn't blow up the initrd size
-  staticDeps = runCommand "static-deps" {} ''
+  staticDeps = runCommand "static-deps" { } ''
     mkdir -p $out/bin
     cp ${pkgsAarch64.pkgsStatic.mtdutils}/bin/mtd_debug $out/bin
     cp ${pkgsAarch64.pkgsStatic.mtdutils}/bin/flash_erase $out/bin
     cp ${tegra-eeprom-tool-static}/bin/tegra-boardspec $out/bin
   '';
 in
-runCommand "flash-from-device" {} ''
+runCommand "flash-from-device" { } ''
   mkdir -p $out/bin
 
   cat > $out/bin/flash-from-device <<EOF

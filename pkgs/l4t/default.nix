@@ -1,8 +1,24 @@
-{ stdenv, stdenvNoCC, lib, fetchurl, fetchpatch, fetchgit, autoPatchelfHook,
-  dpkg, expat, libglvnd, egl-wayland, xorg, mesa, wayland, pango, alsa-lib,
-  gst_all_1, gtk3, libv4l,
-
-  debs, l4tVersion
+{ stdenv
+, stdenvNoCC
+, lib
+, fetchurl
+, fetchpatch
+, fetchgit
+, autoPatchelfHook
+, dpkg
+, expat
+, libglvnd
+, egl-wayland
+, xorg
+, mesa
+, wayland
+, pango
+, alsa-lib
+, gst_all_1
+, gtk3
+, libv4l
+, debs
+, l4tVersion
 }:
 let
   # Wrapper around mkDerivation that has some sensible defaults to extract a .deb file from the L4T BSP pacckage
@@ -10,8 +26,14 @@ let
     # Nicely, the t194 and t234 packages are currently identical, so we just
     # use t194. No guarantee that will stay the same in the future, so we
     # should consider choosing the right package set based on the SoC.
-    { name, src ? debs.t234.${name}.src, version ? debs.t234.${name}.version,
-      sourceRoot ? "source", nativeBuildInputs ? [], autoPatchelf ? true, postPatch ? "", ...
+    { name
+    , src ? debs.t234.${name}.src
+    , version ? debs.t234.${name}.version
+    , sourceRoot ? "source"
+    , nativeBuildInputs ? [ ]
+    , autoPatchelf ? true
+    , postPatch ? ""
+    , ...
     }@args:
     stdenvNoCC.mkDerivation ((lib.filterAttrs (n: v: !(builtins.elem n [ "name" "autoPatchelf" ])) args) // {
       pname = name;
@@ -55,7 +77,7 @@ let
 
       meta = {
         platforms = [ "aarch64-linux" ];
-      } // (args.meta or {});
+      } // (args.meta or { });
     });
 
   l4t-camera = buildFromDeb {
@@ -66,6 +88,22 @@ let
   l4t-core = buildFromDeb {
     name = "nvidia-l4t-core";
     buildInputs = [ stdenv.cc.cc.lib expat libglvnd ];
+
+    # Some libraries, like libEGL_nvidia.so.0 from l3t-3d-core use a dlopen
+    # wrapper called NvOsLibraryLoad, which originates in libnvos.so in this
+    # l4t-core. Unfortunately, calling dlopen from libnvos.so instead of the
+    # original library/executable means that dlopen will use the DT_RUNPATH
+    # from libnvos.so instead of the binary/library which called it. We
+    # typically just need /run/opengl-driver/lib anyway, so lets add it to
+    # libnvos.so here instead.
+    #
+    # We append a postFixupHook since we need to have this happen after
+    # autoPatchelfHook, which itself also runs as a postFixupHook
+    preFixup = ''
+      postFixupHooks+=('
+        patchelf --add-rpath /run/opengl-driver/lib $out/lib/libnvos.so
+      ')
+    '';
   };
 
   l4t-3d-core = buildFromDeb {
@@ -85,18 +123,31 @@ let
 
       mv lib/tegra-egl/* lib
       rm -rf lib/tegra-egl
+      rm -f lib/nvidia.json
 
       # Make some symlinks also done by OE4T
       ln -sf libnvidia-ptxjitcompiler.so.${l4tVersion} lib/libnvidia-ptxjitcompiler.so.1
       ln -sf libnvidia-ptxjitcompiler.so.${l4tVersion} lib/libnvidia-ptxjitcompiler.so
     '';
 
-    # Re-add needed paths to RPATH
-    autoPatchelf = false;
-    postFixup = ''
-      for lib in $(find "$out/lib" -name '*.so*'); do
-        patchelf $lib --set-rpath $out/lib:${lib.makeLibraryPath [ l4t-core libglvnd egl-wayland xorg.libX11 xorg.libXext ]}
-      done
+    # We append a postFixupHook since we need to have this happen after
+    # autoPatchelfHook, which itself also runs as a postFixupHook
+    # TODO: Replace this with appendRunpaths which is available in 23.11
+    preFixup = ''
+      postFixupHooks+=('
+        patchelf --add-rpath ${lib.makeLibraryPath [ libglvnd ]} \
+          $out/lib/libEGL_nvidia.so.0 \
+          $out/lib/libGLX_nvidia.so.0 \
+          $out/lib/libnvidia-vulkan-producer.so
+
+        patchelf --add-rpath ${lib.makeLibraryPath (with xorg; [ libX11 libXext libxcb ])} \
+          $out/lib/libGLX_nvidia.so.0 \
+          $out/lib/libnvidia-glsi.so.* \
+
+        for lib in $(find "$out/lib" -name "*.so*"); do
+          patchelf $lib --add-rpath $out/lib
+        done
+      ')
     '';
   };
 
@@ -104,10 +155,17 @@ let
   l4t-cuda = buildFromDeb {
     name = "nvidia-l4t-cuda";
     buildInputs = [ l4t-core ];
+
     postPatch = ''
       # Additional libcuda symlinks
       ln -sf libcuda.so.1.1 lib/libcuda.so.1
       ln -sf libcuda.so.1.1 lib/libcuda.so
+    '';
+
+    # libcuda.so actually depends on libnvcucompat.so at runtime (probably
+    # through `dlopen`), so we need to tell Nix about this.
+    postFixup = ''
+      patchelf --add-needed libnvcucompat.so $out/lib/libcuda.so
     '';
   };
 
@@ -142,7 +200,7 @@ let
   # version. We need to rebuild it from source to ensure it can find nvidia's
   # v4l plugins in the right location. Nvidia's version has the path hardcoded.
   # See https://nv-tegra.nvidia.com/tegra/v4l2-src/v4l2_libs.git
-  _l4t-multimedia-v4l = libv4l.overrideAttrs ({ nativeBuildInputs ? [], patches ? [], postPatch ? "", ... }: {
+  _l4t-multimedia-v4l = libv4l.overrideAttrs ({ nativeBuildInputs ? [ ], patches ? [ ], postPatch ? "", ... }: {
     nativeBuildInputs = nativeBuildInputs ++ [ dpkg ];
     patches = patches ++ lib.singleton (fetchpatch {
       url = "https://raw.githubusercontent.com/OE4T/meta-tegra/master/recipes-multimedia/libv4l2/libv4l2-minimal/0003-Update-conversion-defaults-to-match-NVIDIA-sources.patch";
@@ -240,7 +298,8 @@ let
     autoPatchelf = false;
     meta.platforms = [ "aarch64-linux" "x86_64-linux" ];
   };
-in {
+in
+{
   inherit
     ### Debs from L4T BSP
     l4t-3d-core
