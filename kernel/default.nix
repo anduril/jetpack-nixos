@@ -88,6 +88,9 @@ pkgsAarch64.buildLinux (args // {
 
     # Lower priority of tegra-se crypto modules since they're slow and flaky
     { patch = ./0008-Lower-priority-of-tegra-se-crypto.patch; }
+
+    # Fix gcc13 compilation failure
+    { patch = ./0009-bonding-gcc13-synchronize-bond_-a-t-lb_xmit-types.patch; }
   ] ++ kernelPatches;
 
   structuredExtraConfig = with lib.kernel; {
