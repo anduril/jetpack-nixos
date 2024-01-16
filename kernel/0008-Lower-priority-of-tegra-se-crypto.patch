@@ -1,7 +1,7 @@
-From b826a540a67d9a097dfd0d3d546f6af98a3a4f2a Mon Sep 17 00:00:00 2001
+From 34095615d3d70848fef9cb12f86a03594086ac10 Mon Sep 17 00:00:00 2001
 From: Daniel Fullmer <dfullmer@anduril.com>
 Date: Sat, 18 Nov 2023 21:33:53 -0800
-Subject: [PATCH 8/8] Lower priority of tegra-se crypto
+Subject: [PATCH 8/9] Lower priority of tegra-se crypto
 
 It is far too flaky and slow to be useful.  I get approximately 150MB/s
 when benchmarking encryption with AES-CBC using this module, while I get
@@ -263,5 +263,5 @@ index 62e005da3dab..9b7c360a7048 100644
  		.cra_module = THIS_MODULE,
  	}
 -- 
-2.39.1
+2.42.0
 
