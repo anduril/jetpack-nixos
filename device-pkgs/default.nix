@@ -48,7 +48,6 @@ let
   tosImage = buildTOS tosArgs;
   taDevKit = buildOpteeTaDevKit tosArgs;
 
-  # TODO: Unify with fuseScript below
   mkFlashScript = args: import ./flash-script.nix ({
     inherit lib flashArgs partitionTemplate;
 
@@ -279,16 +278,24 @@ let
 
   fuseScript = writeShellApplication {
     name = "fuse-${hostName}";
-    text = import ./fuse-script.nix {
+    text = import ./flash-script.nix {
       inherit lib;
       flash-tools = flash-tools-patched;
-      inherit fuseArgs;
+      flashCommands =
+        let
+          chipId =
+            if cfg.som == null then null
+            else if lib.hasPrefix "orin-" cfg.som then "0x23"
+            else if lib.hasPrefix "xavier-" cfg.som then "0x19"
+            else throw "Unknown SoC type";
+        in
+        ''
+          ./odmfuse.sh -i ${chipId} "$@" ${builtins.toString fuseArgs}
+        '';
 
-      chipId =
-        if cfg.som == null then null
-        else if lib.hasPrefix "orin-" cfg.som then "0x23"
-        else if lib.hasPrefix "xavier-" cfg.som then "0x19"
-        else throw "Unknown SoC type";
+      # Fuse script needs device tree files, which aren't already present for
+      # non-devkit boards, so we need to get our built version of them
+      dtbsDir = config.hardware.deviceTree.package;
     };
   };
 in
