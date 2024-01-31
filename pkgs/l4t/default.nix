@@ -98,7 +98,8 @@ let
     # libnvos.so here instead.
     #
     # We append a postFixupHook since we need to have this happen after
-    # autoPatchelfHook, which itself also runs as a postFixupHook
+    # autoPatchelfHook, which itself also runs as a postFixupHook.
+    # TODO: Use runtimeDependencies instead
     preFixup = ''
       postFixupHooks+=('
         patchelf --add-rpath /run/opengl-driver/lib $out/lib/libnvos.so
@@ -251,6 +252,15 @@ let
 
       ln -sf ../../../libv4l2_nvcuvidvideocodec.so lib/libv4l/plugins/nv/libv4l2_nvcuvidvideocodec.so
       ln -sf ../../../libv4l2_nvvideocodec.so lib/libv4l/plugins/nv/libv4l2_nvvideocodec.so
+    '';
+
+    # We append a postFixupHook since we need to have this happen after
+    # autoPatchelfHook, which itself also runs as a postFixupHook.
+    # TODO: Use runtimeDependencies instead
+    preFixup = ''
+      postFixupHooks+=('
+        patchelf --add-rpath ${lib.getLib l4t-nvsci}/lib $out/lib/libnvmedia*.so
+      ')
     '';
   };
 
