@@ -98,7 +98,8 @@ let
     # libnvos.so here instead.
     #
     # We append a postFixupHook since we need to have this happen after
-    # autoPatchelfHook, which itself also runs as a postFixupHook
+    # autoPatchelfHook, which itself also runs as a postFixupHook.
+    # TODO: Use runtimeDependencies instead
     preFixup = ''
       postFixupHooks+=('
         patchelf --add-rpath /run/opengl-driver/lib $out/lib/libnvos.so
@@ -203,7 +204,7 @@ let
   _l4t-multimedia-v4l = libv4l.overrideAttrs ({ nativeBuildInputs ? [ ], patches ? [ ], postPatch ? "", ... }: {
     nativeBuildInputs = nativeBuildInputs ++ [ dpkg ];
     patches = patches ++ lib.singleton (fetchpatch {
-      url = "https://raw.githubusercontent.com/OE4T/meta-tegra/master/recipes-multimedia/libv4l2/libv4l2-minimal/0003-Update-conversion-defaults-to-match-NVIDIA-sources.patch";
+      url = "https://raw.githubusercontent.com/OE4T/meta-tegra/85aa94e16104debdd01a3f61a521b73d86340a9f/recipes-multimedia/libv4l2/libv4l2-minimal/0003-Update-conversion-defaults-to-match-NVIDIA-sources.patch";
       sha256 = "sha256-vGilgHWinrKjX+ikHo0J20PL713+w+lv46dBgfdvsZM=";
     });
     # Use a placeholder path that we replace in the l4t-multimedia derivation, We avoid an infinite recursion problem this way.
@@ -251,6 +252,15 @@ let
 
       ln -sf ../../../libv4l2_nvcuvidvideocodec.so lib/libv4l/plugins/nv/libv4l2_nvcuvidvideocodec.so
       ln -sf ../../../libv4l2_nvvideocodec.so lib/libv4l/plugins/nv/libv4l2_nvvideocodec.so
+    '';
+
+    # We append a postFixupHook since we need to have this happen after
+    # autoPatchelfHook, which itself also runs as a postFixupHook.
+    # TODO: Use runtimeDependencies instead
+    preFixup = ''
+      postFixupHooks+=('
+        patchelf --add-rpath ${lib.getLib l4t-nvsci}/lib $out/lib/libnvmedia*.so
+      ')
     '';
   };
 

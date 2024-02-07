@@ -1,6 +1,7 @@
 { pkgs
 , lib
 , fetchFromGitHub
+, fetchpatch
 , l4t-xusb-firmware
 , realtime ? false
 , kernelPatches ? [ ]
@@ -88,6 +89,19 @@ pkgsAarch64.buildLinux (args // {
 
     # Lower priority of tegra-se crypto modules since they're slow and flaky
     { patch = ./0008-Lower-priority-of-tegra-se-crypto.patch; }
+
+    # Fix gcc13 compilation failure
+    { patch = ./0009-bonding-gcc13-synchronize-bond_-a-t-lb_xmit-types.patch; }
+
+    # Fixes a memory leak by kernel tegra serial driver
+    # This manifested via slab unreclaimable growing unbounded via repeated kmalloc-256 calls
+    # This patch is present in 35.4.1 and should be removed when we update
+    {
+      patch = fetchpatch {
+        url = "https://github.com/OE4T/linux-tegra-5.10/commit/d5b90d6b9365250adb73b2fe5b52a5228df3b1d9.patch";
+        sha256 = "sha256-a5LL4avaxQ3WYr9fRPMCfHrl4iAp1yhH95R+iI/PwYc=";
+      };
+    }
   ] ++ kernelPatches;
 
   structuredExtraConfig = with lib.kernel; {
