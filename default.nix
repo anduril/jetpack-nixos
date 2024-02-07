@@ -64,6 +64,7 @@ let
     stdenv = pkgsAarch64.gcc9Stdenv;
     inherit bspSrc l4tVersion;
   }) buildTOS buildOpteeTaDevKit opteeClient;
+  genEkb = callPackage ./pkgs/optee/gen-ekb.nix { inherit l4tVersion; };
 
   flash-tools = callPackage ./pkgs/flash-tools {
     inherit bspSrc l4tVersion;
@@ -160,7 +161,7 @@ rec {
   inherit edk2-jetson uefi-firmware;
   inherit otaUtils;
 
-  inherit opteeClient;
+  inherit opteeClient genEkb;
 
   # TODO: Source packages. source_sync.sh from bspSrc
   # GST plugins

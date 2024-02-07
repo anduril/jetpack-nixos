@@ -1,0 +1,21 @@
+{ callPackage, l4tVersion, stdenv, python3 }:
+
+stdenv.mkDerivation {
+  pname = "gen_ekb.py";
+  src = callPackage ./nvoptee-src.nix { inherit l4tVersion; };
+  version = l4tVersion;
+  dontBuild = true;
+  buildInputs = [
+    (python3.withPackages (p: with p; [
+      cryptography
+      pycryptodome
+    ]))
+  ];
+  installPhase = ''
+    runHook preInstall
+    install -D optee/samples/hwkey-agent/host/tool/gen_ekb/gen_ekb.py \
+      $out/bin/gen_ekb.py
+    patchShebangs --host $out/bin/gen_ekb.py
+    runHook postInstall
+  '';
+}
