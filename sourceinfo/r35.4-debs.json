@@ -175,6 +175,11 @@
       "sha256": "2808c39298a5b208feffdfbb9d69ffe860a6949771f12bb9b5496d0f09a490b1",
       "version": "2.3.0"
     },
+    "deepstream-6.3": {
+      "filename": "pool/main/d/deepstream-6.3/deepstream-6.3_6.3.0-1_arm64.deb",
+      "sha256": "f3961bc473312d46f5e2568f41b37913cb09a5aef69d905451eaea9cb5ad42cf",
+      "version": "6.3.0-1"
+    },
     "graphsurgeon-tf": {
       "filename": "pool/main/t/tensorrt/graphsurgeon-tf_8.5.2-1+cuda11.4_arm64.deb",
       "sha256": "16d0a9ac2a12bde3f18e93feb172437dd657c4d33e0501bfb1a3f495dc2ab7b5",

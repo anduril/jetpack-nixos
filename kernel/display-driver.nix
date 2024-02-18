@@ -1,8 +1,8 @@
 # TODO: Should try to merge with upstream nixpkgs's open.nix nvidia driver
 { stdenv
 , lib
-, fetchgit
 , kernel
+, gitRepos
 , l4tVersion
 }:
 
@@ -10,11 +10,7 @@ stdenv.mkDerivation rec {
   pname = "nvidia-display-driver";
   version = "jetson_${l4tVersion}";
 
-  src = fetchgit {
-    url = "https://nv-tegra.nvidia.com/tegra/kernel-src/nv-kernel-display-driver.git";
-    rev = version;
-    sha256 = "sha256-6CThvNEyZNVy53lV3xbRN2QpOBiuxV2jGys5ITCf3v0=";
-  };
+  src = gitRepos."tegra/kernel-src/nv-kernel-display-driver";
 
   setSourceRoot = "sourceRoot=$(echo */NVIDIA-kernel-module-source-TempVersion)";
 

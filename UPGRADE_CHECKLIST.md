@@ -3,9 +3,7 @@
 - [ ] Update branch/revision/sha256s in:
     - [ ] `default.nix`
     - [ ] `kernel/default.nix`
-    - [ ] `kernel/display-driver.nix`
     - [ ] `uefi-firmware.nix`
-    - [ ] `optee.nix`
     - [ ] Grep for "sha256 = ", see if there is anything else not covered
 - [ ] Update the kernel version in `kernel/default.nix` if it chaged.
 - [ ] Grep for the previous version strings e.g. "35.3.1"
