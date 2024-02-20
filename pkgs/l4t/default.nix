@@ -170,6 +170,18 @@ let
     '';
   };
 
+  l4t-cupva = buildFromDeb {
+    name = "cupva";
+    src = debs.common."cupva-2.3-l4t".src;
+    version = debs.common."cupva-2.3-l4t".version;
+    buildInputs = [ stdenv.cc.cc.lib l4t-cuda l4t-nvsci l4t-pva ];
+    postPatch = ''
+      mkdir -p lib
+      mv opt/nvidia/cupva-2.3/lib/aarch64-linux-gnu/* lib/
+      rm -rf opt
+    '';
+  };
+
   # TODO: Make nvwifibt systemd scripts work
   l4t-firmware = buildFromDeb {
     name = "nvidia-l4t-firmware";
@@ -316,6 +328,7 @@ in
     l4t-camera
     l4t-core
     l4t-cuda
+    l4t-cupva
     l4t-firmware
     l4t-gbm
     l4t-init

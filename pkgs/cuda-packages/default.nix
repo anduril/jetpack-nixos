@@ -474,7 +474,7 @@ let
       version = debs.common.vpi2-dev.version;
       srcs = [ debs.common.libnvvpi2.src debs.common.vpi2-dev.src ];
       sourceRoot = "source/opt/nvidia/vpi2";
-      buildInputs = (with l4t; [ l4t-core l4t-cuda l4t-nvsci l4t-3d-core l4t-multimedia l4t-pva ])
+      buildInputs = (with l4t; [ l4t-core l4t-3d-core l4t-multimedia l4t-cupva ])
         ++ (with cudaPackages; [ libcufft libnpp ]);
       patches = [ ./vpi2.patch ];
       postPatch = ''
