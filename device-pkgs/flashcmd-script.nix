@@ -1,4 +1,4 @@
-{ lib, flash-tools }:
+{ lib, flash-tools, gcc, dtc }:
 ''
   set -euo pipefail
 
@@ -13,6 +13,9 @@
   cp -r ${flash-tools}/. "$WORKDIR"
   chmod -R u+w "$WORKDIR"
   cd "$WORKDIR"
+
+  # bootloader/tegraflash_impl_t234.py needs these to modify dtbs ;(
+  export PATH=${lib.makeBinPath [ gcc dtc ]}:$PATH
 
   cd bootloader
   bash ./flashcmd.txt
