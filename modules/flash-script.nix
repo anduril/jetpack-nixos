@@ -331,6 +331,7 @@ in
       hardware.nvidia-jetpack.flashScript = devicePkgs.flashScript; # Left for backwards-compatibility
       hardware.nvidia-jetpack.devicePkgs = devicePkgs; # Left for backwards-compatibility
       system.build.jetsonDevicePkgs = devicePkgs;
+      system.build.flashScript = config.system.build.jetsonDevicePkgs.flashScript;
 
       hardware.nvidia-jetpack.flashScriptOverrides.flashArgs = lib.mkAfter (
         lib.optional (cfg.firmware.secureBoot.pkcFile != null) "-u ${cfg.firmware.secureBoot.pkcFile}" ++
