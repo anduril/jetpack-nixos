@@ -229,6 +229,7 @@ let
 
     unpackCmd = "dpkg -x $src source";
     sourceRoot = "source/usr/src/jetson_multimedia_api";
+    separateDebugInfo = true;
 
     nativeBuildInputs = [ dpkg python3 ];
     buildInputs = [ libX11 libdrm libglvnd opencv2 vulkan-headers vulkan-loader ]

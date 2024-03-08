@@ -1,0 +1,13 @@
+diff --git a/Silicon/NVIDIA/Drivers/EqosDeviceDxe/PhyDxeUtil.c b/Silicon/NVIDIA/Drivers/EqosDeviceDxe/PhyDxeUtil.c
+index 7a5850f8..b51e9f04 100644
+--- a/Silicon/NVIDIA/Drivers/EqosDeviceDxe/PhyDxeUtil.c
++++ b/Silicon/NVIDIA/Drivers/EqosDeviceDxe/PhyDxeUtil.c
+@@ -383,7 +383,7 @@ PhyLinkAdjustEmacConfig (
+         osi_set_mode (PhyDriver->MacDriver->osi_core, OSI_HALF_DUPLEX);
+       }
+ 
+-      Status = DeviceDiscoverySetClockFreq (PhyDriver->ControllerHandle, "tx", ClockRate);
++      Status = DeviceDiscoverySetClockFreq (PhyDriver->ControllerHandle, "eqos_tx", ClockRate);
+       if (EFI_ERROR (Status)) {
+         DEBUG ((DEBUG_ERROR, "%a, Failed to set clock frequency %r\r\n", __FUNCTION__, Status));
+         Status = EFI_SUCCESS;

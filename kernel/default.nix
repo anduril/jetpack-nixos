@@ -15,7 +15,7 @@ let
   pkgsAarch64 = if isNative then pkgs else pkgs.pkgsCross.aarch64-multiplatform;
 in
 pkgsAarch64.buildLinux (args // {
-  version = "5.10.120" + lib.optionalString realtime "-rt70";
+  version = "5.10.192" + lib.optionalString realtime "-rt96";
   extraMeta.branch = "5.10";
 
   defconfig = "tegra_defconfig";
@@ -26,8 +26,8 @@ pkgsAarch64.buildLinux (args // {
     src = fetchFromGitHub {
       owner = "OE4T";
       repo = "linux-tegra-5.10";
-      rev = "76678311c10b59a385a6d74152f3a0b976ae2a67"; # latest on oe4t-patches-l4t-r35.4.ga as of 2023-09-27
-      sha256 = "sha256-jHqIYDztVs/yw/oMxr4oPabxXk+l+CPlRrODEaduBgg=";
+      rev = "db857ecdbe10de229a3cf125831afd6226417eac"; # latest on oe4t-patches-l4t-35.5.0 as of 2024-03-08
+      sha256 = "sha256-+cZCq5AMUDDq6Kv0Q70NR5lDksSx2UJWe2yh9fhWYcc=";
     };
     # Remove device tree overlays with some incorrect "remote-endpoint" nodes.
     # They are strings, but should be phandles. Otherwise, it fails to compile
@@ -63,15 +63,6 @@ pkgsAarch64.buildLinux (args // {
         USB_XHCI_TEGRA y
       '';
     }
-
-    # Fix "FAILED: load BTF from vmlinux: Unknown error -22" by including a
-    # number of patches from the 5.10 LTS branch. Unclear exactly which one is needed.
-    # See also: https://github.com/NixOS/nixpkgs/pull/194551
-    { patch = ./0001-bpf-Generate-BTF_KIND_FLOAT-when-linking-vmlinux.patch; }
-    { patch = ./0002-kbuild-Quote-OBJCOPY-var-to-avoid-a-pahole-call-brea.patch; }
-    { patch = ./0003-kbuild-skip-per-CPU-BTF-generation-for-pahole-v1.18-.patch; }
-    { patch = ./0004-kbuild-Unify-options-for-BTF-generation-for-vmlinux-.patch; }
-    { patch = ./0005-kbuild-Add-skip_encoding_btf_enum64-option-to-pahole.patch; }
 
     # Fix "FAILED: resolved symbol udp_sock"
     # This is caused by having multiple structs of the same name in the BTF output.

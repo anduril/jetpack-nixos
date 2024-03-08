@@ -16,8 +16,6 @@ stdenv.mkDerivation {
     python3
   ];
 
-  patches = [ ./board-automation.patch ];
-
   dontConfigure = true;
   dontBuild = true;
   noDumpEnvVars = true;
