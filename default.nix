@@ -21,8 +21,8 @@ let
 
   pkgsAarch64 = if pkgs.stdenv.buildPlatform.isAarch64 then pkgs else pkgs.pkgsCross.aarch64-multiplatform;
 
-  jetpackVersion = "5.1.2";
-  l4tVersion = "35.4.1";
+  jetpackVersion = "5.1.3";
+  l4tVersion = "35.5.0";
   cudaVersion = "11.4";
 
   # https://developer.nvidia.com/embedded/jetson-linux-archive
@@ -30,7 +30,7 @@ let
 
   src = fetchurl {
     url = with lib.versions; "https://developer.download.nvidia.com/embedded/L4T/r${major l4tVersion}_Release_v${minor l4tVersion}.${patch l4tVersion}/release/Jetson_Linux_R${l4tVersion}_aarch64.tbz2";
-    sha256 = "sha256-crdaDH+jv270GuBmNLtnw4qSaCFV0SBgJtvuSmuaAW8=";
+    sha256 = "sha256-jN472TfT7ttkChxY0QjBCffLkEw4oDEB3BeQS30YXd8=";
   };
 
   sourceInfo = import ./sourceinfo { inherit lib fetchurl fetchgit l4tVersion; };

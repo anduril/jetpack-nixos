@@ -4,9 +4,10 @@
     - [ ] `default.nix`
     - [ ] `kernel/default.nix`
     - [ ] `uefi-firmware.nix`
-    - [ ] Grep for "sha256 = ", see if there is anything else not covered
+    - [ ] Grep for "sha256 = " and "hash = ", see if there is anything else not covered
+- [ ] Update gitrepos.json using sourceinfo/gitrepos-update.py  and result/source_sync.sh from bspSrc.
 - [ ] Update the kernel version in `kernel/default.nix` if it chaged.
-- [ ] Grep for the previous version strings e.g. "35.4.1"
+- [ ] Grep for the previous version strings e.g. "35.5.0"
 - [ ] Compare files from `unpackedDebs` before and after
 - [ ] Grep for NvOsLibraryLoad in libraries from debs to see if any new packages not already handled in l4t use the function
 - [ ] Ensure the soc variants in `modules/flash-script.nix` match those in `jetson_board_spec.cfg` from BSP
