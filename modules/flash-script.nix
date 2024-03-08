@@ -202,7 +202,7 @@ in
           default = null;
         };
 
-        # See: https://docs.nvidia.com/jetson/archives/r35.4.1/DeveloperGuide/text/SD/Security/SecureBoot.html#prepare-an-sbk-key
+        # See: https://docs.nvidia.com/jetson/archives/r35.5.0/DeveloperGuide/text/SD/Security/SecureBoot.html#prepare-an-sbk-key
         secureBoot = {
           pkcFile = mkOption {
             type = types.nullOr types.path;

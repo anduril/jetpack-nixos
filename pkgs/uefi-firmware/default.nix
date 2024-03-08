@@ -52,14 +52,14 @@ let
     repo = "edk2";
     rev = "r${l4tVersion}-edk2-stable202208";
     fetchSubmodules = true;
-    sha256 = "sha256-A4nICu2g4Kprdmb0KVfuo8d5I5P7nAri5bzB4j9vUb4=";
+    hash = "sha256-SHix86rio/WeirAB3ziVL4cIlN1JFq56V1LpU3ulfLI=";
   };
 
   edk2-platforms = fetchFromGitHub {
     owner = "NVIDIA";
     repo = "edk2-platforms";
     rev = "r${l4tVersion}-upstream-20220830";
-    sha256 = "sha256-PjAJEbbswOLYupMg/xEqkAOJuAC8SxNsQlb9YBswRfo=";
+    hash = "sha256-PjAJEbbswOLYupMg/xEqkAOJuAC8SxNsQlb9YBswRfo=";
   };
 
   edk2-non-osi = fetchFromGitHub {
@@ -73,28 +73,20 @@ let
     src = fetchFromGitHub {
       owner = "NVIDIA";
       repo = "edk2-nvidia";
-      rev = "8444db349648a77ed8e2e3047a93004c9cadb2d3"; # Latest on r35.4.1-updates as of 2023-08-07
-      sha256 = "sha256-jHyyg5Ywg/tQg39oY1EwHPBjUTE7r7C9q0HO1vqCL6s=";
+      rev = "a5ac12d729f610035f16013482fa70284f75ddfd"; # Latest on r35.5.0-updates as of 2024-03-08
+      hash = "sha256-3llK5lY/V8JZha0N8bYsK4OLd52BSMo3DtyEf8+LZ34=";
     };
     patches = edk2NvidiaPatches ++ [
-      (fetchpatch {
-        # https://github.com/NVIDIA/edk2-nvidia/pull/68
-        name = "fix-disabled-serial.patch";
-        url = "https://github.com/NVIDIA/edk2-nvidia/commit/9604259b0d11c049f6a3eb5365a3ae10cfb9e6d9.patch";
-        hash = "sha256-v/WEwcSNjBXeN0eXVzzl31dn6mq78wIm0u5lW1jGcdE=";
-      })
       # Fix Eqos driver to use correct TX clock name
       # PR: https://github.com/NVIDIA/edk2-nvidia/pull/76
-      (fetchpatch {
-        url = "https://github.com/NVIDIA/edk2-nvidia/commit/26f50dc3f0f041d20352d1656851c77f43c7238e.patch";
-        hash = "sha256-cc+eGLFHZ6JQQix1VWe/UOkGunAzPb8jM9SXa9ScIn8=";
-      })
+      ./eqos-driver-fix-clock-name.patch
 
       ./capsule-authentication.patch
 
       # Have UEFI use the device tree compiled into the firmware, instead of
       # using one from the kernel-dtb partition.
       # See: https://github.com/anduril/jetpack-nixos/pull/18
+      # Upstream Fixed in e81614999?
       ./edk2-uefi-dtb.patch
     ];
     postPatch = lib.optionalString errorLevelInfo ''
@@ -110,46 +102,27 @@ let
     owner = "NVIDIA";
     repo = "edk2-nvidia-non-osi";
     rev = "r${l4tVersion}";
-    sha256 = "sha256-h0EW5j5/pq0c48alz7w2+g4RCU2yQdYOtDiNFH9VI3M=";
-  };
-
-  # Patches from upstream tianocore/edk2 for OpenSSL, to enable in-tree build
-  # of OpenSSL 1.1.1t
-  opensslPatches = import ./edk2-openssl-patches.nix {
-    inherit fetchpatch2;
-  };
-
-  # This has been taken from:
-  # https://github.com/NixOS/nixpkgs/commit/3ed8d9b547c3941d74d9455fdec120f415ebaacd
-  vendoredOpenSSL = fetchFromGitHub {
-    owner = "openssl";
-    repo = "openssl";
-    rev = "OpenSSL_1_1_1t";
-    sha256 = "sha256-gI2+Vm67j1+xLvzBb+DF0YFTOHW7myotRsXRzluzSLY=";
+    hash = "sha256-NQz92p6P+MDDd6yHqq84eNJT5IwpYOh9Kdpm1JKm9w4=";
   };
 
   edk2-jetson = edk2.overrideAttrs (prev: {
-    src = edk2-src;
+    # Upstream nixpkgs patch to use nixpkgs OpenSSL
+    # See https://github.com/NixOS/nixpkgs/blob/44733514b72e732bd49f5511bd0203dea9b9a434/pkgs/development/compilers/edk2/default.nix#L57
+    src = runCommand "edk2-unvendored-src" { } ''
+      cp --no-preserve=mode -r ${edk2-src} $out
+      rm -rf $out/CryptoPkg/Library/OpensslLib/openssl
+      mkdir -p $out/CryptoPkg/Library/OpensslLib/openssl
+      tar --strip-components=1 -xf ${buildPackages.openssl.src} -C $out/CryptoPkg/Library/OpensslLib/openssl
+      chmod -R +w $out/
+
+      # Fix missing INT64_MAX include that edk2 explicitly does not provide
+      # via it's own <stdint.h>. Let's pull in openssl's definition instead:
+      sed -i $out/CryptoPkg/Library/OpensslLib/openssl/crypto/property/property_parse.c \
+          -e '1i #include "internal/numbers.h"'
+    '';
 
     depsBuildBuild = prev.depsBuildBuild ++ [ libuuid ];
 
-    patches =
-      # Remove this one patch (CryptoPkg/OpensslLib: Upgrade OpenSSL to 1.1.1t)
-      # present on nixos-23.05, as it will be added in the opensslPatches below
-      (builtins.filter (patch: patch.url != "https://bugzilla.tianocore.org/attachment.cgi?id=1330") prev.patches)
-      ++ opensslPatches;
-    postUnpack = ''
-      # This has been taken from:
-      # https://github.com/NixOS/nixpkgs/commit/3ed8d9b547c3941d74d9455fdec120f415ebaacd
-      rm -rf source/CryptoPkg/Library/OpensslLib/openssl
-    '';
-    postPatch = ''
-      # This has been taken from:
-      # https://github.com/NixOS/nixpkgs/commit/3ed8d9b547c3941d74d9455fdec120f415ebaacd
-
-      # Replace the edk2's in-tree openssl git-submodule with our 1.1.1t
-      cp -r ${vendoredOpenSSL} CryptoPkg/Library/OpensslLib/openssl
-    '';
   });
 
   pythonEnv = buildPackages.python3.withPackages (ps: [ ps.tkinter ]);
@@ -174,7 +147,7 @@ let
   jetson-edk2-uefi =
     # TODO: edk2.mkDerivation doesn't have a way to override the edk version used!
     # Make it not via passthru ?
-    stdenv.mkDerivation {
+    stdenv.mkDerivation (finalAttrs: {
       pname = "jetson-edk2-uefi";
       version = l4tVersion;
 
@@ -196,8 +169,8 @@ let
 
       # From edk2-nvidia/Silicon/NVIDIA/edk2nv/stuart/settings.py
       PACKAGES_PATH = lib.concatStringsSep ":" [
-        "${edk2-src}/BaseTools" # TODO: Is this needed?
-        edk2-src
+        "${finalAttrs.src}/BaseTools" # TODO: Is this needed?
+        finalAttrs.src
         edk2-platforms
         edk2-non-osi
         edk2-nvidia
@@ -207,19 +180,13 @@ let
 
       enableParallelBuilding = true;
 
-      postUnpack = ''
-        # This has been taken from:
-        # https://github.com/NixOS/nixpkgs/commit/3ed8d9b547c3941d74d9455fdec120f415ebaacd
-        rm -rf source/CryptoPkg/Library/OpensslLib/openssl
-      '';
-
       prePatch = ''
         rm -rf BaseTools
         cp -r ${edk2-jetson}/BaseTools BaseTools
         chmod -R u+w BaseTools
       '';
 
-      patches = opensslPatches ++ edk2UefiPatches ++ [
+      patches = edk2UefiPatches ++ [
         (fetchurl {
           # Patch format does not play well with fetchpatch, it should be fine this is a static attachment in a ticket
           name = "CVE-2023-45229_CVE-2023-45230_CVE-2023-45231_CVE-2023-45232_CVE-2023-45233_CVE-2023-45234_CVE-2023-45235.patch";
@@ -235,14 +202,6 @@ let
           ];
         })
       ];
-
-      postPatch = ''
-        # This has been taken from:
-        # https://github.com/NixOS/nixpkgs/commit/3ed8d9b547c3941d74d9455fdec120f415ebaacd
-
-        # Replace the edk2's in-tree openssl git-submodule with our 1.1.1t
-        cp -r ${vendoredOpenSSL} CryptoPkg/Library/OpensslLib/openssl
-      '';
 
       configurePhase = ''
         runHook preConfigure
@@ -278,7 +237,7 @@ let
         mv -v Build/*/* $out
         runHook postInstall
       '';
-    };
+    });
 
   uefi-firmware = runCommand "uefi-firmware-${l4tVersion}"
     {

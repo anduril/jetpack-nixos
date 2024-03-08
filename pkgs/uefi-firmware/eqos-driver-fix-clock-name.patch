@@ -1,0 +1,32 @@
+From 26f50dc3f0f041d20352d1656851c77f43c7238e Mon Sep 17 00:00:00 2001
+From: Daniel Fullmer <dfullmer@anduril.com>
+Date: Wed, 4 Oct 2023 16:46:41 -0700
+Subject: [PATCH] fix(eqos): Use correct TX clock name
+
+EqosDeviceDxe would fail to set the TX clock rate with the following
+output:
+
+PhyLinkAdjustEmacConfig: Failed to set clock frequency Not Found
+
+This prevented the network from working at 100Base-T or 10Base-T.
+(Tested on Xavier NX devkit). The clock name used in the device tree
+from NVIDIA's sources is "eqos_tx".
+
+Signed-off-by: Daniel Fullmer <dfullmer@anduril.com>
+---
+ Silicon/NVIDIA/Drivers/EqosDeviceDxe/PhyDxeUtil.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Silicon/NVIDIA/Drivers/EqosDeviceDxe/PhyDxeUtil.c b/Silicon/NVIDIA/Drivers/EqosDeviceDxe/PhyDxeUtil.c
+index 7a5850f8..b51e9f04 100644
+--- a/Silicon/NVIDIA/Drivers/EqosDeviceDxe/PhyDxeUtil.c
++++ b/Silicon/NVIDIA/Drivers/EqosDeviceDxe/PhyDxeUtil.c
+@@ -383,7 +383,7 @@ PhyLinkAdjustEmacConfig (
+         osi_set_mode (PhyDriver->MacDriver->osi_core, OSI_HALF_DUPLEX);
+       }
+ 
+-      Status = DeviceDiscoverySetClockFreq (PhyDriver->ControllerHandle, "tx", ClockRate);
++      Status = DeviceDiscoverySetClockFreq (PhyDriver->ControllerHandle, "eqos_tx", ClockRate);
+       if (EFI_ERROR (Status)) {
+         DEBUG ((DEBUG_ERROR, "%a, Failed to set clock frequency %r\r\n", __FUNCTION__, Status));
+         Status = EFI_SUCCESS;
