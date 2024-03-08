@@ -7,9 +7,9 @@ import subprocess
 import sys
 import os
 
-VERSION = '35.4.1'
+VERSION = '35.5'
 TAG = 'jetson_' + VERSION
-FILENAME = 'r' + VERSION + '-srcs.json'
+FILENAME = 'r' + VERSION + '-gitrepos.json'
 
 REPOS_TO_SKIP = [
     '3rdparty/dtc' # This doesn't have tags...
