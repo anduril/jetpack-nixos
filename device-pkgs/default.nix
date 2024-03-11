@@ -16,6 +16,7 @@
 , dtc
 , l4tVersion
 , pkgsAarch64
+, coreutils
 ,
 }:
 
@@ -123,6 +124,7 @@ let
   # Generate a flash script using the built configuration options set in a NixOS configuration
   flashScript = writeShellApplication {
     name = "flash-${hostName}";
+    runtimeInputs = [ coreutils ];
     text = (mkFlashScriptAuto { });
   };
 
@@ -143,6 +145,7 @@ let
   # on x86_64, and the machine in `config` should be aarch64-linux
   rcmBoot = writeShellApplication {
     name = "rcmboot-nixos";
+    runtimeInputs = [ coreutils ];
     text = mkRcmBootScript {
       # See nixpkgs nixos/modules/system/activatation/top-level.nix for standard usage of these paths
       kernelPath = "${config.boot.kernelPackages.kernel}/${config.system.boot.loader.kernelFile}";
@@ -192,6 +195,7 @@ let
     in
     writeShellApplication {
       name = "initrd-flash-${hostName}";
+      runtimeInputs = [ coreutils ];
       text = ''
         ${mkRcmBootScript {
           kernelPath = "${config.boot.kernelPackages.kernel}/Image";
@@ -278,6 +282,7 @@ let
 
   fuseScript = writeShellApplication {
     name = "fuse-${hostName}";
+    runtimeInputs = [ coreutils ];
     text = import ./flash-script.nix {
       inherit lib;
       flash-tools = flash-tools-patched;
