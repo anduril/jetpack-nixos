@@ -57,7 +57,11 @@
         self.legacyPackages;
 
       # Not everything here should be cross-compiled to aarch64-linux
-      legacyPackages.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.callPackage ./default.nix { };
-      legacyPackages.aarch64-linux = nixpkgs.legacyPackages.aarch64-linux.callPackage ./default.nix { };
+      legacyPackages = nixpkgs.lib.genAttrs
+        [ "x86_64-linux" "aarch64-linux" ]
+        (system: import nixpkgs {
+          inherit system;
+          overlays = [ self.overlays.default ];
+        });
     };
 }
