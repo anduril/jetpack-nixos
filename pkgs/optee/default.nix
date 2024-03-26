@@ -9,6 +9,7 @@
 , dtc
 , nukeReferences
 , fetchpatch
+, callPackage
 }:
 
 let
@@ -18,11 +19,7 @@ let
     sha256 = "sha256-9ml28qXN0B04ZocBr04x4tBzJ3iLgqGoVBveSkSCrgk=";
   };
 
-  nvopteeSrc = fetchgit {
-    url = "https://nv-tegra.nvidia.com/r/tegra/optee-src/nv-optee";
-    rev = "jetson_${l4tVersion}";
-    sha256 = "sha256-44RBXFNUlqZoq3OY/OFwhiU4Qxi4xQNmetFmlrr6jzY=";
-  };
+  nvopteeSrc = callPackage ./nvoptee-src.nix { inherit l4tVersion; };
 
   opteeClient = stdenv.mkDerivation {
     pname = "optee_client";
