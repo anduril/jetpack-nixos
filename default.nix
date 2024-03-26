@@ -5,6 +5,7 @@
 , lib
 , runCommand
 , fetchurl
+, fetchgit
 , bzip2_1_1
 , dpkg
 , pkgs
@@ -20,19 +21,20 @@ let
 
   pkgsAarch64 = if pkgs.stdenv.buildPlatform.isAarch64 then pkgs else pkgs.pkgsCross.aarch64-multiplatform;
 
+  jetpackVersion = "5.1.2";
+  l4tVersion = "35.4.1";
+  cudaVersion = "11.4";
+
   # https://developer.nvidia.com/embedded/jetson-linux-archive
   # https://repo.download.nvidia.com/jetson/
 
   src = fetchurl {
-    url = "https://developer.download.nvidia.com/embedded/L4T/r35_Release_v3.1/release/Jetson_Linux_R35.3.1_aarch64.tbz2";
-    sha256 = "sha256-gKVVBKLOnNwKMo7bb9BpBhXE/96cKzL05k4KGjQyouI=";
+    url = with lib.versions; "https://developer.download.nvidia.com/embedded/L4T/r${major l4tVersion}_Release_v${minor l4tVersion}.${patch l4tVersion}/release/Jetson_Linux_R${l4tVersion}_aarch64.tbz2";
+    sha256 = "sha256-crdaDH+jv270GuBmNLtnw4qSaCFV0SBgJtvuSmuaAW8=";
   };
 
-  debs = import ./debs { inherit lib fetchurl; };
-
-  jetpackVersion = "5.1.1";
-  l4tVersion = "35.3.1";
-  cudaVersion = "11.4";
+  sourceInfo = import ./sourceinfo { inherit lib fetchurl fetchgit l4tVersion; };
+  inherit (sourceInfo) debs gitRepos;
 
   # we use a more recent version of bzip2 here because we hit this bug extracting nvidia's archives:
   # https://bugs.launchpad.net/ubuntu/+source/bzip2/+bug/1834494
@@ -42,18 +44,27 @@ let
   '';
 
   # Here for convenience, to see what is in upstream Jetpack
-  unpackedDebs = pkgs.runCommand "unpackedDebs" { nativeBuildInputs = [ dpkg ]; } ''
+  unpackedDebs = pkgs.runCommand "unpackedDebs-${l4tVersion}" { nativeBuildInputs = [ dpkg ]; } ''
     mkdir -p $out
     ${lib.concatStringsSep "\n" (lib.mapAttrsToList (n: p: "echo Unpacking ${n}; dpkg -x ${p.src} $out/${n}") debs.common)}
     ${lib.concatStringsSep "\n" (lib.mapAttrsToList (n: p: "echo Unpacking ${n}; dpkg -x ${p.src} $out/${n}") debs.t234)}
   '';
 
   # Also just for convenience,
-  unpackedDebsFilenames = pkgs.runCommand "unpackedDebsFilenames" { nativeBuildInputs = [ dpkg ]; } ''
+  unpackedDebsFilenames = pkgs.runCommand "unpackedDebsFilenames-${l4tVersion}" { nativeBuildInputs = [ dpkg ]; } ''
     mkdir -p $out
     ${lib.concatStringsSep "\n" (lib.mapAttrsToList (n: p: "echo Extracting file list from ${n}; dpkg --fsys-tarfile ${p.src} | tar --list > $out/${n}") debs.common)}
     ${lib.concatStringsSep "\n" (lib.mapAttrsToList (n: p: "echo Extracting file list from ${n}; dpkg --fsys-tarfile ${p.src} | tar --list > $out/${n}") debs.t234)}
   '';
+
+  unpackedGitRepos = pkgs.runCommand "unpackedGitRepos-${l4tVersion}" { } (
+    lib.mapAttrsToList
+      (relpath: repo: ''
+        mkdir -p $out/${relpath}
+        cp --no-preserve=all -r ${repo}/. $out/${relpath}
+      '')
+      gitRepos
+  );
 
   inherit (pkgsAarch64.callPackages ./pkgs/uefi-firmware { inherit l4tVersion; })
     edk2-jetson uefi-firmware;
@@ -62,7 +73,7 @@ let
     # Nvidia's recommended toolchain is gcc9:
     # https://nv-tegra.nvidia.com/r/gitweb?p=tegra/optee-src/nv-optee.git;a=blob;f=optee/atf_and_optee_README.txt;h=591edda3d4ec96997e054ebd21fc8326983d3464;hb=5ac2ab218ba9116f1df4a0bb5092b1f6d810e8f7#l33
     stdenv = pkgsAarch64.gcc9Stdenv;
-    inherit bspSrc l4tVersion;
+    inherit bspSrc gitRepos l4tVersion;
   }) buildTOS buildOpteeTaDevKit opteeClient;
 
   flash-tools = callPackage ./pkgs/flash-tools {
@@ -86,7 +97,7 @@ let
 
   kernel = callPackage ./kernel { inherit (l4t) l4t-xusb-firmware; kernelPatches = [ ]; };
   kernelPackagesOverlay = self: super: {
-    nvidia-display-driver = self.callPackage ./kernel/display-driver.nix { inherit l4tVersion; };
+    nvidia-display-driver = self.callPackage ./kernel/display-driver.nix { inherit gitRepos l4tVersion; };
   };
   kernelPackages = (pkgs.linuxPackagesFor kernel).extend kernelPackagesOverlay;
 
@@ -112,6 +123,7 @@ let
       value = c;
     }) [
     { som = "orin-agx"; carrierBoard = "devkit"; }
+    { som = "orin-agx-industrial"; carrierBoard = "devkit"; }
     { som = "orin-nx"; carrierBoard = "devkit"; }
     { som = "orin-nano"; carrierBoard = "devkit"; }
     { som = "xavier-agx"; carrierBoard = "devkit"; }
@@ -144,7 +156,8 @@ rec {
   inherit jetpackVersion l4tVersion cudaVersion;
 
   # Just for convenience
-  inherit bspSrc debs unpackedDebs unpackedDebsFilenames;
+  inherit bspSrc debs gitRepos;
+  inherit unpackedDebs unpackedDebsFilenames unpackedGitRepos;
 
   inherit cudaPackages samples;
   inherit flash-tools;

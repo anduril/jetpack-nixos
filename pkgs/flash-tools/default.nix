@@ -33,22 +33,6 @@
 }:
 
 let
-  # This "overlay" can be found here: https://developer.nvidia.com/embedded/jetson-linux-r3521
-  # It includes the tegra_v3_oemkey.yaml file which was missing in Jetpack 5.1, and still isn't in Jetpack 5.1.1 :(
-  secureboot_overlay = fetchzip {
-    url = "https://developer.download.nvidia.com/embedded/L4T/r35_Release_v2.1/secureboot_overlay_35.2.1.tbz2";
-    sha256 = "sha256-mgtgI/MNTHRbmiJdfg6Nl1ZnEw6Swniaej2/5z/bpoI=";
-  };
-
-  mb1_overlay = fetchzip {
-    url = "https://developer.download.nvidia.com/embedded/L4T/r35_Release_v3.1/mb1_35.3.1_overlay.tbz2";
-    sha256 = "sha256-Ytp3vESEyPPwEXVSVjhCWEglgmK82To605vRbMhjv50=";
-  };
-  usb_overlay = fetchzip {
-    url = "https://developer.download.nvidia.com/embedded/L4T/r35_Release_v3.1/overlay_xusb_35.3.1.tbz2";
-    sha256 = "sha256-3ZH2gPKilZfexg2YdnppDBRSBO0oQVDBkjBl1Iw+iOw=";
-  };
-
   flash-tools = stdenv.mkDerivation {
     pname = "flash-tools";
     version = l4tVersion;
@@ -61,7 +45,7 @@ let
       perl
     ];
 
-    patches = [ ./flash-tools.patch ./flash-tools-secureboot.patch ];
+    patches = [ ./flash-tools.patch ];
 
     postPatch = ''
       # Needed in Jetpack 5
@@ -75,19 +59,12 @@ let
       # We should never be flashing upstream's kernel, so just remove it so we get errors if it is used
       #rm -f kernel/Image*
 
-      # Flash script looks for this file
+      # Remove the big nv_tegra dir, since its not neede by flash scripts.
+      # However, save the needed bsp_version file
       mv nv_tegra/bsp_version .
       rm -rf nv_tegra
       mkdir nv_tegra
       mv bsp_version nv_tegra
-
-      # This file was missing from Jetpack 5.1, and still isn't in Jetpack 5.1.1 :(
-      cp ${secureboot_overlay}/bootloader/tegrasign_v3_oemkey.yaml bootloader/
-
-      # Apply additional overlays added after 35.3.1 was released
-      cp ${mb1_overlay}/bootloader/* bootloader/
-      cp ${usb_overlay}/bootloader/* bootloader/
-      chmod u+w -R bootloader
     '' + (lib.optionalString (!stdenv.hostPlatform.isx86) ''
       # Wrap x86 binaries in qemu
       pushd bootloader/ >/dev/null

@@ -55,7 +55,7 @@ in
         # with additional possibilies in an external NixOS module. See:
         # "Extensible option types" in the NixOS manual
         # The "generic" value signals that jetpack-nixos should try to maximize compatility across all varisnts. This may lead
-        type = types.enum [ "generic" "orin-agx" "orin-nx" "orin-nano" "xavier-agx" "xavier-nx" "xavier-nx-emmc" ];
+        type = types.enum [ "generic" "orin-agx" "orin-agx-industrial" "orin-nx" "orin-nano" "xavier-agx" "xavier-nx" "xavier-nx-emmc" ];
         default = "generic";
         description = lib.mdDoc ''
           Jetson SoM (System-on-Module) to target. Can be set to "generic" to target a generic jetson device, but some things may not work.

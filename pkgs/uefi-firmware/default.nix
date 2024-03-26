@@ -52,7 +52,7 @@ let
     repo = "edk2";
     rev = "r${l4tVersion}-edk2-stable202208";
     fetchSubmodules = true;
-    sha256 = "sha256-PTbNxbncfSvxLW2XmdRHzUy+w5+1Blpk62DJpxDmedA=";
+    sha256 = "sha256-A4nICu2g4Kprdmb0KVfuo8d5I5P7nAri5bzB4j9vUb4=";
   };
 
   edk2-platforms = fetchFromGitHub {
@@ -73,11 +73,13 @@ let
     src = fetchFromGitHub {
       owner = "NVIDIA";
       repo = "edk2-nvidia";
-      rev = "2c81e0fc74f703012dd3b2f18da5be256e142fe3"; # Latest on r35.3.1-updates as of 2023-05-17
-      sha256 = "sha256-Qh1g+8a7ZcFG4VmwH+xDix6dpZ881HaNRE/FJoaRljw=";
+      rev = "8444db349648a77ed8e2e3047a93004c9cadb2d3"; # Latest on r35.4.1-updates as of 2023-08-07
+      sha256 = "sha256-jHyyg5Ywg/tQg39oY1EwHPBjUTE7r7C9q0HO1vqCL6s=";
     };
     patches = edk2NvidiaPatches ++ [
       (fetchpatch {
+        # https://github.com/NVIDIA/edk2-nvidia/pull/68
+        name = "fix-disabled-serial.patch";
         url = "https://github.com/NVIDIA/edk2-nvidia/commit/9604259b0d11c049f6a3eb5365a3ae10cfb9e6d9.patch";
         hash = "sha256-v/WEwcSNjBXeN0eXVzzl31dn6mq78wIm0u5lW1jGcdE=";
       })
@@ -108,7 +110,7 @@ let
     owner = "NVIDIA";
     repo = "edk2-nvidia-non-osi";
     rev = "r${l4tVersion}";
-    sha256 = "sha256-27PTl+svZUocmU6r/8FdqqI9rwHAi+6zSFs4fBA13Ks=";
+    sha256 = "sha256-h0EW5j5/pq0c48alz7w2+g4RCU2yQdYOtDiNFH9VI3M=";
   };
 
   # Patches from upstream tianocore/edk2 for OpenSSL, to enable in-tree build

@@ -200,7 +200,7 @@ in
           default = null;
         };
 
-        # See: https://docs.nvidia.com/jetson/archives/r35.3.1/DeveloperGuide/text/SD/Security/SecureBoot.html#prepare-an-sbk-key
+        # See: https://docs.nvidia.com/jetson/archives/r35.4.1/DeveloperGuide/text/SD/Security/SecureBoot.html#prepare-an-sbk-key
         secureBoot = {
           pkcFile = mkOption {
             type = types.nullOr types.path;
@@ -384,6 +384,10 @@ in
                 { boardid = "3701"; boardsku = "0000"; fab = "300"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; }
                 { boardid = "3701"; boardsku = "0004"; fab = "300"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; } # 32GB
                 { boardid = "3701"; boardsku = "0005"; fab = "000"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; } # 64GB
+              ];
+
+              orin-agx-industrial = [
+                { boardid = "3701"; boardsku = "0008"; fab = "300"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; }
               ];
 
               orin-nx = [

@@ -10,8 +10,8 @@ from debian.debian_support import Version
 
 
 BASE_URL = 'https://repo.download.nvidia.com/jetson'
-REPOS = ['t194', 't234', 'common']
-VERSION = 'r35.3'
+REPOS = ['t234', 'common']
+VERSION = 'r36.2'
 
 def fetch_debs(url):
     fd = urllib.request.urlopen(url)

@@ -89,23 +89,6 @@ let
   l4t-core = buildFromDeb {
     name = "nvidia-l4t-core";
     buildInputs = [ stdenv.cc.cc.lib expat libglvnd ];
-
-    # Some libraries, like libEGL_nvidia.so.0 from l3t-3d-core use a dlopen
-    # wrapper called NvOsLibraryLoad, which originates in libnvos.so in this
-    # l4t-core. Unfortunately, calling dlopen from libnvos.so instead of the
-    # original library/executable means that dlopen will use the DT_RUNPATH
-    # from libnvos.so instead of the binary/library which called it. We
-    # typically just need ${driverLink}/lib anyway, so lets add it to
-    # libnvos.so here instead.
-    #
-    # We append a postFixupHook since we need to have this happen after
-    # autoPatchelfHook, which itself also runs as a postFixupHook.
-    # TODO: Use runtimeDependencies instead
-    preFixup = ''
-      postFixupHooks+=('
-        patchelf --add-rpath ${addOpenGLRunpath.driverLink}/lib $out/lib/libnvos.so
-      ')
-    '';
   };
 
   l4t-3d-core = buildFromDeb {
@@ -130,6 +113,17 @@ let
       # Make some symlinks also done by OE4T
       ln -sf libnvidia-ptxjitcompiler.so.${l4tVersion} lib/libnvidia-ptxjitcompiler.so.1
       ln -sf libnvidia-ptxjitcompiler.so.${l4tVersion} lib/libnvidia-ptxjitcompiler.so
+
+      # Some libraries, like libEGL_nvidia.so.0 from l3t-3d-core use a dlopen
+      # wrapper called NvOsLibraryLoad, which originates in libnvos.so in this
+      # l4t-core. Unfortunately, calling dlopen from libnvos.so instead of the
+      # original library/executable means that dlopen will use the DT_RUNPATH
+      # from libnvos.so instead of the binary/library which called it. In ordo
+      # to handle this, we Make a copy of libnvos specifically for this package
+      # so we can set the RUNPATH differently here.
+      patchelf --replace-needed libnvos.so libnvos_3d.so lib/*.so
+      cp --no-preserve=ownership,mode ${l4t-core}/lib/libnvos.so lib/libnvos_3d.so
+      patchelf --set-soname libnvos_3d.so lib/libnvos_3d.so
     '';
 
     # We append a postFixupHook since we need to have this happen after
@@ -144,7 +138,7 @@ let
 
         patchelf --add-rpath ${lib.makeLibraryPath (with xorg; [ libX11 libXext libxcb ])} \
           $out/lib/libGLX_nvidia.so.0 \
-          $out/lib/libnvidia-glsi.so.* \
+          $out/lib/libnvidia-glsi.so.*
 
         for lib in $(find "$out/lib" -name "*.so*"); do
           patchelf $lib --add-rpath $out/lib
@@ -168,6 +162,18 @@ let
     # through `dlopen`), so we need to tell Nix about this.
     postFixup = ''
       patchelf --add-needed libnvcucompat.so $out/lib/libcuda.so
+    '';
+  };
+
+  l4t-cupva = buildFromDeb {
+    name = "cupva";
+    src = debs.common."cupva-2.3-l4t".src;
+    version = debs.common."cupva-2.3-l4t".version;
+    buildInputs = [ stdenv.cc.cc.lib l4t-cuda l4t-nvsci l4t-pva ];
+    postPatch = ''
+      mkdir -p lib
+      mv opt/nvidia/cupva-2.3/lib/aarch64-linux-gnu/* lib/
+      rm -rf opt
     '';
   };
 
@@ -253,6 +259,12 @@ let
 
       ln -sf ../../../libv4l2_nvcuvidvideocodec.so lib/libv4l/plugins/nv/libv4l2_nvcuvidvideocodec.so
       ln -sf ../../../libv4l2_nvvideocodec.so lib/libv4l/plugins/nv/libv4l2_nvvideocodec.so
+
+      # Make a copy of libnvos specifically for this package so we can set the RUNPATH differently here.
+      # See note above for NvOsLibraryLoad
+      patchelf --replace-needed libnvos.so libnvos_multimedia.so lib/*.so
+      cp --no-preserve=ownership,mode ${l4t-core}/lib/libnvos.so lib/libnvos_multimedia.so
+      patchelf --set-soname libnvos_multimedia.so lib/libnvos_multimedia.so
     '';
 
     # We append a postFixupHook since we need to have this happen after
@@ -261,6 +273,9 @@ let
     preFixup = ''
       postFixupHooks+=('
         patchelf --add-rpath ${lib.getLib l4t-nvsci}/lib $out/lib/libnvmedia*.so
+
+        # dlopen in NvOsLibraryLoad from libnvos.so needs to be able to access these libraries
+        patchelf --add-rpath $out/lib $out/lib/libnvos_multimedia.so
       ')
     '';
   };
@@ -317,6 +332,7 @@ in
     l4t-camera
     l4t-core
     l4t-cuda
+    l4t-cupva
     l4t-firmware
     l4t-gbm
     l4t-init

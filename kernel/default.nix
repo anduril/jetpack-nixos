@@ -15,7 +15,7 @@ let
   pkgsAarch64 = if isNative then pkgs else pkgs.pkgsCross.aarch64-multiplatform;
 in
 pkgsAarch64.buildLinux (args // {
-  version = "5.10.104" + lib.optionalString realtime "-rt63";
+  version = "5.10.120" + lib.optionalString realtime "-rt70";
   extraMeta.branch = "5.10";
 
   defconfig = "tegra_defconfig";
@@ -26,8 +26,8 @@ pkgsAarch64.buildLinux (args // {
     src = fetchFromGitHub {
       owner = "OE4T";
       repo = "linux-tegra-5.10";
-      rev = "7191dccf8670635906182cc2da862d9c0fdcb93a"; # latest on oe4t-patches-l4t-r35.3.ga as of 2023-07-27
-      sha256 = "sha256-s71v4Bzc2jF9l65FY7OlrB/zi8Vkty+dBxZry8MyBno=";
+      rev = "76678311c10b59a385a6d74152f3a0b976ae2a67"; # latest on oe4t-patches-l4t-r35.4.ga as of 2023-09-27
+      sha256 = "sha256-jHqIYDztVs/yw/oMxr4oPabxXk+l+CPlRrODEaduBgg=";
     };
     # Remove device tree overlays with some incorrect "remote-endpoint" nodes.
     # They are strings, but should be phandles. Otherwise, it fails to compile
@@ -89,19 +89,6 @@ pkgsAarch64.buildLinux (args // {
 
     # Lower priority of tegra-se crypto modules since they're slow and flaky
     { patch = ./0008-Lower-priority-of-tegra-se-crypto.patch; }
-
-    # Fix gcc13 compilation failure
-    { patch = ./0009-bonding-gcc13-synchronize-bond_-a-t-lb_xmit-types.patch; }
-
-    # Fixes a memory leak by kernel tegra serial driver
-    # This manifested via slab unreclaimable growing unbounded via repeated kmalloc-256 calls
-    # This patch is present in 35.4.1 and should be removed when we update
-    {
-      patch = fetchpatch {
-        url = "https://github.com/OE4T/linux-tegra-5.10/commit/d5b90d6b9365250adb73b2fe5b52a5228df3b1d9.patch";
-        sha256 = "sha256-a5LL4avaxQ3WYr9fRPMCfHrl4iAp1yhH95R+iI/PwYc=";
-      };
-    }
   ] ++ kernelPatches;
 
   structuredExtraConfig = with lib.kernel; {

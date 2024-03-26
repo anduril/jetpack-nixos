@@ -13,6 +13,7 @@
 , buildOpteeTaDevKit
 , python3
 , openssl
+, gcc
 , dtc
 , l4tVersion
 , pkgsAarch64
@@ -112,6 +113,7 @@ let
     in
     import ./flashcmd-script.nix {
       inherit lib;
+      inherit gcc dtc;
       flash-tools = flash-tools-flashcmd;
     };
 

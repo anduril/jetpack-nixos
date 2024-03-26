@@ -9,20 +9,12 @@
 , dtc
 , nukeReferences
 , fetchpatch
+, gitRepos
 }:
 
 let
-  atfSrc = fetchgit {
-    url = "https://nv-tegra.nvidia.com/r/tegra/optee-src/atf";
-    rev = "jetson_${l4tVersion}";
-    sha256 = "sha256-9ml28qXN0B04ZocBr04x4tBzJ3iLgqGoVBveSkSCrgk=";
-  };
-
-  nvopteeSrc = fetchgit {
-    url = "https://nv-tegra.nvidia.com/r/tegra/optee-src/nv-optee";
-    rev = "jetson_${l4tVersion}";
-    sha256 = "sha256-44RBXFNUlqZoq3OY/OFwhiU4Qxi4xQNmetFmlrr6jzY=";
-  };
+  atfSrc = gitRepos."tegra/optee-src/atf";
+  nvopteeSrc = gitRepos."tegra/optee-src/nv-optee";
 
   opteeClient = stdenv.mkDerivation {
     pname = "optee_client";
