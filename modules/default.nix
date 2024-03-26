@@ -242,30 +242,28 @@ in
       otaUtils # Tools for UEFI capsule updates
     ];
 
-    systemd.tmpfiles.rules = lib.optional nvidiaContainerRuntimeActive "d /var/run/cdi 0755 root root - -";
-
     systemd.services.nvidia-cdi-generate = {
       enable = nvidiaContainerRuntimeActive;
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
-        ExecStart =
-          let
-            exe = "${pkgs.nvidia-jetpack.nvidia-ctk}/bin/nvidia-ctk";
-          in
-          toString [
-            exe
-            "cdi"
-            "generate"
-            "--nvidia-ctk-path=${exe}" # it is odd that this is needed, should be the same as /proc/self/exe?
-            "--driver-root=${pkgs.nvidia-jetpack.containerDeps}" # the root where nvidia libs will be resolved from
-            "--dev-root=/" # the root where chardevs will be resolved from
-            "--mode=csv"
-            "--csv.file=${pkgs.nvidia-jetpack.l4tCsv}"
-            "--output=/var/run/cdi/jetpack-nixos" # a yaml file extension is added by the nvidia-ctk tool
-          ];
+        RuntimeDirectory = "cdi";
       };
       wantedBy = [ "multi-user.target" ];
+      script =
+        let
+          exe = lib.getExe pkgs.nvidia-jetpack.nvidia-ctk;
+        in
+        ''
+          ${exe} cdi generate \
+            --nvidia-ctk-path=${exe} \
+            --driver-root=${pkgs.nvidia-jetpack.containerDeps} \
+            --ldconfig-path ${lib.getExe' pkgs.glibc "ldconfig"} \
+            --dev-root=/ \
+            --mode=csv \
+            --csv.file=${pkgs.nvidia-jetpack.l4tCsv} \
+            --output="$RUNTIME_DIRECTORY/jetpack-nixos"
+        '';
     };
 
     # Used by libEGL_nvidia.so.0
