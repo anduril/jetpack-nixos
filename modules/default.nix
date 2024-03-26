@@ -140,7 +140,7 @@ in
       # l4t-core provides - among others - libnvrm_gpu.so and libnvrm_mem.so.
       # The l4t-core/lib directory is directly set in the DT_RUNPATH of
       # l4t-cuda's libcuda.so, thus the standard driver doesn't need them to be
-      # added in /run/opengl-driver.
+      # added in ${driverLink}.
       #
       # However, this isn't the case for cuda_compat's driver currently, which
       # is why we're including this derivation in extraPackages.
@@ -269,6 +269,7 @@ in
     };
 
     # Used by libEGL_nvidia.so.0
-    environment.etc."egl/egl_external_platform.d".source = "/run/opengl-driver/share/egl/egl_external_platform.d/";
+    environment.etc."egl/egl_external_platform.d".source =
+      "${pkgs.addOpenGLRunpath.driverLink}/share/egl/egl_external_platform.d/";
   };
 }
