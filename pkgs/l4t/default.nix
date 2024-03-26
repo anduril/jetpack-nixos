@@ -1,5 +1,6 @@
 { stdenv
 , stdenvNoCC
+, addOpenGLRunpath
 , lib
 , fetchurl
 , fetchpatch
@@ -94,7 +95,7 @@ let
     # l4t-core. Unfortunately, calling dlopen from libnvos.so instead of the
     # original library/executable means that dlopen will use the DT_RUNPATH
     # from libnvos.so instead of the binary/library which called it. We
-    # typically just need /run/opengl-driver/lib anyway, so lets add it to
+    # typically just need ${driverLink}/lib anyway, so lets add it to
     # libnvos.so here instead.
     #
     # We append a postFixupHook since we need to have this happen after
@@ -102,7 +103,7 @@ let
     # TODO: Use runtimeDependencies instead
     preFixup = ''
       postFixupHooks+=('
-        patchelf --add-rpath /run/opengl-driver/lib $out/lib/libnvos.so
+        patchelf --add-rpath ${addOpenGLRunpath.driverLink}/lib $out/lib/libnvos.so
       ')
     '';
   };
