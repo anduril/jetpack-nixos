@@ -1,5 +1,6 @@
 { stdenv
 , stdenvNoCC
+, addOpenGLRunpath
 , lib
 , fetchurl
 , fetchpatch
