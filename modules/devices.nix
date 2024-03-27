@@ -147,4 +147,39 @@ lib.mkMerge [{
         else
           "-F 32 -n ESP";
     };
+  })
+  (lib.mkIf (lib.any (som: som == cfg.som) [ "orin-nx" "orin-nano" ]) {
+    hardware.firmware = [
+      (pkgs.linkFarm "r8169-firmware"
+        (map
+          (firmwarePath: {
+            name = "lib/firmware/${firmwarePath}";
+            path = "${pkgs.linux-firmware}/lib/firmware/${firmwarePath}";
+          }) [
+          # From https://github.com/OE4T/linux-tegra-5.10/blob/20443c6df8b9095e4676b4bf696987279fac30a9/drivers/net/ethernet/realtek/r8169_main.c#L38
+          # We include all the firmware referenced by the r8168 module so that
+          # `makeModulesClosure` doesn't spit out warnings.
+          "rtl_nic/rtl8168d-1.fw"
+          "rtl_nic/rtl8168d-2.fw"
+          "rtl_nic/rtl8168e-1.fw"
+          "rtl_nic/rtl8168e-2.fw"
+          "rtl_nic/rtl8168e-3.fw"
+          "rtl_nic/rtl8168f-1.fw"
+          "rtl_nic/rtl8168f-2.fw"
+          "rtl_nic/rtl8105e-1.fw"
+          "rtl_nic/rtl8402-1.fw"
+          "rtl_nic/rtl8411-1.fw"
+          "rtl_nic/rtl8411-2.fw"
+          "rtl_nic/rtl8106e-1.fw"
+          "rtl_nic/rtl8106e-2.fw"
+          "rtl_nic/rtl8168g-2.fw"
+          "rtl_nic/rtl8168g-3.fw"
+          "rtl_nic/rtl8168h-2.fw" # wanted by orin-nano and orin-nx
+          "rtl_nic/rtl8168fp-3.fw"
+          "rtl_nic/rtl8107e-2.fw"
+          "rtl_nic/rtl8125a-3.fw"
+          "rtl_nic/rtl8125b-2.fw"
+          "rtl_nic/rtl8126a-2.fw"
+        ]))
+    ];
   })]
