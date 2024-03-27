@@ -1,5 +1,6 @@
 { stdenv
 , stdenvNoCC
+, buildPackages
 , addOpenGLRunpath
 , lib
 , fetchurl
@@ -22,6 +23,16 @@
 , l4tVersion
 }:
 let
+  # The version currently in nixpkgs 23.11 and master 0.15 is pretty old and
+  # doesn't have the --rename-dynamic-symbols feature we need
+  patchelf_new = buildPackages.patchelf.overrideAttrs (_: rec {
+    version = "0.18.0";
+    src = fetchurl {
+      url = "https://github.com/NixOS/patchelf/releases/download/${version}/patchelf-${version}.tar.bz2";
+      sha256 = "sha256-GVKyp4K6V2J5whHulC40F0j9tEmX9wTdU970bNBVRws=";
+    };
+  });
+
   # Wrapper around mkDerivation that has some sensible defaults to extract a .deb file from the L4T BSP pacckage
   buildFromDeb =
     # Nicely, the t194 and t234 packages are currently identical, so we just
@@ -114,16 +125,26 @@ let
       ln -sf libnvidia-ptxjitcompiler.so.${l4tVersion} lib/libnvidia-ptxjitcompiler.so.1
       ln -sf libnvidia-ptxjitcompiler.so.${l4tVersion} lib/libnvidia-ptxjitcompiler.so
 
-      # Some libraries, like libEGL_nvidia.so.0 from l3t-3d-core use a dlopen
-      # wrapper called NvOsLibraryLoad, which originates in libnvos.so in this
+      # Some libraries, like libEGL_nvidia.so.0 from l4t-3d-core use a dlopen
+      # wrapper called NvOsLibraryLoad, which originates in libnvos.so in
       # l4t-core. Unfortunately, calling dlopen from libnvos.so instead of the
       # original library/executable means that dlopen will use the DT_RUNPATH
       # from libnvos.so instead of the binary/library which called it. In ordo
-      # to handle this, we Make a copy of libnvos specifically for this package
-      # so we can set the RUNPATH differently here.
-      patchelf --replace-needed libnvos.so libnvos_3d.so lib/*.so
+      # to handle this, we make a copy of libnvos specifically for this package
+      # so we can set the RUNPATH differently here. Additionally to avoid
+      # linking conflicts we rename the library and NvOsLibraryLoad symbol.
       cp --no-preserve=ownership,mode ${l4t-core}/lib/libnvos.so lib/libnvos_3d.so
       patchelf --set-soname libnvos_3d.so lib/libnvos_3d.so
+
+      remapFile=$(mktemp)
+      echo NvOsLibraryLoad NvOsLibraryLoad_3d > $remapFile
+      for lib in $(find ./lib -name "*.so*"); do
+        if isELF $lib; then
+          ${patchelf_new}/bin/patchelf "$lib" \
+            --rename-dynamic-symbols "$remapFile" \
+            --replace-needed libnvos.so libnvos_3d.so
+        fi
+      done
     '';
 
     # We append a postFixupHook since we need to have this happen after
@@ -262,9 +283,18 @@ let
 
       # Make a copy of libnvos specifically for this package so we can set the RUNPATH differently here.
       # See note above for NvOsLibraryLoad
-      patchelf --replace-needed libnvos.so libnvos_multimedia.so lib/*.so
       cp --no-preserve=ownership,mode ${l4t-core}/lib/libnvos.so lib/libnvos_multimedia.so
       patchelf --set-soname libnvos_multimedia.so lib/libnvos_multimedia.so
+
+      remapFile=$(mktemp)
+      echo NvOsLibraryLoad NvOsLibraryLoad_multimedia > $remapFile
+      for lib in $(find ./lib -name "*.so*"); do
+        if isELF $lib; then
+          ${patchelf_new}/bin/patchelf "$lib" \
+            --rename-dynamic-symbols "$remapFile" \
+            --replace-needed libnvos.so libnvos_multimedia.so
+        fi
+      done
     '';
 
     # We append a postFixupHook since we need to have this happen after
