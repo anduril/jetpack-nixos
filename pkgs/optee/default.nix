@@ -32,6 +32,7 @@ let
     ];
     nativeBuildInputs = [ pkg-config ];
     buildInputs = [ libuuid ];
+    enableParallelBuilding = true;
     makeFlags = [
       "-C optee/optee_client"
       "DESTDIR=$(out)"
@@ -82,6 +83,7 @@ let
         (buildPackages.python3.withPackages (p: with p; [ pyelftools cryptography ]))
       ];
       inherit makeFlags;
+      enableParallelBuilding = true;
       # NOTE: EARLY_TA_PATHS needs to be added outside of `makeFlags` since it is a
       # space separated list of paths. See
       # https://nixos.org/manual/nixpkgs/stable/#build-phase for more details.
@@ -103,6 +105,7 @@ let
     src = nvopteeSrc;
     patches = [ ./0001-nvoptee-no-install-makefile.patch ./0002-Exit-with-non-zero-status-code-on-TEEC_InvokeCommand.patch ];
     nativeBuildInputs = [ (buildPackages.python3.withPackages (p: [ p.cryptography ])) ];
+    enableParallelBuilding = true;
     makeFlags = [
       "-C optee/samples/luks-srv"
       "CROSS_COMPILE=${stdenv.cc.targetPrefix}"
@@ -127,6 +130,7 @@ let
     src = nvopteeSrc;
     patches = [ ./0001-nvoptee-no-install-makefile.patch ];
     nativeBuildInputs = [ (buildPackages.python3.withPackages (p: [ p.cryptography ])) ];
+    enableParallelBuilding = true;
     makeFlags = [
       "-C optee/samples/hwkey-agent"
       "CROSS_COMPILE=${stdenv.cc.targetPrefix}"
@@ -176,6 +180,8 @@ let
         # See also: https://developer.trustedfirmware.org/T996
         "LDFLAGS=-no-warn-rwx-segments"
       ];
+
+      enableParallelBuilding = true;
 
       installPhase = ''
         runHook preInstall
