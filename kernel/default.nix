@@ -129,6 +129,8 @@ buildLinux (args // {
     MD_RAID1 = module;
     MD_RAID10 = module;
     MD_RAID456 = module;
+    # Re-enable DMI (revert https://github.com/OE4T/linux-tegra-5.10/commit/bc94634fcddd594735aa9c5ca5f68b4df1cb5f8b)
+    DMI = yes;
   } // (lib.optionalAttrs realtime {
     PREEMPT_VOLUNTARY = lib.mkForce no; # Disable the one set in common-config.nix
     # These are the options enabled/disabled by scripts/rt-patch.sh
