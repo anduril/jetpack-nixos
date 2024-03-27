@@ -28,6 +28,19 @@ let
     xavier-nx = "${pkgs.nvidia-jetpack.l4t-nvfancontrol}/etc/nvpower/nvfancontrol/nvfancontrol_p3668.conf";
     xavier-nx-emmc = "${pkgs.nvidia-jetpack.l4t-nvfancontrol}/etc/nvpower/nvfancontrol/nvfancontrol_p3668.conf";
   };
+
+  # Extract from linux firmware so that the 1GiB+ size of linux-firmware
+  # doesn't become a runtime dependency in a nixos system's closure.
+  extractLinuxFirmware = name: paths: (pkgs.runCommand name { }
+    (lib.concatLines (map
+      # all files in linux-firmware are read-only
+      (firmwarePath: ''
+        install -Dm0444 \
+          --target-directory=$(dirname $out/lib/firmware/${firmwarePath}) \
+          $(realpath ${pkgs.linux-firmware}/lib/firmware/${firmwarePath})
+      ''
+      )
+      paths)));
 in
 lib.mkMerge [{
   # Turn on nvpmodel if we have a config for it.
@@ -150,36 +163,41 @@ lib.mkMerge [{
   })
   (lib.mkIf (lib.any (som: som == cfg.som) [ "orin-nx" "orin-nano" ]) {
     hardware.firmware = [
-      (pkgs.linkFarm "r8169-firmware"
-        (map
-          (firmwarePath: {
-            name = "lib/firmware/${firmwarePath}";
-            path = "${pkgs.linux-firmware}/lib/firmware/${firmwarePath}";
-          }) [
-          # From https://github.com/OE4T/linux-tegra-5.10/blob/20443c6df8b9095e4676b4bf696987279fac30a9/drivers/net/ethernet/realtek/r8169_main.c#L38
-          # We include all the firmware referenced by the r8168 module so that
-          # `makeModulesClosure` doesn't spit out warnings.
-          "rtl_nic/rtl8168d-1.fw"
-          "rtl_nic/rtl8168d-2.fw"
-          "rtl_nic/rtl8168e-1.fw"
-          "rtl_nic/rtl8168e-2.fw"
-          "rtl_nic/rtl8168e-3.fw"
-          "rtl_nic/rtl8168f-1.fw"
-          "rtl_nic/rtl8168f-2.fw"
-          "rtl_nic/rtl8105e-1.fw"
-          "rtl_nic/rtl8402-1.fw"
-          "rtl_nic/rtl8411-1.fw"
-          "rtl_nic/rtl8411-2.fw"
-          "rtl_nic/rtl8106e-1.fw"
-          "rtl_nic/rtl8106e-2.fw"
-          "rtl_nic/rtl8168g-2.fw"
-          "rtl_nic/rtl8168g-3.fw"
-          "rtl_nic/rtl8168h-2.fw" # wanted by orin-nano and orin-nx
-          "rtl_nic/rtl8168fp-3.fw"
-          "rtl_nic/rtl8107e-2.fw"
-          "rtl_nic/rtl8125a-3.fw"
-          "rtl_nic/rtl8125b-2.fw"
-          "rtl_nic/rtl8126a-2.fw"
-        ]))
+      # From https://github.com/OE4T/linux-tegra-5.10/blob/20443c6df8b9095e4676b4bf696987279fac30a9/drivers/net/ethernet/realtek/r8169_main.c#L38
+      (extractLinuxFirmware "r8168-firmware" [
+        "rtl_nic/rtl8168d-1.fw"
+        "rtl_nic/rtl8168d-2.fw"
+        "rtl_nic/rtl8168e-1.fw"
+        "rtl_nic/rtl8168e-2.fw"
+        "rtl_nic/rtl8168e-3.fw"
+        "rtl_nic/rtl8168f-1.fw"
+        "rtl_nic/rtl8168f-2.fw"
+        "rtl_nic/rtl8105e-1.fw"
+        "rtl_nic/rtl8402-1.fw"
+        "rtl_nic/rtl8411-1.fw"
+        "rtl_nic/rtl8411-2.fw"
+        "rtl_nic/rtl8106e-1.fw"
+        "rtl_nic/rtl8106e-2.fw"
+        "rtl_nic/rtl8168g-2.fw"
+        "rtl_nic/rtl8168g-3.fw"
+        "rtl_nic/rtl8168h-2.fw" # wanted by orin-nx and orin-nano
+        "rtl_nic/rtl8168fp-3.fw"
+        "rtl_nic/rtl8107e-2.fw"
+        "rtl_nic/rtl8125a-3.fw"
+        "rtl_nic/rtl8125b-2.fw"
+        "rtl_nic/rtl8126a-2.fw"
+      ])
+    ];
+  })
+  (lib.mkIf (cfg.som == "orin-agx") {
+    hardware.firmware = lib.optionals
+      (config.hardware.bluetooth.enable
+        || config.networking.wireless.enable
+        || config.networking.wireless.iwd.enable) [
+      # From https://github.com/OE4T/linux-tegra-5.10/blob/20443c6df8b9095e4676b4bf696987279fac30a9/drivers/net/wireless/realtek/rtw88/rtw8822c.c#L4398
+      (extractLinuxFirmware "rtw88-firmware" [
+        "rtw88/rtw8822c_fw.bin"
+        "rtw88/rtw8822c_wow_fw.bin"
+      ])
     ];
   })]
