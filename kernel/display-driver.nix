@@ -12,7 +12,7 @@ stdenv.mkDerivation rec {
 
   src = gitRepos."tegra/kernel-src/nv-kernel-display-driver";
 
-  setSourceRoot = "sourceRoot=$(echo */NVIDIA-kernel-module-source-TempVersion)";
+  setSourceRoot = "sourceRoot=$(echo */nvdisplay)";
 
   nativeBuildInputs = kernel.moduleBuildDependencies;
 
