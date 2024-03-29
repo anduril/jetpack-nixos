@@ -106,7 +106,7 @@ in
 
       # Needed on Orin at least, but upstream has it for both
       "nvidia.rm_firmware_active=all"
-    ] ++ lib.optional (lib.hasPrefix "xavier-nx" cfg.som || cfg.som == "generic") "video=efifb:off"; # Disable efifb driver, which crashes Xavier NX
+    ] ++ lib.optional (lib.hasPrefix "xavier-" cfg.som || cfg.som == "generic") "video=efifb:off"; # Disable efifb driver, which crashes Xavier NX and possibly AGX
 
     boot.initrd.includeDefaultModules = false; # Avoid a bunch of modules we may not get from tegra_defconfig
     boot.initrd.availableKernelModules = [ "xhci-tegra" ]; # Make sure USB firmware makes it into initrd
