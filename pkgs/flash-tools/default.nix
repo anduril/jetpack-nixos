@@ -1,35 +1,15 @@
 { stdenv
 , lib
 , makeWrapper
-, bzip2_1_1
 , fetchurl
 , python3
 , perl
-, xxd
 , libxml2
-, coreutils
-, gnugrep
-, gnused
-, gnutar
-, gawk
-, which
-, gzip
-, cpio
-, bintools-unwrapped
-, findutils
-, util-linux
-, dosfstools
-, lz4
-, gcc
-, dtc
 , qemu
 , runtimeShell
-, fetchzip
-, bc
-, openssl
 , bspSrc
 , l4tVersion
-,
+, buildPackages
 }:
 
 let
@@ -95,7 +75,7 @@ let
     # wrapProgram doesn't work here because it refers to the wrapped program by
     # absolute path, and flash-script copies the entire flash-tools dir before
     # running
-    passthru.flashDeps = [
+    passthru.flashDeps = with buildPackages; [
       coreutils
       gnugrep
       gnused

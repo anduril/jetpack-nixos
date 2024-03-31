@@ -76,7 +76,7 @@ let
     inherit bspSrc gitRepos l4tVersion;
   }) buildTOS buildOpteeTaDevKit opteeClient;
 
-  flash-tools = callPackage ./pkgs/flash-tools {
+  flash-tools = pkgs.buildPackages.callPackage ./pkgs/flash-tools {
     inherit bspSrc l4tVersion;
   };
 
