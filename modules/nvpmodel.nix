@@ -34,6 +34,8 @@ in
       description = "Set NVPModel power profile";
       serviceConfig = {
         Type = "oneshot";
+        Restart = "on-failure";
+        RestartSec = "2s";
         ExecStart = "${pkgs.nvidia-jetpack.l4t-nvpmodel}/bin/nvpmodel -f ${cfg.configFile}" + lib.optionalString (cfg.profileNumber != null) " -m ${builtins.toString cfg.profileNumber}";
       };
       wantedBy = [ "multi-user.target" ];
