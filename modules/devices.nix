@@ -35,9 +35,11 @@ let
     (lib.concatLines (map
       # all files in linux-firmware are read-only
       (firmwarePath: ''
-        install -Dm0444 \
-          --target-directory=$(dirname $out/lib/firmware/${firmwarePath}) \
-          $(realpath ${pkgs.linux-firmware}/lib/firmware/${firmwarePath})
+        if [ -f ${pkgs.linux-firmware}/lib/firmware/${firmwarePath} ]; then
+          install -Dm0444 \
+            --target-directory=$(dirname $out/lib/firmware/${firmwarePath}) \
+            $(realpath ${pkgs.linux-firmware}/lib/firmware/${firmwarePath})
+        fi
       ''
       )
       paths)));
