@@ -87,7 +87,7 @@ let
       # using one from the kernel-dtb partition.
       # See: https://github.com/anduril/jetpack-nixos/pull/18
       # Upstream Fixed in e81614999?
-      #./edk2-uefi-dtb.patch
+      ./edk2-uefi-dtb.patch
     ];
     postPatch = lib.optionalString errorLevelInfo ''
       sed -i 's#PcdDebugPrintErrorLevel|.*#PcdDebugPrintErrorLevel|0x8000004F#' Platform/NVIDIA/NVIDIA.common.dsc.inc
