@@ -1,11 +1,17 @@
-{ config, lib, pkgs, ... }:
+{ options
+, config
+, lib
+, pkgs
+, ...
+}:
 
 let
   inherit (lib)
     mkEnableOption
     mkIf
     mkOption
-    types;
+    types
+    ;
 
   cfg = config.hardware.nvidia-jetpack;
 
@@ -19,7 +25,9 @@ let
     paths = cfg.firmware.optee.supplicant.plugins;
   };
 
-  nvidiaContainerRuntimeActive = with config.virtualisation; (docker.enable && docker.enableNvidia) || (podman.enable && podman.enableNvidia);
+  nvidiaContainerRuntimeActive =
+    with config.virtualisation;
+    (docker.enable && docker.enableNvidia) || (podman.enable && podman.enableNvidia);
 in
 {
   imports = [
@@ -55,7 +63,16 @@ in
         # with additional possibilies in an external NixOS module. See:
         # "Extensible option types" in the NixOS manual
         # The "generic" value signals that jetpack-nixos should try to maximize compatility across all varisnts. This may lead
-        type = types.enum [ "generic" "orin-agx" "orin-agx-industrial" "orin-nx" "orin-nano" "xavier-agx" "xavier-nx" "xavier-nx-emmc" ];
+        type = types.enum [
+          "generic"
+          "orin-agx"
+          "orin-agx-industrial"
+          "orin-nx"
+          "orin-nano"
+          "xavier-agx"
+          "xavier-nx"
+          "xavier-nx-emmc"
+        ];
         default = "generic";
         description = lib.mdDoc ''
           Jetson SoM (System-on-Module) to target. Can be set to "generic" to target a generic jetson device, but some things may not work.
@@ -63,7 +80,10 @@ in
       };
 
       carrierBoard = mkOption {
-        type = types.enum [ "generic" "devkit" ];
+        type = types.enum [
+          "generic"
+          "devkit"
+        ];
         default = "generic";
         description = lib.mdDoc ''
           Jetson carrier board to target. Can be set to "generic" to target a generic jetson carrier board, but some things may not work.
@@ -82,27 +102,75 @@ in
         description = "Whether to mount the ESP partition on eMMC under /opt/nvidia/esp on Xavier AGX platforms. Needed for capsule updates";
         internal = true;
       };
+
+      flasherPkgs = mkOption {
+        type = options.nixpkgs.pkgs.type;
+        default = import pkgs.path {
+          system = "x86_64-linux";
+          inherit (pkgs) config;
+        };
+        defaultText = ''
+          import pkgs.path {
+            system = "x86_64-linux";
+            inherit (pkgs) config;
+          }
+        '';
+        apply = p: p.appendOverlays pkgs.overlays;
+        description = ''
+          The package set that is used to build packages that run on an
+          external host for purposes of flashing/fusing a Jetson device. This
+          defaults to a package set that can run NVIDIA's pre-built x86
+          binaries needed for flashing/fusing Jetson SOMs.
+        '';
+      };
     };
   };
 
   config = mkIf cfg.enable {
-    assertions = [{
-      assertion = (config.virtualisation.docker.enable && config.virtualisation.docker.enableNvidia) -> lib.versionAtLeast config.virtualisation.docker.package.version "25";
-      message = "Docker version < 25 does not support CDI";
-    }];
+    assertions = [
+      {
+        # NixOS provides two main ways to feed a package set into a config:
+        # 1. The options nixpkgs.hostPlatform/nixpkgs.buildPlatform, which are
+        #    used to construct an import of nixpkgs.
+        # 2. The option nixpkgs.pkgs (set by default if you use the pkgs.nixos
+        #    function), which is a pre-configured import of nixpkgs.
+        #
+        # Regardless of how the package set is setup, it _must_ have its
+        # hostPlatform compatible with aarch64 in order to run on the Jetson
+        # platform.
+        assertion = pkgs.stdenv.hostPlatform.isAarch64;
+        message = ''
+          NixOS config has an invalid package set for the Jetson platform. Try
+          setting nixpkgs.hostPlatform to "aarch64-linux" or otherwise using an
+          aarch64-linux compatible package set.
+        '';
+      }
+      {
+        assertion =
+          (config.virtualisation.docker.enable && config.virtualisation.docker.enableNvidia)
+          -> lib.versionAtLeast config.virtualisation.docker.package.version "25";
+        message = "Docker version < 25 does not support CDI";
+      }
+    ];
 
     # Use mkOptionDefault so that we prevent conflicting with the priority that
     # `nixos-generate-config` uses.
     nixpkgs.hostPlatform = lib.mkOptionDefault "aarch64-linux";
 
-    nixpkgs.overlays = [
+    # Use mkBefore to ensure that our overlays get merged prior to any
+    # downstream jetpack-nixos users. This should prevent a situation where a
+    # user's overlay is merged before ours and that overlay depends on
+    # something defined in our overlay.
+    nixpkgs.overlays = lib.mkBefore [
       (import ../overlay.nix)
+      (import ../overlay-with-config.nix config)
     ];
 
     boot.kernelPackages =
-      if cfg.kernel.realtime
-      then pkgs.nvidia-jetpack.rtkernelPackages
-      else pkgs.nvidia-jetpack.kernelPackages;
+      if cfg.kernel.realtime then
+        pkgs.nvidia-jetpack.rtkernelPackages
+      else
+        pkgs.nvidia-jetpack.kernelPackages;
 
     boot.kernelParams = [
       "console=tty0" # Output to HDMI/DP. May need fbcon=map:0 as well
@@ -115,12 +183,12 @@ in
     boot.initrd.includeDefaultModules = false; # Avoid a bunch of modules we may not get from tegra_defconfig
     boot.initrd.availableKernelModules = [ "xhci-tegra" ]; # Make sure USB firmware makes it into initrd
 
-    boot.kernelModules = [
-      "nvgpu"
-    ] ++ lib.optionals cfg.modesetting.enable [
-      "tegra-udrm" # For Xavier`
-      "nvidia-drm" # For Orin
-    ];
+    boot.kernelModules =
+      [ "nvgpu" ]
+      ++ lib.optionals cfg.modesetting.enable [
+        "tegra-udrm" # For Xavier`
+        "nvidia-drm" # For Orin
+      ];
 
     boot.extraModprobeConfig = lib.optionalString cfg.modesetting.enable ''
       options tegra-udrm modeset=1
@@ -128,7 +196,11 @@ in
     '';
 
     # For Orin. Unsupported with PREEMPT_RT.
-    boot.extraModulePackages = lib.optional (!cfg.kernel.realtime) config.boot.kernelPackages.nvidia-display-driver;
+    boot.extraModulePackages = lib.optional
+      (
+        !cfg.kernel.realtime
+      )
+      config.boot.kernelPackages.nvidia-display-driver;
 
     hardware.firmware = with pkgs.nvidia-jetpack; [
       l4t-firmware
@@ -189,22 +261,26 @@ in
     # Force the driver, since otherwise the fbdev or modesetting X11 drivers
     # may be used, which don't work and can interfere with the correct
     # selection of GLX drivers.
-    services.xserver.drivers = lib.mkForce (lib.singleton {
-      name = "nvidia";
-      modules = [ pkgs.nvidia-jetpack.l4t-3d-core ];
-      display = true;
-      screenSection = ''
-        Option "AllowEmptyInitialConfiguration" "true"
-      '';
-    });
+    services.xserver.drivers = lib.mkForce (
+      lib.singleton {
+        name = "nvidia";
+        modules = [ pkgs.nvidia-jetpack.l4t-3d-core ];
+        display = true;
+        screenSection = ''
+          Option "AllowEmptyInitialConfiguration" "true"
+        '';
+      }
+    );
 
     # If we aren't using modesetting, we won't have a DRM device with the
     # "master-of-seat" tag, so "loginctl show-seat seat0" reports
     # "CanGraphical=false" and consequently lightdm doesn't start. We override
     # that here.
-    services.xserver.displayManager.lightdm.extraConfig = lib.optionalString (!cfg.modesetting.enable) ''
-      logind-check-graphical = false
-    '';
+    services.xserver.displayManager.lightdm.extraConfig =
+      lib.optionalString (!cfg.modesetting.enable)
+        ''
+          logind-check-graphical = false
+        '';
 
     # Used by libjetsonpower.so, which is used by nvfancontrol at least.
     environment.etc."nvpower/libjetsonpower".source = "${pkgs.nvidia-jetpack.l4t-tools}/etc/nvpower/libjetsonpower";
@@ -226,11 +302,13 @@ in
 
     systemd.services.tee-supplicant =
       let
-        args = lib.escapeShellArgs ([
-          "--ta-path=${teeApplications}"
-          "--plugin-path=${supplicantPlugins}"
-        ]
-        ++ cfg.firmware.optee.supplicant.extraArgs);
+        args = lib.escapeShellArgs (
+          [
+            "--ta-path=${teeApplications}"
+            "--plugin-path=${supplicantPlugins}"
+          ]
+          ++ cfg.firmware.optee.supplicant.extraArgs
+        );
       in
       lib.mkIf cfg.firmware.optee.supplicant.enable {
         description = "Userspace supplicant for OPTEE-OS";
@@ -271,7 +349,6 @@ in
     };
 
     # Used by libEGL_nvidia.so.0
-    environment.etc."egl/egl_external_platform.d".source =
-      "${pkgs.addOpenGLRunpath.driverLink}/share/egl/egl_external_platform.d/";
+    environment.etc."egl/egl_external_platform.d".source = "${pkgs.addOpenGLRunpath.driverLink}/share/egl/egl_external_platform.d/";
   };
 }
