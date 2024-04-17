@@ -69,6 +69,8 @@ in
       inherit (self) bspSrc gitRepos l4tVersion;
     }) buildTOS buildOpteeTaDevKit opteeClient;
 
+    optee-gen-ekb = self.callPackage ./pkgs/optee-gen-ekb { inherit (self) opteeClient; };
+
     flash-tools = self.callPackage ./pkgs/flash-tools { };
 
     # Allows automation of Orin AGX devkit
