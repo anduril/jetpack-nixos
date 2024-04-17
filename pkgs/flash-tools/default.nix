@@ -1,39 +1,19 @@
-{ stdenv
+{ stdenvNoCC
 , lib
 , makeWrapper
-, bzip2_1_1
 , fetchurl
 , python3
 , perl
-, xxd
 , libxml2
-, coreutils
-, gnugrep
-, gnused
-, gnutar
-, gawk
-, which
-, gzip
-, cpio
-, bintools-unwrapped
-, findutils
-, util-linux
-, dosfstools
-, lz4
-, gcc
-, dtc
 , qemu
 , runtimeShell
-, fetchzip
-, bc
-, openssl
 , bspSrc
 , l4tVersion
-,
+, buildPackages
 }:
 
 let
-  flash-tools = stdenv.mkDerivation {
+  flash-tools = stdenvNoCC.mkDerivation {
     pname = "flash-tools";
     version = l4tVersion;
 
@@ -65,7 +45,7 @@ let
       rm -rf nv_tegra
       mkdir nv_tegra
       mv bsp_version nv_tegra
-    '' + (lib.optionalString (!stdenv.hostPlatform.isx86) ''
+    '' + (lib.optionalString (!stdenvNoCC.hostPlatform.isx86) ''
       # Wrap x86 binaries in qemu
       pushd bootloader/ >/dev/null
       for filename in chkbdinfo mkbctpart mkbootimg mksparse tegrabct_v2 tegradevflash_v2 tegrahost_v2 tegrakeyhash tegraopenssl tegraparser_v2 tegrarcm_v2 tegrasign_v2; do
@@ -95,7 +75,7 @@ let
     # wrapProgram doesn't work here because it refers to the wrapped program by
     # absolute path, and flash-script copies the entire flash-tools dir before
     # running
-    passthru.flashDeps = [
+    passthru.flashDeps = with buildPackages; [
       coreutils
       gnugrep
       gnused
