@@ -21,7 +21,9 @@
 , vulkan-headers
 , vulkan-loader
 , writeShellApplication
-, l4t
+, l4t-cuda
+, l4t-multimedia
+, l4t-camera
 , cudaPackages
 , cudaVersion
 , debs
@@ -231,7 +233,7 @@ let
 
     nativeBuildInputs = [ dpkg python3 ];
     buildInputs = [ libX11 libdrm libglvnd opencv2 vulkan-headers vulkan-loader ]
-      ++ (with l4t; [ l4t-cuda l4t-multimedia l4t-camera ])
+      ++ ([ l4t-cuda l4t-multimedia l4t-camera ])
       ++ (with cudaPackages; [ cudatoolkit tensorrt ]);
 
     # Usually provided by pkg-config, but the samples don't use it.

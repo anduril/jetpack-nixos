@@ -3,22 +3,20 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixos-24.05";
   };
 
-  outputs = { self, nixpkgs, ... }@inputs:
+  outputs = { self, nixpkgs, ... }:
     let
       inherit (nixpkgs) lib;
 
       installer_minimal_config = {
         imports = [
           "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
-          ./modules/default.nix
+          self.nixosModules.default
         ];
         # Avoids a bunch of extra modules we don't have in the tegra_defconfig, like "ata_piix",
         disabledModules = [ "profiles/all-hardware.nix" ];
 
         hardware.nvidia-jetpack.enable = true;
       };
-
-      x86_packages = nixpkgs.legacyPackages.x86_64-linux.callPackage ./default.nix { };
     in
     {
       nixosConfigurations = {
@@ -31,19 +29,47 @@
       overlays.default = import ./overlay.nix;
 
       packages = {
-        x86_64-linux = {
-          # TODO: Untested
-          iso_minimal = self.nixosConfigurations.installer_minimal_cross.config.system.build.isoImage;
+        x86_64-linux =
+          let
+            supportedConfigurations = lib.listToAttrs (map
+              (c: {
+                name = "${c.som}-${c.carrierBoard}";
+                value = c;
+              }) [
+              { som = "orin-agx"; carrierBoard = "devkit"; }
+              { som = "orin-agx-industrial"; carrierBoard = "devkit"; }
+              { som = "orin-nx"; carrierBoard = "devkit"; }
+              { som = "orin-nano"; carrierBoard = "devkit"; }
+              { som = "xavier-agx"; carrierBoard = "devkit"; }
+              { som = "xavier-nx"; carrierBoard = "devkit"; }
+              { som = "xavier-nx-emmc"; carrierBoard = "devkit"; }
+            ]);
 
-          inherit (x86_packages)
-            board-automation python-jetson;
-          inherit (x86_packages.cudaPackages)
-            nsight_systems_host nsight_compute_host;
-        }
-        # Flashing and board automation scripts _only_ work on x86_64-linux
-        // x86_packages.flashScripts
-        // x86_packages.initrdFlashScripts
-        // x86_packages.uefiCapsuleUpdates;
+            supportedNixOSConfigurations = lib.mapAttrs
+              (n: c: (nixpkgs.legacyPackages.x86_64-linux.pkgsCross.aarch64-multiplatform.nixos {
+                imports = [ self.nixosModules.default ];
+                hardware.nvidia-jetpack = { enable = true; } // c;
+                networking.hostName = "${c.som}-${c.carrierBoard}"; # Just so it sets the flash binary name.
+              }).config)
+              supportedConfigurations;
+
+            flashScripts = lib.mapAttrs' (n: c: lib.nameValuePair "flash-${n}" c.system.build.flashScript) supportedNixOSConfigurations;
+            initrdFlashScripts = lib.mapAttrs' (n: c: lib.nameValuePair "initrd-flash-${n}" c.system.build.initrdFlashScript) supportedNixOSConfigurations;
+            uefiCapsuleUpdates = lib.mapAttrs' (n: c: lib.nameValuePair "uefi-capsule-update-${n}" c.system.build.uefiCapsuleUpdate) supportedNixOSConfigurations;
+          in
+          {
+            # TODO: Untested
+            iso_minimal = self.nixosConfigurations.installer_minimal_cross.config.system.build.isoImage;
+
+            inherit (self.legacyPackages.x86_64-linux)
+              board-automation python-jetson;
+            inherit (self.legacyPackages.x86_64-linux.cudaPackages)
+              nsight_systems_host nsight_compute_host;
+          }
+          # Flashing and board automation scripts _only_ work on x86_64-linux
+          // flashScripts
+          // initrdFlashScripts
+          // uefiCapsuleUpdates;
 
         aarch64-linux = {
           iso_minimal = self.nixosConfigurations.installer_minimal.config.system.build.isoImage;
@@ -57,7 +83,7 @@
         self.legacyPackages;
 
       # Not everything here should be cross-compiled to aarch64-linux
-      legacyPackages.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.callPackage ./default.nix { };
-      legacyPackages.aarch64-linux = nixpkgs.legacyPackages.aarch64-linux.callPackage ./default.nix { };
+      legacyPackages.x86_64-linux = (import nixpkgs { system = "x86_64-linux"; overlays = [ self.overlays.default ]; }).nvidia-jetpack;
+      legacyPackages.aarch64-linux = (import nixpkgs { system = "aarch64-linux"; overlays = [ self.overlays.default ]; }).nvidia-jetpack;
     };
 }

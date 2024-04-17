@@ -1,20 +1,15 @@
-{ pkgs
+{ applyPatches
 , lib
 , fetchFromGitHub
-, fetchpatch
 , l4t-xusb-firmware
 , realtime ? false
 , kernelPatches ? [ ]
 , structuredExtraConfig ? { }
-, extraMeta ? { }
 , argsOverride ? { }
+, buildLinux
 , ...
 }@args:
-let
-  isNative = pkgs.stdenv.isAarch64;
-  pkgsAarch64 = if isNative then pkgs else pkgs.pkgsCross.aarch64-multiplatform;
-in
-pkgsAarch64.buildLinux (args // {
+buildLinux (args // {
   version = "5.10.120" + lib.optionalString realtime "-rt70";
   extraMeta.branch = "5.10";
 
@@ -22,7 +17,7 @@ pkgsAarch64.buildLinux (args // {
 
   # Using applyPatches here since it's not obvious how to append an extra
   # postPatch. This is not very efficient.
-  src = pkgs.applyPatches {
+  src = applyPatches {
     src = fetchFromGitHub {
       owner = "OE4T";
       repo = "linux-tegra-5.10";

@@ -1,5 +1,5 @@
+flash-tools:
 { lib
-, flash-tools
 , preFlashCommands ? ""
 , flashCommands ? ""
 , postFlashCommands ? ""
@@ -17,9 +17,8 @@
   eksFile ? null
 , # Additional DTB overlays to use during device flashing
   additionalDtbOverlays ? [ ]
-,
 }:
-''
+(''
   set -euo pipefail
 
   if [[ -z ''${WORKDIR-} ]]; then
@@ -72,4 +71,4 @@
   ./flash.sh ${lib.optionalString (partitionTemplate != null) "-c flash.xml"} "$@" ${builtins.toString flashArgs}
 '') + ''
   ${postFlashCommands}
-''
+'')
