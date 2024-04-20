@@ -1,4 +1,4 @@
-{ config, pkgs, lib, ... }:
+{ config, pkgs, lib, utils, ... }:
 
 # Convenience package that allows you to set options for the flash script using the NixOS module system.
 # You could do the overrides yourself if you'd prefer.
@@ -403,42 +403,67 @@ in
             }.${cfg.som}
           )) else lib.mkOptionDefault [ ];
 
-      systemd.services = lib.mkIf (cfg.flashScriptOverrides.targetBoard != null) {
-        setup-jetson-efi-variables = {
-          enable = true;
-          description = "Setup Jetson OTA UEFI variables";
-          wantedBy = [ "multi-user.target" ];
-          after = [ "opt-nvidia-esp.mount" ];
-          serviceConfig.Type = "oneshot";
-          serviceConfig.ExecStart = "${pkgs.nvidia-jetpack.otaUtils}/bin/ota-setup-efivars ${cfg.flashScriptOverrides.targetBoard}";
-        };
+      systemd.services.setup-jetson-efi-variables = lib.mkIf (cfg.flashScriptOverrides.targetBoard != null) {
+        description = "Setup Jetson OTA UEFI variables";
+        wantedBy = [ "multi-user.target" ];
+        after = [ "opt-nvidia-esp.mount" ];
+        serviceConfig.Type = "oneshot";
+        serviceConfig.ExecStart = "${pkgs.nvidia-jetpack.otaUtils}/bin/ota-setup-efivars ${cfg.flashScriptOverrides.targetBoard}";
       };
 
-      boot.loader.systemd-boot.extraInstallCommands = lib.mkIf (cfg.firmware.autoUpdate && cfg.som != null && cfg.flashScriptOverrides.targetBoard != null) ''
-        # Jetpack 5.0 didn't expose this DMI variable,
-        if [[ ! -f /sys/devices/virtual/dmi/id/bios_version ]]; then
-          echo "Unable to determine current Jetson firmware version."
-          echo "You should reflash the firmware with the new version to ensure compatibility"
-        else
-          CUR_VER=$(cat /sys/devices/virtual/dmi/id/bios_version)
-          NEW_VER=${pkgs.nvidia-jetpack.l4tVersion}
+      systemd.services.firmware-update = lib.mkIf (cfg.firmware.autoUpdate && cfg.som != null && cfg.flashScriptOverrides.targetBoard != null) {
+        wantedBy = [ "multi-user.target" ];
+        path = [ pkgs.nvidia-jetpack.otaUtils ];
+        after = [
+          "${utils.escapeSystemdPath config.boot.loader.efi.efiSysMountPoint}.mount"
+          "opt-nvidia-esp.mount"
+        ];
+        unitConfig = {
+          ConditionPathExists = "/sys/devices/virtual/dmi/id/bios_version";
+          # This directory is populated by ota-apply-capsule-update, don't run
+          # if we already have a capsule update present on the ESP.
+          ConditionDirectoryNotEmpty = "!${config.boot.loader.efi.efiSysMountPoint}/EFI/UpdateCapsule";
+        };
+        script =
+          # NOTE: Our intention is to not apply any capsule update if the
+          # user's intention is to "test" a new nixos config without having it
+          # persist across reboots. "nixos-rebuild test" does not append a new
+          # generation to /nix/var/nix/profiles for the system profile, so we
+          # can compare that symlink to /run/current-system to see if our
+          # current active config has been persisted as a generation. Note that
+          # this check _may_ break down if not using nixos-rebuild and using
+          # switch-to-configuration directly, however it is well-documented
+          # that a user would need to self-manage their system profile's
+          # generations if switching a system in that manner.
+          lib.optionalString config.system.switch.enable ''
+            if [[ -L /nix/var/nix/profiles/system ]]; then
+              latest_generation=$(readlink -f /nix/var/nix/profiles/system)
+              current_system=$(readlink -f /run/current-system)
+              if [[ $latest_generation == /nix/store* ]] && [[ $latest_generation != "$current_system" ]]; then
+                echo "Skipping capsule update, current active system not persisted to /nix/var/nix/profiles/system"
+                exit 0
+              fi
+            fi
+          '' + ''
+            CUR_VER=$(cat /sys/devices/virtual/dmi/id/bios_version)
+            NEW_VER=${pkgs.nvidia-jetpack.l4tVersion}
 
-          if [[ "$CUR_VER" != "$NEW_VER" ]]; then
-            echo "Current Jetson firmware version is: $CUR_VER"
-            echo "New Jetson firmware version is: $NEW_VER"
-            echo
+            if [[ "$CUR_VER" != "$NEW_VER" ]]; then
+              echo "Current Jetson firmware version is: $CUR_VER"
+              echo "New Jetson firmware version is: $NEW_VER"
+              echo
 
-            # Set efi vars here as well as in systemd service, in case we're
-            # upgrading from an older nixos generation that doesn't have the
-            # systemd service. Plus, this ota-setup-efivars will be from the
-            # generation we're switching to, which can contain additional
-            # fixes/improvements.
-            ${pkgs.nvidia-jetpack.otaUtils}/bin/ota-setup-efivars ${cfg.flashScriptOverrides.targetBoard}
+              # Set efi vars here as well as in systemd service, in case we're
+              # upgrading from an older nixos generation that doesn't have the
+              # systemd service. Plus, this ota-setup-efivars will be from the
+              # generation we're switching to, which can contain additional
+              # fixes/improvements.
+              ota-setup-efivars ${cfg.flashScriptOverrides.targetBoard}
 
-            ${pkgs.nvidia-jetpack.otaUtils}/bin/ota-apply-capsule-update ${config.system.build.jetsonDevicePkgs.uefiCapsuleUpdate}
-          fi
-        fi
-      '';
+              ota-apply-capsule-update ${config.system.build.jetsonDevicePkgs.uefiCapsuleUpdate}
+            fi
+          '';
+      };
 
       environment.systemPackages = lib.mkIf (cfg.firmware.autoUpdate && cfg.som != null && cfg.flashScriptOverrides.targetBoard != null) [
         (pkgs.writeShellScriptBin "ota-apply-capsule-update-included" ''
