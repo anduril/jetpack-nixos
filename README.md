@@ -129,7 +129,7 @@ Weston and sway have been tested working on Orin devices, but do not work on Xav
 ### Updating firmware from device
 Recent versions of Jetpack (>=5.1) support updating the device firmware from the device using the UEFI Capsule update mechanism.
 This can be done as a more convenient alternative to physically attaching to the device and re-running the flash script.
-These updates can be performed automatically after a `nixos-rebuild boot` if the `hardware.nvidia-jetpack.bootloader.autoUpdate` setting is set to true and systemd-boot is used.
+These updates can be performed automatically after a `nixos-rebuild switch` if the `hardware.nvidia-jetpack.bootloader.autoUpdate` setting is set to true.
 Otherwise, the instructions to apply the update manually are below.
 
 To determine if the currently running firmware matches the software, run, `ota-check-firmware`:
