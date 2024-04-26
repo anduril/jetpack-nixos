@@ -61,6 +61,15 @@ in
 
     hardware.nvidia-jetpack.flashScriptOverrides =
       let
+        # The AGX supports Emulating weaker Jetson SoMs on the devkit:
+        # https://developer.ridgerun.com/wiki/index.php/NVIDIA_Jetson_Orin/Flashing_commands_for_emulation#Flashing_the_board
+        agxDevkitTargetBoards = {
+          "devkit" = "jetson-agx-orin-devkit";
+          "devkit-as-nx-8gb" = "jetson-agx-orin-devkit-as-nx-8gb";
+          "devkit-as-nx-16gb" = "jetson-agx-orin-devkit-as-nx-16gb";
+          "devkit-as-nano-8gb" = "jetson-agx-orin-devkit-as-nano8gb";
+          "devkit-as-nano-4gb" = "jetson-agx-orin-devkit-as-nano4gb";
+        };
         # Remove unnecessary partitions to make it more like
         # flash_t194_uefi_sdmmc_min.xml, except also keep the A/B slots on each
         # partition
@@ -96,7 +105,7 @@ in
       in
       mkMerge [
         (mkIf (cfg.som == "orin-agx") {
-          targetBoard = mkDefault "jetson-agx-orin-devkit";
+          targetBoard = mkDefault (agxDevkitTargetBoards."${cfg.carrierBoard}");
           # We don't flash the sdmmc with kernel/initrd/etc at all. Just let it be a
           # regular NixOS machine instead of having some weird partition structure.
           partitionTemplate = mkDefault "${pkgs.nvidia-jetpack.bspSrc}/bootloader/t186ref/cfg/flash_t234_qspi.xml";
