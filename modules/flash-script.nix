@@ -173,6 +173,29 @@ in
             };
           };
 
+          useTegraTestKeys = mkOption {
+            type = types.bool;
+            default = true;
+            description = ''
+              Enable default OemK1 and OemK2 keys.
+            '';
+          };
+
+          fvForEKB = mkOption {
+            type = types.strMatching "([[:xdigit:]]{2}[[:space:]]){15}[[:xdigit:]]{2}";
+            default = "ba d6 6e b4 48 49 83 68 4b 99 2f e5 4a 64 8b b8";
+            description = lib.mdDoc ''
+              Random fixed vector for EKB.
+              Note: This vector MUST match the 'fv' vector used for EKB binary generation process.
+            '';
+          };
+
+          fvForSSK = mkOption {
+            type = types.strMatching "([[:xdigit:]]{2}[[:space:]]){15}[[:xdigit:]]{2}";
+            default = "e4 20 f5 8d 1d ea b5 24 c2 70 d8 d2 3e ca 45 e8";
+            description = "Random fixed vector used to derive SSK_DK (Derived Key).";
+          };
+
           patches = mkOption {
             type = types.listOf types.path;
             default = [ ];

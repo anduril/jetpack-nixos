@@ -16,6 +16,8 @@ let
   atfSrc = gitRepos."tegra/optee-src/atf";
   nvopteeSrc = gitRepos."tegra/optee-src/nv-optee";
 
+  fvToArr = fv: lib.foldl' (acc: s: acc + "0x${s}, ") "" (lib.splitString " " fv);
+
   opteeClient = stdenv.mkDerivation {
     pname = "optee_client";
     version = l4tVersion;
@@ -47,6 +49,9 @@ let
                                     , earlyTaPaths ? [ ]
                                     , extraMakeFlags ? [ ]
                                     , opteePatches ? [ ]
+                                    , useTegraTestKeys ? true
+                                    , fvForEKB
+                                    , fvForSSK
                                     , taPublicKeyFile ? null
                                     , ...
                                     }:
@@ -73,9 +78,15 @@ let
       inherit pname;
       version = l4tVersion;
       src = nvopteeSrc;
-      patches = opteePatches;
+      patches = opteePatches ++ [ ./optee-keys.patch ];
+      # TODO: use --replace-fail after nixpkgs 24.05 update.
       postPatch = ''
         patchShebangs $(find optee/optee_os -type d -name scripts -printf '%p ')
+        substituteInPlace optee/optee_os/core/arch/arm/plat-tegra/conf.mk \
+          --replace '@@useTegraTestKeys@@' "${if useTegraTestKeys then "" else "#"}"
+        substituteInPlace optee/optee_os/core/pta/tegra/jetson_user_key_pta.c \
+          --replace '@@fvForEKB@@' "${fvToArr fvForEKB}" \
+          --replace '@@fvForSSK@@' "${fvToArr fvForSSK}"
       '';
       nativeBuildInputs = [
         dtc
