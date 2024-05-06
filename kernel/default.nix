@@ -81,10 +81,6 @@ pkgsAarch64.buildLinux (args // {
     # Lower priority of tegra-se crypto modules since they're slow and flaky
     { patch = ./0008-Lower-priority-of-tegra-se-crypto.patch; }
 
-    # Include patch from linux-stable that (for some reason) appears to fix
-    # random crashes very early in boot process on Xavier NX specifically
-    # Remove when updating to 35.5.0
-    { patch = ./0009-Revert-random-use-static-branch-for-crng_ready.patch; }
   ] ++ kernelPatches;
 
   structuredExtraConfig = with lib.kernel; {
