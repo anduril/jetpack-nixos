@@ -94,6 +94,9 @@ pkgsAarch64.buildLinux (args // {
     # random crashes very early in boot process on Xavier NX specifically
     # Remove when updating to 35.5.0
     { patch = ./0009-Revert-random-use-static-branch-for-crng_ready.patch; }
+
+    # Fix an issue building with gcc13
+    { patch = ./0010-bonding-gcc13-synchronize-bond_-a-t-lb_xmit-types.patch; }
   ] ++ kernelPatches;
 
   structuredExtraConfig = with lib.kernel; {
