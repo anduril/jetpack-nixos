@@ -76,7 +76,8 @@ let
     inherit bspSrc gitRepos l4tVersion;
   }) buildTOS buildOpteeTaDevKit opteeClient;
 
-  optee-gen-ekb = pkgs.callPackage ./pkgs/optee-gen-ekb { inherit opteeClient; };
+  optee-gen-ekb = callPackage ./pkgs/optee-gen-ekb { inherit opteeClient; };
+  optee-ftpm-manufacturer = callPackage ./pkgs/optee-ftpm_manufacturer { inherit opteeClient; };
 
   flash-tools = callPackage ./pkgs/flash-tools {
     inherit bspSrc l4tVersion;
@@ -178,7 +179,7 @@ rec {
   inherit otaUtils;
 
   inherit opteeClient;
-  inherit optee-gen-ekb;
+  inherit optee-gen-ekb optee-ftpm-manufacturer;
 
   # TODO: Source packages. source_sync.sh from bspSrc
   # GST plugins
