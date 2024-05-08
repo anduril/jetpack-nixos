@@ -70,6 +70,7 @@ in
     }) buildTOS buildOpteeTaDevKit opteeClient;
 
     optee-gen-ekb = self.callPackage ./pkgs/optee-gen-ekb { inherit (self) opteeClient; };
+    optee-ftpm-manufacturer = self.callPackage ./pkgs/optee-ftpm_manufacturer { inherit (self) opteeClient; };
 
     flash-tools = self.callPackage ./pkgs/flash-tools { };
 
