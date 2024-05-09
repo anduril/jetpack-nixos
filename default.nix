@@ -22,8 +22,8 @@ let
   pkgsAarch64 = if pkgs.stdenv.buildPlatform.isAarch64 then pkgs else pkgs.pkgsCross.aarch64-multiplatform;
 
   jetpackVersion = "5.1.3";
-  l4tVersion = "35.5.0";
-  cudaVersion = "11.4";
+  l4tVersion = "36.3.0";
+  cudaVersion = "12.0";
 
   # https://developer.nvidia.com/embedded/jetson-linux-archive
   # https://repo.download.nvidia.com/jetson/
