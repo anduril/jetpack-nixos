@@ -91,7 +91,9 @@ in
       message = "Docker version < 25 does not support CDI";
     }];
 
-    nixpkgs.hostPlatform = lib.mkDefault "aarch64-linux";
+    # Use mkOptionDefault so that we prevent conflicting with the priority that
+    # `nixos-generate-config` uses.
+    nixpkgs.hostPlatform = lib.mkOptionDefault "aarch64-linux";
 
     nixpkgs.overlays = [
       (import ../overlay.nix)
