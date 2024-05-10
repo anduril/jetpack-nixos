@@ -23,7 +23,7 @@ let
 
   jetpackVersion = "5.1.3";
   l4tVersion = "36.3.0";
-  cudaVersion = "12.0";
+  cudaVersion = "12.2.1";
 
   # https://developer.nvidia.com/embedded/jetson-linux-archive
   # https://repo.download.nvidia.com/jetson/
