@@ -598,9 +598,9 @@
       "version": "35.5.0-20240219203809"
     },
     "nvidia-l4t-bootloader": {
-      "filename": "pool/main/n/nvidia-l4t-bootloader/nvidia-l4t-bootloader_35.5.0-20240219203809_arm64.deb",
-      "sha256": "136a6dfa265483e1548ad796de87395b7497373ec195134aca0425560b288edc",
-      "version": "35.5.0-20240219203809"
+      "filename": "pool/main/n/nvidia-l4t-bootloader/nvidia-l4t-bootloader_35.5.0-20240423174505_arm64.deb",
+      "sha256": "4001670d57c9e5b7b01d576d43950a66c2d4a4cc06248f6478184aac4f99c517",
+      "version": "35.5.0-20240423174505"
     },
     "nvidia-l4t-camera": {
       "filename": "pool/main/n/nvidia-l4t-camera/nvidia-l4t-camera_35.5.0-20240219203809_arm64.deb",
@@ -608,9 +608,9 @@
       "version": "35.5.0-20240219203809"
     },
     "nvidia-l4t-configs": {
-      "filename": "pool/main/n/nvidia-l4t-configs/nvidia-l4t-configs_35.5.0-20240219203809_arm64.deb",
-      "sha256": "ebd0dc5b8a8ae74ee882ecd398ab11ea4604cb3d9a1d183d84336a3fb59e6e16",
-      "version": "35.5.0-20240219203809"
+      "filename": "pool/main/n/nvidia-l4t-configs/nvidia-l4t-configs_35.5.0-20240423174505_arm64.deb",
+      "sha256": "c9727dd77bbf547d59afe6c9b57abcb8f38ae17b3039af68e23dfd7f033fd93e",
+      "version": "35.5.0-20240423174505"
     },
     "nvidia-l4t-core": {
       "filename": "pool/main/n/nvidia-l4t-core/nvidia-l4t-core_35.5.0-20240219203809_arm64.deb",
@@ -633,9 +633,9 @@
       "version": "35.5.0-20240219203809"
     },
     "nvidia-l4t-display-kernel": {
-      "filename": "pool/main/n/nvidia-l4t-display-kernel/nvidia-l4t-display-kernel_5.10.192-tegra-35.5.0-20240219203809_arm64.deb",
-      "sha256": "5250260a4c923f1c6ff4007920b867ddd09760a94c08c04d97577077f399c309",
-      "version": "5.10.192-tegra-35.5.0-20240219203809"
+      "filename": "pool/main/n/nvidia-l4t-display-kernel/nvidia-l4t-display-kernel_5.10.192-tegra-35.5.0-20240423174505_arm64.deb",
+      "sha256": "101932391ece0621bc5696c41c14f3f6289de6f1abd88d14d8f90f6c1c77f382",
+      "version": "5.10.192-tegra-35.5.0-20240423174505"
     },
     "nvidia-l4t-factory-service": {
       "filename": "pool/main/n/nvidia-l4t-factory-service/nvidia-l4t-factory-service_35.5.0-20240219203809_arm64.deb",
@@ -668,14 +668,19 @@
       "version": "35.5.0-20240219203809"
     },
     "nvidia-l4t-initrd": {
-      "filename": "pool/main/n/nvidia-l4t-initrd/nvidia-l4t-initrd_35.5.0-20240219203809_arm64.deb",
-      "sha256": "77287257794d20ec3a4dcc3b29cb13ebcd1bfca028408946e7cb6f09f6288e91",
-      "version": "35.5.0-20240219203809"
+      "filename": "pool/main/n/nvidia-l4t-initrd/nvidia-l4t-initrd_35.5.0-20240423174505_arm64.deb",
+      "sha256": "9f18cf14dda1afc2495340a246c47b1337787ecc672b5a9b50334d48feeb2ad1",
+      "version": "35.5.0-20240423174505"
     },
     "nvidia-l4t-jetson-io": {
       "filename": "pool/main/n/nvidia-l4t-jetson-io/nvidia-l4t-jetson-io_35.5.0-20240219203809_arm64.deb",
       "sha256": "2022d50fc8c708e3013527b451850ad3e02384feceab1ee61b303a1340e0ac14",
       "version": "35.5.0-20240219203809"
+    },
+    "nvidia-l4t-jetson-orin-nano-qspi-updater": {
+      "filename": "pool/main/n/nvidia-l4t-jetson-orin-nano-qspi-updater/nvidia-l4t-jetson-orin-nano-qspi-updater_36.3.0-20240424200557_arm64.deb",
+      "sha256": "c90f8f1f085d3a27a85e46df6b4b3c40735b9ac61914e4a2dbdfff82fa9e85a5",
+      "version": "36.3.0-20240424200557"
     },
     "nvidia-l4t-jetsonpower-gui-tools": {
       "filename": "pool/main/n/nvidia-l4t-jetsonpower-gui-tools/nvidia-l4t-jetsonpower-gui-tools_35.5.0-20240219203809_arm64.deb",
@@ -683,19 +688,19 @@
       "version": "35.5.0-20240219203809"
     },
     "nvidia-l4t-kernel": {
-      "filename": "pool/main/n/nvidia-l4t-kernel/nvidia-l4t-kernel_5.10.192-tegra-35.5.0-20240219203809_arm64.deb",
-      "sha256": "122612bd74eb9a140753828d1d383abcf8d50f80b9f64a9e86573941b752500e",
-      "version": "5.10.192-tegra-35.5.0-20240219203809"
+      "filename": "pool/main/n/nvidia-l4t-kernel/nvidia-l4t-kernel_5.10.192-tegra-35.5.0-20240423174505_arm64.deb",
+      "sha256": "db6b9d70beee421c7703b4f705db1f63dd4272316f4c71ada3d4d7495f74aa2e",
+      "version": "5.10.192-tegra-35.5.0-20240423174505"
     },
     "nvidia-l4t-kernel-dtbs": {
-      "filename": "pool/main/n/nvidia-l4t-kernel-dtbs/nvidia-l4t-kernel-dtbs_5.10.192-tegra-35.5.0-20240219203809_arm64.deb",
-      "sha256": "061cbd86469aa0b5d85847cd05d8069c6e7e3201bc739f4fe81484d0a933276f",
-      "version": "5.10.192-tegra-35.5.0-20240219203809"
+      "filename": "pool/main/n/nvidia-l4t-kernel-dtbs/nvidia-l4t-kernel-dtbs_5.10.192-tegra-35.5.0-20240423174505_arm64.deb",
+      "sha256": "0cf44c81add1a2c7eef6fa5aec49e8c27d56706e8bc443ed1bb6dc62d9c06c57",
+      "version": "5.10.192-tegra-35.5.0-20240423174505"
     },
     "nvidia-l4t-kernel-headers": {
-      "filename": "pool/main/n/nvidia-l4t-kernel-headers/nvidia-l4t-kernel-headers_5.10.192-tegra-35.5.0-20240219203809_arm64.deb",
-      "sha256": "30fa5a41fe5aa09ae337506a483edf464bd1b7915942b2f80aff75bf3a20b8b7",
-      "version": "5.10.192-tegra-35.5.0-20240219203809"
+      "filename": "pool/main/n/nvidia-l4t-kernel-headers/nvidia-l4t-kernel-headers_5.10.192-tegra-35.5.0-20240423174505_arm64.deb",
+      "sha256": "6a5c80c1b84408d988587d724bf204b114b3a9b58f3523a932200be2c513870c",
+      "version": "5.10.192-tegra-35.5.0-20240423174505"
     },
     "nvidia-l4t-libvulkan": {
       "filename": "pool/main/n/nvidia-l4t-libvulkan/nvidia-l4t-libvulkan_35.5.0-20240219203809_arm64.deb",
@@ -753,9 +758,9 @@
       "version": "35.5.0-20240219203809"
     },
     "nvidia-l4t-tools": {
-      "filename": "pool/main/n/nvidia-l4t-tools/nvidia-l4t-tools_35.5.0-20240219203809_arm64.deb",
-      "sha256": "1f73e9f4a45de2150c9fe0954a5ddce4c3b387b0cc720583b46c29e0e1e0fcd8",
-      "version": "35.5.0-20240219203809"
+      "filename": "pool/main/n/nvidia-l4t-tools/nvidia-l4t-tools_35.5.0-20240423174505_arm64.deb",
+      "sha256": "9a0b0a962773ce477a629cdc2fcfd40f499349b4c89d1b61987682b0e1d36586",
+      "version": "35.5.0-20240423174505"
     },
     "nvidia-l4t-vulkan-sc": {
       "filename": "pool/main/n/nvidia-l4t-vulkan-sc/nvidia-l4t-vulkan-sc_35.5.0-20240219203809_arm64.deb",
@@ -793,9 +798,9 @@
       "version": "35.5.0-20240219203809"
     },
     "nvidia-l4t-xusb-firmware": {
-      "filename": "pool/main/n/nvidia-l4t-xusb-firmware/nvidia-l4t-xusb-firmware_35.5.0-20240219203809_arm64.deb",
-      "sha256": "4b076e828f4f76ec35a973e80bca349c95d8fcf8876d0986d914aa63ade08aed",
-      "version": "35.5.0-20240219203809"
+      "filename": "pool/main/n/nvidia-l4t-xusb-firmware/nvidia-l4t-xusb-firmware_35.5.0-20240423174505_arm64.deb",
+      "sha256": "1298568a934bfb5274e22082e8558cec7edc03e7a10227a1fc9a658fd98345f0",
+      "version": "35.5.0-20240423174505"
     },
     "python-jetson-gpio": {
       "filename": "pool/main/j/jetson-gpio/python-jetson-gpio_2.1.6ubuntu1_arm64.deb",

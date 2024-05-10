@@ -7,7 +7,7 @@ import subprocess
 import sys
 import os
 
-VERSION = '35.5'
+VERSION = '36.3'
 TAG = 'jetson_' + VERSION
 FILENAME = 'r' + VERSION + '-gitrepos.json'
 

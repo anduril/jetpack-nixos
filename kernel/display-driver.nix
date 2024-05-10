@@ -10,9 +10,10 @@ stdenv.mkDerivation rec {
   pname = "nvidia-display-driver";
   version = "jetson_${l4tVersion}";
 
-  src = gitRepos."tegra/kernel-src/nv-kernel-display-driver";
+#  src = gitRepos."tegra/kernel-src/nv-kernel-display-driver";
+   src = gitRepos."nvdisplay";
 
-  setSourceRoot = "sourceRoot=$(echo */nvdisplay)";
+  # setSourceRoot = "sourceRoot=$(echo */nvdisplay)";
 
   nativeBuildInputs = kernel.moduleBuildDependencies;
 
