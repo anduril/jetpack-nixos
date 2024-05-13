@@ -153,6 +153,10 @@ let
         (v: with v; ''
           BOARDID=${boardid} BOARDSKU=${boardsku} FAB=${fab} BOARDREV=${boardrev} FUSELEVEL=${fuselevel} CHIPREV=${chiprev} ${lib.optionalString (chipsku != null) "CHIP_SKU=${chipsku}"} ${lib.optionalString (ramcode != null) "RAMCODE=${ramcode}"} ./flash.sh ${lib.optionalString (partitionTemplate != null) "-c flash.xml"} --no-root-check --no-flash --sign ${builtins.toString flashArgs}
 
+          # TODO: ideally we would add chipsku to the boardspec for flashFromDevice to match against but
+          # tegra-boardspec does not read the chipsku from EEPROM so we cannot match against it.
+          # The CHIP_SKU only determines BPFFILE which is the same within a given SOM family (orin-nx, orin-nano, etc.);
+          # since we already seperate Orin NX and Orin Nano, we don't have to worry about using incorrect BPFFILE.
           outdir=$out/${boardid}-${fab}-${boardsku}-${boardrev}-${if fuselevel == "fuselevel_production" then "1" else "0"}-${chiprev}--
           mkdir -p $outdir
 
