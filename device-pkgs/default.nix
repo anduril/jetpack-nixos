@@ -99,7 +99,10 @@ let
         export BOARDSKU=${variant.boardsku}
         export FAB=${variant.fab}
         export BOARDREV=${variant.boardrev}
-        export CHIP_SKU=${variant.chiprev}
+	${lib.optionalString (variant.chipsku != null) ''
+        export CHIP_SKU=${toString variant.chipsku}
+	''}
+        export CHIPREV=${variant.chiprev}
 
         ${cfg.firmware.secureBoot.preSignCommands}
 
@@ -213,8 +216,12 @@ let
     (mkFlashScript {
       flashCommands = cfg.firmware.secureBoot.preSignCommands + lib.concatMapStringsSep "\n"
         (v: with v; ''
-          BOARDID=${boardid} BOARDSKU=${boardsku} FAB=${fab} BOARDREV=${boardrev} FUSELEVEL=${fuselevel} CHIPREV=${chiprev} ./flash.sh ${lib.optionalString (partitionTemplate != null) "-c flash.xml"} --no-root-check --no-flash --sign ${builtins.toString flashArgs}
+          BOARDID=${boardid} BOARDSKU=${boardsku} FAB=${fab} BOARDREV=${boardrev} FUSELEVEL=${fuselevel} CHIPREV=${chiprev} ${lib.optionalString (chipsku != null) "CHIP_SKU=${builtins.toString chipsku}"} ./flash.sh ${lib.optionalString (partitionTemplate != null) "-c flash.xml"} --no-root-check --no-flash --sign ${builtins.toString flashArgs}
 
+	  # TODO: ideally we would add chipsku to the boardspec for flashFromDevice to match against but
+	  # tegra-boardspec does not read the chipsku from EEPROM so we cannot match against it.
+	  # The CHIP_SKU only determines BPFFILE which is the same within a given SOM family (orin-nx, orin-nano, etc.);
+	  # since we already seperate Orin NX and Orin Nano, we don't have to worry about using incorrect BPFFILE.
           outdir=$out/${boardid}-${fab}-${boardsku}-${boardrev}-${if fuselevel == "fuselevel_production" then "1" else "0"}-${chiprev}--
           mkdir -p $outdir
 
@@ -249,7 +256,7 @@ let
       # TODO: Remove preSignCommands when we switch to using signedFirmware directly
       flashCommands = cfg.firmware.secureBoot.preSignCommands + lib.concatMapStringsSep "\n"
         (v: with v;
-        "BOARDID=${boardid} BOARDSKU=${boardsku} FAB=${fab} BOARDREV=${boardrev} FUSELEVEL=${fuselevel} CHIPREV=${chiprev} ./flash.sh ${lib.optionalString (partitionTemplate != null) "-c flash.xml"} --no-flash --bup --multi-spec ${builtins.toString flashArgs}"
+        "BOARDID=${boardid} BOARDSKU=${boardsku} FAB=${fab} BOARDREV=${boardrev} FUSELEVEL=${fuselevel} CHIPREV=${chiprev} ${lib.optionalString (chipsku != null) "CHIP_SKU=${builtins.toString chipsku}"} ./flash.sh ${lib.optionalString (partitionTemplate != null) "-c flash.xml"} --no-flash --bup --multi-spec ${builtins.toString flashArgs}"
         )
         cfg.firmware.variants;
     }) + ''
