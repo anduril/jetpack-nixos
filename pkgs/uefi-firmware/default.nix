@@ -7,6 +7,7 @@
 , fetchpatch2
 , runCommand
 , edk2
+, antlr
 , acpica-tools
 , dtc
 , python3
@@ -30,6 +31,8 @@
   # The root certificate (in PEM format) for authenticating capsule updates. By
   # default, EDK2 authenticates using a test keypair commited upstream.
   trustedPublicCertPemFile ? null
+, which
+, mono
 ,
 }:
 
@@ -46,63 +49,65 @@ let
 
   ###
 
+
   # See: https://github.com/NVIDIA/edk2-edkrepo-manifest/blob/main/edk2-nvidia/Jetson/NVIDIAJetsonManifest.xml
   edk2-src = fetchFromGitHub {
     owner = "NVIDIA";
     repo = "edk2";
-    rev = "r${l4tVersion}-edk2-stable202208";
+    rev = "uefi-202405.0";
     fetchSubmodules = true;
-    hash = "sha256-SHix86rio/WeirAB3ziVL4cIlN1JFq56V1LpU3ulfLI=";
+    hash = "sha256-9+zIfreZchuLjeprvW/WIdSh0+1wDIExvCKp+LejYcw=";
   };
 
   edk2-platforms = fetchFromGitHub {
     owner = "NVIDIA";
     repo = "edk2-platforms";
-    rev = "r${l4tVersion}-upstream-20220830";
-    hash = "sha256-PjAJEbbswOLYupMg/xEqkAOJuAC8SxNsQlb9YBswRfo=";
+    rev = "uefi-202405.0";
+    hash = "sha256-27dKEi66UWBgJi3Sb2/naeeSC2CJ5+Dbtw8e0o5Y/Hg=";
   };
 
   edk2-non-osi = fetchFromGitHub {
     owner = "NVIDIA";
     repo = "edk2-non-osi";
-    rev = "r${l4tVersion}-upstream-20220830";
-    sha256 = "sha256-EPtI63jYhEIo4uVTH3lUt9NC/lK5vPVacUAc5qgmz9M=";
+    rev = "uefi-202405.0";
+    sha256 = "sha256-FnznH8KsB3rD7sL5Lx2GuQZRPZ+uqAYqenjk+7x89mE=";
   };
 
-  edk2-nvidia = applyPatches {
-    src = fetchFromGitHub {
-      owner = "NVIDIA";
-      repo = "edk2-nvidia";
-      rev = "a5ac12d729f610035f16013482fa70284f75ddfd"; # Latest on r35.5.0-updates as of 2024-03-08
-      hash = "sha256-3llK5lY/V8JZha0N8bYsK4OLd52BSMo3DtyEf8+LZ34=";
-    };
-    patches = edk2NvidiaPatches ++ [
-      # Fix Eqos driver to use correct TX clock name
-      # PR: https://github.com/NVIDIA/edk2-nvidia/pull/76
-      ./eqos-driver-fix-clock-name.patch
-
-      ./capsule-authentication.patch
-
-      # Have UEFI use the device tree compiled into the firmware, instead of
-      # using one from the kernel-dtb partition.
-      # See: https://github.com/anduril/jetpack-nixos/pull/18
-      # Upstream Fixed in e81614999?
-      ./edk2-uefi-dtb.patch
-    ];
-    postPatch = lib.optionalString errorLevelInfo ''
-      sed -i 's#PcdDebugPrintErrorLevel|.*#PcdDebugPrintErrorLevel|0x8000004F#' Platform/NVIDIA/NVIDIA.common.dsc.inc
-    '' + lib.optionalString (bootLogo != null) ''
-      cp ${bootLogoVariants}/logo1080.bmp Silicon/NVIDIA/Assets/nvidiagray1080.bmp
-      cp ${bootLogoVariants}/logo720.bmp Silicon/NVIDIA/Assets/nvidiagray720.bmp
-      cp ${bootLogoVariants}/logo480.bmp Silicon/NVIDIA/Assets/nvidiagray480.bmp
-    '';
+  edk2-nvidia = fetchFromGitHub {
+    # src = fetchFromGitHub {
+    owner = "NVIDIA";
+    repo = "edk2-nvidia";
+    rev = "uefi-202405.0";
+    hash = "sha256-8T6GG1td3epnl+0wsgOebDTqYbhAmj7h/xH+avRWiZg=";
   };
+
+  #  patches = edk2NvidiaPatches ++ [
+  # Fix Eqos driver to use correct TX clock name
+  # PR: https://github.com/NVIDIA/edk2-nvidia/pull/76
+  #./eqos-driver-fix-clock-name.patch
+
+  #./capsule-authentication.patch
+
+  # Have UEFI use the device tree compiled into the firmware, instead of
+  # using one from the kernel-dtb partition.
+  # See: https://github.com/anduril/jetpack-nixos/pull/18
+  # Upstream Fixed in e81614999?
+  #./edk2-uefi-dtb.patch
+  # ];
+  #    postPatch = lib.optionalString errorLevelInfo ''
+  #     sed -i 's#PcdDebugPrintErrorLevel|.*#PcdDebugPrintErrorLevel|0x8000004F#' Platform/NVIDIA/NVIDIA.common.dsc.inc
+  #  '' + lib.optionalString (bootLogo != null) ''
+  #   cp ${bootLogoVariants}/logo1080.bmp Silicon/NVIDIA/Assets/nvidiagray1080.bmp
+  #   cp ${bootLogoVariants}/logo720.bmp Silicon/NVIDIA/Assets/nvidiagray720.bmp
+  #   cp ${bootLogoVariants}/logo480.bmp Silicon/NVIDIA/Assets/nvidiagray480.bmp
+  # '';
+  # };
 
   edk2-nvidia-non-osi = fetchFromGitHub {
     owner = "NVIDIA";
     repo = "edk2-nvidia-non-osi";
-    rev = "r${l4tVersion}";
-    hash = "sha256-NQz92p6P+MDDd6yHqq84eNJT5IwpYOh9Kdpm1JKm9w4=";
+    rev = "uefi-202405.0";
+    hash = "sha256-18LWNVZj1FoIigQAX/OHD+QGTxc879TolkFM8JOkXyw=";
   };
 
   edk2-jetson = edk2.overrideAttrs (prev: {
@@ -125,7 +130,8 @@ let
 
   });
 
-  pythonEnv = buildPackages.python3.withPackages (ps: [ ps.tkinter ]);
+  pythonEnv = buildPackages.python3.withPackages ( pythonPkgs: with pythonPkgs;  [ipython pip setuptools virtualenvwrapper wheel ]);
+  # ps: [ ps.tkinter ] 
   targetArch =
     if stdenv.isi686 then
       "IA32"
@@ -154,8 +160,8 @@ let
       # Initialize the build dir with the build tools from edk2
       src = edk2-src;
 
-      depsBuildBuild = [ buildPackages.stdenv.cc ];
-      nativeBuildInputs = [ bc pythonEnv acpica-tools dtc unixtools.whereis ];
+      depsBuildBuild = [ buildPackages.stdenv.cc  ];
+      nativeBuildInputs = [ bc pythonEnv acpica-tools dtc unixtools.whereis python3  mono  ];
       strictDeps = true;
 
       NIX_CFLAGS_COMPILE = [
@@ -187,26 +193,49 @@ let
       '';
 
       patches = edk2UefiPatches ++ [
-        (fetchurl {
-          # Patch format does not play well with fetchpatch, it should be fine this is a static attachment in a ticket
-          name = "CVE-2023-45229_CVE-2023-45230_CVE-2023-45231_CVE-2023-45232_CVE-2023-45233_CVE-2023-45234_CVE-2023-45235.patch";
-          url = "https://bugzilla.tianocore.org/attachment.cgi?id=1457";
-          hash = "sha256-CF41lbjnXbq/6DxMW6q1qcLJ8WAs+U0Rjci+jRwJYYY=";
-        })
-        (fetchpatch {
-          name = "CVE-2022-36764.patch";
-          url = "https://bugzilla.tianocore.org/attachment.cgi?id=1436";
-          hash = "sha256-czku8DgElisDv6minI67nNt6BS+vH6txslZdqiGaQR4=";
-          excludes = [
-            "SecurityPkg/Test/SecurityPkgHostTest.dsc"
-          ];
-        })
+        #    (fetchurl {
+        #      # Patch format does not play well with fetchpatch, it should be fine this is a static attachment in a ticket
+        #      name = "CVE-2023-45229_CVE-2023-45230_CVE-2023-45231_CVE-2023-45232_CVE-2023-45233_CVE-2023-45234_CVE-2023-45235.patch";
+        #      url = "https://bugzilla.tianocore.org/attachment.cgi?id=1457";
+        #     hash = "sha256-CF41lbjnXbq/6DxMW6q1qcLJ8WAs+U0Rjci+jRwJYYY=";
+        #    })
+        #    (fetchpatch {
+        #      name = "CVE-2022-36764.patch";
+        #      url = "https://bugzilla.tianocore.org/attachment.cgi?id=1436";
+        #      hash = "sha256-czku8DgElisDv6minI67nNt6BS+vH6txslZdqiGaQR4=";
+        #      excludes = [
+        #        "SecurityPkg/Test/SecurityPkgHostTest.dsc"
+        #      ];
+        #    })
       ];
+
+
+
+      unpackPhase = ''
+        runHook preUnpack
+
+        echo "unpackPhase dir" $PWD
+
+         chmod -R u+w .
+         mkdir edk2 && cp -r  --no-preserve=ownership ${edk2-src}/* ./edk2/ && chmod -R u+w .
+         mkdir edk2-platforms && cp -r  --no-preserve=ownership ${edk2-platforms}/* ./edk2-platforms/ && chmod -R u+w .
+         mkdir edk2-non-osi && cp -r  --no-preserve=ownership ${edk2-non-osi}/* ./edk2-non-osi/ && chmod -R u+w .
+         mkdir edk2-nvidia && cp -r  --no-preserve=ownership ${edk2-nvidia}/* ./edk2-nvidia/ && chmod -R u+w .
+         mkdir edk2-nvidia-non-osi && cp -r  --no-preserve=ownership ${edk2-nvidia-non-osi}/* ./edk2-nvidia-non-osi/ && chmod -R u+w .
+         find ./ -type f -exec sed -i "1 s|^#!.*python3|${python3}/bin/python3|" {} \;
+         find ./edk2-nvidia/Silicon/NVIDIA/scripts -type f -exec sed -i "44 s|which|${which}/bin/which|" {} \;     
+         sed -i '55d' ./edk2-nvidia/Silicon/NVIDIA/scripts/setenv_stuart.sh    
+         patchShebangs ./
+
+        runHook postUnpack
+      '';
+
+
 
       configurePhase = ''
         runHook preConfigure
         export WORKSPACE="$PWD"
-        source ./edksetup.sh BaseTools
+
 
         ${lib.optionalString (trustedPublicCertPemFile != null) ''
         echo Using ${trustedPublicCertPemFile} as public certificate for capsule verification
@@ -219,17 +248,24 @@ let
       '';
 
       buildPhase = ''
-        runHook preBuild
+            runHook preBuild
 
-        # The BUILDID_STRING and BUILD_DATE_TIME are used
-        # just by nvidia, not generic edk2
-        build -a ${targetArch} -b ${buildTarget} -t ${buildType} -p Platform/NVIDIA/Jetson/Jetson.dsc -n $NIX_BUILD_CORES \
-          -D BUILDID_STRING=${l4tVersion} \
-          -D BUILD_DATE_TIME="$(date --utc --iso-8601=seconds --date=@$SOURCE_DATE_EPOCH)" \
-          ${lib.optionalString (trustedPublicCertPemFile != null) "-D CUSTOM_CAPSULE_CERT"} \
-          $buildFlags
 
-        runHook postBuild
+            #source ./edksetup.sh BaseTools
+
+            # The BUILDID_STRING and BUILD_DATE_TIME are used
+            # just by nvidia, not generic edk2
+            # build -a ${targetArch} -b ${buildTarget} -t ${buildType} -p Platform/NVIDIA/Jetson/Jetson.dsc -n $NIX_BUILD_CORES \
+            #  build -a ${targetArch} -b ${buildTarget} -t ${buildType} -n $NIX_BUILD_CORES \
+            # -D BUILDID_STRING=${l4tVersion} \
+            # -D BUILD_DATE_TIME="$(date --utc --iso-8601=seconds --date=@$SOURCE_DATE_EPOCH)" \
+            # ${lib.optionalString (trustedPublicCertPemFile != null) "-D CUSTOM_CAPSULE_CERT"} \
+            # $buildFlags
+
+              ls ./edk2-nvidia/Platform/NVIDIA/Jetson/
+              bash ./edk2-nvidia/Platform/NVIDIA/Jetson/build.sh
+
+            runHook postBuild
       '';
 
       installPhase = ''
