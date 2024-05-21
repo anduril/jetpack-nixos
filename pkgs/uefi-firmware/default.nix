@@ -225,9 +225,8 @@ let
       unpackPhase = ''
         runHook preUnpack
 
-        echo "unpackPhase dir" $PWD
 
-         chmod -R u+w .
+          chmod -R u+w .
 #         mkdir edk2 && cp -r  --no-preserve=ownership ${edk2-src}/* ./edk2/ && chmod -R u+w .        mkdir edk2-platforms && cp -r  --no-preserve=ownership ${edk2-platforms}/* ./edk2-platforms/ && chmod -R u+w .
 #         mkdir edk2-non-osi && cp -r  --no-preserve=ownership ${edk2-non-osi}/* ./edk2-non-osi/ && chmod -R u+w .
 #         mkdir edk2-nvidia && cp -r  --no-preserve=ownership ${edk2-nvidia}/* ./edk2-nvidia/ && chmod -R u+w .
@@ -236,16 +235,12 @@ let
 #         find ./edk2-nvidia/Silicon/NVIDIA/scripts -type f -exec sed -i "44 s|which|${which}/bin/which|" {} \;     
 #         sed -i '55d' ./edk2-nvidia/Silicon/NVIDIA/scripts/setenv_stuart.sh    
 
-         mkdir ./Build && tar xzvf ${edk2-bin-pack}/nv-efi-bin-200524.tgz -C ./Build
-
 #         find ./ -type f -exec sed -i "1 s|^#!.*python3|${python3}/bin/python3|" {} \;
 #         patchShebangs ./
 
-         #ls ./edk2-nvidia/Platform/NVIDIA/Jetson/
-         #bash ./edk2-nvidia/Platform/NVIDIA/Jetson/build.sh
 
-          echo -----UNPACK----
-          ls ./Build/
+         mkdir ./Build && tar xzvf ${edk2-bin-pack}/nv-efi-bin-200524.tgz -C ./Build
+
 
         runHook postUnpack
       '';
@@ -286,7 +281,6 @@ let
       installPhase = ''
         runHook preInstall
         echo ---INSTALL---
-        ls -l
         mkdir $out
         cp -Rp * $out
         runHook postInstall
@@ -300,11 +294,9 @@ let
       nativeBuildInputs = [ python3 nukeReferences ];
     } ''
 
-    echo ---MAKEFIRMWARE---
+    echo ---MAKE FIRMWARE---
     mkdir -p $out
-    ls -al
-    ls -al ${edk2-bin-pack}
-    ls -al ${jetson-edk2-uefi}
+
 #    python3 ${edk2-nvidia}/Silicon/NVIDIA/Tools/FormatUefiBinary.py \
 #      ${jetson-edk2-uefi}/FV/UEFI_NS.Fv \
 #      $out/uefi_jetson.bin
