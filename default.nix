@@ -88,6 +88,9 @@ let
 
   python-jetson = python3.pkgs.callPackage ./pkgs/python-jetson { };
 
+  #python-edk2-pytool-extensions = python3.pkgs.callPackage ./updated-packages/edk2-pytool-extensions { };
+  #python-edk2-basetools = python3.pkgs.callPackage ./updated-packages/edk2-basetools { };
+
   tegra-eeprom-tool = pkgsAarch64.callPackage ./pkgs/tegra-eeprom-tool { };
   tegra-eeprom-tool-static = pkgsAarch64.pkgsStatic.callPackage ./pkgs/tegra-eeprom-tool { };
 

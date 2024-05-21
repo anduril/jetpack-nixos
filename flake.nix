@@ -36,7 +36,7 @@
           iso_minimal = self.nixosConfigurations.installer_minimal_cross.config.system.build.isoImage;
 
           inherit (x86_packages)
-            board-automation python-jetson;
+            board-automation python-jetson python-edk2-pytool-extensions python-edk2-basetools;
           inherit (x86_packages.cudaPackages)
             nsight_systems_host nsight_compute_host;
         }

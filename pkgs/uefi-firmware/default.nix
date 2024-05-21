@@ -33,7 +33,7 @@
   trustedPublicCertPemFile ? null
 , which
 , mono
-,
+, 
 }:
 
 let
@@ -110,6 +110,16 @@ let
     hash = "sha256-18LWNVZj1FoIigQAX/OHD+QGTxc879TolkFM8JOkXyw=";
   };
 
+
+#  building uefi out of the tree and get it from here
+
+  edk2-bin-pack = fetchFromGitHub {
+    owner = "tiiuae";
+    repo =  "nv-uefi-build";
+    rev = "2005";
+    hash = "sha256-qPlFIBmq3igrkwU9IncjD8PiCrohQSnIVnC1NV8RhAY=";
+  };
+
   edk2-jetson = edk2.overrideAttrs (prev: {
     # Upstream nixpkgs patch to use nixpkgs OpenSSL
     # See https://github.com/NixOS/nixpkgs/blob/44733514b72e732bd49f5511bd0203dea9b9a434/pkgs/development/compilers/edk2/default.nix#L57
@@ -161,7 +171,7 @@ let
       src = edk2-src;
 
       depsBuildBuild = [ buildPackages.stdenv.cc  ];
-      nativeBuildInputs = [ bc pythonEnv acpica-tools dtc unixtools.whereis python3  mono  ];
+      nativeBuildInputs = [ bc pythonEnv acpica-tools dtc unixtools.whereis python3  mono ];
       strictDeps = true;
 
       NIX_CFLAGS_COMPILE = [
@@ -181,6 +191,7 @@ let
         edk2-non-osi
         edk2-nvidia
         edk2-nvidia-non-osi
+        edk2-bin-pack
         "${edk2-platforms}/Features/Intel/OutOfBandManagement"
       ];
 
@@ -217,15 +228,24 @@ let
         echo "unpackPhase dir" $PWD
 
          chmod -R u+w .
-         mkdir edk2 && cp -r  --no-preserve=ownership ${edk2-src}/* ./edk2/ && chmod -R u+w .
-         mkdir edk2-platforms && cp -r  --no-preserve=ownership ${edk2-platforms}/* ./edk2-platforms/ && chmod -R u+w .
-         mkdir edk2-non-osi && cp -r  --no-preserve=ownership ${edk2-non-osi}/* ./edk2-non-osi/ && chmod -R u+w .
-         mkdir edk2-nvidia && cp -r  --no-preserve=ownership ${edk2-nvidia}/* ./edk2-nvidia/ && chmod -R u+w .
-         mkdir edk2-nvidia-non-osi && cp -r  --no-preserve=ownership ${edk2-nvidia-non-osi}/* ./edk2-nvidia-non-osi/ && chmod -R u+w .
-         find ./ -type f -exec sed -i "1 s|^#!.*python3|${python3}/bin/python3|" {} \;
-         find ./edk2-nvidia/Silicon/NVIDIA/scripts -type f -exec sed -i "44 s|which|${which}/bin/which|" {} \;     
-         sed -i '55d' ./edk2-nvidia/Silicon/NVIDIA/scripts/setenv_stuart.sh    
-         patchShebangs ./
+#         mkdir edk2 && cp -r  --no-preserve=ownership ${edk2-src}/* ./edk2/ && chmod -R u+w .        mkdir edk2-platforms && cp -r  --no-preserve=ownership ${edk2-platforms}/* ./edk2-platforms/ && chmod -R u+w .
+#         mkdir edk2-non-osi && cp -r  --no-preserve=ownership ${edk2-non-osi}/* ./edk2-non-osi/ && chmod -R u+w .
+#         mkdir edk2-nvidia && cp -r  --no-preserve=ownership ${edk2-nvidia}/* ./edk2-nvidia/ && chmod -R u+w .
+#         mkdir edk2-nvidia-non-osi && cp -r  --no-preserve=ownership ${edk2-nvidia-non-osi}/* ./edk2-nvidia-non-osi/ && chmod -R u+w .
+
+#         find ./edk2-nvidia/Silicon/NVIDIA/scripts -type f -exec sed -i "44 s|which|${which}/bin/which|" {} \;     
+#         sed -i '55d' ./edk2-nvidia/Silicon/NVIDIA/scripts/setenv_stuart.sh    
+
+         mkdir ./Build && tar xzvf ${edk2-bin-pack}/nv-efi-bin-200524.tgz -C ./Build
+
+#         find ./ -type f -exec sed -i "1 s|^#!.*python3|${python3}/bin/python3|" {} \;
+#         patchShebangs ./
+
+         #ls ./edk2-nvidia/Platform/NVIDIA/Jetson/
+         #bash ./edk2-nvidia/Platform/NVIDIA/Jetson/build.sh
+
+          echo -----UNPACK----
+          ls ./Build/
 
         runHook postUnpack
       '';
@@ -250,46 +270,55 @@ let
       buildPhase = ''
             runHook preBuild
 
+         #    source ./edk2fin/edksetup.sh BaseTools
 
-            #source ./edksetup.sh BaseTools
-
-            # The BUILDID_STRING and BUILD_DATE_TIME are used
-            # just by nvidia, not generic edk2
-            # build -a ${targetArch} -b ${buildTarget} -t ${buildType} -p Platform/NVIDIA/Jetson/Jetson.dsc -n $NIX_BUILD_CORES \
-            #  build -a ${targetArch} -b ${buildTarget} -t ${buildType} -n $NIX_BUILD_CORES \
-            # -D BUILDID_STRING=${l4tVersion} \
-            # -D BUILD_DATE_TIME="$(date --utc --iso-8601=seconds --date=@$SOURCE_DATE_EPOCH)" \
-            # ${lib.optionalString (trustedPublicCertPemFile != null) "-D CUSTOM_CAPSULE_CERT"} \
-            # $buildFlags
-
-              ls ./edk2-nvidia/Platform/NVIDIA/Jetson/
-              bash ./edk2-nvidia/Platform/NVIDIA/Jetson/build.sh
+         # The BUILDID_STRING and BUILD_DATE_TIME are used
+         # just by nvidia, not generic edk2
+         #    build -a ${targetArch} -b ${buildTarget} -t ${buildType} -p edk2-nvidia/Platform/NVIDIA/NVIDIA.common.dsc -n $NIX_BUILD_CORES \
+         #    -D BUILDID_STRING=${l4tVersion} \
+         #    -D BUILD_DATE_TIME="$(date --utc --iso-8601=seconds --date=@$SOURCE_DATE_EPOCH)" \
+         #    ${lib.optionalString (trustedPublicCertPemFile != null) "-D CUSTOM_CAPSULE_CERT"} \
+         #    $buildFlags
 
             runHook postBuild
       '';
 
       installPhase = ''
         runHook preInstall
-        mv -v Build/*/* $out
+        echo ---INSTALL---
+        ls -l
+        mkdir $out
+        cp -Rp * $out
         runHook postInstall
       '';
     });
+
+   # /edk2-nvidia/Silicon/NVIDIA/edk2nv/FormatUefiBinary.py
 
   uefi-firmware = runCommand "uefi-firmware-${l4tVersion}"
     {
       nativeBuildInputs = [ python3 nukeReferences ];
     } ''
-    mkdir -p $out
-    python3 ${edk2-nvidia}/Silicon/NVIDIA/Tools/FormatUefiBinary.py \
-      ${jetson-edk2-uefi}/FV/UEFI_NS.Fv \
-      $out/uefi_jetson.bin
 
-    python3 ${edk2-nvidia}/Silicon/NVIDIA/Tools/FormatUefiBinary.py \
-      ${jetson-edk2-uefi}/AARCH64/L4TLauncher.efi \
-      $out/L4TLauncher.efi
+    echo ---MAKEFIRMWARE---
+    mkdir -p $out
+    ls -al
+    ls -al ${edk2-bin-pack}
+    ls -al ${jetson-edk2-uefi}
+#    python3 ${edk2-nvidia}/Silicon/NVIDIA/Tools/FormatUefiBinary.py \
+#      ${jetson-edk2-uefi}/FV/UEFI_NS.Fv \
+#      $out/uefi_jetson.bin
+     python3 ${jetson-edk2-uefi}/Build/FormatUefiBinary.py ${jetson-edk2-uefi}/Build/UEFI_NS.Fv $out/uefi_jetson.bin
+
+
+#    python3 ${edk2-nvidia}/Silicon/NVIDIA/Tools/FormatUefiBinary.py \
+#      ${jetson-edk2-uefi}/AARCH64/L4TLauncher.efi \
+#      $out/L4TLauncher.efi
+     python3 ${jetson-edk2-uefi}/Build/FormatUefiBinary.py ${jetson-edk2-uefi}/Build/L4TLauncher.efi $out/L4TLauncher.efi
+
 
     mkdir -p $out/dtbs
-    for filename in ${jetson-edk2-uefi}/AARCH64/Silicon/NVIDIA/Tegra/DeviceTree/DeviceTree/OUTPUT/*.dtb; do
+    for filename in ${jetson-edk2-uefi}/DeviceTree/DeviceTree/OUTPUT/*.dtb; do
       cp $filename $out/dtbs/$(basename "$filename" ".dtb").dtbo
     done
 
