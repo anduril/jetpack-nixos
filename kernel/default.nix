@@ -2,6 +2,7 @@
 , lib
 , fetchFromGitHub
 , fetchpatch
+, fetchurl
 , l4t-xusb-firmware
 , realtime ? false
 , kernelPatches ? [ ]
@@ -15,39 +16,37 @@ let
   pkgsAarch64 = if isNative then pkgs else pkgs.pkgsCross.aarch64-multiplatform;
 in
 pkgsAarch64.buildLinux (args // {
-  version = "5.10.192" + lib.optionalString realtime "-rt96";
-  extraMeta.branch = "5.10";
+  version = "6.8.10" + lib.optionalString realtime "-rt96";
+  extraMeta.branch = "6.8";
 
-  defconfig = "tegra_defconfig";
+  # defconfig = "defconfig";
 
   # Using applyPatches here since it's not obvious how to append an extra
   # postPatch. This is not very efficient.
   src = pkgs.applyPatches {
-    src = fetchFromGitHub {
-      owner = "OE4T";
-      repo = "linux-tegra-5.10";
-      rev = "db857ecdbe10de229a3cf125831afd6226417eac"; # latest on oe4t-patches-l4t-35.5.0 as of 2024-03-08
-      sha256 = "sha256-+cZCq5AMUDDq6Kv0Q70NR5lDksSx2UJWe2yh9fhWYcc=";
+    src = fetchurl {
+      url = "https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/snapshot/linux-6.8.y.tar.gz";
+      hash = "sha256-DquFdLIV3vw0/U7xExFKFFwb53TNaopJezoSfdNUm/A=";
     };
     # Remove device tree overlays with some incorrect "remote-endpoint" nodes.
     # They are strings, but should be phandles. Otherwise, it fails to compile
-    postPatch = ''
-      rm \
-        nvidia/platform/t19x/galen/kernel-dts/tegra194-p2822-camera-imx185-overlay.dts \
-        nvidia/platform/t19x/galen/kernel-dts/tegra194-p2822-camera-dual-imx274-overlay.dts \
-        nvidia/platform/t23x/concord/kernel-dts/tegra234-p3737-camera-imx185-overlay.dts \
-        nvidia/platform/t23x/concord/kernel-dts/tegra234-p3737-camera-dual-imx274-overlay.dts
-
-      sed -i -e '/imx185-overlay/d' -e '/imx274-overlay/d' \
-        nvidia/platform/t19x/galen/kernel-dts/Makefile \
-        nvidia/platform/t23x/concord/kernel-dts/Makefile
-
-    '' + lib.optionalString realtime ''
-      for p in $(find $PWD/rt-patches -name \*.patch -type f | sort); do
-        echo "Applying $p"
-        patch -s -p1 < $p
-      done
-    '';
+    # postPatch = ''
+    #   rm \
+    #     nvidia/platform/t19x/galen/kernel-dts/tegra194-p2822-camera-imx185-overlay.dts \
+    #     nvidia/platform/t19x/galen/kernel-dts/tegra194-p2822-camera-dual-imx274-overlay.dts \
+    #     nvidia/platform/t23x/concord/kernel-dts/tegra234-p3737-camera-imx185-overlay.dts \
+    #     nvidia/platform/t23x/concord/kernel-dts/tegra234-p3737-camera-dual-imx274-overlay.dts
+    #
+    #   sed -i -e '/imx185-overlay/d' -e '/imx274-overlay/d' \
+    #     nvidia/platform/t19x/galen/kernel-dts/Makefile \
+    #     nvidia/platform/t23x/concord/kernel-dts/Makefile
+    #
+    # '' + lib.optionalString realtime ''
+    #   for p in $(find $PWD/rt-patches -name \*.patch -type f | sort); do
+    #     echo "Applying $p"
+    #     patch -s -p1 < $p
+    #   done
+    # '';
   };
   autoModules = false;
   features = { }; # TODO: Why is this needed in nixpkgs master (but not NixOS 22.05)?
