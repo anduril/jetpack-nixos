@@ -103,6 +103,7 @@ let
   kernel = callPackage ./kernel { inherit (l4t) l4t-xusb-firmware; kernelPatches = [ ]; };
   kernelPackagesOverlay = self: super: {
     nvidia-display-driver = self.callPackage ./kernel/display-driver.nix { inherit gitRepos l4tVersion; };
+    nvidia-oot = self.callPackage ./kernel/nvidia-oot.nix { inherit gitRepos l4tVersion; };
   };
   kernelPackages = (pkgs.linuxPackagesFor kernel).extend kernelPackagesOverlay;
 

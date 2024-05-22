@@ -64,23 +64,6 @@ pkgsAarch64.buildLinux (args // {
       '';
     }
 
-    # Fix "FAILED: resolved symbol udp_sock"
-    # This is caused by having multiple structs of the same name in the BTF output.
-    # For example, `bpftool btf dump file vmlinux | grep "STRUCT 'udp_sock'"`
-    #   [507] STRUCT 'file' size=256 vlen=22
-    #   [121957] STRUCT 'file' size=256 vlen=22
-    # Without this patch, resolve_btfids doesn't handle this case and
-    # miscounts, leading to the failure. The underlying cause of why we have
-    # multiple structs of the same name is still unresolved as of 2023-07-29
-    { patch = ./0006-tools-resolve_btfids-Warn-when-having-multiple-IDs-f.patch; }
-
-    # Fix Ethernet "downshifting" (e.g.1000Base-T -> 100Base-T) with realtek
-    # PHY used on Xavier NX
-    { patch = ./0007-net-phy-realtek-read-actual-speed-on-rtl8211f-to-det.patch; }
-
-    # Lower priority of tegra-se crypto modules since they're slow and flaky
-    { patch = ./0008-Lower-priority-of-tegra-se-crypto.patch; }
-
   ] ++ kernelPatches;
 
   structuredExtraConfig = with lib.kernel; {
