@@ -124,7 +124,7 @@ in
     '';
 
     # For Orin. 
-    boot.extraModulePackages = [ config.boot.kernelPackages.nvidia-display-driver config.boot.kernelPackages.nvidia-oot ];
+    boot.extraModulePackages = with config.boot.kernelPackages; [ nvidia-oot nvgpu nvidia-display-driver  ];
 
     hardware.firmware = with pkgs.nvidia-jetpack; [
       l4t-firmware
