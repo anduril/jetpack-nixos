@@ -30,7 +30,7 @@ let
 
   src = fetchurl {
     url = with lib.versions; "https://developer.download.nvidia.com/embedded/L4T/r${major l4tVersion}_Release_v${minor l4tVersion}.${patch l4tVersion}/release/Jetson_Linux_R${l4tVersion}_aarch64.tbz2";
-    sha256 = "sha256-R2kjdfTR+eGy34u0iztVVG4L/hYQVRvar+LGLUSkYFI=";
+    sha256 = "sha256-tGVlQIMedLkR4lBtLFZ8uxRv3dWUK2dfgML2ENakD0M=";
   };
 
   sourceInfo = import ./sourceinfo { inherit lib fetchurl fetchgit l4tVersion; };
