@@ -26,7 +26,7 @@ pkgsAarch64.buildLinux (args // {
   src = pkgs.applyPatches {
     src = fetchurl {
       url = "https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/snapshot/linux-6.8.y.tar.gz";
-      hash = "sha256-DquFdLIV3vw0/U7xExFKFFwb53TNaopJezoSfdNUm/A=";
+      hash = "sha256-GQMs2n5QqkKMZw3NEQnlpD4GMCSctclFzk7s67CQUgU";
     };
     # Remove device tree overlays with some incorrect "remote-endpoint" nodes.
     # They are strings, but should be phandles. Otherwise, it fails to compile
