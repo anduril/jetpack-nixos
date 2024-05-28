@@ -16,7 +16,7 @@ let
   pkgsAarch64 = if isNative then pkgs else pkgs.pkgsCross.aarch64-multiplatform;
 in
 pkgsAarch64.buildLinux (args // {
-  version = "6.8.10" + lib.optionalString realtime "-rt96";
+  version = "6.8.11" + lib.optionalString realtime "-rt96";
   extraMeta.branch = "6.8";
 
   # defconfig = "defconfig";
