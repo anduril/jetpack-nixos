@@ -97,7 +97,7 @@ lib.mkMerge [{
         # We don't flash the sdmmc with kernel/initrd/etc at all. Just let it be a
         # regular NixOS machine instead of having some weird partition structure.
         #partitionTemplate = mkDefault "${pkgs.nvidia-jetpack.bspSrc}/bootloader/t186ref/cfg/flash_t234_qspi.xml";
-        partitionTemplate = mkDefault "${pkgs.nvidia-jetpack.flash-tools}/bootloader/t186ref/cfg/flash_t234_qspi.xml";
+        partitionTemplate = mkDefault "${pkgs.nvidia-jetpack.flash-tools}/bootloader/generic/cfg/flash_t234_qspi.xml";
       })
 
       (mkIf (cfg.som == "orin-agx-industrial") {

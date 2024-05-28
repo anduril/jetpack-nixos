@@ -310,10 +310,11 @@ let
 
 
     mkdir -p $out/dtbs
-    for filename in ${jetson-edk2-uefi}/DeviceTree/DeviceTree/OUTPUT/*.dtb; do
+   
+    for filename in ${jetson-edk2-uefi}/Build/DeviceTree/OUTPUT/*.dtb; do
       cp $filename $out/dtbs/$(basename "$filename" ".dtb").dtbo
     done
-
+ 
     # Get rid of any string references to source(s)
     nuke-refs $out/uefi_jetson.bin
   '';
