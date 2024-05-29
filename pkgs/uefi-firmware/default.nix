@@ -116,8 +116,8 @@ let
   edk2-bin-pack = fetchFromGitHub {
     owner = "tiiuae";
     repo =  "nv-uefi-build";
-    rev = "2005";
-    hash = "sha256-qPlFIBmq3igrkwU9IncjD8PiCrohQSnIVnC1NV8RhAY=";
+    rev = "main";
+    hash = "sha256-SPmRQUF95OaGF/Dqf9bQyRhNeMg19QqpRb6kMgmlzcg";
   };
 
   edk2-jetson = edk2.overrideAttrs (prev: {
@@ -239,7 +239,7 @@ let
 #         patchShebangs ./
 
 
-         mkdir ./Build && tar xzvf ${edk2-bin-pack}/nv-efi-bin-200524.tgz -C ./Build
+         mkdir ./Build && tar xzvf ${edk2-bin-pack}/nv-efi-bin-270524.tgz -C ./Build
 
 
         runHook postUnpack
