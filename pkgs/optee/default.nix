@@ -88,6 +88,7 @@ let
         substituteInPlace optee/optee_os/core/pta/tegra/jetson_user_key_pta.c \
           --replace '@@fvForEKB@@' "${fvToArr fvForEKB}" \
           --replace '@@fvForSSK@@' "${fvToArr fvForSSK}"
+         sed -i '/Set the default log level to INFO/{N;d;}'  optee/optee_os/core/arch/arm/plat-tegra/conf.mk
       '';
       nativeBuildInputs = [
         dtc
