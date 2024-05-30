@@ -63,7 +63,23 @@ pkgsAarch64.buildLinux (args // {
    #   '';
    # }
 
-  ] ++ kernelPatches;
+
+    # Fix Ethernet "downshifting" (e.g.1000Base-T -> 100Base-T) with realtek
+    # PHY used on Xavier NX
+    # { patch = ./0007-net-phy-realtek-read-actual-speed-on-rtl8211f-to-det.patch; }
+
+    # Lower priority of tegra-se crypto modules since they're slow and flaky
+    # { patch = ./0008-Lower-priority-of-tegra-se-crypto.patch; }
+
+    # Include patch from linux-stable that (for some reason) appears to fix
+    # random crashes very early in boot process on Xavier NX specifically
+    # Remove when updating to 35.5.0
+    # { patch = ./0009-Revert-random-use-static-branch-for-crng_ready.patch; }
+
+    # Fix an issue building with gcc13
+    # { patch = ./0010-bonding-gcc13-synchronize-bond_-a-t-lb_xmit-types.patch; }
+
+] ++ kernelPatches;
 
   structuredExtraConfig = with lib.kernel; {
     #  MODPOST modules-only.symvers

@@ -217,6 +217,11 @@ let
     '';
   };
 
+  l4t-gstreamer = buildFromDeb {
+    name = "nvidia-l4t-gstreamer";
+    buildInputs = [ l4t-camera l4t-cuda l4t-multimedia wayland ];
+  };
+
   # Most of the stuff in this package doesn't work in NixOS without
   # modification, so don't just include blindly. (for example, in
   # services.udev.packages)
@@ -365,6 +370,7 @@ in
     l4t-cupva
     l4t-firmware
     l4t-gbm
+    l4t-gstreamer
     l4t-init
     l4t-multimedia
     l4t-nvfancontrol

@@ -100,6 +100,8 @@ let
 
   samples = callPackages ./pkgs/samples { inherit debs cudaVersion autoAddOpenGLRunpathHook l4t cudaPackages; };
 
+  tests = callPackages ./pkgs/tests { inherit l4tVersion; };
+
   kernel = callPackage ./kernel { inherit (l4t) l4t-xusb-firmware; kernelPatches = [ ]; };
 
   kernelPackagesOverlay = self: super: {
@@ -167,7 +169,7 @@ rec {
   inherit bspSrc debs gitRepos;
   inherit unpackedDebs unpackedDebsFilenames unpackedGitRepos;
 
-  inherit cudaPackages samples;
+  inherit cudaPackages samples tests;
   inherit flash-tools;
   inherit board-automation; # Allows automation of Orin AGX devkit
   inherit python-jetson; # Allows automation of Xavier AGX devkit

@@ -1,17 +1,18 @@
 { buildGoModule, fetchFromGitHub, fetchpatch }:
 
+let
+  # From https://gitlab.com/nvidia/container-toolkit/container-toolkit/-/blob/03cbf9c6cd26c75afef8a2dd68e0306aace80401/Makefile#L54
+  cliVersionPackage = "github.com/NVIDIA/nvidia-container-toolkit/internal/info";
+in
 buildGoModule rec {
   pname = "nvidia-ctk";
-  version = "1.15.0-rc.4";
+  version = "1.15.0";
 
-  # TODO(jared): pin to v1.15.0 once it is released
-  # We currently rely on some features in an unreleased version of nvidia
-  # container toolkit.
   src = fetchFromGitHub {
     owner = "nvidia";
     repo = "nvidia-container-toolkit";
     rev = "v${version}";
-    hash = "sha256-Ky0mGothIq5BOAHc4ujrMrh1niBYUoSgaRnv30ymjsE=";
+    hash = "sha256-LOglihWESq9Ha+e8yvKBQwiy+v/dxNRxImKuKxPuw/8=";
   };
 
   patches = [
@@ -33,7 +34,14 @@ buildGoModule rec {
 
   vendorHash = null;
 
-  ldflags = [ "-s" "-w" "-extldflags=-Wl,-z,lazy" ];
+
+  ldflags = [
+    "-s"
+    "-w"
+    "-extldflags=-Wl,-z,lazy"
+    "-X"
+    "${cliVersionPackage}.version=${version}"
+  ];
 
   meta.mainProgram = "nvidia-ctk";
 }

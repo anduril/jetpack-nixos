@@ -13,6 +13,7 @@
 - [ ] Ensure the soc variants in `modules/flash-script.nix` match those in `jetson_board_spec.cfg` from BSP
 - [ ] Ensure logic in `ota-utils/ota_helpers.func` matches `nvidia-l4t-init/opt/nvidia/nv-l4t-bootloader-config.sh`
 - [ ] Run `nix build .#genL4tJson` and copy output to `pkgs/containers/l4t.json`
+- [ ] Run `skopeo inspect docker://nvcr.io/nvidia/l4t-jetpack/r${l4tVersion}` to udpate FOD for l4t-jetpack OCI image in `./pkgs/tests/default.nix`
 
 ### Testing
 - [ ] Run `nix flake check`
