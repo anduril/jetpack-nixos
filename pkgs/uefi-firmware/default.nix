@@ -117,7 +117,7 @@ let
     owner = "tiiuae";
     repo =  "nv-uefi-build";
     rev = "main";
-    hash = "sha256-SPmRQUF95OaGF/Dqf9bQyRhNeMg19QqpRb6kMgmlzcg";
+    hash = "sha256-dp/yQSSBcmSj/yzIEg0qgLDHdgcMgL8uX1p8MmSbFX4=";
   };
 
   edk2-jetson = edk2.overrideAttrs (prev: {
@@ -239,7 +239,7 @@ let
 #         patchShebangs ./
 
 
-         mkdir ./Build && tar xzvf ${edk2-bin-pack}/nv-efi-bin-270524.tgz -C ./Build
+         mkdir ./Build && tar xzvf ${edk2-bin-pack}/nv-efi-bin-300524.tgz -C ./Build
 
 
         runHook postUnpack
@@ -300,23 +300,24 @@ let
 #    python3 ${edk2-nvidia}/Silicon/NVIDIA/Tools/FormatUefiBinary.py \
 #      ${jetson-edk2-uefi}/FV/UEFI_NS.Fv \
 #      $out/uefi_jetson.bin
-     python3 ${jetson-edk2-uefi}/Build/FormatUefiBinary.py ${jetson-edk2-uefi}/Build/UEFI_NS.Fv $out/uefi_jetson.bin
+      cp ${jetson-edk2-uefi}/Build/uefi_Jetson_DEBUG.bin $out/uefi_jetson.bin
 
 
 #    python3 ${edk2-nvidia}/Silicon/NVIDIA/Tools/FormatUefiBinary.py \
 #      ${jetson-edk2-uefi}/AARCH64/L4TLauncher.efi \
 #      $out/L4TLauncher.efi
-     python3 ${jetson-edk2-uefi}/Build/FormatUefiBinary.py ${jetson-edk2-uefi}/Build/L4TLauncher.efi $out/L4TLauncher.efi
+     cp ${jetson-edk2-uefi}/Build/BOOTAA64_Jetson_DEBUG.efi $out/L4TLauncher.efi
 
 
     mkdir -p $out/dtbs
    
-    for filename in ${jetson-edk2-uefi}/Build/DeviceTree/OUTPUT/*.dtb; do
-      cp $filename $out/dtbs/$(basename "$filename" ".dtb").dtbo
-    done
+    #for filename in ${jetson-edk2-uefi}/Build/DeviceTree/OUTPUT/*.dtb; do
+    #  cp $filename $out/dtbs/$(basename "$filename" ".dtb").dtbo
+    #done
+    cp ${jetson-edk2-uefi}/Build/*_DEBUG.dtbo $out/
  
     # Get rid of any string references to source(s)
-    nuke-refs $out/uefi_jetson.bin
+    #nuke-refs $out/uefi_jetson.bin
   '';
 in
 {
