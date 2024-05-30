@@ -342,7 +342,7 @@ let
     buildInputs = [ stdenv.cc.cc.lib l4t-core ];
     # Remove some utilities that bring in too many libraries
     postPatch = ''
-      rm bin/nv_macsec_wpa_supplicant
+      rm sbin/nv_wpa_supplicant_wifi
     '';
   };
 

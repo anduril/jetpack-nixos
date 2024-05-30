@@ -42,7 +42,7 @@ let
 
   tosArgs = {
     inherit socType;
-    inherit (cfg.firmware.optee) taPublicKeyFile;
+    inherit (cfg.firmware.optee) taPublicKeyFile fvForEKB fvForSSK useTegraTestKeys;
     opteePatches = cfg.firmware.optee.patches;
     extraMakeFlags = cfg.firmware.optee.extraMakeFlags;
   };

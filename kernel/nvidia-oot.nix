@@ -7,11 +7,10 @@
 }:
 
 stdenv.mkDerivation rec {
-  pname = "nvidia-display-driver";
+  pname = "nvidia-oot";
   version = "jetson_${l4tVersion}";
 
-#  src = gitRepos."tegra/kernel-src/nv-kernel-display-driver";
-   src = gitRepos."nvdisplay";
+   src = gitRepos."nvidia-oot";
 
   # setSourceRoot = "sourceRoot=$(echo */nvdisplay)";
 
@@ -21,12 +20,18 @@ stdenv.mkDerivation rec {
     "SYSSRC=${kernel.dev}/lib/modules/${kernel.modDirVersion}/source"
     "SYSOUT=${kernel.dev}/lib/modules/${kernel.modDirVersion}/build"
     "MODLIB=$(out)/lib/modules/${kernel.modDirVersion}"
+    "O=${kernel.dev}/lib/modules/${kernel.modDirVersion}/source"
   ] ++ lib.optionals ((stdenv.buildPlatform != stdenv.hostPlatform) && stdenv.hostPlatform.isAarch64) [
     "TARGET_ARCH=aarch64"
   ];
 
   # Avoid an error in modpost: "__stack_chk_guard" [.../nvidia.ko] undefined
-  NIX_CFLAGS_COMPILE = "-fno-stack-protector";
+  # NIX_CFLAGS_COMPILE = "-fno-stack-protector";
+
+    postUnpack = ''
+    sourceRoot="$(pwd -P)"
+    ls -lR
+    '';
 
   installTargets = [ "modules_install" ];
   enableParallelBuilding = true;

@@ -45,7 +45,7 @@ let
       perl
     ];
 
-    patches = [ ./flash-tools.patch ];
+#    patches = [ ./flash-tools.patch ];
 
     postPatch = ''
       # Needed in Jetpack 5

@@ -21,16 +21,16 @@ let
 
   pkgsAarch64 = if pkgs.stdenv.buildPlatform.isAarch64 then pkgs else pkgs.pkgsCross.aarch64-multiplatform;
 
-  jetpackVersion = "5.1.2";
-  l4tVersion = "35.4.1";
-  cudaVersion = "11.4";
+  jetpackVersion = "5.1.3";
+  l4tVersion = "36.3.0";
+  cudaVersion = "12.2.1";
 
   # https://developer.nvidia.com/embedded/jetson-linux-archive
   # https://repo.download.nvidia.com/jetson/
 
   src = fetchurl {
     url = with lib.versions; "https://developer.download.nvidia.com/embedded/L4T/r${major l4tVersion}_Release_v${minor l4tVersion}.${patch l4tVersion}/release/Jetson_Linux_R${l4tVersion}_aarch64.tbz2";
-    sha256 = "sha256-crdaDH+jv270GuBmNLtnw4qSaCFV0SBgJtvuSmuaAW8=";
+    sha256 = "sha256-tGVlQIMedLkR4lBtLFZ8uxRv3dWUK2dfgML2ENakD0M=";
   };
 
   sourceInfo = import ./sourceinfo { inherit lib fetchurl fetchgit l4tVersion; };
@@ -76,6 +76,8 @@ let
     inherit bspSrc gitRepos l4tVersion;
   }) buildTOS buildOpteeTaDevKit opteeClient;
 
+  optee-gen-ekb = pkgs.callPackage ./pkgs/optee-gen-ekb { inherit opteeClient; };
+
   flash-tools = callPackage ./pkgs/flash-tools {
     inherit bspSrc l4tVersion;
   };
@@ -85,6 +87,9 @@ let
   };
 
   python-jetson = python3.pkgs.callPackage ./pkgs/python-jetson { };
+
+  #python-edk2-pytool-extensions = python3.pkgs.callPackage ./updated-packages/edk2-pytool-extensions { };
+  #python-edk2-basetools = python3.pkgs.callPackage ./updated-packages/edk2-basetools { };
 
   tegra-eeprom-tool = pkgsAarch64.callPackage ./pkgs/tegra-eeprom-tool { };
   tegra-eeprom-tool-static = pkgsAarch64.pkgsStatic.callPackage ./pkgs/tegra-eeprom-tool { };
@@ -98,8 +103,11 @@ let
   tests = callPackages ./pkgs/tests { inherit l4tVersion; };
 
   kernel = callPackage ./kernel { inherit (l4t) l4t-xusb-firmware; kernelPatches = [ ]; };
+
   kernelPackagesOverlay = self: super: {
     nvidia-display-driver = self.callPackage ./kernel/display-driver.nix { inherit gitRepos l4tVersion; };
+    nvidia-oot = self.callPackage ./kernel/nvidia-oot.nix { inherit gitRepos l4tVersion; };
+    nvgpu = self.callPackage ./kernel/nvgpu.nix { inherit gitRepos l4tVersion; };
   };
   kernelPackages = (pkgs.linuxPackagesFor kernel).extend kernelPackagesOverlay;
 
@@ -176,6 +184,7 @@ rec {
   inherit otaUtils;
 
   inherit opteeClient;
+  inherit optee-gen-ekb;
 
   # TODO: Source packages. source_sync.sh from bspSrc
   # GST plugins

@@ -1,25 +1,12 @@
-{ buildPythonPackage
-, fetchFromGitHub
-, fetchPypi
-, pyftdi
+{
+  lib,
+  buildPythonPackage,
+  fetchpatch2,
+  fetchPypi,
+  poetry-core,
 }:
 
-buildPythonPackage {
-  pname = "python-jetson";
-  version = "0.0.0";
-  src = fetchFromGitHub {
-    owner = "NVIDIA";
-    repo = "python-jetson";
-    rev = "7cf586612820b8c81a17168541eb8bfc45b010de";
-    sha256 = "sha256-APlDliwGqlhWChJESyCYyI2N9/yzlRdp1qwvfqlRjKM=";
-  };
-
-  propagatedBuildInputs = [ pyftdi ];
-
-  doCheck = false;
-}
-
-buildPythonPackage {
+buildPythonPackage: rec {
   version = "0.1.48";
   pname = "edk2-basetools";
   format = "pyproject";
@@ -48,10 +35,9 @@ buildPythonPackage {
   #  pyserial
   #];
 
-# meta = with pkgs.lib; {
-#    description = "Python extension library for edk2 building";
-#    homepage = "https://github.com/";
-#    license = licenses.asl20;
-#  };
+  meta = with pkgs.lib; {
+    description = "Python extension library for edk2 building";
+    homepage = "https://github.com/";
+    license = licenses.asl20;
+  };
 }
-
