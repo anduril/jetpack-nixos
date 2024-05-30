@@ -180,8 +180,8 @@ let
         "-C arm-trusted-firmware"
         "BUILD_BASE=$(PWD)/build"
         "CROSS_COMPILE=${stdenv.cc.targetPrefix}"
-        "DEBUG=0"
-        "LOG_LEVEL=20"
+        "DEBUG=1"
+        "LOG_LEVEL=50"
         "PLAT=tegra"
         "SPD=opteed"
         "TARGET_SOC=${socType}"
@@ -198,7 +198,8 @@ let
         runHook preInstall
 
         mkdir -p $out
-        cp ./build/tegra/${socType}/release/bl31.bin $out/bl31.bin
+        #cp ./build/tegra/${socType}/release/bl31.bin $out/bl31.bin
+        cp ./build/tegra/${socType}/debug/bl31.bin $out/bl31.bin
 
         runHook postInstall
       '';

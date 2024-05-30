@@ -203,7 +203,9 @@ in
 
           extraMakeFlags = mkOption {
             type = types.listOf types.str;
-            default = [ ];
+            default = [ 
+             "CFG_TEE_CORE_LOG_LEVEL=2"
+            ];
           };
 
           taPublicKeyFile = mkOption {
