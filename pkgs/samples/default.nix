@@ -4,7 +4,6 @@
 , dpkg
 , pkg-config
 , autoAddOpenGLRunpathHook
-, freeimage
 , cmake
 , opencv
 , opencv2
@@ -86,7 +85,7 @@ let
     sourceRoot = "source/usr/src/cudnn_samples_v8";
 
     nativeBuildInputs = [ dpkg autoAddOpenGLRunpathHook ];
-    buildInputs = with cudaPackages; [ cudatoolkit cudnn freeimage ];
+    buildInputs = with cudaPackages; [ cudatoolkit cudnn ];
 
     buildFlags = [
       "CUDA_PATH=${cudaPackages.cudatoolkit}"
@@ -96,10 +95,11 @@ let
 
     enableParallelBuilding = true;
 
+    # Disabled mnistCUDNN since it requires freeimage which is marked vulnerable in upstream as of 24.05
     buildPhase = ''
       runHook preBuild
 
-      for dirname in conv_sample mnistCUDNN multiHeadAttention RNN_v8.0; do
+      for dirname in conv_sample multiHeadAttention RNN_v8.0; do
         pushd "$dirname"
         make $buildFlags
         popd 2>/dev/null
@@ -113,7 +113,6 @@ let
 
       install -Dm755 -t $out/bin \
         conv_sample/conv_sample \
-        mnistCUDNN/mnistCUDNN \
         multiHeadAttention/multiHeadAttention \
         RNN_v8.0/RNN
 
