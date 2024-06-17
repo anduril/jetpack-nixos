@@ -187,6 +187,9 @@ let
         "SPD=opteed"
         "TARGET_SOC=${socType}"
         "V=0"
+        "BRANCH_PROTECTION=3"
+        "ARM_ARCH_MINOR=3"
+
         # binutils 2.39 regression
         # `warning: /build/source/build/rk3399/release/bl31/bl31.elf has a LOAD segment with RWX permissions`
         # See also: https://developer.trustedfirmware.org/T996
