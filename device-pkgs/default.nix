@@ -99,9 +99,9 @@ let
         export BOARDSKU=${variant.boardsku}
         export FAB=${variant.fab}
         export BOARDREV=${variant.boardrev}
-	${lib.optionalString (variant.chipsku != null) ''
+        ${lib.optionalString (variant.chipsku != null) ''
         export CHIP_SKU=${toString variant.chipsku}
-	''}
+        ''}
         export CHIPREV=${variant.chiprev}
 
         ${cfg.firmware.secureBoot.preSignCommands}
@@ -215,33 +215,34 @@ let
     }
     (mkFlashScript {
       flashCommands = cfg.firmware.secureBoot.preSignCommands + lib.concatMapStringsSep "\n"
-        (v: with v; ''
+        (v: with v;
+        ''
           BOARDID=${boardid} BOARDSKU=${boardsku} FAB=${fab} BOARDREV=${boardrev} FUSELEVEL=${fuselevel} CHIPREV=${chiprev} ${lib.optionalString (chipsku != null) "CHIP_SKU=${builtins.toString chipsku}"} ./flash.sh ${lib.optionalString (partitionTemplate != null) "-c flash.xml"} --no-root-check --no-flash --sign ${builtins.toString flashArgs}
 
-	  # TODO: ideally we would add chipsku to the boardspec for flashFromDevice to match against but
-	  # tegra-boardspec does not read the chipsku from EEPROM so we cannot match against it.
-	  # The CHIP_SKU only determines BPFFILE which is the same within a given SOM family (orin-nx, orin-nano, etc.);
-	  # since we already seperate Orin NX and Orin Nano, we don't have to worry about using incorrect BPFFILE.
-          outdir=$out/${boardid}-${fab}-${boardsku}-${boardrev}-${if fuselevel == "fuselevel_production" then "1" else "0"}-${chiprev}--
-          mkdir -p $outdir
+          # TODO: ideally we would add chipsku to the boardspec for flashFromDevice to match against but
+          # tegra-boardspec does not read the chipsku from EEPROM so we cannot match against it.
+          # The CHIP_SKU only determines BPFFILE which is the same within a given SOM family (orin-nx, orin-nano, etc.);
+          # since we already seperate Orin NX and Orin Nano, we don't have to worry about using incorrect BPFFILE.
+            outdir=$out/${boardid}-${fab}-${boardsku}-${boardrev}-${if fuselevel == "fuselevel_production" then "1" else "0"}-${chiprev}--
+            mkdir -p $outdir
 
-          cp -v bootloader/signed/flash.idx $outdir/
+            cp -v bootloader/signed/flash.idx $outdir/
 
-          # Copy files referenced by flash.idx
-          while IFS=", " read -r partnumber partloc start_location partsize partfile partattrs partsha; do
-            if [[ "$partfile" != "" ]]; then
-              if [[ -f "bootloader/signed/$partfile" ]]; then
-                cp -v "bootloader/signed/$partfile" $outdir/
-              elif [[ -f "bootloader/$partfile" ]]; then
-                cp -v "bootloader/$partfile" $outdir/
-              else
-                echo "Unable to find $partfile"
-                exit 1
+            # Copy files referenced by flash.idx
+            while IFS=", " read -r partnumber partloc start_location partsize partfile partattrs partsha; do
+              if [[ "$partfile" != "" ]]; then
+                if [[ -f "bootloader/signed/$partfile" ]]; then
+                  cp -v "bootloader/signed/$partfile" $outdir/
+                elif [[ -f "bootloader/$partfile" ]]; then
+                  cp -v "bootloader/$partfile" $outdir/
+                else
+                  echo "Unable to find $partfile"
+                  exit 1
+                fi
               fi
-            fi
-          done < bootloader/signed/flash.idx
+            done < bootloader/signed/flash.idx
 
-          rm -rf bootloader/signed
+            rm -rf bootloader/signed
         '')
         cfg.firmware.variants;
     });
