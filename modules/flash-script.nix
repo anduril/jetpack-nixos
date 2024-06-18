@@ -261,6 +261,10 @@ in
                 type = types.str;
                 default = "";
               };
+              ramcode = lib.mkOption {
+                type = types.nullOr types.str;
+                default = null;
+              };
             };
           }));
         };
@@ -397,7 +401,7 @@ in
             ];
 
             orin-agx-industrial = [
-              { boardid = "3701"; boardsku = "0008"; fab = "500"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; chipsku = "00:00:00:90"; }
+              { boardid = "3701"; boardsku = "0008"; fab = "300"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; chipsku="00:00:00:90"; ramcode = "4"; }
             ];
 
             orin-nx = [

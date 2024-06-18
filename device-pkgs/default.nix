@@ -60,6 +60,9 @@ let
         export CHIP_SKU=${variant.chipsku}
         ''}
         export CHIPREV=${variant.chiprev}
+        ${lib.optionalString (variant.ramcode != null) ''
+        export RAMCODE=${variant.ramcode}
+        ''}
 
         ${cfg.firmware.secureBoot.preSignCommands}
 
@@ -67,9 +70,6 @@ let
 
         cp -r ./ $out
       '';
-      # TODO: Do we also need these? Set in l4t_create_images_for_kernel_flash.sh
-      # export RAMCODE_ID
-      # export RAMCODE
     in
     import ./flashcmd-script.nix {
       inherit lib;
@@ -151,7 +151,7 @@ let
     (mkFlashScript nvidia-jetpack.flash-tools {
       flashCommands = cfg.firmware.secureBoot.preSignCommands + lib.concatMapStringsSep "\n"
         (v: with v; ''
-          BOARDID=${boardid} BOARDSKU=${boardsku} FAB=${fab} BOARDREV=${boardrev} FUSELEVEL=${fuselevel} CHIPREV=${chiprev} ${lib.optionalString (chipsku != null) "CHIP_SKU=${chipsku}"} ./flash.sh ${lib.optionalString (partitionTemplate != null) "-c flash.xml"} --no-root-check --no-flash --sign ${builtins.toString flashArgs}
+          BOARDID=${boardid} BOARDSKU=${boardsku} FAB=${fab} BOARDREV=${boardrev} FUSELEVEL=${fuselevel} CHIPREV=${chiprev} ${lib.optionalString (chipsku != null) "CHIP_SKU=${chipsku}"} ${lib.optionalString (ramcode != null) "RAMCODE=${ramcode}"} ./flash.sh ${lib.optionalString (partitionTemplate != null) "-c flash.xml"} --no-root-check --no-flash --sign ${builtins.toString flashArgs}
 
           outdir=$out/${boardid}-${fab}-${boardsku}-${boardrev}-${if fuselevel == "fuselevel_production" then "1" else "0"}-${chiprev}--
           mkdir -p $outdir
