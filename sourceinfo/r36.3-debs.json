@@ -797,11 +797,6 @@
       "sha256": "7f6371181d34d5022bbddd5a8a45b9d3742e7036b9704e3eddd72e7d3c100152",
       "version": "36.3.0-20240506102626"
     },
-    "nvidia-l4t-display-kernel": {
-      "filename": "pool/main/n/nvidia-l4t-display-kernel/nvidia-l4t-display-kernel_5.15.136-tegra-36.3.0-20240506102626_arm64.deb",
-      "sha256": "7de6ae5cfb2d9c84bfbcf42f02ed7ca6fad23c8b4300ba62001ffd9f4276e55d",
-      "version": "5.15.136-tegra-36.3.0-20240506102626"
-    },
     "nvidia-l4t-factory-service": {
       "filename": "pool/main/n/nvidia-l4t-factory-service/nvidia-l4t-factory-service_36.3.0-20240506102626_arm64.deb",
       "sha256": "40715cfe327015b20c939fe0b7b9ba020eb578e9af5808fc43574449af5f469a",
@@ -846,31 +841,6 @@
       "filename": "pool/main/n/nvidia-l4t-jetsonpower-gui-tools/nvidia-l4t-jetsonpower-gui-tools_36.3.0-20240506102626_arm64.deb",
       "sha256": "06dcf8741dba2ae04baa010c70fddd91a77ce34ff6a9f545fd3159c4cdf3f6de",
       "version": "36.3.0-20240506102626"
-    },
-    "nvidia-l4t-kernel": {
-      "filename": "pool/main/n/nvidia-l4t-kernel/nvidia-l4t-kernel_5.15.136-tegra-36.3.0-20240506102626_arm64.deb",
-      "sha256": "924f06e0d58d4671d2fb7d5437127316aa24d6babfe8b26b5470cbe9b1f94951",
-      "version": "5.15.136-tegra-36.3.0-20240506102626"
-    },
-    "nvidia-l4t-kernel-dtbs": {
-      "filename": "pool/main/n/nvidia-l4t-kernel-dtbs/nvidia-l4t-kernel-dtbs_5.15.136-tegra-36.3.0-20240506102626_arm64.deb",
-      "sha256": "f738efb2071da07604b8ce230baf68c3039a3542b9091d8112585a468f5312fb",
-      "version": "5.15.136-tegra-36.3.0-20240506102626"
-    },
-    "nvidia-l4t-kernel-headers": {
-      "filename": "pool/main/n/nvidia-l4t-kernel-headers/nvidia-l4t-kernel-headers_5.15.136-tegra-36.3.0-20240506102626_arm64.deb",
-      "sha256": "12568405fdd7eda5f1cb7c14b752e2d1f6f0ef9c796b998764a57acf414587c2",
-      "version": "5.15.136-tegra-36.3.0-20240506102626"
-    },
-    "nvidia-l4t-kernel-oot-headers": {
-      "filename": "pool/main/n/nvidia-l4t-kernel-oot-headers/nvidia-l4t-kernel-oot-headers_5.15.136-tegra-36.3.0-20240506102626_arm64.deb",
-      "sha256": "bd676b40685f5ba2f7f71543b2a8eff8b784f8669bfb1d7eda5f7678dcf63bf7",
-      "version": "5.15.136-tegra-36.3.0-20240506102626"
-    },
-    "nvidia-l4t-kernel-oot-modules": {
-      "filename": "pool/main/n/nvidia-l4t-kernel-oot-modules/nvidia-l4t-kernel-oot-modules_5.15.136-tegra-36.3.0-20240506102626_arm64.deb",
-      "sha256": "7baa0754bd9b8bec68d8d0b9d01a7c44f4a7419d0cc18d9e80ed8a9cc25ae24e",
-      "version": "5.15.136-tegra-36.3.0-20240506102626"
     },
     "nvidia-l4t-multimedia": {
       "filename": "pool/main/n/nvidia-l4t-multimedia/nvidia-l4t-multimedia_36.3.0-20240506102626_arm64.deb",

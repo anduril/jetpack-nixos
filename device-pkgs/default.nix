@@ -56,15 +56,15 @@ let
 
     flash-tools = flash-tools-patched;
 
-    uefi-firmware = uefi-firmware.override ({
-      bootLogo = cfg.firmware.uefi.logo;
-      debugMode = cfg.firmware.uefi.debugMode;
-      errorLevelInfo = cfg.firmware.uefi.errorLevelInfo;
-      edk2NvidiaPatches = cfg.firmware.uefi.edk2NvidiaPatches;
-      edk2UefiPatches = cfg.firmware.uefi.edk2UefiPatches;
-    } // lib.optionalAttrs cfg.firmware.uefi.capsuleAuthentication.enable {
-      inherit (cfg.firmware.uefi.capsuleAuthentication) trustedPublicCertPemFile;
-    });
+    #uefi-firmware = uefi-firmware.override ({
+    #  bootLogo = cfg.firmware.uefi.logo;
+    #  debugMode = cfg.firmware.uefi.debugMode;
+    #  errorLevelInfo = cfg.firmware.uefi.errorLevelInfo;
+    #  edk2NvidiaPatches = cfg.firmware.uefi.edk2NvidiaPatches;
+    #  edk2UefiPatches = cfg.firmware.uefi.edk2UefiPatches;
+    #} // lib.optionalAttrs cfg.firmware.uefi.capsuleAuthentication.enable {
+    #  inherit (cfg.firmware.uefi.capsuleAuthentication) trustedPublicCertPemFile;
+    #});
 
     inherit socType;
 
@@ -111,6 +111,7 @@ let
       # export RAMCODE_ID
       # export RAMCODE
     in
+    builtins.trace "-----------------------------MKFLASHSCRIPT------------------------------------" null
     import ./flashcmd-script.nix {
       inherit lib;
       inherit gcc dtc;
@@ -133,6 +134,11 @@ let
     preFlashCommands = ''
       cp ${kernelPath} kernel/Image
       cp ${initrdPath}/initrd bootloader/l4t_initrd.img
+       
+
+      echo @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+      echo ${kernelPath} ${initrdPath}
+      echo @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
       export CMDLINE="${builtins.toString kernelCmdline}"
       export INITRD_IN_BOOTIMG="yes"
@@ -192,6 +198,8 @@ let
         ];
       };
     in
+    builtins.trace modulesClosure null
+    builtins.trace "-----------------------------MKINITRDSCRIPT------------------------------------" null
     writeShellApplication {
       name = "initrd-flash-${hostName}";
       text = ''
@@ -203,6 +211,12 @@ let
         echo
         echo "Jetson device should now be flashing and will reboot when complete."
         echo "You may watch the progress of this on the device's serial port"
+        echo "#######################################################################"
+        echo "#######################################################################"
+        echo " ${config.boot.kernelPackages.kernel}"
+        echo "#######################################################################"
+        echo "#######################################################################"
+
       '';
     };
 

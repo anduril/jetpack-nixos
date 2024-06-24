@@ -16,7 +16,7 @@ let
   pkgsAarch64 = if isNative then pkgs else pkgs.pkgsCross.aarch64-multiplatform;
 in
 pkgsAarch64.buildLinux (args // {
-  version = "6.8.11" + lib.optionalString realtime "-rt96";
+  version = "6.8.12" + lib.optionalString realtime "-rt96";
   extraMeta.branch = "6.8";
 
   # defconfig = "defconfig";
@@ -26,7 +26,7 @@ pkgsAarch64.buildLinux (args // {
   src = pkgs.applyPatches {
     src = fetchurl {
       url = "https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/snapshot/linux-6.8.y.tar.gz";
-      hash = "sha256-GQMs2n5QqkKMZw3NEQnlpD4GMCSctclFzk7s67CQUgU";
+      hash = "sha256-AvGkgpMPUcZ953eoU/joJT5AvPYA4heEP7gpewzdjy8";
     };
     # Remove device tree overlays with some incorrect "remote-endpoint" nodes.
     # They are strings, but should be phandles. Otherwise, it fails to compile
