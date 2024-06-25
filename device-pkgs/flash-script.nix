@@ -17,7 +17,7 @@
   eksFile ? null
 , # Additional DTB overlays to use during device flashing
   additionalDtbOverlays ? [ ]
-,
+, kernel
 }:
 ''
   set -euo pipefail
@@ -62,9 +62,15 @@
   cp ${eksFile} bootloader/eks_${socType}.img
   ''}
 
+  echo THE KERNEL IS ${kernel}
+  cp ${kernel}/Image  bootloader/Image
+  cp ${kernel}/Image  kernel/Image
+
   ${preFlashCommands}
 
   chmod -R u+w .
+  chmod a-w bootloader/Image
+  chmod a-w kernel/Image
 
 '' + (if (flashCommands != "") then ''
   ${flashCommands}

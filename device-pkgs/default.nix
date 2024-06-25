@@ -17,6 +17,7 @@
 , dtc
 , l4tVersion
 , pkgsAarch64
+, kernel
 ,
 }:
 
@@ -72,6 +73,9 @@ let
     eksFile = cfg.firmware.eksFile;
 
     dtbsDir = config.hardware.deviceTree.package;
+   
+    inherit kernel;
+
   } // args);
 
   # This produces a script where we have already called the ./flash.sh script
@@ -103,8 +107,12 @@ let
 
         ${cfg.firmware.secureBoot.preSignCommands}
 
+        
+        echo 1243321421243894328219387421974921874793218749321874932184732198472198472139483218473219487
+        echo ${mkFlashScript (args // { flashArgs = [ "--no-root-check" "--no-flash" ] ++ (args.flashArgs or flashArgs); }) }
         ${mkFlashScript (args // { flashArgs = [ "--no-root-check" "--no-flash" ] ++ (args.flashArgs or flashArgs); }) }
 
+     
         cp -r ./ $out
       '';
       # TODO: Do we also need these? Set in l4t_create_images_for_kernel_flash.sh
@@ -132,12 +140,12 @@ let
   # Produces a script that boots a given kernel, initrd, and cmdline using the RCM boot method
   mkRcmBootScript = { kernelPath, initrdPath, kernelCmdline }: mkFlashScriptAuto {
     preFlashCommands = ''
-      cp ${kernelPath} kernel/Image
+      cp ${kernel}/Image kernel/Image
       cp ${initrdPath}/initrd bootloader/l4t_initrd.img
        
 
       echo @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-      echo ${kernelPath} ${initrdPath}
+      echo ${kernel} ${initrdPath}
       echo @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
       export CMDLINE="${builtins.toString kernelCmdline}"
@@ -227,6 +235,7 @@ let
     (mkFlashScript {
       flashCommands = cfg.firmware.secureBoot.preSignCommands + lib.concatMapStringsSep "\n"
         (v: with v; ''
+          echo SIGNEDSIGNEDSIGNEDSIGNEDSIGNEDSIGNEDSIGNEDSIGNEDSIGNEDSIGNEDSIGNEDSIGNEDSIGNED
           BOARDID=${boardid} BOARDSKU=${boardsku} FAB=${fab} BOARDREV=${boardrev} FUSELEVEL=${fuselevel} CHIPREV=${chiprev} ./flash.sh ${lib.optionalString (partitionTemplate != null) "-c flash.xml"} --no-root-check --no-flash --sign ${builtins.toString flashArgs}
 
           outdir=$out/${boardid}-${fab}-${boardsku}-${boardrev}-${if fuselevel == "fuselevel_production" then "1" else "0"}-${chiprev}--
