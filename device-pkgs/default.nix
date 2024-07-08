@@ -206,8 +206,8 @@ let
         ];
       };
     in
-    builtins.trace modulesClosure null
-    builtins.trace "-----------------------------MKINITRDSCRIPT------------------------------------" null
+    # builtins.trace modulesClosure null
+    # builtins.trace "-----------------------------MKINITRDSCRIPT------------------------------------" null
     writeShellApplication {
       name = "initrd-flash-${hostName}";
       text = ''

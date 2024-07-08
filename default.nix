@@ -110,6 +110,7 @@ let
     nvgpu = self.callPackage ./kernel/nvgpu.nix { inherit gitRepos l4tVersion; };
   };
   kernelPackages = (pkgs.linuxPackagesFor kernel).extend kernelPackagesOverlay;
+  nvidia-oot = callPackage ./kernel/nvidia-oot.nix { inherit kernel gitRepos l4tVersion; };
 
   rtkernel = callPackage ./kernel { inherit (l4t) l4t-xusb-firmware; kernelPatches = [ ]; realtime = true; };
   rtkernelPackages = (pkgs.linuxPackagesFor rtkernel).extend kernelPackagesOverlay;
@@ -185,6 +186,7 @@ rec {
 
   inherit opteeClient;
   inherit optee-gen-ekb;
+  inherit nvidia-oot;
 
   # TODO: Source packages. source_sync.sh from bspSrc
   # GST plugins

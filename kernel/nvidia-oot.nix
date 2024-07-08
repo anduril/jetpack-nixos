@@ -12,7 +12,8 @@ stdenv.mkDerivation rec {
 
    src = gitRepos."nvidia-oot";
 
-  # setSourceRoot = "sourceRoot=$(echo */nvdisplay)";
+  #setSourceRoot = "sourceRoot=$(echo /build/linux-nv-oot-*)";
+  sourceRoot="linux-nv-oot-564ce2a";
 
   nativeBuildInputs = kernel.moduleBuildDependencies;
 
@@ -29,9 +30,15 @@ stdenv.mkDerivation rec {
   # NIX_CFLAGS_COMPILE = "-fno-stack-protector";
 
     postUnpack = ''
-    sourceRoot="$(pwd -P)"
-    ls -lR
+    cd linux-nv-oot-564ce2a
+    sourceRoot=$(pwd -P)
+    pwd
+    ls -al
+    echo $sourceRoot
     '';
+    preBuildPhase = ''
+    echo prebuildphase 
+    '';   
 
   installTargets = [ "modules_install" ];
   enableParallelBuilding = true;
