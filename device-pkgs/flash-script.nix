@@ -1,4 +1,3 @@
-flash-tools:
 { lib
 , preFlashCommands ? ""
 , flashCommands ? ""
@@ -17,6 +16,8 @@ flash-tools:
   eksFile ? null
 , # Additional DTB overlays to use during device flashing
   additionalDtbOverlays ? [ ]
+,
+  flash-tools
 }:
 (''
   set -euo pipefail
