@@ -16,8 +16,7 @@
   eksFile ? null
 , # Additional DTB overlays to use during device flashing
   additionalDtbOverlays ? [ ]
-,
-  flash-tools
+, flash-tools
 }:
 (''
   set -euo pipefail
