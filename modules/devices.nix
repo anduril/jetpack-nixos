@@ -38,7 +38,7 @@ let
         if [[ -f $(realpath ${pkgs.linux-firmware}/lib/firmware/${firmwarePath}) ]]; then
           install -Dm0444 \
             --target-directory=$(dirname $out/lib/firmware/${firmwarePath}) \
-            $(realpath ${pkgs.linux-firmware}/lib/firmware/${firmwarePath})
+            ${pkgs.linux-firmware}/lib/firmware/${firmwarePath}
         else
           echo "WARNING: lib/firmware/${firmwarePath} does not exist in linux-firmware ${pkgs.linux-firmware.version}"
         fi
