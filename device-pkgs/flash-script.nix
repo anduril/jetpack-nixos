@@ -1,4 +1,3 @@
-flash-tools:
 { lib
 , preFlashCommands ? ""
 , flashCommands ? ""
@@ -18,6 +17,7 @@ flash-tools:
 , # Additional DTB overlays to use during device flashing
   additionalDtbOverlays ? [ ]
 , kernel
+, flash-tools
 }:
 (''
   set -euo pipefail

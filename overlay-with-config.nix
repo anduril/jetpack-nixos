@@ -97,8 +97,8 @@ final: prev: (
       # you give it, so if your flash-tools is for an x86_64-linux
       # hostPlatform, then mkFlashScript will generate script commands that
       # will need to be ran on x86_64-linux.
-      mkFlashScript = flash-tools: args: (import ./device-pkgs/flash-script.nix flash-tools ) ({
-        inherit lib;
+      mkFlashScript = flash-tools: args: import ./device-pkgs/flash-script.nix ({
+        inherit lib flash-tools;
         inherit (cfg.firmware) eksFile;
         inherit (cfg.flashScriptOverrides) additionalDtbOverlays flashArgs partitionTemplate;
         inherit (finalJetpack) tosImage socType uefi-firmware;
