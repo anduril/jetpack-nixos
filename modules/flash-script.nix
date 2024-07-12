@@ -409,6 +409,9 @@ in
               { boardid = "2888"; boardsku = "0004"; fab = "400"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = "2"; } # 32GB
               { boardid = "2888"; boardsku = "0005"; fab = "402"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = "2"; } # 64GB
             ];
+            xavier-agx-industrial = [
+              { boardid = "2888"; boardsku = "0008"; fab = "600"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = "2"; ramcode = "1"; }
+            ];
             xavier-nx = [
               # Dev variant
               { boardid = "3668"; boardsku = "0000"; fab = "100"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = "2"; }

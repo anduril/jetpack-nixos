@@ -70,6 +70,7 @@ in
           "orin-nx"
           "orin-nano"
           "xavier-agx"
+          "xavier-agx-industrial"
           "xavier-nx"
           "xavier-nx-emmc"
         ];
