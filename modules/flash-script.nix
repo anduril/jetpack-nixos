@@ -60,7 +60,7 @@ in
 
           edk2NvidiaPatches = mkOption {
             type = types.listOf types.path;
-            description = lib.mdDoc ''
+            description = ''
               Patches that will be applied to the edk2-nvidia repo
             '';
             default = [ ];
@@ -68,7 +68,7 @@ in
 
           edk2UefiPatches = mkOption {
             type = types.listOf types.path;
-            description = lib.mdDoc ''
+            description = ''
               Patches that will be applied to the nvidia edk2 repo which is nvidia's fork of the upstream edk2 repo
             '';
             default = [ ];
@@ -78,19 +78,19 @@ in
             enrollDefaultKeys = lib.mkEnableOption "enroll default UEFI keys";
             defaultPkEslFile = mkOption {
               type = lib.types.path;
-              description = lib.mdDoc ''
+              description = ''
                 The path to the UEFI PK EFI Signature List (ESL).
               '';
             };
             defaultKekEslFile = mkOption {
               type = lib.types.path;
-              description = lib.mdDoc ''
+              description = ''
                 The path to the UEFI KEK Signature List (ESL).
               '';
             };
             defaultDbEslFile = mkOption {
               type = lib.types.path;
-              description = lib.mdDoc ''
+              description = ''
                 The path to the UEFI DB Signature List (ESL).
               '';
             };
@@ -101,7 +101,7 @@ in
 
             trustedPublicCertPemFile = mkOption {
               type = lib.types.path;
-              description = lib.mdDoc ''
+              description = ''
                 The path to the public certificate (in DER format) that will be
                 used for validating capsule updates. Capsule files must be signed
                 with a private key in the same certificate chain. This file will
@@ -111,7 +111,7 @@ in
 
             otherPublicCertPemFile = mkOption {
               type = lib.types.path;
-              description = lib.mdDoc ''
+              description = ''
                 The path to another public certificate (in PEM format) that will
                 be used when signing capsule payloads. This can be the same as
                 `trustedPublicCertPem`, but it can also be an intermediate
@@ -121,7 +121,7 @@ in
 
             signerPrivateCertPemFile = mkOption {
               type = lib.types.path;
-              description = lib.mdDoc ''
+              description = ''
                 The path to the private certificate (in PEM format) that will be
                 used for signing capsule payloads.
               '';
@@ -130,7 +130,7 @@ in
             requiredSystemFeatures = lib.mkOption {
               type = types.listOf types.str;
               default = [ ];
-              description = lib.mdDoc ''
+              description = ''
                 Additional `requiredSystemFeatures` to add to derivations which
                 make use of capsule authentication private keys.
               '';
@@ -151,7 +151,7 @@ in
             extraArgs = mkOption {
               type = types.listOf types.str;
               default = [ ];
-              description = lib.mdDoc ''
+              description = ''
                 Extra arguments to pass to tee-supplicant.
               '';
             };
@@ -159,7 +159,7 @@ in
             trustedApplications = mkOption {
               type = types.listOf types.package;
               default = [ ];
-              description = lib.mdDoc ''
+              description = ''
                 Trusted applications that will be loaded into the TEE on
                 supplicant startup.
               '';
@@ -168,7 +168,7 @@ in
             plugins = mkOption {
               type = types.listOf types.package;
               default = [ ];
-              description = lib.mdDoc ''
+              description = ''
                 A list of packages containing TEE supplicant plugins. TEE
                 supplicant will load each plugin file in the top level of each
                 package on startup.
@@ -214,7 +214,7 @@ in
           taPublicKeyFile = mkOption {
             type = types.nullOr types.path;
             default = null;
-            description = lib.mdDoc ''
+            description = ''
               The public key to build into optee OS that will be used for
               verifying loaded runtime TAs. If not provided, TAs are verified
               with the public key derived from the private key in optee's

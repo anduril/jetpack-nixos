@@ -75,7 +75,7 @@ in
           "xavier-nx-emmc"
         ];
         default = "generic";
-        description = lib.mdDoc ''
+        description = ''
           Jetson SoM (System-on-Module) to target. Can be set to "generic" to target a generic jetson device, but some things may not work.
         '';
       };
@@ -86,7 +86,7 @@ in
           "devkit"
         ];
         default = "generic";
-        description = lib.mdDoc ''
+        description = ''
           Jetson carrier board to target. Can be set to "generic" to target a generic jetson carrier board, but some things may not work.
         '';
       };
