@@ -25,7 +25,7 @@ in
         # https://repo.download.nvidia.com/jetson/
         src = prev.fetchurl {
           url = with prev.lib.versions; "https://developer.download.nvidia.com/embedded/L4T/r${major l4tVersion}_Release_v${minor l4tVersion}.${patch l4tVersion}/release/Jetson_Linux_R${l4tVersion}_aarch64.tbz2";
-          hash = "sha256-crdaDH+jv270GuBmNLtnw4qSaCFV0SBgJtvuSmuaAW8=";
+          hash = "sha256-tGVlQIMedLkR4lBtLFZ8uxRv3dWUK2dfgML2ENakD0M";
         };
         # We use a more recent version of bzip2 here because we hit this bug
         # extracting nvidia's archives:
