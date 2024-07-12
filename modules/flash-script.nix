@@ -427,7 +427,11 @@ in
             ];
 
             orin-agx-industrial = [
-              { boardid = "3701"; boardsku = "0008"; fab = "300"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; chipsku="00:00:00:90"; ramcode = "4"; }
+              # jetson_board_spec.cfg says this is FAB 300, but the devices
+              # encountered in the wild, and NVIDIA has said FAB 500 should be
+              # right
+              # See: https://forums.developer.nvidia.com/t/jetson-agx-orin-board-id-sku-fab/278977/13
+              { boardid = "3701"; boardsku = "0008"; fab = "500"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; chipsku = "00:00:00:90"; ramcode = "4"; }
             ];
 
             orin-nx = [
