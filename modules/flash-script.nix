@@ -268,6 +268,10 @@ in
               boardsku = lib.mkOption {
                 type = types.str;
               };
+              chipsku = lib.mkOption {
+                type = types.nullOr types.str;
+                default = null;
+              };
               fab = lib.mkOption {
                 type = types.str;
               };
@@ -413,24 +417,24 @@ in
             ];
 
             orin-agx = [
-              { boardid = "3701"; boardsku = "0000"; fab = "300"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; }
-              { boardid = "3701"; boardsku = "0004"; fab = "300"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; } # 32GB
-              { boardid = "3701"; boardsku = "0005"; fab = "000"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; } # 64GB
+              { boardid = "3701"; boardsku = "0000"; fab = "300"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; chipsku="00:00:00:D0"; }
+              { boardid = "3701"; boardsku = "0004"; fab = "300"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; chipsku="00:00:00:D2"; } # 32GB
+              { boardid = "3701"; boardsku = "0005"; fab = "000"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; chipsku="00:00:00:D0"; } # 64GB
             ];
 
             orin-agx-industrial = [
-              { boardid = "3701"; boardsku = "0008"; fab = "300"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; }
+              { boardid = "3701"; boardsku = "0008"; fab = "300"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; chipsku="00:00:00:90"; }
             ];
 
             orin-nx = [
-              { boardid = "3767"; boardsku = "0000"; fab = "000"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; } # Orin NX 16GB
-              { boardid = "3767"; boardsku = "0001"; fab = "000"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; } # Orin NX 8GB
+              { boardid = "3767"; boardsku = "0000"; fab = "000"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; chipsku="00:00:00:D3"; } # Orin NX 16GB
+              { boardid = "3767"; boardsku = "0001"; fab = "000"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; chipsku="00:00:00:D4"; } # Orin NX 8GB
             ];
 
             orin-nano = [
-              { boardid = "3767"; boardsku = "0003"; fab = "000"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; } # Orin Nano 8GB
-              { boardid = "3767"; boardsku = "0004"; fab = "000"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; } # Orin Nano 4GB
-              { boardid = "3767"; boardsku = "0005"; fab = "000"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; } # Orin Nano devkit module
+              { boardid = "3767"; boardsku = "0003"; fab = "000"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; chipsku="00:00:00:D5"; } # Orin Nano 8GB
+              { boardid = "3767"; boardsku = "0004"; fab = "000"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; chipsku="00:00:00:D6"; } # Orin Nano 4GB
+              { boardid = "3767"; boardsku = "0005"; fab = "000"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; chipsku="00:00:00:D5"; } # Orin Nano devkit module
             ];
           }.${cfg.som}
         )) else lib.mkOptionDefault [ ];
