@@ -15,7 +15,11 @@ in
 , expat
 , pkg-config
 , substituteAll
-, l4t
+, l4t-3d-core
+, l4t-core
+, l4t-cuda
+, l4t-cupva
+, l4t-multimedia
 , zlib
 , qt6
 , xorg
@@ -238,7 +242,7 @@ let
     libcusolver = buildFromSourcePackage { name = "libcusolver"; buildInputs = [ cudaPackages.libcublas ]; };
     libcusparse = buildFromSourcePackage { name = "libcusparse"; };
     libnpp = buildFromSourcePackage { name = "libnpp"; };
-    libcudla = buildFromSourcePackage { name = "libcudla"; buildInputs = [ l4t.l4t-cuda ]; };
+    libcudla = buildFromSourcePackage { name = "libcudla"; buildInputs = [ l4t-cuda ]; };
     nsight_compute_target = buildFromDebs {
       name = "nsight-compute-target";
       version = nsight_compute_version;
@@ -452,7 +456,7 @@ let
         version = (lib.head tensorrtDebs).version;
         srcs = builtins.map (deb: deb.src) tensorrtDebs;
 
-        buildInputs = (with cudaPackages; [ cuda_cudart libcublas libcudla cudnn ]) ++ (with l4t; [ l4t-core l4t-multimedia ]);
+        buildInputs = (with cudaPackages; [ cuda_cudart libcublas libcudla cudnn ]) ++ ([ l4t-core l4t-multimedia ]);
         # Remove unnecessary (and large) static libs
         postPatch = ''
           rm -rf lib/*.a
@@ -474,7 +478,7 @@ let
       version = debs.common.vpi3-dev.version;
       srcs = [ debs.common.libnvvpi3.src debs.common.vpi3-dev.src ];
       sourceRoot = "source/opt/nvidia/vpi2";
-      buildInputs = (with l4t; [ l4t-core l4t-3d-core l4t-multimedia l4t-cupva ])
+      buildInputs = ([ l4t-core l4t-3d-core l4t-multimedia l4t-cupva ])
         ++ (with cudaPackages; [ libcufft libnpp ]);
       patches = [ ./vpi2.patch ];
       postPatch = ''

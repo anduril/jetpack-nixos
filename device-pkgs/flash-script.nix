@@ -1,5 +1,5 @@
+flash-tools:
 { lib
-, flash-tools
 , preFlashCommands ? ""
 , flashCommands ? ""
 , postFlashCommands ? ""
@@ -19,7 +19,7 @@
   additionalDtbOverlays ? [ ]
 , kernel
 }:
-''
+(''
   set -euo pipefail
 
   if [[ -z ''${WORKDIR-} ]]; then
@@ -78,4 +78,4 @@
   ./flash.sh ${lib.optionalString (partitionTemplate != null) "-c flash.xml"} "$@" ${builtins.toString flashArgs}
 '') + ''
   ${postFlashCommands}
-''
+'')

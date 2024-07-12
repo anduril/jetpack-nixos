@@ -1,4 +1,5 @@
 { pkgs
+, applyPatches
 , lib
 , fetchFromGitHub
 , fetchpatch
@@ -7,15 +8,16 @@
 , realtime ? false
 , kernelPatches ? [ ]
 , structuredExtraConfig ? { }
-, extraMeta ? { }
 , argsOverride ? { }
+, buildLinux
 , ...
 }@args:
+
 let
   isNative = pkgs.stdenv.isAarch64;
   pkgsAarch64 = if isNative then pkgs else pkgs.pkgsCross.aarch64-multiplatform;
 in
-pkgsAarch64.buildLinux (args // {
+buildLinux (args // {
   version = "6.8.12" + lib.optionalString realtime "-rt96";
   extraMeta.branch = "6.8";
 
@@ -23,7 +25,7 @@ pkgsAarch64.buildLinux (args // {
 
   # Using applyPatches here since it's not obvious how to append an extra
   # postPatch. This is not very efficient.
-  src = pkgs.applyPatches {
+  src = applyPatches {
     src = fetchurl {
       url = "https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/snapshot/linux-6.8.y.tar.gz";
       hash = "sha256-AvGkgpMPUcZ953eoU/joJT5AvPYA4heEP7gpewzdjy8";

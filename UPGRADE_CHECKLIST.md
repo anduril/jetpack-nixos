@@ -1,7 +1,7 @@
 ### Updating
-- [ ] Update `l4tVersion`, `jetpackVersion`, and `cudaVersion` in default.nix
+- [ ] Update `l4tVersion`, `jetpackVersion`, and `cudaVersion` in overlay.nix
 - [ ] Update branch/revision/sha256s in:
-    - [ ] `default.nix`
+    - [ ] `overlay.nix`
     - [ ] `kernel/default.nix`
     - [ ] `uefi-firmware.nix`
     - [ ] Grep for "sha256 = " and "hash = ", see if there is anything else not covered
