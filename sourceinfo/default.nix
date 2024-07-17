@@ -1,4 +1,4 @@
-{ lib, fetchurl, fetchgit, l4tVersion }:
+{ lib, fetchurl, fetchgit, l4tVersion, fvForEKB, fvForSSK }:
 
 let
   debsJSON = lib.importJSON (./r${lib.versions.majorMinor l4tVersion}-debs.json);

@@ -11,6 +11,7 @@
 , fetchpatch
 , gitRepos
 , fvForEKB
+, fvForSSK
 }:
 
 let
@@ -52,6 +53,8 @@ let
                                     , extraMakeFlags ? [ ]
                                     , opteePatches ? [ ]
                                     , useTegraTestKeys ? true
+				    , fvForEKB
+ 				    , fvForSSK
                                     , taPublicKeyFile ? null
                                     , ...
                                     }:
@@ -84,6 +87,9 @@ let
         patchShebangs $(find optee/optee_os -type d -name scripts -printf '%p ')
         substituteInPlace optee/optee_os/core/arch/arm/plat-tegra/conf.mk \
           --replace '@@useTegraTestKeys@@' "${if useTegraTestKeys then "" else "#"}"
+	substituteInPlace optee/optee_os/core/pta/tegra/jetson_user_key_pta.c \
+          --replace '@@fvForEKB@@' "${fvToArr fvForEKB}" \
+          --replace '@@fvForSSK@@' "${fvToArr fvForSSK}"
          sed -i '/Set the default log level to INFO/{N;d;}'  optee/optee_os/core/arch/arm/plat-tegra/conf.mk
       '';
       nativeBuildInputs = [
@@ -105,6 +111,8 @@ let
   buildOpteeTaDevKit = args: buildOptee (args // {
     pname = "optee-ta-dev-kit";
     extraMakeFlags = (args.extraMakeFlags or [ ]) ++ [ "ta_dev_kit" ];
+    fvForEKB = fvForEKB;
+    fvForSSK = fvForSSK;
   });
 
   buildNvLuksSrv = args: stdenv.mkDerivation {
@@ -221,6 +229,8 @@ let
           "${nvLuksSrv}/b83d14a8-7128-49df-9624-35f14f65ca6c.stripped.elf"
           "${hwKeyAgent}/82154947-c1bc-4bdf-b89d-04f93c0ea97c.stripped.elf"
         ];
+       fvForEKB = fvForEKB;
+       fvForSSK = fvForSSK;
       } // args);
 
       image = buildPackages.runCommand "tos.img"
