@@ -100,7 +100,7 @@ final: prev: (
       mkFlashScript = flash-tools: args: import ./device-pkgs/flash-script.nix ({
         inherit lib flash-tools;
         inherit (cfg.firmware) eksFile;
-        inherit (cfg.flashScriptOverrides) additionalDtbOverlays flashArgs partitionTemplate;
+        inherit (cfg.flashScriptOverrides) additionalDtbOverlays flashArgs partitionTemplate postFlashCommands;
         inherit (finalJetpack) tosImage socType uefi-firmware;
 
         dtbsDir = config.hardware.deviceTree.package;
