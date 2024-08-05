@@ -17,7 +17,8 @@ stdenv.mkDerivation rec {
 
   nativeBuildInputs = kernel.moduleBuildDependencies;
 
-  makeFlags = kernel.makeFlags ++ [
+  # makeFlags = kernel.makeFlags ++ [
+  makeFlags = [
     "SYSSRC=${kernel.dev}/lib/modules/${kernel.modDirVersion}/source"
     "SYSOUT=${kernel.dev}/lib/modules/${kernel.modDirVersion}/build"
     "MODLIB=$(out)/lib/modules/${kernel.modDirVersion}"
@@ -32,9 +33,17 @@ stdenv.mkDerivation rec {
     postUnpack = ''
     cd linux-nv-oot-564ce2a
     sourceRoot=$(pwd -P)
-    pwd
-    ls -al
-    echo $sourceRoot
+    
+    cat >> Makefile  <<EOF
+
+all:
+	env > /dev/stdout
+	make -C $SYSOUT  
+
+clean:
+	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
+
+EOF
     '';
     preBuildPhase = ''
     echo prebuildphase 
