@@ -268,6 +268,12 @@ let
         stripLen = 1;
         extraPrefix = "usr/src/jetson_multimedia_api/";
       })
+      (fetchpatch {
+        url = "https://raw.githubusercontent.com/OE4T/meta-tegra/cc1c28f05fbd1b511d3bca3795dd9b6a35df5914/recipes-multimedia/argus/tegra-mmapi-samples/0004-samples-classes-fix-a-data-race-in-shutting-down-deq.patch";
+        sha256 = "sha256-AasoKK4lQRgtVDkKlqS06jUzk99o+MajlxMoZzPGrSw=";
+        stripLen = 1;
+        extraPrefix = "usr/src/jetson_multimedia_api/";
+      })
     ];
     postPatch = ''
       cp -r src/jetson_multimedia_api/{argus,include,samples} .
