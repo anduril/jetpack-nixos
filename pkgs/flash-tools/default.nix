@@ -60,6 +60,13 @@ let
       # We should never be flashing upstream's kernel, so just remove it so we get errors if it is used
       #rm -f kernel/Image*
 
+      # Replace pre-built binaries for utilities that we already have available
+      # with nix. There are places in flash.sh that expect for these paths to
+      # exist, so it is not enough to just remove them and have the utilities
+      # available in PATH.
+      ln -sf ${lib.getExe' dtc "dtc"} kernel/dtc
+      ln -sf ${lib.getExe' dtc "fdtoverlay"} kernel/fdtoverlay
+
       # Remove the big nv_tegra dir, since its not neede by flash scripts.
       # However, save the needed bsp_version file
       mv nv_tegra/bsp_version .
