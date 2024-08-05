@@ -4,20 +4,21 @@
 
 final: prev:
 let
-  jetpackVersion = "5.1.2";
-  l4tVersion = "35.4.1";
-  cudaVersion = "11.4";
+  jetpackVersion = "5.1.3";
+  l4tVersion = "36.3.0";
+  cudaVersion = "12.2.1";
+  fvForEKB = "ba d6 6e b4 48 49 83 68 4b 99 2f e5 4a 64 8b b8"; 
+  fvForSSK = "e4 20 f5 8d 1d ea b5 24 c2 70 d8 d2 3e ca 45 e8"; 
 
   sourceInfo = import ./sourceinfo {
     inherit l4tVersion;
-    inherit (prev) lib fetchurl fetchgit;
+    inherit (prev) lib fetchurl fetchgit fvForEKB fvForSSK;
   };
 in
 {
   nvidia-jetpack = prev.lib.makeScope prev.newScope (self: ({
-    inherit jetpackVersion l4tVersion cudaVersion;
-
-    inherit (sourceInfo) debs gitRepos;
+    inherit jetpackVersion l4tVersion cudaVersion  fvForEKB fvForSSK;
+    inherit (sourceInfo) debs gitRepos ;
 
     bspSrc = prev.runCommand "l4t-unpacked"
       {
@@ -25,7 +26,7 @@ in
         # https://repo.download.nvidia.com/jetson/
         src = prev.fetchurl {
           url = with prev.lib.versions; "https://developer.download.nvidia.com/embedded/L4T/r${major l4tVersion}_Release_v${minor l4tVersion}.${patch l4tVersion}/release/Jetson_Linux_R${l4tVersion}_aarch64.tbz2";
-          hash = "sha256-crdaDH+jv270GuBmNLtnw4qSaCFV0SBgJtvuSmuaAW8=";
+          hash = "sha256-tGVlQIMedLkR4lBtLFZ8uxRv3dWUK2dfgML2ENakD0M";
         };
         # We use a more recent version of bzip2 here because we hit this bug
         # extracting nvidia's archives:
@@ -66,7 +67,7 @@ in
       # Nvidia's recommended toolchain is gcc9:
       # https://nv-tegra.nvidia.com/r/gitweb?p=tegra/optee-src/nv-optee.git;a=blob;f=optee/atf_and_optee_README.txt;h=591edda3d4ec96997e054ebd21fc8326983d3464;hb=5ac2ab218ba9116f1df4a0bb5092b1f6d810e8f7#l33
       stdenv = prev.gcc9Stdenv;
-      inherit (self) bspSrc gitRepos l4tVersion;
+      inherit (self) bspSrc gitRepos l4tVersion fvForSSK fvForEKB;
     }) buildTOS buildOpteeTaDevKit opteeClient;
 
     flash-tools = self.callPackage ./pkgs/flash-tools { };
@@ -99,6 +100,8 @@ in
 
     kernelPackagesOverlay = final: prev: {
       nvidia-display-driver = self.callPackage ./kernel/display-driver.nix { };
+      nvgpu = self.callPackage ./kernel/nvgpu.nix { };
+      nvidia-oot = self.callPackage ./kernel/nvidia-oot.nix { };
     };
 
     kernel = self.callPackage ./kernel { kernelPatches = [ ]; };
