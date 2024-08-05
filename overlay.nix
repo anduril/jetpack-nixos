@@ -88,12 +88,12 @@ in
         l4t-cuda
         l4t-cupva
         l4t-multimedia;
-      inherit (prev.cudaPackages) autoAddOpenGLRunpathHook;
+      inherit (prev) autoAddDriverRunpath;
     };
 
     samples = prev.callPackages ./pkgs/samples {
       inherit (self) debs cudaVersion cudaPackages l4t-cuda l4t-multimedia l4t-camera;
-      inherit (prev.cudaPackages) autoAddOpenGLRunpathHook;
+      inherit (prev) autoAddDriverRunpath;
     };
 
     tests = prev.callPackages ./pkgs/tests { inherit l4tVersion; };

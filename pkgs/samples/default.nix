@@ -3,7 +3,7 @@
 , fetchurl
 , dpkg
 , pkg-config
-, autoAddOpenGLRunpathHook
+, autoAddDriverRunpath
 , cmake
 , opencv
 , opencv2
@@ -44,7 +44,7 @@ let
 
     patches = [ ./cuda-samples.patch ];
 
-    nativeBuildInputs = [ dpkg pkg-config autoAddOpenGLRunpathHook ];
+    nativeBuildInputs = [ dpkg pkg-config autoAddDriverRunpath ];
     buildInputs = [ cudaPackages.cudatoolkit ];
 
     preConfigure = ''
@@ -86,7 +86,7 @@ let
     unpackCmd = "dpkg -x $src source";
     sourceRoot = "source/usr/src/cudnn_samples_v8";
 
-    nativeBuildInputs = [ dpkg autoAddOpenGLRunpathHook ];
+    nativeBuildInputs = [ dpkg autoAddDriverRunpath ];
     buildInputs = with cudaPackages; [ cudatoolkit cudnn ];
 
     buildFlags = [
@@ -190,7 +190,7 @@ let
     unpackCmd = "dpkg -x $src source";
     sourceRoot = "source/usr/src/tensorrt/samples";
 
-    nativeBuildInputs = [ dpkg autoAddOpenGLRunpathHook ];
+    nativeBuildInputs = [ dpkg autoAddDriverRunpath ];
     buildInputs = with cudaPackages; [ tensorrt cuda_profiler_api cudnn ];
 
     # These environment variables are required by the /usr/src/tensorrt/samples/README.md

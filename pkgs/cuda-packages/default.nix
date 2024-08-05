@@ -10,7 +10,7 @@ in
 , dpkg
 , makeWrapper
 , autoPatchelfHook
-, autoAddOpenGLRunpathHook
+, autoAddDriverRunpath
 , symlinkJoin
 , expat
 , pkg-config
@@ -90,7 +90,7 @@ let
       pname = name;
       inherit version srcs;
 
-      nativeBuildInputs = [ dpkg autoPatchelfHook autoAddOpenGLRunpathHook ] ++ nativeBuildInputs;
+      nativeBuildInputs = [ dpkg autoPatchelfHook autoAddDriverRunpath ] ++ nativeBuildInputs;
       buildInputs = [ stdenv.cc.cc.lib ] ++ buildInputs;
 
       unpackCmd = "for src in $srcs; do dpkg-deb -x $src source; done";
