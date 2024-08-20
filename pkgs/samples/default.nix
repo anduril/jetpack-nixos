@@ -134,6 +134,81 @@ let
     '';
   };
 
+  cupti-samples = stdenv.mkDerivation {
+    pname = "cupti-samples";
+    version = debs.common."cuda-cupti-dev-${cudaVersionDashes}".version;
+    src = debs.common."cuda-cupti-dev-${cudaVersionDashes}".src;
+
+    unpackCmd = "dpkg -x $src source";
+    sourceRoot = "source/usr/local/cuda-${cudaVersion}/extras/CUPTI/samples";
+
+    nativeBuildInputs = [ dpkg pkg-config autoAddDriverRunpath ];
+    buildInputs = [ cudaPackages.cudatoolkit ];
+
+    preConfigure = ''
+      export CUDA_INSTALL_PATH=${cudaPackages.cudatoolkit}
+    '';
+
+    enableParallelBuilding = true;
+
+    buildPhase = ''
+      runHook preBuild
+
+      # Some samples depend on this being built first
+      make $buildFlags -C extensions/src/profilerhost_util
+
+      for sample in *; do
+        if [[ "$sample" != "extensions" ]]; then
+          make $buildFlags -C "$sample"
+        fi
+      done
+
+      runHook postBuild
+    '';
+
+    installPhase = ''
+      runHook preInstall
+
+      for sample in *; do
+        if [[ "$sample" != "extensions" && "$sample" != "autorange_profiling" && "$sample" != "userrange_profiling" ]]; then
+          install -Dm755 -t $out/bin $sample/$sample
+        fi
+      done
+
+      # These samples aren't named the same as their containing directory
+      install -Dm755 -t $out/bin autorange_profiling/auto_range_profiling
+      install -Dm755 -t $out/bin userrange_profiling/user_range_profiling
+
+      runHook postInstall
+    '';
+  };
+  cupti-test = writeShellApplication {
+    name = "cupti-test";
+    text = ''
+      # Not entirely sure which utilities are relevant here, I'll just pick a few
+      # See: https://docs.nvidia.com/cupti/main/main.html?highlight=samples#samples
+      #
+      for binary in auto_range_profiling callback_timestamp pc_sampling; do
+        echo " * Running $binary"
+        ${cupti-samples}/bin/"$binary"
+        echo
+        echo
+      done
+
+      # cupti_query fails on Orin with the following message:
+      # "Error CUPTI_ERROR_LEGACY_PROFILER_NOT_SUPPORTED for CUPTI API function 'cuptiDeviceEnumEventDomains'."
+      #
+      # https://forums.developer.nvidia.com/t/whether-cuda-supports-gpu-devices-with-8-6-compute-capability/274884/4
+      # Orin doesn't support the "legacy profile"
+      if ! grep -q -E "tegra234" /proc/device-tree/compatible; then
+        echo " * Running cupti_query"
+        ${cupti-samples}/bin/cupti_query
+        echo
+        echo
+      fi
+    '';
+  };
+
   graphics-demos = stdenv.mkDerivation {
     pname = "graphics-demos";
     version = debs.t234.nvidia-l4t-graphics-demos.version;
@@ -399,6 +474,11 @@ let
       ${cudnn-test}/bin/cudnn-test
 
       echo "====="
+      echo "Running CUPTI test"
+      echo "====="
+      ${cupti-test}/bin/cupti-test
+
+      echo "====="
       echo "Running TensorRT test"
       echo "====="
       ${libnvinfer-test}/bin/libnvinfer-test
@@ -421,6 +501,8 @@ in
     cuda-test
     cudnn-samples
     cudnn-test
+    cupti-samples
+    cupti-test
     graphics-demos
     libnvinfer-samples
     libnvinfer-test
