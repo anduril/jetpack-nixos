@@ -235,9 +235,13 @@ in
           name = "l4t-core-wrapper";
           phases = [ "installPhase" ];
           installPhase = ''
+            runHook preInstall
+
             mkdir -p $out/lib
             ln -s ${l4t-core}/lib/libnvrm_gpu.so $out/lib/libnvrm_gpu.so
             ln -s ${l4t-core}/lib/libnvrm_mem.so $out/lib/libnvrm_mem.so
+
+            runHook postInstall
           '';
         };
       in

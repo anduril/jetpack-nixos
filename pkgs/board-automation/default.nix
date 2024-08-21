@@ -27,7 +27,11 @@ stdenv.mkDerivation {
   '';
 
   installPhase = ''
+    runHook preInstall
+
     mkdir -p $out/bin
     cp tools/board_automation/* $out/bin
+
+    runHook postInstall
   '';
 }
