@@ -97,8 +97,12 @@ let
     noDumpEnvVars = true;
 
     installPhase = ''
+      runHook preInstall
+
       mkdir -p $out
       cp -r . $out/
+
+      runHook postInstall
     '';
 
     # Stuff to put into PATH for flash.sh

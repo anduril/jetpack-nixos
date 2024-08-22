@@ -84,7 +84,11 @@ let
       '';
 
       installPhase = ''
+        runHook preInstall
+
         cp -r . $out
+
+        runHook postInstall
       '';
 
       meta = {
@@ -102,6 +106,7 @@ let
     buildInputs = [ stdenv.cc.cc.lib expat libglvnd ];
   };
 
+  # TODO: Split this package up into subpackages similar to what is done in meta-tegra: vulkan, glx, egl, etc
   l4t-3d-core = buildFromDeb {
     name = "nvidia-l4t-3d-core";
     buildInputs = [ l4t-core libglvnd egl-wayland ];
@@ -121,9 +126,8 @@ let
       rm -rf lib/tegra-egl
       rm -f lib/nvidia.json
 
-      # Make some symlinks also done by OE4T
-      ln -sf libnvidia-ptxjitcompiler.so.${l4tVersion} lib/libnvidia-ptxjitcompiler.so.1
-      ln -sf libnvidia-ptxjitcompiler.so.${l4tVersion} lib/libnvidia-ptxjitcompiler.so
+      # Remove libnvidia-ptxjitcompiler, which is included in l4t-cuda instead
+      rm -f lib/libnvidia-ptxjitcompiler.*
 
       # Some libraries, like libEGL_nvidia.so.0 from l4t-3d-core use a dlopen
       # wrapper called NvOsLibraryLoad, which originates in libnvos.so in
@@ -182,6 +186,18 @@ let
       # Additional libcuda symlinks
       ln -sf libcuda.so.1.1 lib/libcuda.so.1
       ln -sf libcuda.so.1.1 lib/libcuda.so
+
+      # Also unpack l4t-3d-core so we can grab libnvidia-ptxjitcompiler from it
+      # and include it in this library.
+      #
+      # It's unclear why NVIDIA has this library in l4t-3d-core and not in
+      # l4t-core. Even more so since the cuda compat package has libcuda as
+      # well as libnvidia-ptxjitcompiler in the same package. meta-tegra does a
+      # similar thing where they pull libnvidia-ptxjitcompiler out of
+      # l4t-3d-core and place it in the same package as libcuda.
+      dpkg --fsys-tarfile ${debs.t234.nvidia-l4t-3d-core.src} | tar -xO ./usr/lib/aarch64-linux-gnu/tegra/libnvidia-ptxjitcompiler.so.${l4tVersion} > lib/libnvidia-ptxjitcompiler.so.${l4tVersion}
+      ln -sf libnvidia-ptxjitcompiler.so.${l4tVersion} lib/libnvidia-ptxjitcompiler.so.1
+      ln -sf libnvidia-ptxjitcompiler.so.${l4tVersion} lib/libnvidia-ptxjitcompiler.so
     '';
 
     # libcuda.so actually depends on libnvcucompat.so at runtime (probably

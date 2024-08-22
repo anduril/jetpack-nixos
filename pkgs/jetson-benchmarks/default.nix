@@ -95,6 +95,8 @@ stdenvNoCC.mkDerivation {
     substituteInPlace utils/utilities.py --replace "/usr/src/tensorrt" "${cudaPackages.tensorrt}"
   '';
   installPhase = ''
+    runHook preInstall
+
     mkdir -p models
     cp -r $models/. models
 
@@ -104,6 +106,8 @@ stdenvNoCC.mkDerivation {
     mkdir -p $out/bin
     cp -r ${./scripts}/. $out/bin
     chmod +x $out/bin/*
+
+    runHook postInstall
   '';
   postFixup = ''
     wrapProgram $out/bin/run-jetson-benchmarks \

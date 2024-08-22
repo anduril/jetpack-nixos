@@ -10,6 +10,8 @@ stdenvNoCC.mkDerivation {
   dontBuild = true;
 
   installPhase = ''
+    runHook preInstall
+
     mkdir -p $out/bin $out/share
     cp ${./ota-setup-efivars.sh} $out/bin/ota-setup-efivars
     cp ${./ota-apply-capsule-update.sh} $out/bin/ota-apply-capsule-update
@@ -28,5 +30,7 @@ stdenvNoCC.mkDerivation {
 
     # patchShebangs does not seem to work here for some reason
     substituteInPlace $out/bin/* --replace '#!/usr/bin/env bash' '#!${bash}/bin/bash'
+
+    runHook postInstall
   '';
 }

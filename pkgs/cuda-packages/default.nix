@@ -152,7 +152,11 @@ let
       '';
 
       installPhase = ''
+        runHook preInstall
+
         cp -r . $out
+
+        runHook postInstall
       '';
 
       meta = {
@@ -180,7 +184,19 @@ let
       '';
     };
     cuda_cuobjdump = buildFromSourcePackage { name = "cuda-cuobjdump"; };
-    cuda_cupti = buildFromSourcePackage { name = "cuda-cupti"; };
+    cuda_cupti = buildFromSourcePackage {
+      name = "cuda-cupti";
+
+      # We append a postFixupHook since we need to have this happen after
+      # autoPatchelfHook, which itself also runs as a postFixupHook.
+      # TODO: Use runtimeDependencies instead
+      preFixup = ''
+        postFixupHooks+=('
+          # dlopen in libcupti.so needs to be able to access these libnvperf_host.so in this directory
+          patchelf --add-rpath $out/lib $(readlink -f $out/lib/libcupti.so)
+        ')
+      '';
+    };
     cuda_cuxxfilt = buildFromSourcePackage { name = "cuda-cuxxfilt"; };
     cuda_documentation = buildFromSourcePackage { name = "cuda-documentation"; };
     cuda_gdb = buildFromSourcePackage { name = "cuda-gdb"; buildInputs = [ expat ]; };
