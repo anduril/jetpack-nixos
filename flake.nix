@@ -1,9 +1,10 @@
 {
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-24.05";
+    flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { self, nixpkgs, ... }:
+  outputs = { self, nixpkgs, flake-utils, ... }:
     let
       inherit (nixpkgs) lib;
 
@@ -76,15 +77,19 @@
           iso_minimal = self.nixosConfigurations.installer_minimal.config.system.build.isoImage;
         };
       };
+    } // flake-utils.lib.eachSystem [ "x86_64-linux" "aarch64-linux" ] (system:
+      let
+        pkgs = nixpkgs.legacyPackages.${system};
+      in
+      {
+        checks = {
+          formatting = pkgs.runCommand "repo-formatting" { nativeBuildInputs = with pkgs; [ nixpkgs-fmt ]; } ''
+            nixpkgs-fmt --check ${self} && touch $out
+          '';
+        };
 
-      checks = nixpkgs.lib.mapAttrs
-        (system: _: {
-          formatting = nixpkgs.legacyPackages.${system}.callPackage ./ci/formatting.nix { };
-        })
-        self.legacyPackages;
+        formatter = pkgs.nixpkgs-fmt;
 
-      # Not everything here should be cross-compiled to aarch64-linux
-      legacyPackages.x86_64-linux = (import nixpkgs { system = "x86_64-linux"; overlays = [ self.overlays.default ]; }).nvidia-jetpack;
-      legacyPackages.aarch64-linux = (import nixpkgs { system = "aarch64-linux"; overlays = [ self.overlays.default ]; }).nvidia-jetpack;
-    };
+        legacyPackages = (import nixpkgs { inherit system; overlays = [ self.overlays.default ]; }).nvidia-jetpack;
+      });
 }
