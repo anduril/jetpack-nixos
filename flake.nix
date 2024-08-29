@@ -7,6 +7,12 @@
     let
       inherit (nixpkgs) lib;
 
+      allSystems = [ "x86_64-linux" "aarch64-linux" ];
+      forAllSystems = f: nixpkgs.lib.genAttrs allSystems (system: f {
+        pkgs = nixpkgs.legacyPackages.${system};
+        inherit system;
+      });
+
       installer_minimal_config = {
         imports = [
           "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
@@ -77,14 +83,16 @@
         };
       };
 
-      checks = nixpkgs.lib.mapAttrs
-        (system: _: {
-          formatting = nixpkgs.legacyPackages.${system}.callPackage ./ci/formatting.nix { };
-        })
-        self.legacyPackages;
+      checks = forAllSystems ({ pkgs, ... }: {
+        formatting = pkgs.runCommand "repo-formatting" { nativeBuildInputs = with pkgs; [ nixpkgs-fmt ]; } ''
+          nixpkgs-fmt --check ${self} && touch $out
+        '';
+      });
 
-      # Not everything here should be cross-compiled to aarch64-linux
-      legacyPackages.x86_64-linux = (import nixpkgs { system = "x86_64-linux"; overlays = [ self.overlays.default ]; }).nvidia-jetpack;
-      legacyPackages.aarch64-linux = (import nixpkgs { system = "aarch64-linux"; overlays = [ self.overlays.default ]; }).nvidia-jetpack;
+      formatter = forAllSystems ({ pkgs, ... }: pkgs.nixpkgs-fmt);
+
+      legacyPackages = forAllSystems ({ system, ... }:
+        (import nixpkgs { inherit system; overlays = [ self.overlays.default ]; }).nvidia-jetpack
+      );
     };
 }
