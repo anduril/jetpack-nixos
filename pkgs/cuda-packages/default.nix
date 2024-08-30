@@ -37,7 +37,7 @@ in
     if stdenv.hostPlatform.system == "x86_64-linux" then
       requireFile
         rec {
-          name = "NsightSystems-linux-public-2022.5.2.120-3231674.deb";
+          name = "NsightSystems-linux-public-2023.2.4.120-3231674.deb";
           sha256 = "011f1vxrmxnip02zmlsb224cc01nviva2070qadkwhmz409sjxag";
           message = ''
             For Jetpack 5.1, Nvidia doesn't upload the corresponding nsight system x86_64 version to the deb repo, so it need to be fetched using sdkmanager
