@@ -145,7 +145,7 @@ let
   _l4t-multimedia-v4l = libv4l.overrideAttrs ({ nativeBuildInputs ? [], patches ? [], postPatch ? "", ... }: {
     nativeBuildInputs = nativeBuildInputs ++ [ dpkg ];
     patches = patches ++ lib.singleton (fetchpatch {
-      url = "https://raw.githubusercontent.com/OE4T/meta-tegra/master/recipes-multimedia/libv4l2/libv4l2-minimal/0003-Update-conversion-defaults-to-match-NVIDIA-sources.patch";
+      url = "https://raw.githubusercontent.com/OE4T/meta-tegra/85aa94e16104debdd01a3f61a521b73d86340a9f/recipes-multimedia/libv4l2/libv4l2-minimal/0003-Update-conversion-defaults-to-match-NVIDIA-sources.patch";
       sha256 = "sha256-vGilgHWinrKjX+ikHo0J20PL713+w+lv46dBgfdvsZM=";
     });
     # Use a placeholder path that we replace in the l4t-multimedia derivation, We avoid an infinite recursion problem this way.
