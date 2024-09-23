@@ -19,6 +19,8 @@
 , gst_all_1
 , gtk3
 , libv4l
+, makeWrapper
+, bc
 , debs
 , l4tVersion
 }:
@@ -361,10 +363,14 @@ let
   # For tegrastats and jetson_clocks
   l4t-tools = buildFromDeb {
     name = "nvidia-l4t-tools";
+    nativeBuildInputs = [ makeWrapper ];
     buildInputs = [ stdenv.cc.cc.lib l4t-core ];
     # Remove some utilities that bring in too many libraries
     postPatch = ''
       rm bin/nv_macsec_wpa_supplicant
+    '';
+    postFixup = ''
+      wrapProgram $out/bin/nv_fuse_read.sh --prefix PATH : ${lib.makeBinPath [ bc ]}
     '';
   };
 
