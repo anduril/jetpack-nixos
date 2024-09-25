@@ -9,8 +9,6 @@ let
     types;
 
   cfg = config.hardware.nvidia-jetpack;
-
-  flashTools = cfg.flasherPkgs.callPackages (import ../device-pkgs { inherit config pkgs; }) { };
 in
 {
   imports = with lib; [
@@ -136,9 +134,14 @@ in
             };
 
             preSignCommands = lib.mkOption {
-              type = types.lines;
+              type = types.oneOf [ types.lines (types.functionTo types.lines) ];
               default = "";
-              description = "Additional commands to run before performing operation that involve signing. Can be used to set up environment to interact with an external HSM.";
+              apply = val: if lib.isFunction val then val else _: val;
+              description = ''
+                Additional commands to run before performing operation that
+                involve signing. Can be used to set up environment to interact
+                with an external HSM.
+              '';
             };
           };
         };
@@ -225,8 +228,9 @@ in
           };
 
           preSignCommands = lib.mkOption {
-            type = types.lines;
+            type = types.oneOf [ types.lines (types.functionTo types.lines) ];
             default = "";
+            apply = val: if lib.isFunction val then val else _: val;
             description = "Additional commands to run before performing operation that involve signing. Can be used to set up environment to interact with an external HSM.";
           };
         };
@@ -335,15 +339,13 @@ in
 
   config = {
     hardware.nvidia-jetpack.flashScript = lib.warn "hardware.nvidia-jetpack.flashScript is deprecated, use config.system.build.flashScript" config.system.build.flashScript;
-    hardware.nvidia-jetpack.devicePkgs = (lib.mapAttrs (_: lib.warn "hardware.nvidia-jetpack.devicePkgs is deprecated, use pkgs.nvidia-jetpack") pkgs.nvidia-jetpack)
-      // (lib.mapAttrs (name: lib.warn "hardware.nvidia-jetpack.devicePkgs.${name} is deprecated, use config.system.build.${name}") flashTools);
+    hardware.nvidia-jetpack.devicePkgs = (lib.mapAttrs (_: lib.warn "hardware.nvidia-jetpack.devicePkgs is deprecated, use pkgs.nvidia-jetpack") pkgs.nvidia-jetpack);
 
     system.build = {
-      jetsonDevicePkgs = (lib.mapAttrs (_: lib.warn "system.build.jetsonDevicePkgs is deprecated, use pkgs.nvidia-jetpack") pkgs.nvidia-jetpack)
-        // (lib.mapAttrs (name: lib.warn "system.build.jetsonDevicePkgs.${name} is deprecated, use config.system.build.${name}") flashTools);
+      jetsonDevicePkgs = (lib.mapAttrs (_: lib.warn "system.build.jetsonDevicePkgs is deprecated, use pkgs.nvidia-jetpack") pkgs.nvidia-jetpack);
 
-      inherit (pkgs.nvidia-jetpack) uefiCapsuleUpdate;
-      inherit (flashTools) flashScript initrdFlashScript fuseScript signedFirmware;
+      # Left here for compatibility
+      inherit (pkgs.nvidia-jetpack) uefiCapsuleUpdate flashScript initrdFlashScript fuseScript signedFirmware;
     };
 
     hardware.nvidia-jetpack.flashScriptOverrides.flashArgs = lib.mkAfter (
