@@ -60,7 +60,7 @@ in
         self.gitRepos
     );
 
-    inherit (prev.callPackages ./pkgs/uefi-firmware { inherit (self) l4tVersion; })
+    inherit (prev.pkgsCross.aarch64-multiplatform.callPackages ./pkgs/uefi-firmware { inherit (self) l4tVersion; })
       edk2-jetson uefi-firmware;
 
     inherit (prev.callPackages ./pkgs/optee {
