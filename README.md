@@ -184,6 +184,8 @@ You can run OCI containers with jetpack-nixos by enabling the following nixos op
 }
 ```
 
+Note that on newer nixpkgs the `virtualisation.{docker,podman}.enableNvidia` option is deprecated in favor of using `hardware.nvidia-container-toolkit.enable` instead. This new option does not work yet with Jetson devices, see [this issue](https://github.com/nixos/nixpkgs/issues/344729).
+
 To run a container with access to nvidia hardware, you must specify a device to
 passthrough to the container in the [CDI](https://github.com/cncf-tags/container-device-interface/blob/main/SPEC.md#overview)
 format. By default, there will be a single device setup of the kind
