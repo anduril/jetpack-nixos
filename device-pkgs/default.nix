@@ -15,6 +15,7 @@
 , runCommand
 , writeScript
 , writeShellApplication
+, buildPackages
 }:
 
 let
@@ -64,7 +65,7 @@ let
         export RAMCODE=${variant.ramcode}
         ''}
 
-        ${cfg.firmware.secureBoot.preSignCommands}
+        ${cfg.firmware.secureBoot.preSignCommands buildPackages}
 
         ${mkFlashScript nvidia-jetpack.flash-tools (args // { flashArgs = [ "--no-root-check" "--no-flash" ] ++ (args.flashArgs or flashArgs); }) }
 
@@ -149,7 +150,9 @@ let
       inherit (cfg.firmware.secureBoot) requiredSystemFeatures;
     }
     (mkFlashScript nvidia-jetpack.flash-tools {
-      flashCommands = cfg.firmware.secureBoot.preSignCommands + lib.concatMapStringsSep "\n"
+      flashCommands = ''
+        ${cfg.firmware.secureBoot.preSignCommands buildPackages}
+      '' + lib.concatMapStringsSep "\n"
         (v: with v; ''
           BOARDID=${boardid} BOARDSKU=${boardsku} FAB=${fab} BOARDREV=${boardrev} FUSELEVEL=${fuselevel} CHIPREV=${chiprev} ${lib.optionalString (chipsku != null) "CHIP_SKU=${chipsku}"} ${lib.optionalString (ramcode != null) "RAMCODE=${ramcode}"} ./flash.sh ${lib.optionalString (partitionTemplate != null) "-c flash.xml"} --no-root-check --no-flash --sign ${builtins.toString flashArgs}
 

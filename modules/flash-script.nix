@@ -136,9 +136,20 @@ in
             };
 
             preSignCommands = lib.mkOption {
-              type = types.lines;
+              type = types.oneOf [ (types.functionTo types.lines) types.lines ];
+              apply = val: if lib.isFunction val then val else _: val;
               default = "";
-              description = "Additional commands to run before performing operation that involve signing. Can be used to set up environment to interact with an external HSM.";
+              description = ''
+                Additional commands to run before performing operation that
+                involve signing. Can be used to set up environment to interact
+                with an external HSM.
+
+                Since preSignCommands is used in different contexts where the
+                package-set in use may differ (mostly in order to satisfy
+                building NVIDIA's flash scripts for x86_64-linux), you should
+                define this option to be a function that accepts the `pkgs`
+                package-set if you need to access something from it.
+              '';
             };
           };
         };
@@ -225,9 +236,20 @@ in
           };
 
           preSignCommands = lib.mkOption {
-            type = types.lines;
+            type = types.oneOf [ (types.functionTo types.lines) types.lines ];
+            apply = val: if lib.isFunction val then val else _: val;
             default = "";
-            description = "Additional commands to run before performing operation that involve signing. Can be used to set up environment to interact with an external HSM.";
+            description = ''
+              Additional commands to run before performing operation that
+              involve signing. Can be used to set up environment to interact
+              with an external HSM.
+
+              Since preSignCommands is used in different contexts where the
+              package-set in use may differ (mostly in order to satisfy
+              building NVIDIA's flash scripts for x86_64-linux), you should
+              define this option to be a function that accepts the `pkgs`
+              package-set if you need to access something from it.
+            '';
           };
         };
 

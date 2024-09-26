@@ -114,7 +114,9 @@ final: prev: (
           final.pkgsBuildBuild.nvidia-jetpack.flash-tools # we need flash-tools for the buildPlatform
           {
             # TODO: Remove preSignCommands when we switch to using signedFirmware directly
-            flashCommands = cfg.firmware.secureBoot.preSignCommands + lib.concatMapStringsSep "\n"
+            flashCommands = ''
+              ${cfg.firmware.secureBoot.preSignCommands final.buildPackages}
+            '' + lib.concatMapStringsSep "\n"
               (v: with v;
               "BOARDID=${boardid} BOARDSKU=${boardsku} FAB=${fab} BOARDREV=${boardrev} FUSELEVEL=${fuselevel} CHIPREV=${chiprev} ${lib.optionalString (chipsku != null) "CHIP_SKU=${chipsku}"} ${lib.optionalString (ramcode != null) "RAMCODE=${ramcode}"} ./flash.sh ${lib.optionalString (cfg.flashScriptOverrides.partitionTemplate != null) "-c flash.xml"} --no-flash --bup --multi-spec ${builtins.toString cfg.flashScriptOverrides.flashArgs}"
               )
@@ -133,7 +135,7 @@ final: prev: (
           inherit (cfg.firmware.uefi.capsuleAuthentication) requiredSystemFeatures;
         }
         (''
-          ${cfg.firmware.uefi.capsuleAuthentication.preSignCommands}
+          ${cfg.firmware.uefi.capsuleAuthentication.preSignCommands final.buildPackages}
           bash ${finalJetpack.flash-tools}/generate_capsule/l4t_generate_soc_capsule.sh \
         '' + (lib.optionalString cfg.firmware.uefi.capsuleAuthentication.enable ''
           --trusted-public-cert ${cfg.firmware.uefi.capsuleAuthentication.trustedPublicCertPemFile} \
