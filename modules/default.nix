@@ -25,9 +25,8 @@ let
     paths = cfg.firmware.optee.supplicant.plugins;
   };
 
-  nvidiaContainerRuntimeActive =
-    with config.virtualisation;
-    (docker.enable && docker.enableNvidia) || (podman.enable && podman.enableNvidia);
+  nvidiaDockerActive = with config.virtualisation; docker.enable && (docker.enableNvidia || config.hardware.nvidia-container-toolkit.enable);
+  nvidiaPodmanActive = with config.virtualisation; podman.enable && (podman.enableNvidia || config.hardware.nvidia-container-toolkit.enable);
 in
 {
   imports = [
@@ -147,9 +146,7 @@ in
         '';
       }
       {
-        assertion =
-          (config.virtualisation.docker.enable && config.virtualisation.docker.enableNvidia)
-          -> lib.versionAtLeast config.virtualisation.docker.package.version "25";
+        assertion = nvidiaDockerActive -> lib.versionAtLeast config.virtualisation.docker.package.version "25";
         message = "Docker version < 25 does not support CDI";
       }
     ];
@@ -330,7 +327,7 @@ in
     ];
 
     systemd.services.nvidia-cdi-generate = {
-      enable = nvidiaContainerRuntimeActive;
+      enable = nvidiaDockerActive || nvidiaPodmanActive;
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
