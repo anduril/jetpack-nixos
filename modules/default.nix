@@ -125,7 +125,8 @@ in
       };
 
       console.enable = mkOption {
-        default = true;
+        default = config.console.enable;
+        defaultText = "config.console.enable";
         type = types.bool;
         description = "Enable boot.kernelParams default console configuration";
       };
