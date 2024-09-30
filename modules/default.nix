@@ -123,6 +123,12 @@ in
           binaries needed for flashing/fusing Jetson SOMs.
         '';
       };
+
+      console.enable = mkOption {
+        default = true;
+        type = types.bool;
+        description = "Enable boot.kernelParams default console configuration";
+      };
     };
   };
 
@@ -171,12 +177,14 @@ in
         pkgs.nvidia-jetpack.kernelPackages;
 
     boot.kernelParams = [
-      "console=tty0" # Output to HDMI/DP. May need fbcon=map:0 as well
-      "console=ttyTCU0,115200" # Provides console on "Tegra Combined UART" (TCU)
-
       # Needed on Orin at least, but upstream has it for both
       "nvidia.rm_firmware_active=all"
-    ] ++ lib.optional (lib.hasPrefix "xavier-" cfg.som || cfg.som == "generic") "video=efifb:off"; # Disable efifb driver, which crashes Xavier NX and possibly AGX
+    ]
+    ++ lib.optionals cfg.console.enable [
+      "console=tty0" # Output to HDMI/DP. May need fbcon=map:0 as well
+      "console=ttyTCU0,115200" # Provides console on "Tegra Combined UART" (TCU)
+    ]
+    ++ lib.optional (lib.hasPrefix "xavier-" cfg.som || cfg.som == "generic") "video=efifb:off"; # Disable efifb driver, which crashes Xavier NX and possibly AGX
 
     boot.initrd.includeDefaultModules = false; # Avoid a bunch of modules we may not get from tegra_defconfig
     boot.initrd.availableKernelModules = [ "xhci-tegra" ]; # Make sure USB firmware makes it into initrd
