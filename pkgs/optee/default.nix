@@ -10,11 +10,15 @@
 , nukeReferences
 , fetchpatch
 , gitRepos
+, fvForEKB
+, fvForSSK
 }:
 
 let
   atfSrc = gitRepos."tegra/optee-src/atf";
   nvopteeSrc = gitRepos."tegra/optee-src/nv-optee";
+
+  fvToArr = fv: lib.foldl' (acc: s: acc + "0x${s}, ") "" (lib.splitString " " fv);
 
   opteeClient = stdenv.mkDerivation {
     pname = "optee_client";
@@ -48,6 +52,9 @@ let
                                     , earlyTaPaths ? [ ]
                                     , extraMakeFlags ? [ ]
                                     , opteePatches ? [ ]
+                                    , useTegraTestKeys ? true
+				    , fvForEKB
+ 				    , fvForSSK
                                     , taPublicKeyFile ? null
                                     , ...
                                     }:
@@ -74,9 +81,16 @@ let
       inherit pname;
       version = l4tVersion;
       src = nvopteeSrc;
-      patches = opteePatches;
+      patches = opteePatches ++ [ ./optee-keys.patch ];
+      # TODO: use --replace-fail after nixpkgs 24.05 update.
       postPatch = ''
         patchShebangs $(find optee/optee_os -type d -name scripts -printf '%p ')
+        substituteInPlace optee/optee_os/core/arch/arm/plat-tegra/conf.mk \
+          --replace '@@useTegraTestKeys@@' "${if useTegraTestKeys then "" else "#"}"
+	substituteInPlace optee/optee_os/core/pta/tegra/jetson_user_key_pta.c \
+          --replace '@@fvForEKB@@' "${fvToArr fvForEKB}" \
+          --replace '@@fvForSSK@@' "${fvToArr fvForSSK}"
+         sed -i '/Set the default log level to INFO/{N;d;}'  optee/optee_os/core/arch/arm/plat-tegra/conf.mk
       '';
       nativeBuildInputs = [
         dtc
@@ -97,6 +111,8 @@ let
   buildOpteeTaDevKit = args: buildOptee (args // {
     pname = "optee-ta-dev-kit";
     extraMakeFlags = (args.extraMakeFlags or [ ]) ++ [ "ta_dev_kit" ];
+    fvForEKB = fvForEKB;
+    fvForSSK = fvForSSK;
   });
 
   buildNvLuksSrv = args: stdenv.mkDerivation {
@@ -170,11 +186,14 @@ let
         "BUILD_BASE=$(PWD)/build"
         "CROSS_COMPILE=${stdenv.cc.targetPrefix}"
         "DEBUG=0"
-        "LOG_LEVEL=20"
+        "LOG_LEVEL=10"
         "PLAT=tegra"
         "SPD=opteed"
         "TARGET_SOC=${socType}"
         "V=0"
+        "BRANCH_PROTECTION=3"
+        "ARM_ARCH_MINOR=3"
+
         # binutils 2.39 regression
         # `warning: /build/source/build/rk3399/release/bl31/bl31.elf has a LOAD segment with RWX permissions`
         # See also: https://developer.trustedfirmware.org/T996
@@ -188,6 +207,7 @@ let
 
         mkdir -p $out
         cp ./build/tegra/${socType}/release/bl31.bin $out/bl31.bin
+        #cp ./build/tegra/${socType}/debug/bl31.bin $out/bl31.bin
 
         runHook postInstall
       '';
@@ -209,6 +229,8 @@ let
           "${nvLuksSrv}/b83d14a8-7128-49df-9624-35f14f65ca6c.stripped.elf"
           "${hwKeyAgent}/82154947-c1bc-4bdf-b89d-04f93c0ea97c.stripped.elf"
         ];
+       fvForEKB = fvForEKB;
+       fvForSSK = fvForSSK;
       } // args);
 
       image = buildPackages.runCommand "tos.img"

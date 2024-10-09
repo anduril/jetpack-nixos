@@ -2,7 +2,7 @@
 
 This repository packages components from NVIDIA's [Jetpack SDK](https://developer.nvidia.com/embedded/jetpack) for use with NixOS, including:
  * Platform firmware flashing scripts
- * A 5.10 Linux kernel from NVIDIA, which includes some open-source drivers like nvgpu
+ * A MAINLINE Linux kernel with out-of-tree drivers from NVIDIA
  * An [EDK2-based UEFI firmware](https://github.com/NVIDIA/edk2-nvidia)
  * ARM Trusted Firmware / OP-TEE
  * Additional packages for:
@@ -11,7 +11,7 @@ This repository packages components from NVIDIA's [Jetpack SDK](https://develope
    - Graphics: Wayland, GBM, EGL, Vulkan
    - Power/fan control: nvpmodel, nvfancontrol
 
-This package is based on the Jetpack 5 release, and will only work with devices supported by Jetpack 5.1:
+This package is based on the Jetpack 6 release, and will only work with devices supported by Jetpack 6.3:
  * Jetson Orin AGX
  * Jetson Orin NX
  * Jetson Xavier AGX
@@ -135,8 +135,8 @@ Otherwise, the instructions to apply the update manually are below.
 To determine if the currently running firmware matches the software, run, `ota-check-firmware`:
 ```
 $ ota-check-firmware
-Current firmware version is: 35.2.1
-Current software version is: 35.2.1
+Current firmware version is: 35.5.0
+Current software version is: 35.5.0
 ```
 
 If these versions do not match, you can update your firmware using the UEFI Capsule update mechanism. The procedure to do so is below:

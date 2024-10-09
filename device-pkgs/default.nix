@@ -1,6 +1,6 @@
 # These come from the device's nixos module arguments, so `pkgs` is actually an
 # aarch64 hostPlatform packaget-set.
-{ config, pkgs, ... }:
+{ config, pkgs, kernel,  ... }:
 
 # These must be filled in by a `callPackage` from an x86_64 hostPlatform
 # package-set to satisfy being able to run nvidia's prebuilt binaries on an
@@ -16,6 +16,8 @@
 , writeScript
 , writeShellApplication
 , buildPackages
+# possibly need clean up with imports below
+, makeModulesClosure
 }:
 
 let
@@ -69,9 +71,11 @@ let
 
         ${mkFlashScript nvidia-jetpack.flash-tools (args // { flashArgs = [ "--no-root-check" "--no-flash" ] ++ (args.flashArgs or flashArgs); }) }
 
+     
         cp -r ./ $out
       '';
     in
+    builtins.trace "-----------------------------MKFLASHSCRIPT------------------------------------" null
     import ./flashcmd-script.nix {
       inherit lib;
       inherit gcc dtc;
@@ -93,8 +97,13 @@ let
   # Produces a script that boots a given kernel, initrd, and cmdline using the RCM boot method
   mkRcmBootScript = { kernelPath, initrdPath, kernelCmdline }: mkFlashScriptAuto {
     preFlashCommands = ''
-      cp ${kernelPath} kernel/Image
-      cp ${initrdPath} bootloader/l4t_initrd.img
+      cp ${kernel}/Image kernel/Image
+      cp ${initrdPath}/initrd bootloader/l4t_initrd.img
+       
+
+      echo @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+      echo ${kernel} ${initrdPath}
+      echo @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
       export CMDLINE="${builtins.toString kernelCmdline}"
       export INITRD_IN_BOOTIMG="yes"
@@ -141,6 +150,12 @@ let
         echo
         echo "Jetson device should now be flashing and will reboot when complete."
         echo "You may watch the progress of this on the device's serial port"
+        echo "#######################################################################"
+        echo "#######################################################################"
+        echo " ${config.boot.kernelPackages.kernel}"
+        echo "#######################################################################"
+        echo "#######################################################################"
+
       '';
       meta.platforms = [ "x86_64-linux" ];
     };

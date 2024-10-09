@@ -1,15 +1,13 @@
 diff --git a/Silicon/NVIDIA/Library/DxeDtPlatformDtbLoaderLib/DxeDtPlatformDtbKernelLoaderLib.c b/Silicon/NVIDIA/Library/DxeDtPlatformDtbLoaderLib/DxeDtPlatformDtbKernelLoaderLib.c
-index 1defbed..d16b86e 100644
+index 218cb66c..f7f7df7a 100644
 --- a/Silicon/NVIDIA/Library/DxeDtPlatformDtbLoaderLib/DxeDtPlatformDtbKernelLoaderLib.c
 +++ b/Silicon/NVIDIA/Library/DxeDtPlatformDtbLoaderLib/DxeDtPlatformDtbKernelLoaderLib.c
-@@ -705,9 +705,7 @@ DtPlatformLoadDtb (
+@@ -686,7 +686,7 @@ DtPlatformLoadDtb (
    Status = gBS->CreateEventEx (
                    EVT_NOTIFY_SIGNAL,
-                   TPL_CALLBACK,
--                  UefiDtbBoot ?
--                  UpdateFdt :
--                  InstallFdt,
+                   TPL_NOTIFY,
+-                  OnEndOfDxe,
 +                  UpdateFdt,
                    NULL,
-                   &gEfiEventReadyToBootGuid,
-                   &ReadyToBootEvent
+                   &gEfiEndOfDxeEventGroupGuid,
+                   &EndOfDxeEvent

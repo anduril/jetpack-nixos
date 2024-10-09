@@ -211,7 +211,11 @@ in
       (
         !cfg.kernel.realtime
       )
-      config.boot.kernelPackages.nvidia-display-driver;
+       config.boot.kernelPackages.nvidia-oot ;
+      # FIXME
+      # config.boot.kernelPackages.nvgpu
+      #config.boot.kernelPackages.nvidia-display-driver
+      
 
     hardware.firmware = with pkgs.nvidia-jetpack; [
       l4t-firmware
