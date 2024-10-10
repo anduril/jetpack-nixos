@@ -26,6 +26,8 @@ in
       enable = true;
       description = "NV Fan control";
       serviceConfig = {
+        Restart = "on-failure";
+        RestartSec = "2s";
         ExecStartPre = "${pkgs.coreutils}/bin/mkdir -p /var/lib/nvfancontrol";
         ExecStart = "${pkgs.nvidia-jetpack.l4t-nvfancontrol}/bin/nvfancontrol -f ${cfg.configFile}";
       };

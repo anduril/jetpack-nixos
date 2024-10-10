@@ -17,8 +17,8 @@
 , benchmarkSrc ? fetchFromGitHub {
     owner = "NVIDIA-AI-IOT";
     repo = "jetson_benchmarks";
-    rev = "43892b9ec64abdfabb4c18e19f301d9d4358f5ea";
-    sha256 = "sha256-u11iBbEALOMite/ivm95TAnmXB71i9OjdNnRd0e1cHg=";
+    rev = "c029c7de35d69fd85e10b624b4908b6de10194b0";
+    hash = "sha256-xK2Er/+Wkge0v1LtZFybZQR7GCZ7PzIhv8PCFLH6+80=";
   }
 
   # disable some system checks such as closing all apps which prevent the benchmark
