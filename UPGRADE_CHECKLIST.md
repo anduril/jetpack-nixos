@@ -1,10 +1,11 @@
 ### Updating
 - [ ] Update `l4tVersion`, `jetpackVersion`, and `cudaVersion` in overlay.nix
-- [ ] Update branch/revision/sha256s in:
+- [ ] Update branch/revision/hashes in:
     - [ ] `overlay.nix`
     - [ ] `kernel/default.nix`
-    - [ ] `uefi-firmware.nix`
-    - [ ] Grep for "sha256 = ", see if there is anything else not covered
+    - [ ] `pkgs/uefi-firmware/edk2-nvidia.nix`
+    - [ ] `pkgs/uefi-firmware/jetson-edk2-uefi.nix`
+    - [ ] `grep -r -e "hash = " -e "sha256 = "` to see if there is anything else not covered
 - [ ] Update the kernel version in `kernel/default.nix` if it chaged.
 - [ ] Grep for the previous version strings e.g. "35.4.1"
 - [ ] Compare files from `unpackedDebs` before and after

@@ -5,13 +5,6 @@ final: prev: (
     cfg = config.hardware.nvidia-jetpack;
 
     inherit (prev) lib;
-
-    tosArgs = {
-      inherit (final.nvidia-jetpack) socType;
-      inherit (cfg.firmware.optee) taPublicKeyFile;
-      opteePatches = cfg.firmware.optee.patches;
-      extraMakeFlags = cfg.firmware.optee.extraMakeFlags;
-    };
   in
   {
     nvidia-jetpack = prev.nvidia-jetpack.overrideScope (finalJetpack: prevJetpack: {
@@ -27,24 +20,19 @@ final: prev: (
         else if lib.hasPrefix "xavier-" cfg.som then "0x19"
         else throw "Unknown SoC type";
 
-      uefi-firmware = prevJetpack.uefi-firmware.override ({
-        bootLogo = cfg.firmware.uefi.logo;
-        debugMode = cfg.firmware.uefi.debugMode;
+      edk2NvidiaSrc = prevJetpack.edk2NvidiaSrc.override {
         errorLevelInfo = cfg.firmware.uefi.errorLevelInfo;
-        edk2NvidiaPatches = cfg.firmware.uefi.edk2NvidiaPatches;
-        edk2UefiPatches = cfg.firmware.uefi.edk2UefiPatches;
+        bootLogo = cfg.firmware.uefi.logo;
+      };
+
+      jetsonEdk2Uefi = prevJetpack.jetsonEdk2Uefi.override ({
+        debugMode = cfg.firmware.uefi.debugMode;
       } // lib.optionalAttrs cfg.firmware.uefi.capsuleAuthentication.enable {
         inherit (cfg.firmware.uefi.capsuleAuthentication) trustedPublicCertPemFile;
       });
 
-      flash-tools = prevJetpack.flash-tools.overrideAttrs ({ patches ? [ ], postPatch ? "", ... }: {
-        patches = patches ++ cfg.flashScriptOverrides.patches;
-        postPatch = postPatch + cfg.flashScriptOverrides.postPatch;
-      });
-
-      tosImage = finalJetpack.buildTOS tosArgs;
-      taDevKit = finalJetpack.buildOpteeTaDevKit tosArgs;
-      inherit (finalJetpack.tosImage) nvLuksSrv hwKeyAgent;
+      armTrustedFirmware = finalJetpack.callPackage ./pkgs/optee/arm-trusted-firmware.nix { };
+      tosImage = finalJetpack.callPackage ./pkgs/optee/tos-image.nix { };
 
       flashInitrd =
         let
@@ -101,7 +89,7 @@ final: prev: (
         inherit lib flash-tools;
         inherit (cfg.firmware) eksFile;
         inherit (cfg.flashScriptOverrides) additionalDtbOverlays flashArgs partitionTemplate;
-        inherit (finalJetpack) tosImage socType uefi-firmware;
+        inherit (finalJetpack) tosImage socType uefiFirmware;
 
         dtbsDir = config.hardware.deviceTree.package;
       } // args);

@@ -22,6 +22,12 @@ in
     (mkRenamedOptionModule [ "hardware" "nvidia-jetpack" "firmware" "optee" "supplicantExtraArgs" ] [ "hardware" "nvidia-jetpack" "firmware" "optee" "supplicant" "extraArgs" ])
     (mkRenamedOptionModule [ "hardware" "nvidia-jetpack" "firmware" "optee" "trustedApplications" ] [ "hardware" "nvidia-jetpack" "firmware" "optee" "supplicant" "trustedApplications" ])
     (mkRenamedOptionModule [ "hardware" "nvidia-jetpack" "firmware" "optee" "supplicantPlugins" ] [ "hardware" "nvidia-jetpack" "firmware" "optee" "supplicant" "plugins" ])
+    (mkRemovedOptionModule [ "hardware" "nvidia-jetpack" "firmware" "uefi" "edk2NvidiaPatches" ] "Use `nixpkgs.overlays` to modify `pkgs.nvidia-jetpack.edk2NvidiaSrc` instead.")
+    (mkRemovedOptionModule [ "hardware" "nvidia-jetpack" "firmware" "uefi" "edk2UefiPatches" ] "Use `nixpkgs.overlays` to modify `pkgs.nvidia-jetpack.jetsonEdk2Uefi` instead.")
+    (mkRemovedOptionModule [ "hardware" "nvidia-jetpack" "flashScriptOverrides" "patches" ] "Use `nixpkgs.overlays` to modify `pkgs.nvidia-jetpack.flash-tools` instead.")
+    (mkRemovedOptionModule [ "hardware" "nvidia-jetpack" "flashScriptOverrides" "postPatch" ] "Use `nixpkgs.overlays` to modify `pkgs.nvidia-jetpack.flash-tools` instead.")
+    (mkRemovedOptionModule [ "hardware" "nvidia-jetpack" "firmware" "optee" "patches" ] "Use `nixpkgs.overlays` to modify `pkgs.nvidia-jetpack.opteeOS` instead.")
+    (mkRemovedOptionModule [ "hardware" "nvidia-jetpack" "firmware" "optee" "extraMakeFlags" ] "Use `nixpkgs.overlays` to modify `pkgs.nvidia-jetpack.opteeOS` instead.")
   ];
 
   options = {
@@ -55,22 +61,6 @@ in
           errorLevelInfo = mkOption {
             type = types.bool;
             default = cfg.firmware.uefi.debugMode;
-          };
-
-          edk2NvidiaPatches = mkOption {
-            type = types.listOf types.path;
-            description = ''
-              Patches that will be applied to the edk2-nvidia repo
-            '';
-            default = [ ];
-          };
-
-          edk2UefiPatches = mkOption {
-            type = types.listOf types.path;
-            description = ''
-              Patches that will be applied to the nvidia edk2 repo which is nvidia's fork of the upstream edk2 repo
-            '';
-            default = [ ];
           };
 
           secureBoot = {
@@ -184,16 +174,6 @@ in
                 package on startup.
               '';
             };
-          };
-
-          patches = mkOption {
-            type = types.listOf types.path;
-            default = [ ];
-          };
-
-          extraMakeFlags = mkOption {
-            type = types.listOf types.str;
-            default = [ ];
           };
 
           taPublicKeyFile = mkOption {
@@ -318,18 +298,6 @@ in
         partitionTemplate = mkOption {
           type = types.path;
           description = ".xml file describing partition template to use when flashing";
-        };
-
-        patches = mkOption {
-          type = types.listOf types.path;
-          default = [ ];
-          description = "Patches to apply to the flash-tools";
-        };
-
-        postPatch = mkOption {
-          type = types.lines;
-          default = "";
-          description = "Additional commands to run when building flash-tools";
         };
 
         additionalDtbOverlays = mkOption {
