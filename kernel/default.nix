@@ -10,7 +10,8 @@
 , ...
 }@args:
 buildLinux (args // {
-  version = "5.10.120" + lib.optionalString realtime "-rt70";
+  # See Makefile in kernel source root for VERSION/PATCHLEVEL/SUBLEVEL. See realtime patch for rt version
+  version = "5.10.216" + lib.optionalString realtime "-rt96";
   extraMeta.branch = "5.10";
 
   defconfig = "tegra_defconfig";
@@ -21,8 +22,8 @@ buildLinux (args // {
     src = fetchFromGitHub {
       owner = "OE4T";
       repo = "linux-tegra-5.10";
-      rev = "76678311c10b59a385a6d74152f3a0b976ae2a67"; # latest on oe4t-patches-l4t-r35.4.ga as of 2023-09-27
-      sha256 = "sha256-jHqIYDztVs/yw/oMxr4oPabxXk+l+CPlRrODEaduBgg=";
+      rev = "4bce4d148ef3ff159ab55c127d8761aeaac5cc28"; # latest on oe4t-patches-l4t-r36.0.ga as of 2024-10-27
+      sha256 = "sha256-YCOEGQ943EbrApdVFKs+l+g2XWZ8TvdqRxcK8F9ebo8=";
     };
     # Remove device tree overlays with some incorrect "remote-endpoint" nodes.
     # They are strings, but should be phandles. Otherwise, it fails to compile
@@ -59,15 +60,6 @@ buildLinux (args // {
       '';
     }
 
-    # Fix "FAILED: load BTF from vmlinux: Unknown error -22" by including a
-    # number of patches from the 5.10 LTS branch. Unclear exactly which one is needed.
-    # See also: https://github.com/NixOS/nixpkgs/pull/194551
-    { patch = ./0001-bpf-Generate-BTF_KIND_FLOAT-when-linking-vmlinux.patch; }
-    { patch = ./0002-kbuild-Quote-OBJCOPY-var-to-avoid-a-pahole-call-brea.patch; }
-    { patch = ./0003-kbuild-skip-per-CPU-BTF-generation-for-pahole-v1.18-.patch; }
-    { patch = ./0004-kbuild-Unify-options-for-BTF-generation-for-vmlinux-.patch; }
-    { patch = ./0005-kbuild-Add-skip_encoding_btf_enum64-option-to-pahole.patch; }
-
     # Fix "FAILED: resolved symbol udp_sock"
     # This is caused by having multiple structs of the same name in the BTF output.
     # For example, `bpftool btf dump file vmlinux | grep "STRUCT 'udp_sock'"`
@@ -76,22 +68,14 @@ buildLinux (args // {
     # Without this patch, resolve_btfids doesn't handle this case and
     # miscounts, leading to the failure. The underlying cause of why we have
     # multiple structs of the same name is still unresolved as of 2023-07-29
-    { patch = ./0006-tools-resolve_btfids-Warn-when-having-multiple-IDs-f.patch; }
+    { patch = ./0001-tools-resolve_btfids-Warn-when-having-multiple-IDs-f.patch; }
 
     # Fix Ethernet "downshifting" (e.g.1000Base-T -> 100Base-T) with realtek
     # PHY used on Xavier NX
-    { patch = ./0007-net-phy-realtek-read-actual-speed-on-rtl8211f-to-det.patch; }
+    { patch = ./0002-net-phy-realtek-read-actual-speed-on-rtl8211f-to-det.patch; }
 
     # Lower priority of tegra-se crypto modules since they're slow and flaky
-    { patch = ./0008-Lower-priority-of-tegra-se-crypto.patch; }
-
-    # Include patch from linux-stable that (for some reason) appears to fix
-    # random crashes very early in boot process on Xavier NX specifically
-    # Remove when updating to 35.5.0
-    { patch = ./0009-Revert-random-use-static-branch-for-crng_ready.patch; }
-
-    # Fix an issue building with gcc13
-    { patch = ./0010-bonding-gcc13-synchronize-bond_-a-t-lb_xmit-types.patch; }
+    { patch = ./0003-Lower-priority-of-tegra-se-crypto.patch; }
   ] ++ kernelPatches;
 
   structuredExtraConfig = with lib.kernel; {
