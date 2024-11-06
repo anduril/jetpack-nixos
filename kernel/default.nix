@@ -11,7 +11,7 @@
 }@args:
 buildLinux (args // {
   # See Makefile in kernel source root for VERSION/PATCHLEVEL/SUBLEVEL. See realtime patch for rt version
-  version = "5.10.216" + lib.optionalString realtime "-rt96";
+  version = "5.10.216" + lib.optionalString realtime "-rt108";
   extraMeta.branch = "5.10";
 
   defconfig = "tegra_defconfig";
