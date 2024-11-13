@@ -114,11 +114,11 @@ let
     buildInputs = [ l4t-core libglvnd egl-wayland ];
     postPatch = ''
       # Replace incorrect ICD symlinks
-      rm -rf etc
-      mkdir -p share/vulkan/icd.d
-      mv lib/nvidia_icd.json share/vulkan/icd.d/nvidia_icd.json
+      #rm -rf etc
+      #mkdir -p share/vulkan/icd.d
+      #mv lib/nvidia_icd.json share/vulkan/icd.d/nvidia_icd.json
       # Use absolute path in ICD json
-      sed -i -E "s#(libGLX_nvidia)#$out/lib/\\1#" share/vulkan/icd.d/nvidia_icd.json
+      #sed -i -E "s#(libGLX_nvidia)#$out/lib/\\1#" share/vulkan/icd.d/nvidia_icd.json
 
       rm -f share/glvnd/egl_vendor.d/10_nvidia.json
       cp lib/tegra-egl/nvidia.json share/glvnd/egl_vendor.d/10_nvidia.json
@@ -144,6 +144,11 @@ let
 
       remapFile=$(mktemp)
       echo NvOsLibraryLoad NvOsLibraryLoad_3d > $remapFile
+
+      #remove broken libcuda links
+      echo remove broken libcuda links
+      rm ./lib/libcuda.so
+      
       for lib in $(find ./lib -name "*.so*"); do
         if isELF $lib; then
           ${patchelf_new}/bin/patchelf "$lib" \
@@ -367,7 +372,7 @@ let
     buildInputs = [ stdenv.cc.cc.lib l4t-core ];
     # Remove some utilities that bring in too many libraries
     postPatch = ''
-      rm bin/nv_macsec_wpa_supplicant
+      rm sbin/nv_wpa_supplicant_wifi
     '';
     postFixup = ''
       wrapProgram $out/bin/nv_fuse_read.sh --prefix PATH : ${lib.makeBinPath [ bc ]}

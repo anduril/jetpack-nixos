@@ -4,7 +4,7 @@ final: prev: (
   let
     cfg = config.hardware.nvidia-jetpack;
 
-    inherit (prev) lib;
+    inherit (prev) lib ;
 
     tosArgs = {
       inherit (final.nvidia-jetpack) socType;
@@ -103,6 +103,7 @@ final: prev: (
         inherit (cfg.flashScriptOverrides) additionalDtbOverlays flashArgs partitionTemplate;
         inherit (finalJetpack) tosImage socType uefi-firmware;
 
+        kernel = config.system.modulesTree;
         dtbsDir = config.hardware.deviceTree.package;
       } // args);
 

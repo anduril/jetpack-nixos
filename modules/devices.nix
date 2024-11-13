@@ -98,14 +98,14 @@ lib.mkMerge [{
         targetBoard = mkDefault "jetson-agx-orin-devkit";
         # We don't flash the sdmmc with kernel/initrd/etc at all. Just let it be a
         # regular NixOS machine instead of having some weird partition structure.
-        partitionTemplate = mkDefault "${pkgs.nvidia-jetpack.bspSrc}/bootloader/t186ref/cfg/flash_t234_qspi.xml";
+        partitionTemplate = mkDefault "${pkgs.nvidia-jetpack.flash-tools}/bootloader/generic/cfg/flash_t234_qspi.xml";
       })
 
       (mkIf (cfg.som == "orin-agx-industrial") {
         targetBoard = mkDefault "jetson-agx-orin-devkit-industrial";
         # Remove the sdmmc part of this flash.xmo file. The industrial spi part is still different
         partitionTemplate = mkDefault (pkgs.runCommand "flash.xml" { nativeBuildInputs = [ pkgs.buildPackages.xmlstarlet ]; } ''
-          xmlstarlet ed -d '//device[@type="sdmmc_user"]' ${pkgs.nvidia-jetpack.bspSrc}/bootloader/t186ref/cfg/flash_t234_qspi_sdmmc_industrial.xml >$out
+          xmlstarlet ed -d '//device[@type="sdmmc_user"]' ${pkgs.nvidia-jetpack.bspSrc}/bootloader/generic/cfg/flash_t234_qspi_sdmmc_industrial.xml >$out
         '');
       })
 
@@ -113,7 +113,7 @@ lib.mkMerge [{
         targetBoard = mkDefault "jetson-orin-nano-devkit";
         # Use this instead if you want to use the original Xavier NX Devkit module (p3509-a02)
         #targetBoard = mkDefault "p3509-a02+p3767-0000";
-        partitionTemplate = mkDefault "${pkgs.nvidia-jetpack.bspSrc}/bootloader/t186ref/cfg/flash_t234_qspi.xml";
+        partitionTemplate = mkDefault "${pkgs.nvidia-jetpack.bspSrc}/bootloader/generic/cfg/flash_t234_qspi.xml";
       })
 
       (mkIf (cfg.som == "xavier-agx") {

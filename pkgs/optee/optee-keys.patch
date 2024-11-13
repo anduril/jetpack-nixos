@@ -1,0 +1,37 @@
+diff --git a/optee/optee_os/core/arch/arm/plat-tegra/conf.mk b/optee/optee_os/core/arch/arm/plat-tegra/conf.mk
+index aecd6df..475d8b1 100644
+--- a/optee/optee_os/core/arch/arm/plat-tegra/conf.mk
++++ b/optee/optee_os/core/arch/arm/plat-tegra/conf.mk
+@@ -110,7 +110,7 @@ endif
+ $(call force,CFG_EARLY_TA,y)
+ $(call force,CFG_EMBEDDED_TS,y)
+
+-$(call force,CFG_TEGRA_SE_USE_TEST_KEYS,y)
++@@useTegraTestKeys@@$(call force,CFG_TEGRA_SE_USE_TEST_KEYS,y)
+
+ libdeps += $(NV_CCC_PREBUILT)
+ endif
+diff --git a/optee/optee_os/core/pta/tegra/jetson_user_key_pta.c b/optee/optee_os/core/pta/tegra/jetson_user_key_pta.c
+index 3b95156..601b633 100644
+--- a/optee/optee_os/core/pta/tegra/jetson_user_key_pta.c
++++ b/optee/optee_os/core/pta/tegra/jetson_user_key_pta.c
+@@ -38,8 +38,7 @@ static vaddr_t ekb_base_addr;
+  * ba d6 6e b4 48 49 83 68 4b 99 2f e5 4a 64 8b b8
+  */
+ static uint8_t fv_for_ekb[] = {
+-	0xba, 0xd6, 0x6e, 0xb4, 0x48, 0x49, 0x83, 0x68,
+-	0x4b, 0x99, 0x2f, 0xe5, 0x4a, 0x64, 0x8b, 0xb8,
++       @@fvForEKB@@
+ };
+
+ /*
+@@ -48,8 +48,7 @@ static uint8_t fv_for_ekb[] = {
+  * e4 20 f5 8d 1d ea b5 24 c2 70 d8 d2 3e ca 45 e8
+  */
+ static uint8_t fv_for_ssk_dk[] = {
+-	0xe4, 0x20, 0xf5, 0x8d, 0x1d, 0xea, 0xb5, 0x24,
+-	0xc2, 0x70, 0xd8, 0xd2, 0x3e, 0xca, 0x45, 0xe8,
++       @@fvForSSK@@
+ };
+
+ /*

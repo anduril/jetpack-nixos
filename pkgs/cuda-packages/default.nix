@@ -173,7 +173,7 @@ let
     srcs = builtins.map (deb: deb.src) (debsForSourcePackage name);
   } // args);
 
-  nsight_compute_version = "2022.2.1";
+  nsight_compute_version = "2023.2.2";
   cudaPackages = {
     cuda_cccl = buildFromSourcePackage { name = "cuda-thrust"; };
     cuda_cudart = buildFromSourcePackage {
@@ -490,9 +490,9 @@ let
 
     # vpi2
     vpi2 = buildFromDebs {
-      name = "vpi2";
-      version = debs.common.vpi2-dev.version;
-      srcs = [ debs.common.libnvvpi2.src debs.common.vpi2-dev.src ];
+      name = "vpi3";
+      version = debs.common.vpi3-dev.version;
+      srcs = [ debs.common.libnvvpi3.src debs.common.vpi3-dev.src ];
       sourceRoot = "source/opt/nvidia/vpi2";
       buildInputs = ([ l4t-core l4t-3d-core l4t-multimedia l4t-cupva ])
         ++ (with cudaPackages; [ libcufft libnpp ]);
@@ -506,9 +506,9 @@ let
     };
 
     # Needed for vpi2-samples benchmark w/ pva to work
-    vpi2-firmware = runCommand "vpi2-firmware" { nativeBuildInputs = [ dpkg ]; } ''
-      dpkg-deb -x ${debs.common.libnvvpi2.src} source
-      install -D source/opt/nvidia/vpi2/lib64/priv/vpi2_pva_auth_allowlist $out/lib/firmware/pva_auth_allowlist
+    vpi2-firmware = runCommand "vpi3-firmware" { nativeBuildInputs = [ dpkg ]; } ''
+      dpkg-deb -x ${debs.common.libnvvpi3.src} source
+      install -D source/opt/nvidia/vpi3/lib64/priv/vpi3_pva_auth_allowlist $out/lib/firmware/pva_auth_allowlist
     '';
   };
 in

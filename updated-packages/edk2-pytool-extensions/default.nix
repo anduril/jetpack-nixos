@@ -1,11 +1,10 @@
 { buildPythonPackage
 , fetchFromGitHub
-, fetchPypi
 , pyftdi
 }:
 
 buildPythonPackage {
-  pname = "python-jetson";
+  pname = "python-edk2-pytools-extensions";
   version = "0.0.0";
   src = fetchFromGitHub {
     owner = "NVIDIA";

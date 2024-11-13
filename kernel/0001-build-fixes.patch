@@ -1,0 +1,31 @@
+diff --git a/Makefile b/Makefile
+index 5499ee7..39bb083 100644
+--- a/Makefile
++++ b/Makefile
+@@ -46,7 +46,7 @@ ifeq ($(MAKECMDGOALS), modules)
+ 	$(MAKE) -j $(NPROC) ARCH=arm64 \
+ 		src=$(NVIDIA_CONFTEST)/nvidia obj=$(NVIDIA_CONFTEST)/nvidia \
+ 		CC=$(CROSS_COMPILE)gcc LD=$(CROSS_COMPILE)ld \
+-		NV_KERNEL_SOURCES=$(KERNEL_HEADERS) \
++		NV_KERNEL_SOURCES=$(KERNEL_HEADERS)/source \
+ 		NV_KERNEL_OUTPUT=$(KERNEL_OUTPUT) \
+ 		-f $(NVIDIA_CONFTEST)/nvidia/Makefile
+ endif
+@@ -110,7 +110,7 @@ define display-cmd
+ 		LOCALVERSION=$(version) \
+ 		NV_VERBOSE=0 \
+ 		KERNELRELEASE="" \
+-		SYSSRC=$(NVIDIA_HEADERS) \
++		SYSSRC=$(NVIDIA_HEADERS)/source \
+ 		SYSOUT=$(NVIDIA_HEADERS) \
+ 		SYSSRCHOST1X=$(MAKEFILE_DIR)/nvidia-oot/drivers/gpu/host1x/include \
+ 		CC=$(CROSS_COMPILE)gcc \
+@@ -123,7 +123,7 @@ endef
+ 
+ nvidia-headers: nvidia-oot
+ 	mkdir -p $(NVIDIA_HEADERS)
+-	cp -LR $(KERNEL_HEADERS)/* $(NVIDIA_HEADERS)
++	cp -LR $(KERNEL_HEADERS)/* $(NVIDIA_HEADERS) || true
+ 	if [ "$(KERNEL_HEADERS)" != "$(KERNEL_OUTPUT)" ] ; then \
+ 		cp -LR $(KERNEL_OUTPUT)/include/* $(NVIDIA_HEADERS)/include/ ; \
+ 		cp -LR $(KERNEL_OUTPUT)/arch/arm64/include/* $(NVIDIA_HEADERS)/arch/arm64/include/ ; \

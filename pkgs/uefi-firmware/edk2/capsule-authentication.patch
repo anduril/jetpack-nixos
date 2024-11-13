@@ -1,0 +1,22 @@
+diff --git a/Platform/NVIDIA/NVIDIA.common.dsc.inc b/Platform/NVIDIA/NVIDIA.common.dsc.inc
+index e56a31b3..af5949ed 100644
+--- a/Platform/NVIDIA/NVIDIA.common.dsc.inc
++++ b/Platform/NVIDIA/NVIDIA.common.dsc.inc
+@@ -1,3 +1,4 @@
++
+ #
+ #  SPDX-FileCopyrightText: Copyright (c) 2018-2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ #  Copyright (c) 2011-2018, ARM Limited. All rights reserved.
+@@ -801,6 +802,12 @@ CONFIG_ARM_WATCHDOG_INTERRUPT=0
+   gFmpDevicePkgTokenSpaceGuid.PcdFmpDeviceTestKeySha256Digest|{0}
+ 
+ [PcdsFixedAtBuild]
++  #
++  # trustedPublicCertPemFile
++  #
++  !include PublicCapsuleKey.cer.gEfiSecurityPkgTokenSpaceGuid.PcdPkcs7CertBuffer.inc
++  !include PublicCapsuleKey.cer.gFmpDevicePkgTokenSpaceGuid.PcdFmpDevicePkcs7CertBufferXdr.inc
++
+   #
+   # Variable Services PCDs.
+   #

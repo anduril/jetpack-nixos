@@ -1,5 +1,5 @@
 #!/usr/bin/env nix-shell
-#!nix-shell -i python -p "python3.withPackages (ps: with ps; [ debian ])
+#!nix-shell -i python -p "python3.withPackages (ps: with ps; [ debian ])"
 
 import gzip
 import json
@@ -11,7 +11,7 @@ from debian.debian_support import Version
 
 BASE_URL = 'https://repo.download.nvidia.com/jetson'
 REPOS = ['t234', 'common']
-VERSION = 'r36.2'
+VERSION = 'r36.3'
 
 def fetch_debs(url):
     fd = urllib.request.urlopen(url)
