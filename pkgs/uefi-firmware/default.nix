@@ -136,7 +136,7 @@ let
     patches =
       # Remove this one patch (CryptoPkg/OpensslLib: Upgrade OpenSSL to 1.1.1t)
       # present on nixos-23.05, as it will be added in the opensslPatches below
-      (builtins.filter (patch: patch.url != "https://bugzilla.tianocore.org/attachment.cgi?id=1330") prev.patches)
+      (builtins.filter (patch: patch.url != "https://bugzilla.tianocore.org/attachment.cgi?id=1330") (prev.patches or []))
       ++ opensslPatches;
     postUnpack = ''
       # This has been taken from:
