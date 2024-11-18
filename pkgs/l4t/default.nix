@@ -179,7 +179,10 @@ let
     name = "nvidia-l4t-cuda";
     buildInputs = [ l4t-core ];
 
-    postPatch = ''
+    postPatch = let
+      # XXX: Temporary override here since NVIDIA didn't update this for 35.6.0
+      l4tVersion = "35.5.0";
+    in ''
       # Additional libcuda symlinks
       ln -sf libcuda.so.1.1 lib/libcuda.so.1
       ln -sf libcuda.so.1.1 lib/libcuda.so
@@ -365,9 +368,12 @@ let
     name = "nvidia-l4t-tools";
     nativeBuildInputs = [ makeWrapper ];
     buildInputs = [ stdenv.cc.cc.lib l4t-core ];
-    # Remove some utilities that bring in too many libraries
     postPatch = ''
+      # Remove a utility that bring in too many libraries
       rm bin/nv_macsec_wpa_supplicant
+
+      # This just contains a symlink to a binary already in /bin (nvcapture-status-decoder)
+      rm -rf opt
     '';
     postFixup = ''
       wrapProgram $out/bin/nv_fuse_read.sh --prefix PATH : ${lib.makeBinPath [ bc ]}

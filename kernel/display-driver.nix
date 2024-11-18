@@ -6,13 +6,15 @@
 , l4tVersion
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation {
   pname = "nvidia-display-driver";
   version = "jetson_${l4tVersion}";
 
   src = gitRepos."tegra/kernel-src/nv-kernel-display-driver";
 
-  setSourceRoot = "sourceRoot=$(echo */NVIDIA-kernel-module-source-TempVersion)";
+  setSourceRoot = "sourceRoot=$(echo */nvdisplay)";
+
+  patches = [ ./display-driver-reproducibility-fix.patch ];
 
   nativeBuildInputs = kernel.moduleBuildDependencies;
 
