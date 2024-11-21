@@ -67,8 +67,6 @@ let
   );
 
   # Produces a script which boots into this NixOS system via RCM mode
-  # TODO: This doesn't work currently because `rcmBoot` would need to be built
-  # on x86_64, and the machine in `config` should be aarch64-linux
   rcmBoot = writeShellApplication {
     name = "rcmboot-nixos";
     text = mkRcmBootScript {
