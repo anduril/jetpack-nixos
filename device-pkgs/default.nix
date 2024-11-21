@@ -75,7 +75,7 @@ let
       # See nixpkgs nixos/modules/system/activatation/top-level.nix for standard usage of these paths
       kernelPath = "${config.system.build.kernel}/${config.system.boot.loader.kernelFile}";
       initrdPath = "${config.system.build.initialRamdisk}/${config.system.boot.loader.initrdFile}";
-      kernelCmdline = "init=${config.system.build.toplevel}/init initrd=initrd ${toString config.boot.kernelParams}";
+      kernelCmdline = "init=${config.system.build.toplevel}/init ${toString config.boot.kernelParams}";
     };
     meta.platforms = [ "x86_64-linux" ];
   };
@@ -88,7 +88,7 @@ let
         ${mkRcmBootScript {
           kernelPath = "${config.system.build.kernel}/${config.system.boot.loader.kernelFile}";
           initrdPath = "${flashInitrd}/initrd";
-          kernelCmdline = "initrd=initrd console=ttyTCU0,115200";
+          kernelCmdline = "console=ttyTCU0,115200";
           # During the initrd flash script, we upload two edk2 builds to the
           # board, one that is only used temporarily to boot into our
           # kernel/initrd to perform the flashing, and another one that is
