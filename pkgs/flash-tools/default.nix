@@ -29,7 +29,7 @@
 , openssl
 , bspSrc
 , l4tVersion
-,
+, symlinkJoin
 }:
 
 let
@@ -121,13 +121,22 @@ let
       python3
       util-linux
       dosfstools
-      lz4
       bc
       openssl
 
       # Needed by bootloader/tegraflash_impl_t234.py
       gcc
       dtc
+
+      # flash.sh wants lz4c, which used to be a symlink to lz4, but does not
+      # exist in more recent nixpkgs.
+      (symlinkJoin {
+        inherit (lz4) name;
+        paths = [ (lib.getBin lz4) ];
+        postBuild = ''
+          ln -sf $out/bin/lz4{,c}
+        '';
+      })
     ];
   };
 
