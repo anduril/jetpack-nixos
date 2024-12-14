@@ -11,13 +11,6 @@ final: prev: (
 
     inherit (final) lib;
 
-    tosArgs = {
-      inherit (final.nvidia-jetpack) socType;
-      inherit (cfg.firmware.optee) taPublicKeyFile;
-      opteePatches = cfg.firmware.optee.patches;
-      extraMakeFlags = cfg.firmware.optee.extraMakeFlags;
-    };
-
     flashTools = cfg.flasherPkgs.callPackages (import ./device-pkgs { inherit config; pkgs = final; }) { };
   in
   {
@@ -53,14 +46,18 @@ final: prev: (
         patches = (old.patches or [ ]) ++ cfg.firmware.uefi.edk2UefiPatches;
       });
 
-      flash-tools = prevJetpack.flash-tools.overrideAttrs ({ patches ? [ ], postPatch ? "", ... }: {
-        patches = patches ++ cfg.flashScriptOverrides.patches;
-        postPatch = postPatch + cfg.flashScriptOverrides.postPatch;
+      opteeOS = prevJetpack.opteeOS.overrideAttrs (old: {
+        patches = (old.patches or [ ]) ++ cfg.firmware.optee.patches;
+        makeFlags = (old.makeFlags or [ ]) ++ cfg.firmware.optee.extraMakeFlags;
       });
 
-      tosImage = finalJetpack.buildTOS tosArgs;
-      taDevKit = finalJetpack.buildOpteeTaDevKit tosArgs;
-      inherit (finalJetpack.tosImage) nvLuksSrv hwKeyAgent;
+      opteeTaDevKit = prevJetpack.opteeTaDevKit.overrideAttrs (old: {
+        patches = (old.patches or [ ]) ++ cfg.firmware.optee.patches;
+        makeFlags = (old.makeFlags or [ ]) ++ cfg.firmware.optee.extraMakeFlags;
+      });
+
+      armTrustedFirmware = finalJetpack.callPackage ./pkgs/optee/arm-trusted-firmware.nix { };
+      tosImage = finalJetpack.callPackage ./pkgs/optee/tos-image.nix { };
 
       flashInitrd =
         let
@@ -196,6 +193,11 @@ final: prev: (
             '')
             cfg.firmware.variants;
         });
+
+      flash-tools = prevJetpack.flash-tools.overrideAttrs (old: {
+        patches = (old.patches or [ ]) ++ cfg.flashScriptOverrides.patches;
+        postPatch = (old.postPatch or "") + cfg.flashScriptOverrides.postPatch;
+      });
 
       # Use the flash-tools produced by mkFlashScript, we need whatever changes
       # the script made, as well as the flashcmd.txt from it

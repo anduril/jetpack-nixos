@@ -63,13 +63,26 @@ in
     jetsonEdk2Uefi = self.callPackage ./pkgs/uefi-firmware/jetson-edk2-uefi.nix { };
     uefiFirmware = self.callPackage ./pkgs/uefi-firmware/default.nix { };
 
-    inherit (prev.callPackages ./pkgs/optee {
-      # Nvidia's recommended toolchain is gcc9:
-      # https://nv-tegra.nvidia.com/r/gitweb?p=tegra/optee-src/nv-optee.git;a=blob;f=optee/atf_and_optee_README.txt;h=591edda3d4ec96997e054ebd21fc8326983d3464;hb=5ac2ab218ba9116f1df4a0bb5092b1f6d810e8f7#l33
-      stdenv = prev.gcc9Stdenv;
-      inherit (self) bspSrc gitRepos l4tVersion;
-    }) buildTOS buildOpteeTaDevKit opteeClient;
-    genEkb = self.callPackage ./pkgs/optee/gen-ekb.nix { };
+    # Nvidia's recommended toolchain for optee is gcc9:
+    # https://nv-tegra.nvidia.com/r/gitweb?p=tegra/optee-src/nv-optee.git;a=blob;f=optee/atf_and_optee_README.txt;h=591edda3d4ec96997e054ebd21fc8326983d3464;hb=5ac2ab218ba9116f1df4a0bb5092b1f6d810e8f7#l33
+    opteeStdenv = prev.gcc9Stdenv;
+
+    opteeClient = self.callPackage ./pkgs/optee/client.nix { };
+
+    opteeTaDevKit = (self.callPackage ./pkgs/optee/os.nix { }).overrideAttrs (old: {
+      pname = "optee-ta-dev-kit";
+      makeFlags = (old.makeFlags or [ ]) ++ [ "ta_dev_kit" ];
+    });
+
+    nvLuksSrv = self.callPackage ./pkgs/optee/nv-luks-srv.nix { };
+    hwKeyAgent = self.callPackage ./pkgs/optee/hw-key-agent.nix { };
+
+    opteeOS = self.callPackage ./pkgs/optee/os.nix {
+      earlyTaPaths = [
+        "${self.nvLuksSrv}/${self.nvLuksSrv.uuid}.stripped.elf"
+        "${self.hwKeyAgent}/${self.hwKeyAgent.uuid}.stripped.elf"
+      ];
+    };
 
     flash-tools = self.callPackage ./pkgs/flash-tools { };
 
