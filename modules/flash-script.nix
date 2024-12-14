@@ -1,4 +1,4 @@
-{ config, pkgs, lib, utils, ... }:
+{ options, config, pkgs, lib, utils, ... }:
 
 # Convenience package that allows you to set options for the flash script using the NixOS module system.
 # You could do the overrides yourself if you'd prefer.
