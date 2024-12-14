@@ -409,6 +409,63 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    warnings = lib.optionals options.hardware.nvidia-jetpack.firmware.uefi.edk2NvidiaPatches.isDefined [
+      ''
+        The option `hardware.nvidia-jetpack.firmware.uefi.edk2NvidiaPatches`
+        will be deprecated soon. Please migrate to using the `nixpkgs.overlays`
+        option to define an overlay that modifies the
+        `pkgs.nvidia-jetpack.edk2NvidiaSrc` derivation. For example, see
+        <jetpack-nixos/overlay-with-config.nix>.
+      ''
+    ]
+    ++ lib.optionals options.hardware.nvidia-jetpack.firmware.uefi.edk2UefiPatches.isDefined [
+      ''
+        The option `hardware.nvidia-jetpack.firmware.uefi.edk2UefiPatches` will
+        be deprecated soon. Please migrate to using the `nixpkgs.overlays`
+        option to define an overlay that modifies the
+        `pkgs.nvidia-jetpack.jetsonEdk2Uefi` derivation. For example, see
+        <jetpack-nixos/overlay-with-config.nix>.
+      ''
+    ]
+    ++ lib.optionals options.hardware.nvidia-jetpack.flashScriptOverrides.patches.isDefined [
+      ''
+        The option `hardware.nvidia-jetpack.flashScriptOverrides.patches` will
+        be deprecated soon. Please migrate to using the `nixpkgs.overlays`
+        option to define an overlay that modifies the
+        `pkgs.nvidia-jetpack.flash-tools` derivation. For example, see
+        <jetpack-nixos/overlay-with-config.nix>.
+      ''
+    ]
+    ++ lib.optionals options.hardware.nvidia-jetpack.flashScriptOverrides.postPatch.isDefined [
+      ''
+        The option `hardware.nvidia-jetpack.flashScriptOverrides.postPatch`
+        will be deprecated soon. Please migrate to using the `nixpkgs.overlays`
+        option to define an overlay that modifies the
+        `pkgs.nvidia-jetpack.flash-tools` derivation. For example, see
+        <jetpack-nixos/overlay-with-config.nix>.
+      ''
+    ]
+    ++ lib.optionals options.hardware.nvidia-jetpack.firmware.optee.patches.isDefined [
+      ''
+        The option `hardware.nvidia-jetpack.firmware.optee.patches` will be
+        deprecated soon. Please migrate to using the `nixpkgs.overlays` option
+        to define an overlay that modifies the `pkgs.nvidia-jetpack.opteeOS`
+        and/or `pkgs.nvidia-jetpack.opteeTaDevKit` derivations. For example,
+        see <jetpack-nixos/overlay-with-config.nix>.
+      ''
+    ]
+    ++ lib.optionals options.hardware.nvidia-jetpack.firmware.optee.extraMakeFlags.isDefined [
+      ''
+        The option `hardware.nvidia-jetpack.firmware.optee.extraMakeFlags` will
+        be deprecated soon. Please migrate to using the `nixpkgs.overlays`
+        option to define an overlay that modifies the
+        `pkgs.nvidia-jetpack.opteeOS` and/or
+        `pkgs.nvidia-jetpack.opteeTaDevKit` derivations. For example, see
+        <jetpack-nixos/overlay-with-config.nix>.
+      ''
+    ]
+    ;
+
     hardware.nvidia-jetpack.flashScript = lib.warn "hardware.nvidia-jetpack.flashScript is deprecated, use config.system.build.flashScript" config.system.build.flashScript;
     hardware.nvidia-jetpack.devicePkgs = (lib.mapAttrs (_: lib.warn "hardware.nvidia-jetpack.devicePkgs is deprecated, use pkgs.nvidia-jetpack") pkgs.nvidia-jetpack);
 
