@@ -9,7 +9,7 @@
   # be used by the bootloader(s) and passed to the kernel.
   dtbsDir ? null
 , # Optional package containing uefi_jetson.efi to replace prebuilt version
-  uefi-firmware ? null
+  uefiFirmware ? null
 , # Optional package containing tos.img to replace prebuilt version
   tosImage ? null
 , # Optional EKS file containing encrypted keyblob
@@ -44,15 +44,15 @@
 
   ${lib.optionalString (partitionTemplate != null) "cp ${partitionTemplate} flash.xml"}
   ${lib.optionalString (dtbsDir != null) "cp -r ${dtbsDir}/. kernel/dtb/"}
-  ${lib.optionalString (uefi-firmware != null) ''
-  cp ${uefi-firmware}/uefi_jetson.bin bootloader/uefi_jetson.bin
+  ${lib.optionalString (uefiFirmware != null) ''
+  cp ${uefiFirmware}/uefi_jetson.bin bootloader/uefi_jetson.bin
 
   # For normal NixOS usage, we'd probably use systemd-boot or GRUB instead,
   # but lets replace the upstream L4TLauncher EFI payload anyway
-  cp ${uefi-firmware}/L4TLauncher.efi bootloader/BOOTAA64.efi
+  cp ${uefiFirmware}/L4TLauncher.efi bootloader/BOOTAA64.efi
 
   # Replace additional dtbos
-  cp ${uefi-firmware}/dtbs/*.dtbo kernel/dtb/
+  cp ${uefiFirmware}/dtbs/*.dtbo kernel/dtb/
   ''}
   ${lib.optionalString (tosImage != null) ''
   cp ${tosImage}/tos.img bootloader/tos-optee_${socType}.img

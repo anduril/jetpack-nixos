@@ -34,14 +34,19 @@ final: prev: (
         else if lib.hasPrefix "xavier-" cfg.som then "0x19"
         else throw "Unknown SoC type";
 
-      uefi-firmware = prevJetpack.uefi-firmware.override ({
-        bootLogo = cfg.firmware.uefi.logo;
-        debugMode = cfg.firmware.uefi.debugMode;
+      edk2NvidiaSrc = (prevJetpack.edk2NvidiaSrc.override {
         errorLevelInfo = cfg.firmware.uefi.errorLevelInfo;
-        edk2NvidiaPatches = cfg.firmware.uefi.edk2NvidiaPatches;
-        edk2UefiPatches = cfg.firmware.uefi.edk2UefiPatches;
+        bootLogo = cfg.firmware.uefi.logo;
+      }).overrideAttrs (old: {
+        patches = (old.patches or [ ]) ++ cfg.firmware.uefi.edk2NvidiaPatches;
+      });
+
+      jetsonEdk2Uefi = (prevJetpack.jetsonEdk2Uefi.override ({
+        debugMode = cfg.firmware.uefi.debugMode;
       } // lib.optionalAttrs cfg.firmware.uefi.capsuleAuthentication.enable {
         inherit (cfg.firmware.uefi.capsuleAuthentication) trustedPublicCertPemFile;
+      })).overrideAttrs (old: {
+        patches = (old.patches or [ ]) ++ cfg.firmware.uefi.edk2UefiPatches;
       });
 
       flash-tools = prevJetpack.flash-tools.overrideAttrs ({ patches ? [ ], postPatch ? "", ... }: {
@@ -108,7 +113,7 @@ final: prev: (
         inherit lib flash-tools;
         inherit (cfg.firmware) eksFile;
         inherit (cfg.flashScriptOverrides) flashArgs partitionTemplate;
-        inherit (finalJetpack) tosImage socType uefi-firmware;
+        inherit (finalJetpack) tosImage socType uefiFirmware;
 
         additionalDtbOverlays = args.additionalDtbOverlays or cfg.flashScriptOverrides.additionalDtbOverlays;
         dtbsDir = config.hardware.deviceTree.package;

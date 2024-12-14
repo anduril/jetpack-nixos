@@ -59,8 +59,9 @@ in
         self.gitRepos
     );
 
-    inherit (prev.callPackages ./pkgs/uefi-firmware { inherit (self) l4tVersion; })
-      edk2-jetson uefi-firmware;
+    edk2NvidiaSrc = self.callPackage ./pkgs/uefi-firmware/edk2-nvidia-src.nix { };
+    jetsonEdk2Uefi = self.callPackage ./pkgs/uefi-firmware/jetson-edk2-uefi.nix { };
+    uefiFirmware = self.callPackage ./pkgs/uefi-firmware/default.nix { };
 
     inherit (prev.callPackages ./pkgs/optee {
       # Nvidia's recommended toolchain is gcc9:
