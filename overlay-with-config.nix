@@ -11,13 +11,6 @@ final: prev: (
 
     inherit (final) lib;
 
-    tosArgs = {
-      inherit (final.nvidia-jetpack) socType;
-      inherit (cfg.firmware.optee) taPublicKeyFile;
-      opteePatches = cfg.firmware.optee.patches;
-      extraMakeFlags = cfg.firmware.optee.extraMakeFlags;
-    };
-
     flashTools = cfg.flasherPkgs.callPackages (import ./device-pkgs { inherit config; pkgs = final; }) { };
   in
   {
@@ -34,24 +27,33 @@ final: prev: (
         else if lib.hasPrefix "xavier-" cfg.som then "0x19"
         else throw "Unknown SoC type";
 
-      uefi-firmware = prevJetpack.uefi-firmware.override ({
-        bootLogo = cfg.firmware.uefi.logo;
-        debugMode = cfg.firmware.uefi.debugMode;
+      edk2NvidiaSrc = (prevJetpack.edk2NvidiaSrc.override {
         errorLevelInfo = cfg.firmware.uefi.errorLevelInfo;
-        edk2NvidiaPatches = cfg.firmware.uefi.edk2NvidiaPatches;
-        edk2UefiPatches = cfg.firmware.uefi.edk2UefiPatches;
+        bootLogo = cfg.firmware.uefi.logo;
+      }).overrideAttrs (old: {
+        patches = (old.patches or [ ]) ++ cfg.firmware.uefi.edk2NvidiaPatches;
+      });
+
+      jetsonEdk2Uefi = (prevJetpack.jetsonEdk2Uefi.override ({
+        debugMode = cfg.firmware.uefi.debugMode;
       } // lib.optionalAttrs cfg.firmware.uefi.capsuleAuthentication.enable {
         inherit (cfg.firmware.uefi.capsuleAuthentication) trustedPublicCertPemFile;
+      })).overrideAttrs (old: {
+        patches = (old.patches or [ ]) ++ cfg.firmware.uefi.edk2UefiPatches;
       });
 
-      flash-tools = prevJetpack.flash-tools.overrideAttrs ({ patches ? [ ], postPatch ? "", ... }: {
-        patches = patches ++ cfg.flashScriptOverrides.patches;
-        postPatch = postPatch + cfg.flashScriptOverrides.postPatch;
+      opteeOS = prevJetpack.opteeOS.overrideAttrs (old: {
+        patches = (old.patches or [ ]) ++ cfg.firmware.optee.patches;
+        makeFlags = (old.makeFlags or [ ]) ++ cfg.firmware.optee.extraMakeFlags;
       });
 
-      tosImage = finalJetpack.buildTOS tosArgs;
-      taDevKit = finalJetpack.buildOpteeTaDevKit tosArgs;
-      inherit (finalJetpack.tosImage) nvLuksSrv hwKeyAgent;
+      opteeTaDevKit = prevJetpack.opteeTaDevKit.overrideAttrs (old: {
+        patches = (old.patches or [ ]) ++ cfg.firmware.optee.patches;
+        makeFlags = (old.makeFlags or [ ]) ++ cfg.firmware.optee.extraMakeFlags;
+      });
+
+      armTrustedFirmware = finalJetpack.callPackage ./pkgs/optee/arm-trusted-firmware.nix { };
+      tosImage = finalJetpack.callPackage ./pkgs/optee/tos-image.nix { };
 
       flashInitrd =
         let
@@ -108,7 +110,7 @@ final: prev: (
         inherit lib flash-tools;
         inherit (cfg.firmware) eksFile;
         inherit (cfg.flashScriptOverrides) flashArgs partitionTemplate;
-        inherit (finalJetpack) tosImage socType uefi-firmware;
+        inherit (finalJetpack) tosImage socType uefiFirmware;
 
         additionalDtbOverlays = args.additionalDtbOverlays or cfg.flashScriptOverrides.additionalDtbOverlays;
         dtbsDir = config.hardware.deviceTree.package;
@@ -187,6 +189,11 @@ final: prev: (
             '')
             cfg.firmware.variants;
         });
+
+      flash-tools = prevJetpack.flash-tools.overrideAttrs (old: {
+        patches = (old.patches or [ ]) ++ cfg.flashScriptOverrides.patches;
+        postPatch = (old.postPatch or "") + cfg.flashScriptOverrides.postPatch;
+      });
 
       # Use the flash-tools produced by mkFlashScript, we need whatever changes
       # the script made, as well as the flashcmd.txt from it
