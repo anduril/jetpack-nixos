@@ -1,11 +1,9 @@
 { stdenv
 , stdenvNoCC
 , buildPackages
-, addOpenGLRunpath
 , lib
 , fetchurl
 , fetchpatch
-, fetchgit
 , autoPatchelfHook
 , dpkg
 , expat
