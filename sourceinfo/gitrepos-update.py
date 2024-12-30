@@ -1,15 +1,17 @@
 #!/usr/bin/env nix-shell
 #!nix-shell -i python -p python3 nix-prefetch-git
 
+# This script is intended to be run against the source_sync.sh file in the unpacked BSP
+
 import json
 import re
 import subprocess
 import sys
 import os
 
-VERSION = '35.4.1'
+VERSION = '35.6'
 TAG = 'jetson_' + VERSION
-FILENAME = 'r' + VERSION + '-srcs.json'
+FILENAME = 'r' + VERSION + '-gitrepos.json'
 
 REPOS_TO_SKIP = [
     '3rdparty/dtc' # This doesn't have tags...

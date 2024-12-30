@@ -1,6 +1,6 @@
-diff -Naur bsp-5.1.2/bootloader/l4t_bup_gen.func bsp-5.1.2-new/bootloader/l4t_bup_gen.func
---- bsp-5.1.2/bootloader/l4t_bup_gen.func	1969-12-31 16:00:01.000000000 -0800
-+++ bsp-5.1.2-new/bootloader/l4t_bup_gen.func	2023-08-06 22:42:06.120107569 -0700
+diff -Naur bsp-5.1.4/bootloader/l4t_bup_gen.func bsp-5.1.4-new/bootloader/l4t_bup_gen.func
+--- bsp-5.1.4/bootloader/l4t_bup_gen.func	1969-12-31 16:00:01.000000000 -0800
++++ bsp-5.1.4-new/bootloader/l4t_bup_gen.func	2024-10-27 17:38:54.890791212 -0700
 @@ -23,7 +23,6 @@
  
  declare -A ENTRY_LIST
@@ -9,28 +9,15 @@ diff -Naur bsp-5.1.2/bootloader/l4t_bup_gen.func bsp-5.1.2-new/bootloader/l4t_bu
  
  PART_NAME=""
  IMAGE_SIGNED=0
-diff -Naur bsp-5.1.2/bootloader/tegraflash_impl_t234.py bsp-5.1.2-new/bootloader/tegraflash_impl_t234.py
---- bsp-5.1.2/bootloader/tegraflash_impl_t234.py	1969-12-31 16:00:01.000000000 -0800
-+++ bsp-5.1.2-new/bootloader/tegraflash_impl_t234.py	2023-08-06 22:40:37.923500980 -0700
-@@ -1861,7 +1861,7 @@
-             xml_tree = ElementTree.parse(file)
-             mode = xml_tree.getroot().get('mode')
- 
--            for file_nodes in xml_tree.getiterator('file'):
-+            for file_nodes in xml_tree.iter('file'):
-                 # To dinf encryptcompress node - Marcos
-                 sbknode = file_nodes.find('sbk')
-                 if sbknode is None:
-diff -Naur bsp-5.1.2/flash.sh bsp-5.1.2-new/flash.sh
---- bsp-5.1.2/flash.sh	1969-12-31 16:00:01.000000000 -0800
-+++ bsp-5.1.2-new/flash.sh	2023-08-06 22:43:04.708431157 -0700
-@@ -2585,6 +2585,9 @@
- 			cmdline+="${string} ";
+diff -Naur bsp-5.1.4/flash.sh bsp-5.1.4-new/flash.sh
+--- bsp-5.1.4/flash.sh	1969-12-31 16:00:01.000000000 -0800
++++ bsp-5.1.4-new/flash.sh	2024-10-27 17:41:11.472780429 -0700
+@@ -2711,6 +2711,8 @@
  		fi
+ 		cmdline+="${string} ";
  	done
 +
 +	# Just use the cmdline as-is, needed for RCM-boot in jetpack-nixos
-+	cmdline="${CMDLINE}"
  fi;
  
  ##########################################################################
