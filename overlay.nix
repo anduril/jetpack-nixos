@@ -68,6 +68,7 @@ in
       stdenv = prev.gcc9Stdenv;
       inherit (self) bspSrc gitRepos l4tVersion;
     }) buildTOS buildOpteeTaDevKit opteeClient;
+    genEkb = self.callPackage ./pkgs/optee/gen-ekb.nix { };
 
     flash-tools = self.callPackage ./pkgs/flash-tools { };
 

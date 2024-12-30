@@ -53,27 +53,27 @@ let
   };
 
   # Produces a script that boots a given kernel, initrd, and cmdline using the RCM boot method
-  mkRcmBootScript = { kernelPath, initrdPath, kernelCmdline }: mkFlashScriptAuto {
-    preFlashCommands = ''
-      cp ${kernelPath} kernel/Image
-      cp ${initrdPath} bootloader/l4t_initrd.img
+  mkRcmBootScript = { kernelPath, initrdPath, kernelCmdline, ... }@args: mkFlashScriptAuto (
+    builtins.removeAttrs args [ "kernelPath" "initrdPath" "kernelCmdline" ] // {
+      preFlashCommands = ''
+        cp ${kernelPath} kernel/Image
+        cp ${initrdPath} bootloader/l4t_initrd.img
 
-      export CMDLINE="${builtins.toString kernelCmdline}"
-      export INITRD_IN_BOOTIMG="yes"
-    '';
-    flashArgs = [ "--rcm-boot" ] ++ cfg.flashScriptOverrides.flashArgs;
-  };
+        export CMDLINE="${builtins.toString kernelCmdline}"
+        export INITRD_IN_BOOTIMG="yes"
+      '';
+      flashArgs = [ "--rcm-boot" ] ++ cfg.flashScriptOverrides.flashArgs;
+    }
+  );
 
   # Produces a script which boots into this NixOS system via RCM mode
-  # TODO: This doesn't work currently because `rcmBoot` would need to be built
-  # on x86_64, and the machine in `config` should be aarch64-linux
   rcmBoot = writeShellApplication {
     name = "rcmboot-nixos";
     text = mkRcmBootScript {
       # See nixpkgs nixos/modules/system/activatation/top-level.nix for standard usage of these paths
       kernelPath = "${config.system.build.kernel}/${config.system.boot.loader.kernelFile}";
       initrdPath = "${config.system.build.initialRamdisk}/${config.system.boot.loader.initrdFile}";
-      kernelCmdline = "init=${config.system.build.toplevel}/init initrd=initrd ${toString config.boot.kernelParams}";
+      kernelCmdline = "init=${config.system.build.toplevel}/init ${toString config.boot.kernelParams}";
     };
     meta.platforms = [ "x86_64-linux" ];
   };
@@ -86,7 +86,20 @@ let
         ${mkRcmBootScript {
           kernelPath = "${config.system.build.kernel}/${config.system.boot.loader.kernelFile}";
           initrdPath = "${flashInitrd}/initrd";
-          kernelCmdline = "initrd=initrd console=ttyTCU0,115200";
+          kernelCmdline = "console=ttyTCU0,115200";
+          # During the initrd flash script, we upload two edk2 builds to the
+          # board, one that is only used temporarily to boot into our
+          # kernel/initrd to perform the flashing, and another one that is
+          # persisted to the firmware storage medium for future booting. We
+          # don't want to influence the boot order of the temporary edk2 since
+          # this may cause that edk2 to boot from something other than our
+          # intended flashing kernel/initrd combo (e.g. disk or network). Since
+          # the edk2 build that we actually persist to the board is embedded in
+          # the initrd used for flashing, we have the desired boot order (as
+          # configured in nix) in there and is not affected dynamically during
+          # the flashing procedure. NVIDIA ensures that when the device is
+          # using RCM boot, only the boot mode named "boot.img" is used (see https://gist.github.com/jmbaur/1ca79436e69eadc0a38ec0b43b16cb2f#file-flash-sh-L1675).
+          additionalDtbOverlays = lib.filter (path: (path.name or "") != "DefaultBootOrder.dtbo") cfg.flashScriptOverrides.additionalDtbOverlays;
         }}
         echo
         echo "Jetson device should now be flashing and will reboot when complete."

@@ -107,11 +107,12 @@ final: prev: (
       mkFlashScript = flash-tools: args: import ./device-pkgs/flash-script.nix ({
         inherit lib flash-tools;
         inherit (cfg.firmware) eksFile;
-        inherit (cfg.flashScriptOverrides) additionalDtbOverlays flashArgs partitionTemplate;
+        inherit (cfg.flashScriptOverrides) flashArgs partitionTemplate;
         inherit (finalJetpack) tosImage socType uefi-firmware;
 
+        additionalDtbOverlays = args.additionalDtbOverlays or cfg.flashScriptOverrides.additionalDtbOverlays;
         dtbsDir = config.hardware.deviceTree.package;
-      } // args);
+      } // (builtins.removeAttrs args [ "additionalDtbOverlays" ]));
 
       bup = prev.runCommand "bup-${config.networking.hostName}-${finalJetpack.l4tVersion}"
         {
