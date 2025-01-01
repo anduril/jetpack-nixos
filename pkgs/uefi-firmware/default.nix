@@ -222,13 +222,17 @@ let
       patches = opensslPatches ++ edk2UefiPatches ++ [
         (fetchurl {
           # Patch format does not play well with fetchpatch, it should be fine this is a static attachment in a ticket
+          # previously hosted at https://bugzilla.tianocore.org/attachment.cgi?id=1457, but moved as per Bugzilla to
+          # GitHub issue migration: https://github.com/tianocore/edk2/discussions/6544
           name = "CVE-2023-45229_CVE-2023-45230_CVE-2023-45231_CVE-2023-45232_CVE-2023-45233_CVE-2023-45234_CVE-2023-45235.patch";
-          url = "https://bugzilla.tianocore.org/attachment.cgi?id=1457";
+          url = "https://raw.githubusercontent.com/tianocore/user-attachments/147607ddbc1751a297d15e1293cecf4c08037366/tianocore/edk2/BZ-1457-TCBZ4534_to_TCBZ4540.patch";
           hash = "sha256-CF41lbjnXbq/6DxMW6q1qcLJ8WAs+U0Rjci+jRwJYYY=";
         })
         (fetchpatch {
+          # previously hosted at https://bugzilla.tianocore.org/attachment.cgi?id=1436, but moved as per Bugzilla to
+          # GitHub issue migration: https://github.com/tianocore/edk2/discussions/6544
           name = "CVE-2022-36764.patch";
-          url = "https://bugzilla.tianocore.org/attachment.cgi?id=1436";
+          url = "https://raw.githubusercontent.com/tianocore/user-attachments/147607ddbc1751a297d15e1293cecf4c08037366/tianocore/edk2/BZ-1436-4118.patch";
           hash = "sha256-czku8DgElisDv6minI67nNt6BS+vH6txslZdqiGaQR4=";
           excludes = [
             "SecurityPkg/Test/SecurityPkgHostTest.dsc"
