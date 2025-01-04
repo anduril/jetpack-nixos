@@ -221,8 +221,8 @@ in
 
     hardware.deviceTree.enable = true;
 
-    hardware.opengl.package = pkgs.nvidia-jetpack.l4t-3d-core;
-    hardware.opengl.extraPackages =
+    hardware.graphics.package = pkgs.nvidia-jetpack.l4t-3d-core;
+    hardware.graphics.extraPackages =
       with pkgs.nvidia-jetpack;
       # l4t-core provides - among others - libnvrm_gpu.so and libnvrm_mem.so.
       # The l4t-core/lib directory is directly set in the DT_RUNPATH of
@@ -364,6 +364,7 @@ in
     };
 
     # Used by libEGL_nvidia.so.0
-    environment.etc."egl/egl_external_platform.d".source = "${pkgs.addOpenGLRunpath.driverLink}/share/egl/egl_external_platform.d/";
+    environment.etc."egl/egl_external_platform.d".source =
+      "${pkgs.addDriverRunpath.driverLink}/share/egl/egl_external_platform.d/";
   };
 }

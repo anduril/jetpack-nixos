@@ -335,6 +335,18 @@ in
           default = [ ];
           description = "A list of paths to compiled .dtbo files to include with the UEFI image while flashing. These overlays are applied by UEFI at runtime";
         };
+
+        preFlashCommands = mkOption {
+          type = types.lines;
+          default = "";
+          description = "Additional commands to be added to the flash script while it is being constructed.";
+        };
+
+        postFlashCommands = mkOption {
+          type = types.lines;
+          default = "";
+          description = "Additional commands to be added to the flash script while it is being constructed.";
+        };
       };
 
       flashScript = mkOption {
