@@ -6,7 +6,6 @@
 , autoAddDriverRunpath
 , cmake
 , opencv
-, opencv2
 , libX11
 , libdrm
 , libglvnd
@@ -312,12 +311,15 @@ let
     sourceRoot = "source/usr/src/jetson_multimedia_api";
 
     nativeBuildInputs = [ dpkg python3 ];
-    buildInputs = [ libX11 libdrm libglvnd opencv2 vulkan-headers vulkan-loader ]
+    buildInputs = [ libX11 libdrm libglvnd opencv vulkan-headers vulkan-loader ]
       ++ ([ l4t-cuda l4t-multimedia l4t-camera ])
       ++ (with cudaPackages; [ cudatoolkit tensorrt ]);
 
     # Usually provided by pkg-config, but the samples don't use it.
-    NIX_CFLAGS_COMPILE = [ "-I${lib.getDev libdrm}/include/libdrm" ];
+    NIX_CFLAGS_COMPILE = [
+      "-I${lib.getDev libdrm}/include/libdrm"
+      "-I${lib.getDev opencv}/include/opencv4"
+    ];
 
     # TODO: Unify this with headers in l4t-jetson-multimedia-api
     patches = [
