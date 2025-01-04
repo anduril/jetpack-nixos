@@ -1,15 +1,14 @@
 diff --git a/Silicon/NVIDIA/Library/DxeDtPlatformDtbLoaderLib/DxeDtPlatformDtbKernelLoaderLib.c b/Silicon/NVIDIA/Library/DxeDtPlatformDtbLoaderLib/DxeDtPlatformDtbKernelLoaderLib.c
-index 1defbed..d16b86e 100644
+index ba009757..71593409 100644
 --- a/Silicon/NVIDIA/Library/DxeDtPlatformDtbLoaderLib/DxeDtPlatformDtbKernelLoaderLib.c
 +++ b/Silicon/NVIDIA/Library/DxeDtPlatformDtbLoaderLib/DxeDtPlatformDtbKernelLoaderLib.c
-@@ -705,9 +705,7 @@ DtPlatformLoadDtb (
-   Status = gBS->CreateEventEx (
-                   EVT_NOTIFY_SIGNAL,
-                   TPL_CALLBACK,
--                  UefiDtbBoot ?
--                  UpdateFdt :
--                  InstallFdt,
-+                  UpdateFdt,
-                   NULL,
-                   &gEfiEventReadyToBootGuid,
-                   &ReadyToBootEvent
+@@ -561,8 +561,7 @@ InstallFdt (
+   }
+ 
+   PlatformType = TegraGetPlatform ();
+-  if ((PlatformType != TEGRA_PLATFORM_SILICON) ||
+-      (PlatformResourceInfo->BootType == TegrablBootRcm))
++  if (TRUE) // Always use DTB from UEFI
+   {
+     Dtb = (VOID *)GetDTBBaseAddress ();
+     if (fdt_check_header (Dtb) != 0) {

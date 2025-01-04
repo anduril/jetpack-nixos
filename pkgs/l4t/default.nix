@@ -177,23 +177,28 @@ let
     name = "nvidia-l4t-cuda";
     buildInputs = [ l4t-core ];
 
-    postPatch = ''
-      # Additional libcuda symlinks
-      ln -sf libcuda.so.1.1 lib/libcuda.so.1
-      ln -sf libcuda.so.1.1 lib/libcuda.so
+    postPatch =
+      let
+        # XXX: Temporary override here since NVIDIA didn't update this for 35.6.0
+        l4tVersion = "35.5.0";
+      in
+      ''
+        # Additional libcuda symlinks
+        ln -sf libcuda.so.1.1 lib/libcuda.so.1
+        ln -sf libcuda.so.1.1 lib/libcuda.so
 
-      # Also unpack l4t-3d-core so we can grab libnvidia-ptxjitcompiler from it
-      # and include it in this library.
-      #
-      # It's unclear why NVIDIA has this library in l4t-3d-core and not in
-      # l4t-core. Even more so since the cuda compat package has libcuda as
-      # well as libnvidia-ptxjitcompiler in the same package. meta-tegra does a
-      # similar thing where they pull libnvidia-ptxjitcompiler out of
-      # l4t-3d-core and place it in the same package as libcuda.
-      dpkg --fsys-tarfile ${debs.t234.nvidia-l4t-3d-core.src} | tar -xO ./usr/lib/aarch64-linux-gnu/tegra/libnvidia-ptxjitcompiler.so.${l4tVersion} > lib/libnvidia-ptxjitcompiler.so.${l4tVersion}
-      ln -sf libnvidia-ptxjitcompiler.so.${l4tVersion} lib/libnvidia-ptxjitcompiler.so.1
-      ln -sf libnvidia-ptxjitcompiler.so.${l4tVersion} lib/libnvidia-ptxjitcompiler.so
-    '';
+        # Also unpack l4t-3d-core so we can grab libnvidia-ptxjitcompiler from it
+        # and include it in this library.
+        #
+        # It's unclear why NVIDIA has this library in l4t-3d-core and not in
+        # l4t-core. Even more so since the cuda compat package has libcuda as
+        # well as libnvidia-ptxjitcompiler in the same package. meta-tegra does a
+        # similar thing where they pull libnvidia-ptxjitcompiler out of
+        # l4t-3d-core and place it in the same package as libcuda.
+        dpkg --fsys-tarfile ${debs.t234.nvidia-l4t-3d-core.src} | tar -xO ./usr/lib/aarch64-linux-gnu/tegra/libnvidia-ptxjitcompiler.so.${l4tVersion} > lib/libnvidia-ptxjitcompiler.so.${l4tVersion}
+        ln -sf libnvidia-ptxjitcompiler.so.${l4tVersion} lib/libnvidia-ptxjitcompiler.so.1
+        ln -sf libnvidia-ptxjitcompiler.so.${l4tVersion} lib/libnvidia-ptxjitcompiler.so
+      '';
 
     # libcuda.so actually depends on libnvcucompat.so at runtime (probably
     # through `dlopen`), so we need to tell Nix about this.
@@ -363,9 +368,12 @@ let
     name = "nvidia-l4t-tools";
     nativeBuildInputs = [ makeWrapper ];
     buildInputs = [ stdenv.cc.cc.lib l4t-core ];
-    # Remove some utilities that bring in too many libraries
     postPatch = ''
+      # Remove a utility that bring in too many libraries
       rm bin/nv_macsec_wpa_supplicant
+
+      # This just contains a symlink to a binary already in /bin (nvcapture-status-decoder)
+      rm -rf opt
     '';
     postFixup = ''
       wrapProgram $out/bin/nv_fuse_read.sh --prefix PATH : ${lib.makeBinPath [ bc ]}
