@@ -9,6 +9,49 @@ let
     types;
 
   cfg = config.hardware.nvidia-jetpack;
+
+  canUpdateFirmware = cfg.firmware.autoUpdate && cfg.som != null && cfg.flashScriptOverrides.targetBoard != null;
+
+  updateFirmware = pkgs.writeShellApplication {
+    name = "update-jetson-firmware";
+    runtimeInputs = [ pkgs.nvidia-jetpack.otaUtils ];
+    text = ''
+      # This directory is populated by ota-apply-capsule-update, don't run if
+      # we already have a capsule update present on the ESP. We check the exact
+      # path that we populate because it is possible for multiple capsule
+      # updates to be applied at once, so we don't want other files in this
+      # directory to influence our behavior.
+      if [[ -e ${config.boot.loader.efi.efiSysMountPoint}/EFI/UpdateCapsule/TEGRA_BL.Cap ]]; then
+        echo "Existing capsule update for platform firmware exists, exiting"
+        exit 0
+      fi
+
+      # Jetpack 5.0 didn't expose this DMI variable,
+      if [[ ! -f /sys/devices/virtual/dmi/id/bios_version ]]; then
+        echo "Unable to determine current Jetson firmware version."
+        echo "You should reflash the firmware with the new version to ensure compatibility"
+        exit 1
+      fi
+
+      CUR_VER=$(cat /sys/devices/virtual/dmi/id/bios_version)
+      NEW_VER=${pkgs.nvidia-jetpack.l4tVersion}
+
+      if [[ "$CUR_VER" != "$NEW_VER" ]]; then
+        echo "Current Jetson firmware version is: $CUR_VER"
+        echo "New Jetson firmware version is: $NEW_VER"
+        echo
+
+        # Set efi vars here as well as in systemd service, in case we're
+        # upgrading from an older nixos generation that doesn't have the
+        # systemd service. Plus, this ota-setup-efivars will be from the
+        # generation we're switching to, which can contain additional
+        # fixes/improvements.
+        ota-setup-efivars ${cfg.flashScriptOverrides.targetBoard}
+
+        ota-apply-capsule-update ${pkgs.nvidia-jetpack.uefiCapsuleUpdate}
+      fi
+    '';
+  };
 in
 {
   imports = with lib; [
@@ -462,19 +505,19 @@ in
       serviceConfig.ExecStart = "${pkgs.nvidia-jetpack.otaUtils}/bin/ota-setup-efivars ${cfg.flashScriptOverrides.targetBoard}";
     };
 
-    systemd.services.firmware-update = lib.mkIf (cfg.firmware.autoUpdate && cfg.som != null && cfg.flashScriptOverrides.targetBoard != null) {
+    # Include the capsule-on-disk firmware update method with the bootloader
+    # installation process so that firmware updates work with "nixos-rebuild boot".
+    boot.loader = lib.mkIf canUpdateFirmware {
+      systemd-boot.extraInstallCommands = lib.getExe updateFirmware;
+      grub.extraInstallCommands = lib.getExe updateFirmware;
+    };
+
+    systemd.services.firmware-update = lib.mkIf canUpdateFirmware {
       wantedBy = [ "multi-user.target" ];
-      path = [ pkgs.nvidia-jetpack.otaUtils ];
       after = [
         "${utils.escapeSystemdPath config.boot.loader.efi.efiSysMountPoint}.mount"
         "opt-nvidia-esp.mount"
       ];
-      unitConfig = {
-        ConditionPathExists = "/sys/devices/virtual/dmi/id/bios_version";
-        # This directory is populated by ota-apply-capsule-update, don't run
-        # if we already have a capsule update present on the ESP.
-        ConditionDirectoryNotEmpty = "!${config.boot.loader.efi.efiSysMountPoint}/EFI/UpdateCapsule";
-      };
       script =
         # NOTE: Our intention is to not apply any capsule update if the
         # user's intention is to "test" a new nixos config without having it
@@ -496,23 +539,7 @@ in
             fi
           fi
         '' + ''
-          CUR_VER=$(cat /sys/devices/virtual/dmi/id/bios_version)
-          NEW_VER=${pkgs.nvidia-jetpack.l4tVersion}
-
-          if [[ "$CUR_VER" != "$NEW_VER" ]]; then
-            echo "Current Jetson firmware version is: $CUR_VER"
-            echo "New Jetson firmware version is: $NEW_VER"
-            echo
-
-            # Set efi vars here as well as in systemd service, in case we're
-            # upgrading from an older nixos generation that doesn't have the
-            # systemd service. Plus, this ota-setup-efivars will be from the
-            # generation we're switching to, which can contain additional
-            # fixes/improvements.
-            ota-setup-efivars ${cfg.flashScriptOverrides.targetBoard}
-
-            ota-apply-capsule-update ${pkgs.nvidia-jetpack.uefiCapsuleUpdate}
-          fi
+          ${lib.getExe updateFirmware}
         '';
     };
 
