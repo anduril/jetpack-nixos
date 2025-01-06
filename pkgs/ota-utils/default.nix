@@ -1,4 +1,4 @@
-{ lib, stdenvNoCC, bash, util-linux, e2fsprogs, tegra-eeprom-tool, l4tVersion }:
+{ lib, stdenvNoCC, bash, util-linux, e2fsprogs, tegra-eeprom-tool, l4tVersion, efiSysMountPoint ? "/boot" }:
 
 stdenvNoCC.mkDerivation {
   name = "ota-utils";
@@ -8,6 +8,10 @@ stdenvNoCC.mkDerivation {
   dontUnpack = true;
   dontConfigure = true;
   dontBuild = true;
+
+  env = { inherit efiSysMountPoint; };
+
+  buildInputs = [ bash ];
 
   installPhase = ''
     runHook preInstall
@@ -19,6 +23,10 @@ stdenvNoCC.mkDerivation {
     cp ${./ota_helpers.func} $out/share/ota_helpers.func
     chmod +x $out/bin/ota-setup-efivars $out/bin/ota-apply-capsule-update $out/bin/ota-check-firmware
 
+    for path in $out/bin/ota-apply-capsule-update $out/share/ota_helpers.func; do
+      substituteInPlace "$path" --subst-var efiSysMountPoint
+    done
+
     for fname in ota-setup-efivars ota-apply-capsule-update; do
       substituteInPlace $out/bin/$fname \
         --replace "@ota_helpers@" "$out/share/ota_helpers.func"
@@ -28,8 +36,7 @@ stdenvNoCC.mkDerivation {
     substituteInPlace $out/bin/ota-check-firmware \
       --replace "@l4tVersion@" "${l4tVersion}"
 
-    # patchShebangs does not seem to work here for some reason
-    substituteInPlace $out/bin/* --replace '#!/usr/bin/env bash' '#!${bash}/bin/bash'
+    patchShebangs --host $out/bin
 
     runHook postInstall
   '';

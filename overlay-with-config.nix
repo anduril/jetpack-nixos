@@ -34,6 +34,10 @@ final: prev: (
         else if lib.hasPrefix "xavier-" cfg.som then "0x19"
         else throw "Unknown SoC type";
 
+      otaUtils = prevJetpack.otaUtils.override {
+        inherit (config.boot.loader.efi) efiSysMountPoint;
+      };
+
       uefi-firmware = prevJetpack.uefi-firmware.override ({
         bootLogo = cfg.firmware.uefi.logo;
         debugMode = cfg.firmware.uefi.debugMode;
