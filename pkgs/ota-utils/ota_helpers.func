@@ -89,7 +89,7 @@ detect_can_write_runtime_uefi_vars() {
         noRuntimeUefiWrites=true
         espDir=/opt/nvidia/esp
     else
-        espDir=/boot
+        espDir=@efiSysMountPoint@
     fi
 }
 
