@@ -148,7 +148,7 @@ final: prev: (
         }
         (''
           ${cfg.firmware.uefi.capsuleAuthentication.preSignCommands final.buildPackages}
-          bash ${finalJetpack.flash-tools}/generate_capsule/l4t_generate_soc_capsule.sh \
+          bash ${final.pkgsBuildBuild.nvidia-jetpack.flash-tools}/generate_capsule/l4t_generate_soc_capsule.sh \
         '' + (lib.optionalString cfg.firmware.uefi.capsuleAuthentication.enable ''
           --trusted-public-cert ${cfg.firmware.uefi.capsuleAuthentication.trustedPublicCertPemFile} \
           --other-public-cert ${cfg.firmware.uefi.capsuleAuthentication.otherPublicCertPemFile} \
@@ -161,7 +161,7 @@ final: prev: (
 
       signedFirmware = final.runCommand "signed-${hostName}-${finalJetpack.l4tVersion}"
         { inherit (cfg.firmware.secureBoot) requiredSystemFeatures; }
-        (finalJetpack.mkFlashScript finalJetpack.flash-tools {
+        (finalJetpack.mkFlashScript final.pkgsBuildBuild.nvidia-jetpack.flash-tools {
           flashCommands = ''
             ${cfg.firmware.secureBoot.preSignCommands final}
           '' + lib.concatMapStringsSep "\n"
