@@ -27,7 +27,7 @@ stdenv.mkDerivation {
   ];
 
   # Avoid an error in modpost: "__stack_chk_guard" [.../nvidia.ko] undefined
-  NIX_CFLAGS_COMPILE = "-fno-stack-protector";
+  NIX_CFLAGS_COMPILE = "-fno-stack-protector -Wno-implicit-function-declaration";
 
   installTargets = [ "modules_install" ];
   enableParallelBuilding = true;
