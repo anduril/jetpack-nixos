@@ -72,8 +72,8 @@ let
     src = fetchFromGitHub {
       owner = "NVIDIA";
       repo = "edk2-nvidia";
-      rev = "r${l4tVersion}";
-      sha256 = "sha256-JYaN9s97hffHOiljZcujrviFHSPiPl0z2MKk9IZxQAY=";
+      rev = "c101ba515b2737fb78d8929c2852f5c8f9607330";  # Latest on r${l4tVersion}-updates branch as of 2024-01-15
+      sha256 = "sha256-Ofj1FS1wLTLf6rCCPbB841SSBM3wjW4tdUJD6cY0ixE=";
     };
     patches = edk2NvidiaPatches ++ [
       # Fix Eqos driver to use correct TX clock name
