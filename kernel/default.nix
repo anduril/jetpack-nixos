@@ -16,6 +16,19 @@ buildLinux (args // {
 
   defconfig = "tegra_defconfig";
 
+  # https://github.com/NixOS/nixpkgs/pull/366004
+  # introduced a breaking change that if a module is declared but it is not being used it will fail
+  # if you try to suppress each of he errors e.g.
+  # REISERFS_FS_SECURITY = lib.mkForce unset; within structuredExtraConfig
+  # that list runs to a long 100+ modules so we go back to the previous default and ignore them
+  ignoreConfigErrors = true;
+
+  # disabling the dependency on the common-config would seem appropriate as we define our own defconfig
+  # however, it seems that some of the settings for e.g. fw loading are only made available there.
+  # TODO: a future task could be to set this, disable ignoreConfigErrors and add the needed modules to the
+  # structuredExtraConfig below.
+  #enableCommonConfig = false;
+
   # Using applyPatches here since it's not obvious how to append an extra
   # postPatch. This is not very efficient.
   src = applyPatches {
@@ -99,9 +112,14 @@ buildLinux (args // {
     # Override the default CMA_SIZE_MBYTES=32M setting in common-config.nix with the default from tegra_defconfig
     # Otherwise, nvidia's driver craps out
     CMA_SIZE_MBYTES = lib.mkForce (freeform "64");
+    MODVERSIONS = no;
 
     ### So nat.service and firewall work ###
     NF_TABLES = module; # This one should probably be in common-config.nix
+    # this NFT_NAT is not actually being set. when build with enableCommonConfig = false;
+    # and not ignoreConfigErrors = true; it will fail with error about unused option
+    # unused means that it wanted to set it as a module, but make oldconfig didn't ask it about that option,
+    # so it didn't get a chance to set it.
     NFT_NAT = module;
     NFT_MASQ = module;
     NFT_REJECT = module;
