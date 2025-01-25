@@ -4,9 +4,9 @@
 
 final: prev:
 let
-  jetpackVersion = "5.1.4";
-  l4tVersion = "35.6.0";
-  cudaVersion = "11.4";
+  jetpackVersion = "6.2";
+  l4tVersion = "36.4.3";
+  cudaVersion = "12.6";
 
   sourceInfo = import ./sourceinfo {
     inherit l4tVersion;
