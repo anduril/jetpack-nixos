@@ -99,14 +99,14 @@ in
     tests = prev.callPackages ./pkgs/tests { inherit l4tVersion; };
 
     kernelPackagesOverlay = final: prev: {
-      nvidia-display-driver = self.callPackage ./kernel/display-driver.nix { };
+      nvidia-display-driver = final.callPackage ./kernel/display-driver.nix { inherit (self) gitRepos l4tVersion; };
     };
 
     kernel = self.callPackage ./kernel { kernelPatches = [ ]; };
-    kernelPackages = (prev.linuxPackagesFor self.kernel).extend self.kernelPackagesOverlay;
+    kernelPackages = (final.linuxPackagesFor self.kernel).extend self.kernelPackagesOverlay;
 
     rtkernel = self.callPackage ./kernel { kernelPatches = [ ]; realtime = true; };
-    rtkernelPackages = (prev.linuxPackagesFor self.rtkernel).extend self.kernelPackagesOverlay;
+    rtkernelPackages = (final.linuxPackagesFor self.rtkernel).extend self.kernelPackagesOverlay;
 
     nxJetsonBenchmarks = self.callPackage ./pkgs/jetson-benchmarks {
       targetSom = "nx";
