@@ -1,5 +1,5 @@
 let
-  nsight_system_version = "2023.2.4";
+  nsight_system_version = "2024.5.4";
 in
 { lib
 , stdenv
