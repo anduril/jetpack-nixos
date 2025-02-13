@@ -14,7 +14,7 @@ let
 
   updateFirmware = pkgs.writeShellApplication {
     name = "update-jetson-firmware";
-    runtimeInputs = [ pkgs.nvidia-jetpack.otaUtils ];
+    runtimeInputs = with pkgs; [ coreutils nvidia-jetpack.otaUtils ];
     text = ''
       # This directory is populated by ota-apply-capsule-update, don't run if
       # we already have a capsule update present on the ESP. We check the exact
