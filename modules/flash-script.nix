@@ -473,7 +473,7 @@ in
             orin-agx = [
               { boardid = "3701"; boardsku = "0000"; fab = "300"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; chipsku = "00:00:00:D0"; }
               { boardid = "3701"; boardsku = "0004"; fab = "300"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; chipsku = "00:00:00:D2"; } # 32GB
-              { boardid = "3701"; boardsku = "0005"; fab = "000"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; chipsku = "00:00:00:D0"; } # 64GB
+              { boardid = "3701"; boardsku = "0005"; fab = "300"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; chipsku = "00:00:00:D0"; } # 64GB
             ];
 
             orin-agx-industrial = [
