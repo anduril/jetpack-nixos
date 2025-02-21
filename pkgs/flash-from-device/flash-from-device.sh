@@ -5,8 +5,6 @@
 
 set -euo pipefail
 
-source @ota_helpers_func@
-
 signed_images=$1
 
 matching_boardspec=

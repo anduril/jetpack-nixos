@@ -79,7 +79,7 @@ in
     python-jetson = prev.python3.pkgs.callPackage ./pkgs/python-jetson { };
 
     tegra-eeprom-tool = prev.callPackage ./pkgs/tegra-eeprom-tool { };
-    tegra-eeprom-tool-static = prev.pkgsStatic.callPackage ./pkgs/tegra-eeprom-tool { };
+    tegra-eeprom-tool-static = final.lib.warn "alias tegra-eeprom-tool-static is deprecated, use pkgsStatic.nvidia-jetpack.tegra-eeprom-tool" prev.pkgsStatic.callPackage ./pkgs/tegra-eeprom-tool { };
 
     cudaPackages = prev.callPackages ./pkgs/cuda-packages {
       inherit (self) debs cudaVersion
@@ -117,8 +117,6 @@ in
     orinAgxJetsonBenchmarks = self.callPackage ./pkgs/jetson-benchmarks {
       targetSom = "orin-agx";
     };
-
-    flashFromDevice = self.callPackage ./pkgs/flash-from-device { };
 
     otaUtils = self.callPackage ./pkgs/ota-utils { };
 

@@ -67,8 +67,7 @@ final: prev: (
             allowMissing = false;
           };
           jetpack-init = prev.writeScript "init" ''
-            #!${prev.pkgsStatic.busybox}/bin/sh
-            export PATH=${prev.pkgsStatic.busybox}/bin
+            #!/bin/sh
             mkdir -p /proc /dev /sys
             mount -t proc proc -o nosuid,nodev,noexec /proc
             mount -t devtmpfs none -o nosuid /dev
@@ -83,20 +82,38 @@ final: prev: (
             # known path so that the final initrd can be constructed from
             # outside the context of this nixos config (which has an
             # aarch64-linux package-set).
-            if ${lib.getExe finalJetpack.flashFromDevice} ${finalJetpack.signedFirmware}; then
+            if flash-from-device /signed-firmware; then
               echo "Flashing platform firmware successful. Rebooting now."
               sync
               reboot -f
             else
               echo "Flashing platform firmware unsuccessful. Entering console"
-              exec ${prev.pkgsStatic.busybox}/bin/sh
+              exec /bin/sh
             fi
           '';
         in
-        prev.makeInitrd {
+        final.makeInitrdNG {
           contents = [
-            { object = jetpack-init; symlink = "/init"; }
-            { object = "${modulesClosure}/lib"; symlink = "/lib"; }
+            { source = jetpack-init; target = "/init"; }
+            { source = "${modulesClosure}/lib"; target = "/lib"; }
+            { source = finalJetpack.signedFirmware; target = "/signed-firmware"; }
+            {
+              source = "${prev.buildEnv {
+              name = "initrd-flash-env";
+              paths = [
+                final.busybox final.mtdutils finalJetpack.tegra-eeprom-tool
+                (final.runCommand "flash-from-device" { } ''
+                  mkdir -p $out/bin
+                  echo '#!/bin/sh' >> $out/bin/$name
+                  cat ${./pkgs/ota-utils/ota_helpers.func} >> $out/bin/flash-from-device
+                  cat ${./pkgs/flash-from-device/flash-from-device.sh} >> $out/bin/flash-from-device
+                  chmod +x $out/bin/flash-from-device
+                '')
+              ];
+              pathsToLink=  [ "/bin" ];
+            }}/bin";
+              target = "/bin";
+            }
           ];
         };
 
