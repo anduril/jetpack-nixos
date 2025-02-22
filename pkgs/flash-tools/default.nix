@@ -22,7 +22,7 @@
 , lz4
 , gcc
 , dtc
-, qemu
+, qemu-user
 , runtimeShell
 , fetchzip
 , bc
@@ -79,7 +79,7 @@ let
         mv "$filename" ."$filename"-wrapped
         cat >"$filename" <<EOF
       #!${runtimeShell}
-      exec -a "\$0" ${qemu}/bin/qemu-i386 "$out/bootloader/.$filename-wrapped" "\$@"
+      exec -a "\$0" ${qemu-user}/bin/qemu-i386 "$out/bootloader/.$filename-wrapped" "\$@"
       EOF
         chmod +x "$filename"
       done
