@@ -24,7 +24,7 @@ runCommand name { meta.mainProgram = name; } ''
 
   cat > $out/bin/flash-from-device <<EOF
   #!${pkgsStatic.busybox}/bin/sh
-  export PATH="${lib.makeBinPath [ pkgsStatic.busybox staticDeps ]}:$PATH"
+  export PATH="${lib.makeBinPath [ pkgsStatic.busybox staticDeps ]}"
   EOF
   cat ${./flash-from-device.sh} >> $out/bin/flash-from-device
   substituteInPlace $out/bin/flash-from-device \
