@@ -1,5 +1,5 @@
 #!/usr/bin/env nix-shell
-#!nix-shell -i python -p "python3.withPackages (ps: with ps; [ debian ])
+#!nix-shell -i python -p "python3.withPackages (ps: with ps; [ debian ])"
 
 import gzip
 import json

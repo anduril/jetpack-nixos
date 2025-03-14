@@ -135,8 +135,8 @@ Otherwise, the instructions to apply the update manually are below.
 To determine if the currently running firmware matches the software, run, `ota-check-firmware`:
 ```
 $ ota-check-firmware
-Current firmware version is: 35.6.0
-Current software version is: 35.6.0
+Current firmware version is: 35.6.1
+Current software version is: 35.6.1
 ```
 
 If these versions do not match, you can update your firmware using the UEFI Capsule update mechanism. The procedure to do so is below:
