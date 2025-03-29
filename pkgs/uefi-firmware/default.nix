@@ -49,7 +49,9 @@ let
   edk2-src = fetchFromGitHub {
     owner = "NVIDIA";
     repo = "edk2";
-    rev = "r${l4tVersion}-edk2-stable202208";
+    # No 35.6.1 tag as of 2025-03-28
+    #rev = "r${l4tVersion}-edk2-stable202208";
+    rev = "r35.6.0-edk2-stable202208";
     fetchSubmodules = true;
     sha256 = "sha256-w+rZq7Wjni62MJds6QmqpLod+zSFZ/qAN7kRDOit+jo=";
   };
@@ -57,14 +59,18 @@ let
   edk2-platforms = fetchFromGitHub {
     owner = "NVIDIA";
     repo = "edk2-platforms";
-    rev = "r${l4tVersion}-upstream-20220830";
+    # No 35.6.1 tag as of 2025-03-28
+    #rev = "r${l4tVersion}-upstream-20220830";
+    rev = "r35.6.0-upstream-20220830";
     sha256 = "sha256-PjAJEbbswOLYupMg/xEqkAOJuAC8SxNsQlb9YBswRfo=";
   };
 
   edk2-non-osi = fetchFromGitHub {
     owner = "NVIDIA";
     repo = "edk2-non-osi";
-    rev = "r${l4tVersion}-upstream-20220830";
+    # No 35.6.1 tag as of 2025-03-28
+    #rev = "r${l4tVersion}-upstream-20220830";
+    rev = "r35.6.0-upstream-20220830";
     sha256 = "sha256-EPtI63jYhEIo4uVTH3lUt9NC/lK5vPVacUAc5qgmz9M=";
   };
 
@@ -72,8 +78,10 @@ let
     src = fetchFromGitHub {
       owner = "NVIDIA";
       repo = "edk2-nvidia";
-      rev = "r${l4tVersion}";
-      sha256 = "sha256-JYaN9s97hffHOiljZcujrviFHSPiPl0z2MKk9IZxQAY=";
+      # No 35.6.1 tag as of 2025-03-28
+      # rev = "r${l4tVersion}";
+      rev = "uefi-202210.6";
+      sha256 = "sha256-ldPKOSdk/1XWiK13/dpUJO6H2v7dqC/Th9hhpNFCct0=";
     };
     patches = edk2NvidiaPatches ++ [
       # Fix Eqos driver to use correct TX clock name
@@ -89,15 +97,6 @@ let
       # using one from the kernel-dtb partition.
       # See: https://github.com/anduril/jetpack-nixos/pull/18
       ./edk2-uefi-dtb.patch
-
-      # Include patches to fix "Assertion 3" mentioned here:
-      # https://forums.developer.nvidia.com/t/assertion-issue-in-uefi-during-boot/315628
-      # From this PR: https://github.com/NVIDIA/edk2-nvidia/pull/110
-      # It is unclear if it does (as of 2025-01-03), but hopefully this also
-      # resolves the critical issue mentioned here:
-      # https://forums.developer.nvidia.com/t/possible-uefi-memory-leak-and-partition-full/308540
-      ./fix-bug-in-block-erase-logic.patch
-      ./fix-variant-read-records-per-erase-block-and-fix-leak.patch
     ];
     postPatch = lib.optionalString errorLevelInfo ''
       sed -i 's#PcdDebugPrintErrorLevel|.*#PcdDebugPrintErrorLevel|0x8000004F#' Platform/NVIDIA/NVIDIA.common.dsc.inc
@@ -111,8 +110,10 @@ let
   edk2-nvidia-non-osi = fetchFromGitHub {
     owner = "NVIDIA";
     repo = "edk2-nvidia-non-osi";
-    rev = "r${l4tVersion}";
-    sha256 = "sha256-Fg8s9Fjwt5IzrGdJ7TKI3AjZLh/wHN8oyvi5Xw+Jg+k=";
+    # No 35.6.1 tag as of 2025-03-28
+    # rev = "r${l4tVersion}";
+    rev = "uefi-202210.6";
+    sha256 = "sha256-Pdsxxo+KdXa1lE/RqFBQ20VzNrvLghatT3phQz+hPQI=";
   };
 
   edk2-jetson = edk2.overrideAttrs (prev: {
