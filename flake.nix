@@ -55,7 +55,9 @@
             supportedNixOSConfigurations = lib.mapAttrs
               (n: c: (nixpkgs.legacyPackages.x86_64-linux.pkgsCross.aarch64-multiplatform.nixos {
                 imports = [ self.nixosModules.default ];
-                hardware.nvidia-jetpack = { enable = true; } // c;
+                hardware.nvidia-jetpack = { enable = true; } // c // {
+                  firmware.uefi.logo = ./logo-spades.svg;
+                };
                 networking.hostName = "${c.som}-${c.carrierBoard}"; # Just so it sets the flash binary name.
               }).config)
               supportedConfigurations;
