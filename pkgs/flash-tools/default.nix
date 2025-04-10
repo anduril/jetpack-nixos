@@ -27,6 +27,7 @@
 , fetchzip
 , bc
 , openssl
+, mktemp
 , bspSrc
 , l4tVersion
 , symlinkJoin
@@ -123,6 +124,8 @@ let
       dosfstools
       bc
       openssl
+      # Needed to add this to make a self contained binary work
+      mktemp
 
       # Needed by bootloader/tegraflash_impl_t234.py
       gcc
