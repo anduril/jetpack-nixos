@@ -39,13 +39,15 @@
           let
             supportedConfigurations = lib.listToAttrs (map
               (c: {
-                name = "${c.som}-${c.carrierBoard}";
+                name = "${c.som}" + (lib.optionalString (c.super or false) "-super") + "-${c.carrierBoard}" ;
                 value = c;
               }) [
               { som = "orin-agx"; carrierBoard = "devkit"; }
               { som = "orin-agx-industrial"; carrierBoard = "devkit"; }
               { som = "orin-nx"; carrierBoard = "devkit"; }
               { som = "orin-nano"; carrierBoard = "devkit"; }
+              { som = "orin-nx"; carrierBoard = "devkit"; super = true; }
+              { som = "orin-nano"; carrierBoard = "devkit";  super = true; }
               { som = "xavier-agx"; carrierBoard = "devkit"; }
               { som = "xavier-agx-industrial"; carrierBoard = "devkit"; } # TODO: Entirely untested
               { som = "xavier-nx"; carrierBoard = "devkit"; }
