@@ -4,7 +4,6 @@
 , fetchFromGitHub
 , fetchurl
 , fetchpatch
-, fetchpatch2
 , runCommand
 , edk2
 , acpica-tools
@@ -49,9 +48,7 @@ let
   edk2-src = fetchFromGitHub {
     owner = "NVIDIA";
     repo = "edk2";
-    # No 35.6.1 tag as of 2025-03-28
-    #rev = "r${l4tVersion}-edk2-stable202208";
-    rev = "r35.6.0-edk2-stable202208";
+    rev = "r${l4tVersion}-edk2-stable202208";
     fetchSubmodules = true;
     sha256 = "sha256-w+rZq7Wjni62MJds6QmqpLod+zSFZ/qAN7kRDOit+jo=";
   };
@@ -59,18 +56,14 @@ let
   edk2-platforms = fetchFromGitHub {
     owner = "NVIDIA";
     repo = "edk2-platforms";
-    # No 35.6.1 tag as of 2025-03-28
-    #rev = "r${l4tVersion}-upstream-20220830";
-    rev = "r35.6.0-upstream-20220830";
+    rev = "r${l4tVersion}-upstream-20220830";
     sha256 = "sha256-PjAJEbbswOLYupMg/xEqkAOJuAC8SxNsQlb9YBswRfo=";
   };
 
   edk2-non-osi = fetchFromGitHub {
     owner = "NVIDIA";
     repo = "edk2-non-osi";
-    # No 35.6.1 tag as of 2025-03-28
-    #rev = "r${l4tVersion}-upstream-20220830";
-    rev = "r35.6.0-upstream-20220830";
+    rev = "r${l4tVersion}-upstream-20220830";
     sha256 = "sha256-EPtI63jYhEIo4uVTH3lUt9NC/lK5vPVacUAc5qgmz9M=";
   };
 
@@ -78,9 +71,7 @@ let
     src = fetchFromGitHub {
       owner = "NVIDIA";
       repo = "edk2-nvidia";
-      # No 35.6.1 tag as of 2025-03-28
-      # rev = "r${l4tVersion}";
-      rev = "uefi-202210.6";
+      rev = "r${l4tVersion}";
       sha256 = "sha256-ldPKOSdk/1XWiK13/dpUJO6H2v7dqC/Th9hhpNFCct0=";
     };
     patches = edk2NvidiaPatches ++ [
@@ -110,9 +101,7 @@ let
   edk2-nvidia-non-osi = fetchFromGitHub {
     owner = "NVIDIA";
     repo = "edk2-nvidia-non-osi";
-    # No 35.6.1 tag as of 2025-03-28
-    # rev = "r${l4tVersion}";
-    rev = "uefi-202210.6";
+    rev = "r${l4tVersion}";
     sha256 = "sha256-Pdsxxo+KdXa1lE/RqFBQ20VzNrvLghatT3phQz+hPQI=";
   };
 
