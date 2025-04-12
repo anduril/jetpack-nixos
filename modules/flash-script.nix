@@ -14,8 +14,16 @@ let
 
   updateFirmware = pkgs.writeShellApplication {
     name = "update-jetson-firmware";
-    runtimeInputs = [ pkgs.nvidia-jetpack.otaUtils ];
+    runtimeInputs = [ pkgs.coreutils config.systemd.package pkgs.nvidia-jetpack.otaUtils ];
     text = ''
+      # If this script is not run on real hardware, don't attempt to perform an
+      # update. This script could potentially run in a few places, for example
+      # in <nixpkgs/nixos/lib/make-disk-image.nix>.
+      if systemd-detect-virt --quiet; then
+        echo "virtualisation detected, skipping jetson firmware update"
+        exit 0
+      fi
+
       # This directory is populated by ota-apply-capsule-update, don't run if
       # we already have a capsule update present on the ESP. We check the exact
       # path that we populate because it is possible for multiple capsule
@@ -473,7 +481,7 @@ in
             orin-agx = [
               { boardid = "3701"; boardsku = "0000"; fab = "300"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; chipsku = "00:00:00:D0"; }
               { boardid = "3701"; boardsku = "0004"; fab = "300"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; chipsku = "00:00:00:D2"; } # 32GB
-              { boardid = "3701"; boardsku = "0005"; fab = "000"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; chipsku = "00:00:00:D0"; } # 64GB
+              { boardid = "3701"; boardsku = "0005"; fab = "300"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; chipsku = "00:00:00:D0"; } # 64GB
             ];
 
             orin-agx-industrial = [

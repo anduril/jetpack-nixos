@@ -45,12 +45,22 @@ let
   ###
 
   # See: https://github.com/NVIDIA/edk2-edkrepo-manifest/blob/main/edk2-nvidia/Jetson/NVIDIAJetsonManifest.xml
-  edk2-src = fetchFromGitHub {
-    owner = "NVIDIA";
-    repo = "edk2";
-    rev = "r${l4tVersion}-edk2-stable202208";
-    fetchSubmodules = true;
-    sha256 = "sha256-w+rZq7Wjni62MJds6QmqpLod+zSFZ/qAN7kRDOit+jo=";
+  edk2-src = applyPatches {
+    src = fetchFromGitHub {
+      owner = "NVIDIA";
+      repo = "edk2";
+      rev = "r${l4tVersion}-edk2-stable202208";
+      fetchSubmodules = true;
+      sha256 = "sha256-w+rZq7Wjni62MJds6QmqpLod+zSFZ/qAN7kRDOit+jo=";
+    };
+    patches = [
+      # Fix GCC 14 compile issue.
+      # PR: https://github.com/tianocore/edk2/pull/5781
+      (fetchpatch {
+        url = "https://github.com/NVIDIA/edk2/commit/57a890fd03356350a1b7a2a0064c8118f44e9958.patch";
+        hash = "sha256-on+yJOlH9B2cD1CS9b8Pmg99pzrlrZT6/n4qPHAbDcA=";
+      })
+    ];
   };
 
   edk2-platforms = fetchFromGitHub {
