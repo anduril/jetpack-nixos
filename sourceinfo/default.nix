@@ -11,7 +11,7 @@ let
   };
   debs = lib.mapAttrs (repo: pkgs: lib.mapAttrs (pkgname: pkg: pkg // { src = fetchDeb repo pkg; }) pkgs) debsJSON;
 
-  gitJSON = lib.importJSON (./r${lib.versions.majorMinor l4tVersion}-gitrepos.json);
+  gitJSON = lib.importJSON (./r${l4tVersion}-gitrepos.json);
   gitRepos = lib.mapAttrs
     (relpath: info: fetchgit {
       inherit (info) url rev hash;

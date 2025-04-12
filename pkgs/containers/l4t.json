@@ -1,14 +1,14 @@
 {
   "nvidia-l4t-3d-core": [
     "/usr/lib/aarch64-linux-gnu/tegra/libGLX_nvidia.so.0",
-    "/usr/lib/aarch64-linux-gnu/tegra/libnvidia-eglcore.so.35.5.0",
-    "/usr/lib/aarch64-linux-gnu/tegra/libnvidia-glcore.so.35.5.0",
-    "/usr/lib/aarch64-linux-gnu/tegra/libnvidia-glsi.so.35.5.0",
-    "/usr/lib/aarch64-linux-gnu/tegra/libnvidia-glvkspirv.so.35.5.0",
-    "/usr/lib/aarch64-linux-gnu/tegra/libnvidia-nvvm.so.35.5.0",
-    "/usr/lib/aarch64-linux-gnu/tegra/libnvidia-ptxjitcompiler.so.35.5.0",
-    "/usr/lib/aarch64-linux-gnu/tegra/libnvidia-rmapi-tegra.so.35.5.0",
-    "/usr/lib/aarch64-linux-gnu/tegra/libnvidia-rtcore.so.35.5.0",
+    "/usr/lib/aarch64-linux-gnu/tegra/libnvidia-eglcore.so.35.6.1",
+    "/usr/lib/aarch64-linux-gnu/tegra/libnvidia-glcore.so.35.6.1",
+    "/usr/lib/aarch64-linux-gnu/tegra/libnvidia-glsi.so.35.6.1",
+    "/usr/lib/aarch64-linux-gnu/tegra/libnvidia-glvkspirv.so.35.6.1",
+    "/usr/lib/aarch64-linux-gnu/tegra/libnvidia-nvvm.so.35.6.1",
+    "/usr/lib/aarch64-linux-gnu/tegra/libnvidia-ptxjitcompiler.so.35.6.1",
+    "/usr/lib/aarch64-linux-gnu/tegra/libnvidia-rmapi-tegra.so.35.6.1",
+    "/usr/lib/aarch64-linux-gnu/tegra/libnvidia-rtcore.so.35.6.1",
     "/usr/lib/aarch64-linux-gnu/tegra/libnvidia-vulkan-producer.so",
     "/usr/lib/aarch64-linux-gnu/tegra/nvidia_icd.json",
     "/usr/lib/aarch64-linux-gnu/tegra-egl/ld.so.conf",
@@ -64,7 +64,7 @@
     "/usr/lib/aarch64-linux-gnu/tegra/libnvgov_spincircle.so",
     "/usr/lib/aarch64-linux-gnu/tegra/libnvgov_tbc.so",
     "/usr/lib/aarch64-linux-gnu/tegra/libnvgov_ui.so",
-    "/usr/lib/aarch64-linux-gnu/tegra/libnvidia-tls.so.35.5.0",
+    "/usr/lib/aarch64-linux-gnu/tegra/libnvidia-tls.so.35.6.1",
     "/usr/lib/aarch64-linux-gnu/tegra/libnvimp.so",
     "/usr/lib/aarch64-linux-gnu/tegra/libnvisp_utils.so",
     "/usr/lib/aarch64-linux-gnu/tegra/libnvll.so",
@@ -213,7 +213,7 @@
     "/usr/lib/aarch64-linux-gnu/tegra/libnvscisync.so"
   ],
   "nvidia-l4t-openwfd": [
-    "/usr/lib/aarch64-linux-gnu/tegra/libnvidia-kms.so.35.5.0",
+    "/usr/lib/aarch64-linux-gnu/tegra/libnvidia-kms.so.35.6.1",
     "/usr/lib/aarch64-linux-gnu/tegra/libtegrawfd.so",
     "/usr/lib/aarch64-linux-gnu/tegra/libnvidia-kms.so"
   ],
@@ -221,7 +221,7 @@
     "/usr/lib/aarch64-linux-gnu/tegra/libnvpvaintf.so"
   ],
   "nvidia-l4t-vulkan-sc": [
-    "/usr/lib/aarch64-linux-gnu/tegra/libnvidia-vksc-core.so.35.5.0",
+    "/usr/lib/aarch64-linux-gnu/tegra/libnvidia-vksc-core.so.35.6.1",
     "/usr/lib/aarch64-linux-gnu/tegra/libnvidia-vksc-core.so"
   ],
   "nvidia-l4t-vulkan-sc-sdk": [

@@ -7,8 +7,49 @@
 , structuredExtraConfig ? { }
 , argsOverride ? { }
 , buildLinux
+, gitRepos
 , ...
 }@args:
+
+# NVIDIA's kernel builds include multiple git repositories outside the main
+# kernel tree. NixOS expects all kernel source to be within a single source
+# tree. OE4T's kernel already has this structure. So we can either reuse that
+# structure, or reproduce it ourself below.
+
+let
+  useOe4tKernelSrc = false;
+
+  oe4tKernelSrc = fetchFromGitHub {
+    owner = "OE4T";
+    repo = "linux-tegra-5.10";
+    # No OE4T kernel branch/tag for 35.6.1 as of 2025-03-11
+    #rev = "4bce4d148ef3ff159ab55c127d8761aeaac5cc28";
+    #sha256 = "sha256-YCOEGQ943EbrApdVFKs+l+g2XWZ8TvdqRxcK8F9ebo8=";
+  };
+
+  # keys are strings referring to repos in sourceInfo, keys are relative paths to place into kernel src dir
+  subtrees = (lib.flip lib.genAttrs (lib.removePrefix "kernel/") [
+    "kernel/nvidia"
+    "kernel/nvidia/drivers/net/ethernet/nvidia/nvethernet/nvethernetrm"
+  ]) // (lib.flip lib.genAttrs (lib.removePrefix "hardware/") [
+    "hardware/nvidia/platform/t19x/common"
+    "hardware/nvidia/platform/t19x/galen-industrial/kernel-dts"
+    "hardware/nvidia/platform/t19x/galen/kernel-dts"
+    "hardware/nvidia/platform/t19x/jakku/kernel-dts"
+    "hardware/nvidia/platform/t19x/mccoy/kernel-dts"
+    "hardware/nvidia/platform/t23x/common/kernel-dts"
+    "hardware/nvidia/platform/t23x/concord/kernel-dts"
+    "hardware/nvidia/platform/t23x/p3768/kernel-dts"
+    #"hardware/nvidia/platform/t23x/prometheus/kernel-dts"  # Only used for IGX
+    "hardware/nvidia/platform/tegra/common"
+    "hardware/nvidia/soc/t19x"
+    "hardware/nvidia/soc/t23x"
+    "hardware/nvidia/soc/tegra"
+  ]) // {
+    # Exception to the rules above
+    "kernel/nvgpu" = "nvidia/nvgpu";
+  };
+in
 buildLinux (args // {
   # See Makefile in kernel source root for VERSION/PATCHLEVEL/SUBLEVEL. See realtime patch for rt version
   version = "5.10.216" + lib.optionalString realtime "-rt108";
@@ -32,15 +73,24 @@ buildLinux (args // {
   # Using applyPatches here since it's not obvious how to append an extra
   # postPatch. This is not very efficient.
   src = applyPatches {
-    src = fetchFromGitHub {
-      owner = "OE4T";
-      repo = "linux-tegra-5.10";
-      rev = "4bce4d148ef3ff159ab55c127d8761aeaac5cc28"; # latest on oe4t-patches-l4t-r36.0.ga as of 2024-10-27
-      sha256 = "sha256-YCOEGQ943EbrApdVFKs+l+g2XWZ8TvdqRxcK8F9ebo8=";
-    };
-    # Remove device tree overlays with some incorrect "remote-endpoint" nodes.
-    # They are strings, but should be phandles. Otherwise, it fails to compile
+    src = if useOe4tKernelSrc then oe4tKernelSrc else gitRepos."kernel/kernel-5.10";
+
+    prePatch = lib.optionalString (!useOe4tKernelSrc) (lib.concatStringsSep "\n" (lib.mapAttrsToList
+      (treeName: outPath: ''
+        echo "Copying ${treeName} to ./${outPath}"
+        mkdir -p "./${outPath}"
+        cp -r "${gitRepos.${treeName}}/." "./${outPath}"
+        chmod +w -R "./${outPath}"
+      '')
+      subtrees));
+
+    # Patches from OE4T which modify the build files to work with a single common kernel directory
+    # Also includes some toolchain and random fixes
+    patches = lib.optional (!useOe4tKernelSrc) ./oe4t-patches.mbox;
+
     postPatch = ''
+      # Remove device tree overlays with some incorrect "remote-endpoint" nodes.
+      # They are strings, but should be phandles. Otherwise, it fails to compile
       rm \
         nvidia/platform/t19x/galen/kernel-dts/tegra194-p2822-camera-imx185-overlay.dts \
         nvidia/platform/t19x/galen/kernel-dts/tegra194-p2822-camera-dual-imx274-overlay.dts \

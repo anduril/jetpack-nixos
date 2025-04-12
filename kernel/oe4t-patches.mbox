@@ -1,0 +1,1456 @@
+From 58a7b0064543e242e9b3759a6dacc4afd6c07bd7 Mon Sep 17 00:00:00 2001
+From: Matt Madison <matt@madison.systems>
+Date: Fri, 21 Sep 2018 09:04:31 -0700
+Subject: [PATCH 01/26] Build system updates for merged nvidia tree.
+
+Signed-off-by: Matt Madison <matt@madison.systems>
+---
+ Makefile                                      | 17 +++--------------
+ arch/arm64/boot/dts/Makefile                  |  4 ++--
+ nvidia/drivers/video/tegra/dc/bridge/Makefile |  6 +++---
+ scripts/Kbuild.include                        |  2 +-
+ 4 files changed, 9 insertions(+), 20 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index 33093baedce1..5a40d0805a42 100644
+--- a/Makefile
++++ b/Makefile
+@@ -6,20 +6,9 @@ EXTRAVERSION =
+ NAME = Dare mighty things
+ 
+ ifeq ($(KERNEL_OVERLAYS),)
+-ifeq ($(_nv_build_configuration_is_external),0)
+-# internal build kernel overlays txt
+-CHOSEN_KERNEL_OVERLAYS_TXT := kernel-int-overlays.txt
+-else
+-ifeq ($(_nv_build_configuration_is_external),)
+-# menuconfig make selects internal profile
+-# NOTE: external profile menuconfig support may be needed later
+-CHOSEN_KERNEL_OVERLAYS_TXT := kernel-int-overlays.txt
+-else
+-# external build kernel overlays txt
+-CHOSEN_KERNEL_OVERLAYS_TXT := kernel-overlays.txt
+-endif
+-endif
+-KERNEL_OVERLAYS := $(addprefix $(CURDIR)/../,$(shell cat $(CHOSEN_KERNEL_OVERLAYS_TXT)))
++KERNEL_OVERLAYS :=
++KERNEL_OVERLAYS += $(CURDIR)/nvidia
++KERNEL_OVERLAYS += $(CURDIR)/nvidia/nvgpu
+ else
+ override KERNEL_OVERLAYS := $(subst :, ,$(KERNEL_OVERLAYS))
+ endif
+diff --git a/arch/arm64/boot/dts/Makefile b/arch/arm64/boot/dts/Makefile
+index dfef14e99367..761d36c33d01 100644
+--- a/arch/arm64/boot/dts/Makefile
++++ b/arch/arm64/boot/dts/Makefile
+@@ -47,8 +47,8 @@ dts_mfiles = $(call dts_makefile, $(tegra-dtstree)/platform/, Makefile)
+ ifneq ($(dts_mfiles),)
+ dts-include :=
+ include $(dts_mfiles)
+-dtb-y := $(addprefix $(tegra-rel-dtstree)/hardware/nvidia/,$(dtb-y))
+-dtbo-y := $(addprefix $(tegra-rel-dtstree)/hardware/nvidia/,$(dtbo-y))
++dtb-y := $(addprefix $(tegra-rel-dtstree)/nvidia/,$(dtb-y))
++dtbo-y := $(addprefix $(tegra-rel-dtstree)/nvidia/,$(dtbo-y))
+ ifneq ($(dts-include),)
+ DTC_INCLUDE += $(addprefix $(tegra-dtstree)/,$(dts-include))
+ endif
+diff --git a/nvidia/drivers/video/tegra/dc/bridge/Makefile b/nvidia/drivers/video/tegra/dc/bridge/Makefile
+index edf9013ab75b..bfda2c32b8c8 100644
+--- a/nvidia/drivers/video/tegra/dc/bridge/Makefile
++++ b/nvidia/drivers/video/tegra/dc/bridge/Makefile
+@@ -1,8 +1,8 @@
+ GCOV_PROFILE := y
+ subdir-ccflags-y := -Werror
+-ccflags-y += -I$(overlay)/drivers/video/tegra/host
+-ccflags-y += -I$(overlay)/drivers/video/tegra/dc
+-ccflags-y += -I$(overlay)/drivers/platform/tegra
++ccflags-y += -I$(srctree.nvidia)/drivers/video/tegra/host
++ccflags-y += -I$(srctree.nvidia)/drivers/video/tegra/dc
++ccflags-y += -I$(srctree.nvidia)/drivers/platform/tegra
+ ccflags-y += -I$(srctree)/arch/arm/mach-tegra
+ 
+ obj-$(CONFIG_TEGRA_HDMI2FPD_DS90UH949) += hdmi2fpd_ds90uh949.o
+diff --git a/scripts/Kbuild.include b/scripts/Kbuild.include
+index 1f2f661ab18c..c5965bbcb168 100644
+--- a/scripts/Kbuild.include
++++ b/scripts/Kbuild.include
+@@ -352,7 +352,7 @@ endef
+ ifneq ($(NV_BUILD_KERNEL_DTS_ROOT),)
+ tegra-dtstree = $(NV_BUILD_KERNEL_DTS_ROOT)
+ else
+-tegra-dtstree = $(srctree)/../../hardware/nvidia
++tegra-dtstree = $(srctree)/nvidia
+ endif
+ 
+ tegra-root-dtstree = $(subst ^$(realpath $(tegra-dtstree)/../..)/,,^$(realpath $(srctree)/arch/arm64/boot/dts))
+-- 
+2.47.0
+
+
+From 2f7f99efae12a25692ebd67f7a1ce82a1b389c65 Mon Sep 17 00:00:00 2001
+From: Matt Madison <matt@madison.systems>
+Date: Fri, 21 Sep 2018 12:56:45 -0700
+Subject: [PATCH 02/26] nvidia: tegra: host: remove xxd reference from Makefile
+
+and replace it with commands that are more readily
+available, updating bus_client.c to provide the actual
+variable declearations.
+
+Signed-off-by: Matt Madison <matt@madison.systems>
+---
+ nvidia/drivers/video/tegra/host/Makefile     | 3 +--
+ nvidia/drivers/video/tegra/host/bus_client.c | 3 +++
+ 2 files changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/nvidia/drivers/video/tegra/host/Makefile b/nvidia/drivers/video/tegra/host/Makefile
+index 169b46acccdb..c5a60789c031 100644
+--- a/nvidia/drivers/video/tegra/host/Makefile
++++ b/nvidia/drivers/video/tegra/host/Makefile
+@@ -80,8 +80,7 @@ ifdef CONFIG_EVENTLIB
+ $(obj)/bus_client.o: $(obj)/nvhost_events_json.h
+ 
+ $(obj)/nvhost_events_json.h: $(src)/nvhost_events.json
+-	xxd -i $< $@
+-	sed -i 's/\(.*\) \(.*\)nvhost_events_json\(.*\)/\1 nvhost_events_json\3/g' $@
++	od -tx1 -v $< | sed -r -e's,^[0-9a-f]+, ,' -e's! ([0-9a-f][0-9a-f])! 0x\1,!g' | head -c -4 > $@
+ 
+ clean-files := nvhost_events_json.h
+ 
+diff --git a/nvidia/drivers/video/tegra/host/bus_client.c b/nvidia/drivers/video/tegra/host/bus_client.c
+index 1d923f3e8d85..281f1eda26e6 100644
+--- a/nvidia/drivers/video/tegra/host/bus_client.c
++++ b/nvidia/drivers/video/tegra/host/bus_client.c
+@@ -45,7 +45,10 @@
+ 
+ #ifdef CONFIG_EVENTLIB
+ #include <linux/keventlib.h>
++static const char nvhost_events_json[] = {
+ #include "nvhost_events_json.h"
++};
++static size_t nvhost_events_json_len = sizeof(nvhost_events_json);
+ #endif
+ 
+ #include "debug.h"
+-- 
+2.47.0
+
+
+From a17a93349bcf29fcc19189e2d3b1975f5165ce8f Mon Sep 17 00:00:00 2001
+From: Ilies CHERGUI <ilies.chergui@gmail.com>
+Date: Mon, 27 Dec 2021 12:58:19 +0000
+Subject: [PATCH 03/26] scripts: update 'tegra-root-dtstree' definition
+
+This is needed to fix dtbs build issue.
+
+Signed-off-by: Ilies CHERGUI <ilies.chergui@gmail.com>
+---
+ scripts/Kbuild.include | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/scripts/Kbuild.include b/scripts/Kbuild.include
+index c5965bbcb168..fe0db0c83fad 100644
+--- a/scripts/Kbuild.include
++++ b/scripts/Kbuild.include
+@@ -355,5 +355,5 @@ else
+ tegra-dtstree = $(srctree)/nvidia
+ endif
+ 
+-tegra-root-dtstree = $(subst ^$(realpath $(tegra-dtstree)/../..)/,,^$(realpath $(srctree)/arch/arm64/boot/dts))
++tegra-root-dtstree = $(subst ^$(realpath $(tegra-dtstree)/..)/,,^$(realpath $(srctree)/arch/arm64/boot/dts))
+ tegra-rel-dtstree = $(subst $(space),/,$(patsubst %,..,$(subst /, ,$(tegra-root-dtstree))))
+-- 
+2.47.0
+
+
+From f0cb7c4f2480afae473cbd5cd22aec7128e2014b Mon Sep 17 00:00:00 2001
+From: Matt Madison <matt@madison.systems>
+Date: Sat, 8 Aug 2020 08:43:33 -0700
+Subject: [PATCH 04/26] nvidia/net: fix Kconfig file for bcmdhd_pcie
+
+which Kbuild accepts but kconfiglib.py does not,
+due to incorrect indentation.
+
+Signed-off-by: Matt Madison <matt@madison.systems>
+---
+ nvidia/drivers/net/wireless/bcmdhd_pcie/Kconfig | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/nvidia/drivers/net/wireless/bcmdhd_pcie/Kconfig b/nvidia/drivers/net/wireless/bcmdhd_pcie/Kconfig
+index 4e19476e00d2..6486da16b1f6 100644
+--- a/nvidia/drivers/net/wireless/bcmdhd_pcie/Kconfig
++++ b/nvidia/drivers/net/wireless/bcmdhd_pcie/Kconfig
+@@ -59,8 +59,8 @@ config DHD_USE_SCHED_SCAN
+ 	  Use CFG80211 sched scan
+ 
+ config DHD_SET_RANDOM_MAC_VAL
+-hex "Vendor OUI"
+-depends on BCMDHD
+-default 0x001A11
+- help
+-Set vendor OUI for SoftAP
++	hex "Vendor OUI"
++	depends on BCMDHD
++	default 0x001A11
++	help
++	  Set vendor OUI for SoftAP
+-- 
+2.47.0
+
+
+From 3daffc569bb3da4e1f6a2a45e472ed8b6ddbd34a Mon Sep 17 00:00:00 2001
+From: Matt Madison <matt@madison.systems>
+Date: Mon, 27 Dec 2021 06:25:32 -0800
+Subject: [PATCH 05/26] Ensure KERNEL_OVERLAYS are in the source tree
+
+Signed-off-by: Matt Madison <matt@madison.systems>
+---
+ Makefile | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index 5a40d0805a42..97a7a77fc5ee 100644
+--- a/Makefile
++++ b/Makefile
+@@ -7,8 +7,8 @@ NAME = Dare mighty things
+ 
+ ifeq ($(KERNEL_OVERLAYS),)
+ KERNEL_OVERLAYS :=
+-KERNEL_OVERLAYS += $(CURDIR)/nvidia
+-KERNEL_OVERLAYS += $(CURDIR)/nvidia/nvgpu
++KERNEL_OVERLAYS += $(dir $(lastword $(MAKEFILE_LIST)))/nvidia
++KERNEL_OVERLAYS += $(dir $(lastword $(MAKEFILE_LIST)))/nvidia/nvgpu
+ else
+ override KERNEL_OVERLAYS := $(subst :, ,$(KERNEL_OVERLAYS))
+ endif
+-- 
+2.47.0
+
+
+From 0c476ad40ba9609dffa76646c5508fe9e9eb8ee9 Mon Sep 17 00:00:00 2001
+From: Matt Madison <matt@madison.systems>
+Date: Mon, 27 Dec 2021 07:01:56 -0800
+Subject: [PATCH 06/26] arm64: set -mno-outline-atomics in KBUILD_CFLAGS
+
+to compensate for NVIDIA's use of GCC builtins instead
+of kernel atomics in their semi-out-of-tree drivers.
+
+Signed-off-by: Matt Madison <matt@madison.systems>
+---
+ arch/arm64/Makefile | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/arch/arm64/Makefile b/arch/arm64/Makefile
+index 485b7dbd4f9e..d06262298804 100644
+--- a/arch/arm64/Makefile
++++ b/arch/arm64/Makefile
+@@ -52,6 +52,13 @@ KBUILD_AFLAGS	+= $(compat_vdso)
+ KBUILD_CFLAGS	+= $(call cc-option,-mabi=lp64)
+ KBUILD_AFLAGS	+= $(call cc-option,-mabi=lp64)
+ 
++# XXX---
++# NVIDIA uses GCC builtins instead of proper kernel atomics
++# in their semi-out-of-tree drivers, and those builtins get
++# outlined automatically with GCC 10 and later
++KBUILD_CFLAGS += $(call cc-option,-mno-outline-atomics)
++# ---XXX
++
+ # Avoid generating .eh_frame* sections.
+ KBUILD_CFLAGS	+= -fno-asynchronous-unwind-tables -fno-unwind-tables
+ KBUILD_AFLAGS	+= -fno-asynchronous-unwind-tables -fno-unwind-tables
+-- 
+2.47.0
+
+
+From d0d82d3fb0d2d888bda5983ec552eb1eba38171e Mon Sep 17 00:00:00 2001
+From: Matt Madison <matt@madison.systems>
+Date: Thu, 6 May 2021 05:12:54 -0700
+Subject: [PATCH 07/26] nvidia: net/wireless/bcmdhd: fix incorrect identation
+
+flagged by gcc 11.
+
+Signed-off-by: Matt Madison <matt@madison.systems>
+---
+ nvidia/drivers/net/wireless/bcmdhd/dhd_linux.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/nvidia/drivers/net/wireless/bcmdhd/dhd_linux.c b/nvidia/drivers/net/wireless/bcmdhd/dhd_linux.c
+index 365b6a12320d..74e59df7832f 100644
+--- a/nvidia/drivers/net/wireless/bcmdhd/dhd_linux.c
++++ b/nvidia/drivers/net/wireless/bcmdhd/dhd_linux.c
+@@ -3366,8 +3366,8 @@ dhd_watchdog_thread(void *data)
+ 					    jiffies +
+ 					    msecs_to_jiffies(dhd_watchdog_ms) -
+ 					    min(msecs_to_jiffies(dhd_watchdog_ms), time_lapse));
+-					DHD_GENERAL_UNLOCK(&dhd->pub, flags);
+-				}
++				DHD_GENERAL_UNLOCK(&dhd->pub, flags);
++			}
+ 		} else {
+ 			break;
+ 	}
+-- 
+2.47.0
+
+
+From 23cdf54cc98686db7acf33fc22fcbb569f6c55a4 Mon Sep 17 00:00:00 2001
+From: Matt Madison <matt@madison.systems>
+Date: Thu, 6 May 2021 05:36:19 -0700
+Subject: [PATCH 08/26] nvidia: net/wireless/realtek: clean up indentation
+ issues
+
+now flagged as errors by gcc 11.  Some of these were actual
+bugs.
+
+Signed-off-by: Matt Madison <matt@madison.systems>
+---
+ .../wireless/realtek/rtl8812au/core/efuse/rtw_efuse.c  |  4 ++--
+ .../net/wireless/realtek/rtl8812au/core/rtw_mlme.c     |  5 ++++-
+ .../net/wireless/realtek/rtl8812au/core/rtw_rf.c       |  3 ++-
+ .../wireless/realtek/rtl8812au/core/rtw_wlan_util.c    |  4 ++--
+ .../wireless/realtek/rtl8814au/core/efuse/rtw_efuse.c  |  2 +-
+ .../net/wireless/realtek/rtl8814au/core/rtw_mlme.c     |  5 ++++-
+ .../net/wireless/realtek/rtl8814au/core/rtw_recv.c     | 10 +++++-----
+ .../wireless/realtek/rtl8821au/core/efuse/rtw_efuse.c  |  2 +-
+ .../net/wireless/realtek/rtl8821au/core/rtw_mlme.c     |  5 ++++-
+ .../net/wireless/realtek/rtl8821au/core/rtw_recv.c     | 10 +++++-----
+ .../wireless/realtek/rtl8821cu/core/efuse/rtw_efuse.c  |  2 +-
+ .../net/wireless/realtek/rtl8821cu/core/rtw_mlme.c     |  5 ++++-
+ .../net/wireless/realtek/rtl8821cu/core/rtw_recv.c     | 10 +++++-----
+ .../wireless/realtek/rtl8822bu/core/efuse/rtw_efuse.c  |  2 +-
+ .../net/wireless/realtek/rtl8822bu/core/rtw_mlme.c     |  5 ++++-
+ .../net/wireless/realtek/rtl8822bu/core/rtw_recv.c     | 10 +++++-----
+ .../net/wireless/realtek/rtl8822ce/core/rtw_mlme.c     |  5 ++++-
+ 17 files changed, 54 insertions(+), 35 deletions(-)
+
+diff --git a/nvidia/drivers/net/wireless/realtek/rtl8812au/core/efuse/rtw_efuse.c b/nvidia/drivers/net/wireless/realtek/rtl8812au/core/efuse/rtw_efuse.c
+index 44d8ac4687b5..af715d5f9198 100644
+--- a/nvidia/drivers/net/wireless/realtek/rtl8812au/core/efuse/rtw_efuse.c
++++ b/nvidia/drivers/net/wireless/realtek/rtl8812au/core/efuse/rtw_efuse.c
+@@ -780,10 +780,10 @@ void rtw_efuse_analyze(PADAPTER	padapter, u8 Type, u8 Fake)
+ 	for (i = 0; i < mapLen; i++) {
+ 		if (i % 16 == 0)
+ 			RTW_PRINT_SEL(RTW_DBGDUMP, "0x%03x: ", i);
+-			_RTW_PRINT_SEL(RTW_DBGDUMP, "%02X%s"
++		_RTW_PRINT_SEL(RTW_DBGDUMP, "%02X%s"
+ 				, pEfuseHal->fakeEfuseInitMap[i]
+ 				, ((i + 1) % 16 == 0) ? "\n" : (((i + 1) % 8 == 0) ? "	  " : " ")
+-			);
++		      );
+ 		}
+ 	_RTW_PRINT_SEL(RTW_DBGDUMP, "\n");
+ 
+diff --git a/nvidia/drivers/net/wireless/realtek/rtl8812au/core/rtw_mlme.c b/nvidia/drivers/net/wireless/realtek/rtl8812au/core/rtw_mlme.c
+index a3567a2c873e..9e3cdc0e0a65 100644
+--- a/nvidia/drivers/net/wireless/realtek/rtl8812au/core/rtw_mlme.c
++++ b/nvidia/drivers/net/wireless/realtek/rtl8812au/core/rtw_mlme.c
+@@ -3193,10 +3193,13 @@ void rtw_drv_scan_by_self(_adapter *padapter, u8 reason)
+ 		#ifdef CONFIG_LAYER2_ROAMING
+ 		if (rtw_chk_roam_flags(padapter, RTW_ROAM_ACTIVE) && pmlmepriv->need_to_roam == _TRUE)
+ 			RTW_INFO(FUNC_ADPT_FMT" need to roam, don't care BusyTraffic\n", FUNC_ADPT_ARG(padapter));
+-		else
++		else {
+ 		#endif
+ 			RTW_INFO(FUNC_ADPT_FMT" exit BusyTraffic\n", FUNC_ADPT_ARG(padapter));
+ 			goto exit;
++		#ifdef CONFIG_LAYER2_ROAMING
++		}
++		#endif
+ 	}
+ 	else if (ssc_chk != SS_ALLOW)
+ 		goto exit;
+diff --git a/nvidia/drivers/net/wireless/realtek/rtl8812au/core/rtw_rf.c b/nvidia/drivers/net/wireless/realtek/rtl8812au/core/rtw_rf.c
+index fa851e40e822..f8015fd99123 100644
+--- a/nvidia/drivers/net/wireless/realtek/rtl8812au/core/rtw_rf.c
++++ b/nvidia/drivers/net/wireless/realtek/rtl8812au/core/rtw_rf.c
+@@ -762,9 +762,10 @@ void dump_txpwr_lmt(void *sel, _adapter *adapter)
+ 
+ 	RTW_PRINT_SEL(sel, "txpwr_lmt_2g_cck_ofdm_state:0x%02x\n", rfctl->txpwr_lmt_2g_cck_ofdm_state);
+ 	#ifdef CONFIG_IEEE80211_BAND_5GHZ
+-	if (IS_HARDWARE_TYPE_JAGUAR_AND_JAGUAR2(adapter))
++	if (IS_HARDWARE_TYPE_JAGUAR_AND_JAGUAR2(adapter)) {
+ 		RTW_PRINT_SEL(sel, "txpwr_lmt_5g_cck_ofdm_state:0x%02x\n", rfctl->txpwr_lmt_5g_cck_ofdm_state);
+ 		RTW_PRINT_SEL(sel, "txpwr_lmt_5g_20_40_ref:0x%02x\n", rfctl->txpwr_lmt_5g_20_40_ref);
++	}
+ 	#endif
+ 	RTW_PRINT_SEL(sel, "\n");
+ 
+diff --git a/nvidia/drivers/net/wireless/realtek/rtl8812au/core/rtw_wlan_util.c b/nvidia/drivers/net/wireless/realtek/rtl8812au/core/rtw_wlan_util.c
+index fd9b7cabde3f..ad8a00e92e5b 100644
+--- a/nvidia/drivers/net/wireless/realtek/rtl8812au/core/rtw_wlan_util.c
++++ b/nvidia/drivers/net/wireless/realtek/rtl8812au/core/rtw_wlan_util.c
+@@ -3225,8 +3225,8 @@ void rtw_parse_sta_vendor_ie_8812(_adapter *adapter, struct sta_info *sta, u8 *t
+ 	else {
+ 		if(*(p+1) > 6 ) {
+ 			for(i=0; i<9;i++)
+-				RTW_INFO("p[%d]=0x%x",i,*(p+i) );
+-				RTW_INFO("\n");
++				RTW_INFO("p[%d]=0x%x ",i,*(p+i) );
++			RTW_INFO("\n");
+ 			if(*(p+6) != 2)
+ 				goto exit;
+ 			
+diff --git a/nvidia/drivers/net/wireless/realtek/rtl8814au/core/efuse/rtw_efuse.c b/nvidia/drivers/net/wireless/realtek/rtl8814au/core/efuse/rtw_efuse.c
+index a3572531ee9e..54e34d4b6f11 100644
+--- a/nvidia/drivers/net/wireless/realtek/rtl8814au/core/efuse/rtw_efuse.c
++++ b/nvidia/drivers/net/wireless/realtek/rtl8814au/core/efuse/rtw_efuse.c
+@@ -904,7 +904,7 @@ void rtw_efuse_analyze(PADAPTER	padapter, u8 Type, u8 Fake)
+ 	for (i = 0; i < mapLen; i++) {
+ 		if (i % 16 == 0)
+ 			RTW_PRINT_SEL(RTW_DBGDUMP, "0x%03x: ", i);
+-			_RTW_PRINT_SEL(RTW_DBGDUMP, "%02X%s"
++		_RTW_PRINT_SEL(RTW_DBGDUMP, "%02X%s"
+ 				, pEfuseHal->fakeEfuseInitMap[i]
+ 				, ((i + 1) % 16 == 0) ? "\n" : (((i + 1) % 8 == 0) ? "	  " : " ")
+ 			);
+diff --git a/nvidia/drivers/net/wireless/realtek/rtl8814au/core/rtw_mlme.c b/nvidia/drivers/net/wireless/realtek/rtl8814au/core/rtw_mlme.c
+index 791fafd073fe..257f24a8fde7 100644
+--- a/nvidia/drivers/net/wireless/realtek/rtl8814au/core/rtw_mlme.c
++++ b/nvidia/drivers/net/wireless/realtek/rtl8814au/core/rtw_mlme.c
+@@ -3127,10 +3127,13 @@ void rtw_drv_scan_by_self(_adapter *padapter, u8 reason)
+ 		#ifdef CONFIG_LAYER2_ROAMING
+ 		if (rtw_chk_roam_flags(padapter, RTW_ROAM_ACTIVE) && pmlmepriv->need_to_roam == _TRUE)
+ 			RTW_INFO(FUNC_ADPT_FMT" need to roam, don't care BusyTraffic\n", FUNC_ADPT_ARG(padapter));
+-		else
++		else {
+ 		#endif
+ 			RTW_INFO(FUNC_ADPT_FMT" exit BusyTraffic\n", FUNC_ADPT_ARG(padapter));
+ 			goto exit;
++		#ifdef CONFIG_LAYER2_ROAMING
++		}
++		#endif
+ 	}
+ 	else if (ssc_chk != SS_ALLOW)
+ 		goto exit;
+diff --git a/nvidia/drivers/net/wireless/realtek/rtl8814au/core/rtw_recv.c b/nvidia/drivers/net/wireless/realtek/rtl8814au/core/rtw_recv.c
+index 2d5047fc8719..aa52b3e15eca 100644
+--- a/nvidia/drivers/net/wireless/realtek/rtl8814au/core/rtw_recv.c
++++ b/nvidia/drivers/net/wireless/realtek/rtl8814au/core/rtw_recv.c
+@@ -3575,11 +3575,11 @@ int validate_mp_recv_frame(_adapter *adapter, union recv_frame *precv_frame)
+ 			for (i = 0; i < precv_frame->u.hdr.len; i = i + 8)
+ 				RTW_INFO("%02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X:\n", *(ptr + i),
+ 					*(ptr + i + 1), *(ptr + i + 2) , *(ptr + i + 3) , *(ptr + i + 4), *(ptr + i + 5), *(ptr + i + 6), *(ptr + i + 7));
+-				RTW_INFO("#############################\n");
+-				_rtw_memset(pmppriv->mplink_buf, '\0' , sizeof(pmppriv->mplink_buf));
+-				_rtw_memcpy(pmppriv->mplink_buf, ptr, precv_frame->u.hdr.len);
+-				pmppriv->mplink_rx_len = precv_frame->u.hdr.len;
+-				pmppriv->mplink_brx =_TRUE;
++			RTW_INFO("#############################\n");
++			_rtw_memset(pmppriv->mplink_buf, '\0' , sizeof(pmppriv->mplink_buf));
++			_rtw_memcpy(pmppriv->mplink_buf, ptr, precv_frame->u.hdr.len);
++			pmppriv->mplink_rx_len = precv_frame->u.hdr.len;
++			pmppriv->mplink_brx =_TRUE;
+ 		}
+ 	}
+ 	if (pmppriv->bloopback) {
+diff --git a/nvidia/drivers/net/wireless/realtek/rtl8821au/core/efuse/rtw_efuse.c b/nvidia/drivers/net/wireless/realtek/rtl8821au/core/efuse/rtw_efuse.c
+index 89f27271e845..5eec8b78278a 100644
+--- a/nvidia/drivers/net/wireless/realtek/rtl8821au/core/efuse/rtw_efuse.c
++++ b/nvidia/drivers/net/wireless/realtek/rtl8821au/core/efuse/rtw_efuse.c
+@@ -904,7 +904,7 @@ void rtw_efuse_analyze(PADAPTER	padapter, u8 Type, u8 Fake)
+ 	for (i = 0; i < mapLen; i++) {
+ 		if (i % 16 == 0)
+ 			RTW_PRINT_SEL(RTW_DBGDUMP, "0x%03x: ", i);
+-			_RTW_PRINT_SEL(RTW_DBGDUMP, "%02X%s"
++		_RTW_PRINT_SEL(RTW_DBGDUMP, "%02X%s"
+ 				, pEfuseHal->fakeEfuseInitMap[i]
+ 				, ((i + 1) % 16 == 0) ? "\n" : (((i + 1) % 8 == 0) ? "	  " : " ")
+ 			);
+diff --git a/nvidia/drivers/net/wireless/realtek/rtl8821au/core/rtw_mlme.c b/nvidia/drivers/net/wireless/realtek/rtl8821au/core/rtw_mlme.c
+index 5c905d9d49e2..930665bfbbe7 100644
+--- a/nvidia/drivers/net/wireless/realtek/rtl8821au/core/rtw_mlme.c
++++ b/nvidia/drivers/net/wireless/realtek/rtl8821au/core/rtw_mlme.c
+@@ -3137,10 +3137,13 @@ void rtw_drv_scan_by_self(_adapter *padapter, u8 reason)
+ 		#ifdef CONFIG_LAYER2_ROAMING
+ 		if (rtw_chk_roam_flags(padapter, RTW_ROAM_ACTIVE) && pmlmepriv->need_to_roam == _TRUE)
+ 			RTW_INFO(FUNC_ADPT_FMT" need to roam, don't care BusyTraffic\n", FUNC_ADPT_ARG(padapter));
+-		else
++		else {
+ 		#endif
+ 			RTW_INFO(FUNC_ADPT_FMT" exit BusyTraffic\n", FUNC_ADPT_ARG(padapter));
+ 			goto exit;
++		#ifdef CONFIG_LAYER2_ROAMING
++		}
++		#endif
+ 	}
+ 	else if (ssc_chk != SS_ALLOW)
+ 		goto exit;
+diff --git a/nvidia/drivers/net/wireless/realtek/rtl8821au/core/rtw_recv.c b/nvidia/drivers/net/wireless/realtek/rtl8821au/core/rtw_recv.c
+index e417f13c18ac..6309fee2a165 100644
+--- a/nvidia/drivers/net/wireless/realtek/rtl8821au/core/rtw_recv.c
++++ b/nvidia/drivers/net/wireless/realtek/rtl8821au/core/rtw_recv.c
+@@ -3575,11 +3575,11 @@ int validate_mp_recv_frame(_adapter *adapter, union recv_frame *precv_frame)
+ 			for (i = 0; i < precv_frame->u.hdr.len; i = i + 8)
+ 				RTW_INFO("%02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X:\n", *(ptr + i),
+ 					*(ptr + i + 1), *(ptr + i + 2) , *(ptr + i + 3) , *(ptr + i + 4), *(ptr + i + 5), *(ptr + i + 6), *(ptr + i + 7));
+-				RTW_INFO("#############################\n");
+-				_rtw_memset(pmppriv->mplink_buf, '\0' , sizeof(pmppriv->mplink_buf));
+-				_rtw_memcpy(pmppriv->mplink_buf, ptr, precv_frame->u.hdr.len);
+-				pmppriv->mplink_rx_len = precv_frame->u.hdr.len;
+-				pmppriv->mplink_brx =_TRUE;
++			RTW_INFO("#############################\n");
++			_rtw_memset(pmppriv->mplink_buf, '\0' , sizeof(pmppriv->mplink_buf));
++			_rtw_memcpy(pmppriv->mplink_buf, ptr, precv_frame->u.hdr.len);
++			pmppriv->mplink_rx_len = precv_frame->u.hdr.len;
++			pmppriv->mplink_brx =_TRUE;
+ 		}
+ 	}
+ 	if (pmppriv->bloopback) {
+diff --git a/nvidia/drivers/net/wireless/realtek/rtl8821cu/core/efuse/rtw_efuse.c b/nvidia/drivers/net/wireless/realtek/rtl8821cu/core/efuse/rtw_efuse.c
+index 89f27271e845..5eec8b78278a 100644
+--- a/nvidia/drivers/net/wireless/realtek/rtl8821cu/core/efuse/rtw_efuse.c
++++ b/nvidia/drivers/net/wireless/realtek/rtl8821cu/core/efuse/rtw_efuse.c
+@@ -904,7 +904,7 @@ void rtw_efuse_analyze(PADAPTER	padapter, u8 Type, u8 Fake)
+ 	for (i = 0; i < mapLen; i++) {
+ 		if (i % 16 == 0)
+ 			RTW_PRINT_SEL(RTW_DBGDUMP, "0x%03x: ", i);
+-			_RTW_PRINT_SEL(RTW_DBGDUMP, "%02X%s"
++		_RTW_PRINT_SEL(RTW_DBGDUMP, "%02X%s"
+ 				, pEfuseHal->fakeEfuseInitMap[i]
+ 				, ((i + 1) % 16 == 0) ? "\n" : (((i + 1) % 8 == 0) ? "	  " : " ")
+ 			);
+diff --git a/nvidia/drivers/net/wireless/realtek/rtl8821cu/core/rtw_mlme.c b/nvidia/drivers/net/wireless/realtek/rtl8821cu/core/rtw_mlme.c
+index 936205bad360..366bf98c21cd 100644
+--- a/nvidia/drivers/net/wireless/realtek/rtl8821cu/core/rtw_mlme.c
++++ b/nvidia/drivers/net/wireless/realtek/rtl8821cu/core/rtw_mlme.c
+@@ -3125,10 +3125,13 @@ void rtw_drv_scan_by_self(_adapter *padapter, u8 reason)
+ 		#ifdef CONFIG_LAYER2_ROAMING
+ 		if (rtw_chk_roam_flags(padapter, RTW_ROAM_ACTIVE) && pmlmepriv->need_to_roam == _TRUE)
+ 			RTW_INFO(FUNC_ADPT_FMT" need to roam, don't care BusyTraffic\n", FUNC_ADPT_ARG(padapter));
+-		else
++		else {
+ 		#endif
+ 			RTW_INFO(FUNC_ADPT_FMT" exit BusyTraffic\n", FUNC_ADPT_ARG(padapter));
+ 			goto exit;
++		#ifdef CONFIG_LAYER2_ROAMING
++		}
++		#endif
+ 	}
+ 	else if (ssc_chk != SS_ALLOW)
+ 		goto exit;
+diff --git a/nvidia/drivers/net/wireless/realtek/rtl8821cu/core/rtw_recv.c b/nvidia/drivers/net/wireless/realtek/rtl8821cu/core/rtw_recv.c
+index e417f13c18ac..6309fee2a165 100644
+--- a/nvidia/drivers/net/wireless/realtek/rtl8821cu/core/rtw_recv.c
++++ b/nvidia/drivers/net/wireless/realtek/rtl8821cu/core/rtw_recv.c
+@@ -3575,11 +3575,11 @@ int validate_mp_recv_frame(_adapter *adapter, union recv_frame *precv_frame)
+ 			for (i = 0; i < precv_frame->u.hdr.len; i = i + 8)
+ 				RTW_INFO("%02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X:\n", *(ptr + i),
+ 					*(ptr + i + 1), *(ptr + i + 2) , *(ptr + i + 3) , *(ptr + i + 4), *(ptr + i + 5), *(ptr + i + 6), *(ptr + i + 7));
+-				RTW_INFO("#############################\n");
+-				_rtw_memset(pmppriv->mplink_buf, '\0' , sizeof(pmppriv->mplink_buf));
+-				_rtw_memcpy(pmppriv->mplink_buf, ptr, precv_frame->u.hdr.len);
+-				pmppriv->mplink_rx_len = precv_frame->u.hdr.len;
+-				pmppriv->mplink_brx =_TRUE;
++			RTW_INFO("#############################\n");
++			_rtw_memset(pmppriv->mplink_buf, '\0' , sizeof(pmppriv->mplink_buf));
++			_rtw_memcpy(pmppriv->mplink_buf, ptr, precv_frame->u.hdr.len);
++			pmppriv->mplink_rx_len = precv_frame->u.hdr.len;
++			pmppriv->mplink_brx =_TRUE;
+ 		}
+ 	}
+ 	if (pmppriv->bloopback) {
+diff --git a/nvidia/drivers/net/wireless/realtek/rtl8822bu/core/efuse/rtw_efuse.c b/nvidia/drivers/net/wireless/realtek/rtl8822bu/core/efuse/rtw_efuse.c
+index a97abc2d5eb4..09a75c4d258a 100644
+--- a/nvidia/drivers/net/wireless/realtek/rtl8822bu/core/efuse/rtw_efuse.c
++++ b/nvidia/drivers/net/wireless/realtek/rtl8822bu/core/efuse/rtw_efuse.c
+@@ -904,7 +904,7 @@ void rtw_efuse_analyze(PADAPTER	padapter, u8 Type, u8 Fake)
+ 	for (i = 0; i < mapLen; i++) {
+ 		if (i % 16 == 0)
+ 			RTW_PRINT_SEL(RTW_DBGDUMP, "0x%03x: ", i);
+-			_RTW_PRINT_SEL(RTW_DBGDUMP, "%02X%s"
++		_RTW_PRINT_SEL(RTW_DBGDUMP, "%02X%s"
+ 				, pEfuseHal->fakeEfuseInitMap[i]
+ 				, ((i + 1) % 16 == 0) ? "\n" : (((i + 1) % 8 == 0) ? "	  " : " ")
+ 			);
+diff --git a/nvidia/drivers/net/wireless/realtek/rtl8822bu/core/rtw_mlme.c b/nvidia/drivers/net/wireless/realtek/rtl8822bu/core/rtw_mlme.c
+index 83a0cf2d6e9e..6e35fc1fe36b 100644
+--- a/nvidia/drivers/net/wireless/realtek/rtl8822bu/core/rtw_mlme.c
++++ b/nvidia/drivers/net/wireless/realtek/rtl8822bu/core/rtw_mlme.c
+@@ -3451,10 +3451,13 @@ void rtw_drv_scan_by_self(_adapter *padapter, u8 reason)
+ 		#ifdef CONFIG_LAYER2_ROAMING
+ 		if (rtw_chk_roam_flags(padapter, RTW_ROAM_ACTIVE) && pmlmepriv->need_to_roam == _TRUE)
+ 			RTW_INFO(FUNC_ADPT_FMT" need to roam, don't care BusyTraffic\n", FUNC_ADPT_ARG(padapter));
+-		else
++		else {
+ 		#endif
+ 			RTW_INFO(FUNC_ADPT_FMT" exit BusyTraffic\n", FUNC_ADPT_ARG(padapter));
+ 			goto exit;
++		#ifdef CONFIG_LAYER2_ROAMING
++		}
++		#endif
+ 	}
+ 	else if (ssc_chk != SS_ALLOW)
+ 		goto exit;
+diff --git a/nvidia/drivers/net/wireless/realtek/rtl8822bu/core/rtw_recv.c b/nvidia/drivers/net/wireless/realtek/rtl8822bu/core/rtw_recv.c
+index e417f13c18ac..6309fee2a165 100644
+--- a/nvidia/drivers/net/wireless/realtek/rtl8822bu/core/rtw_recv.c
++++ b/nvidia/drivers/net/wireless/realtek/rtl8822bu/core/rtw_recv.c
+@@ -3575,11 +3575,11 @@ int validate_mp_recv_frame(_adapter *adapter, union recv_frame *precv_frame)
+ 			for (i = 0; i < precv_frame->u.hdr.len; i = i + 8)
+ 				RTW_INFO("%02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X:\n", *(ptr + i),
+ 					*(ptr + i + 1), *(ptr + i + 2) , *(ptr + i + 3) , *(ptr + i + 4), *(ptr + i + 5), *(ptr + i + 6), *(ptr + i + 7));
+-				RTW_INFO("#############################\n");
+-				_rtw_memset(pmppriv->mplink_buf, '\0' , sizeof(pmppriv->mplink_buf));
+-				_rtw_memcpy(pmppriv->mplink_buf, ptr, precv_frame->u.hdr.len);
+-				pmppriv->mplink_rx_len = precv_frame->u.hdr.len;
+-				pmppriv->mplink_brx =_TRUE;
++			RTW_INFO("#############################\n");
++			_rtw_memset(pmppriv->mplink_buf, '\0' , sizeof(pmppriv->mplink_buf));
++			_rtw_memcpy(pmppriv->mplink_buf, ptr, precv_frame->u.hdr.len);
++			pmppriv->mplink_rx_len = precv_frame->u.hdr.len;
++			pmppriv->mplink_brx =_TRUE;
+ 		}
+ 	}
+ 	if (pmppriv->bloopback) {
+diff --git a/nvidia/drivers/net/wireless/realtek/rtl8822ce/core/rtw_mlme.c b/nvidia/drivers/net/wireless/realtek/rtl8822ce/core/rtw_mlme.c
+index 752a3300f76a..a1974d9f9451 100644
+--- a/nvidia/drivers/net/wireless/realtek/rtl8822ce/core/rtw_mlme.c
++++ b/nvidia/drivers/net/wireless/realtek/rtl8822ce/core/rtw_mlme.c
+@@ -3662,12 +3662,15 @@ u8 rtw_drv_scan_by_self(_adapter *padapter, u8 reason)
+ 		#ifdef CONFIG_LAYER2_ROAMING
+ 		if (rtw_chk_roam_flags(padapter, RTW_ROAM_ACTIVE) && pmlmepriv->need_to_roam == _TRUE)
+ 			RTW_INFO(FUNC_ADPT_FMT" need to roam, don't care BusyTraffic\n", FUNC_ADPT_ARG(padapter));
+-		else
++		else {
+ 		#endif
+ 		{
+ 			RTW_INFO(FUNC_ADPT_FMT" exit BusyTraffic\n", FUNC_ADPT_ARG(padapter));
+ 			goto exit;
+ 		}
++		#ifdef CONFIG_LAYER2_ROAMING
++		}
++		#endif
+ 	}
+ 	else if (ssc_chk != SS_ALLOW)
+ 		goto exit;
+-- 
+2.47.0
+
+
+From c7c6216f7c115cb04edb1eed658809035491f789 Mon Sep 17 00:00:00 2001
+From: Matt Madison <matt@madison.systems>
+Date: Fri, 1 Oct 2021 03:05:08 -0700
+Subject: [PATCH 09/26] nvidia/driver/net/wireless: fix WEXT conditional in
+ realtek drivers
+
+Building the rtl88XXXX drivers for a kernel with CONFIG_WIRELESS_EXT
+disabled in the configuration results in unused static functions.
+Move the ifdef that conditionalizes inclusion of WEXT support to
+above the offending function.
+
+Signed-off-by: Matt Madison <matt@madison.systems>
+---
+ .../net/wireless/realtek/rtl8812au/os_dep/linux/ioctl_linux.c   | 2 +-
+ .../net/wireless/realtek/rtl8814au/os_dep/linux/ioctl_linux.c   | 2 +-
+ .../net/wireless/realtek/rtl8821au/os_dep/linux/ioctl_linux.c   | 2 +-
+ .../net/wireless/realtek/rtl8821cu/os_dep/linux/ioctl_linux.c   | 2 +-
+ .../net/wireless/realtek/rtl8822bu/os_dep/linux/ioctl_linux.c   | 2 +-
+ 5 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/nvidia/drivers/net/wireless/realtek/rtl8812au/os_dep/linux/ioctl_linux.c b/nvidia/drivers/net/wireless/realtek/rtl8812au/os_dep/linux/ioctl_linux.c
+index 1060cf017e46..9e1afbf67812 100644
+--- a/nvidia/drivers/net/wireless/realtek/rtl8812au/os_dep/linux/ioctl_linux.c
++++ b/nvidia/drivers/net/wireless/realtek/rtl8812au/os_dep/linux/ioctl_linux.c
+@@ -12346,6 +12346,7 @@ static iw_handler rtw_private_handler[] = {
+ #endif /* CONFIG_INTEL_WIDI */
+ };
+ 
++#ifdef CONFIG_WIRELESS_EXT
+ #if WIRELESS_EXT >= 17
+ static struct iw_statistics *rtw_get_wireless_stats(struct net_device *dev)
+ {
+@@ -12402,7 +12403,6 @@ static struct iw_statistics *rtw_get_wireless_stats(struct net_device *dev)
+ }
+ #endif
+ 
+-#ifdef CONFIG_WIRELESS_EXT
+ struct iw_handler_def rtw_handlers_def = {
+ 	.standard = rtw_handlers,
+ 	.num_standard = sizeof(rtw_handlers) / sizeof(iw_handler),
+diff --git a/nvidia/drivers/net/wireless/realtek/rtl8814au/os_dep/linux/ioctl_linux.c b/nvidia/drivers/net/wireless/realtek/rtl8814au/os_dep/linux/ioctl_linux.c
+index 4128ed1fea12..d0869d650017 100644
+--- a/nvidia/drivers/net/wireless/realtek/rtl8814au/os_dep/linux/ioctl_linux.c
++++ b/nvidia/drivers/net/wireless/realtek/rtl8814au/os_dep/linux/ioctl_linux.c
+@@ -12328,6 +12328,7 @@ static iw_handler rtw_private_handler[] = {
+ 	rtw_test,						/* 0x1D */
+ };
+ 
++#ifdef CONFIG_WIRELESS_EXT
+ #if WIRELESS_EXT >= 17
+ static struct iw_statistics *rtw_get_wireless_stats(struct net_device *dev)
+ {
+@@ -12384,7 +12385,6 @@ static struct iw_statistics *rtw_get_wireless_stats(struct net_device *dev)
+ }
+ #endif
+ 
+-#ifdef CONFIG_WIRELESS_EXT
+ struct iw_handler_def rtw_handlers_def = {
+ 	.standard = rtw_handlers,
+ 	.num_standard = sizeof(rtw_handlers) / sizeof(iw_handler),
+diff --git a/nvidia/drivers/net/wireless/realtek/rtl8821au/os_dep/linux/ioctl_linux.c b/nvidia/drivers/net/wireless/realtek/rtl8821au/os_dep/linux/ioctl_linux.c
+index a46609723300..f2527f3d7ce0 100644
+--- a/nvidia/drivers/net/wireless/realtek/rtl8821au/os_dep/linux/ioctl_linux.c
++++ b/nvidia/drivers/net/wireless/realtek/rtl8821au/os_dep/linux/ioctl_linux.c
+@@ -12345,6 +12345,7 @@ static iw_handler rtw_private_handler[] = {
+ 	rtw_test,						/* 0x1D */
+ };
+ 
++#ifdef CONFIG_WIRELESS_EXT
+ #if WIRELESS_EXT >= 17
+ static struct iw_statistics *rtw_get_wireless_stats(struct net_device *dev)
+ {
+@@ -12401,7 +12402,6 @@ static struct iw_statistics *rtw_get_wireless_stats(struct net_device *dev)
+ }
+ #endif
+ 
+-#ifdef CONFIG_WIRELESS_EXT
+ struct iw_handler_def rtw_handlers_def = {
+ 	.standard = rtw_handlers,
+ 	.num_standard = sizeof(rtw_handlers) / sizeof(iw_handler),
+diff --git a/nvidia/drivers/net/wireless/realtek/rtl8821cu/os_dep/linux/ioctl_linux.c b/nvidia/drivers/net/wireless/realtek/rtl8821cu/os_dep/linux/ioctl_linux.c
+index f467f7e4588c..352eded54515 100644
+--- a/nvidia/drivers/net/wireless/realtek/rtl8821cu/os_dep/linux/ioctl_linux.c
++++ b/nvidia/drivers/net/wireless/realtek/rtl8821cu/os_dep/linux/ioctl_linux.c
+@@ -12329,6 +12329,7 @@ static iw_handler rtw_private_handler[] = {
+ 	rtw_test,						/* 0x1D */
+ };
+ 
++#ifdef CONFIG_WIRELESS_EXT
+ #if WIRELESS_EXT >= 17
+ static struct iw_statistics *rtw_get_wireless_stats(struct net_device *dev)
+ {
+@@ -12385,7 +12386,6 @@ static struct iw_statistics *rtw_get_wireless_stats(struct net_device *dev)
+ }
+ #endif
+ 
+-#ifdef CONFIG_WIRELESS_EXT
+ struct iw_handler_def rtw_handlers_def = {
+ 	.standard = rtw_handlers,
+ 	.num_standard = sizeof(rtw_handlers) / sizeof(iw_handler),
+diff --git a/nvidia/drivers/net/wireless/realtek/rtl8822bu/os_dep/linux/ioctl_linux.c b/nvidia/drivers/net/wireless/realtek/rtl8822bu/os_dep/linux/ioctl_linux.c
+index 91c07ae8d2c6..05ede16792ea 100644
+--- a/nvidia/drivers/net/wireless/realtek/rtl8822bu/os_dep/linux/ioctl_linux.c
++++ b/nvidia/drivers/net/wireless/realtek/rtl8822bu/os_dep/linux/ioctl_linux.c
+@@ -12345,6 +12345,7 @@ static iw_handler rtw_private_handler[] = {
+ 	rtw_test,						/* 0x1D */
+ };
+ 
++#ifdef CONFIG_WIRELESS_EXT
+ #if WIRELESS_EXT >= 17
+ static struct iw_statistics *rtw_get_wireless_stats(struct net_device *dev)
+ {
+@@ -12401,7 +12402,6 @@ static struct iw_statistics *rtw_get_wireless_stats(struct net_device *dev)
+ }
+ #endif
+ 
+-#ifdef CONFIG_WIRELESS_EXT
+ struct iw_handler_def rtw_handlers_def = {
+ 	.standard = rtw_handlers,
+ 	.num_standard = sizeof(rtw_handlers) / sizeof(iw_handler),
+-- 
+2.47.0
+
+
+From 213113c966d7e0bd1e2c3c6e3d47584a7f6228b8 Mon Sep 17 00:00:00 2001
+From: Matt Madison <matt@madison.systems>
+Date: Mon, 3 Jan 2022 05:04:51 -0800
+Subject: [PATCH 10/26] nvgpu: disable GSP stress test
+
+to cut down on the kernel message spam it was generating.
+
+Signed-off-by: Matt Madison <matt@madison.systems>
+---
+ nvidia/nvgpu/drivers/gpu/nvgpu/Makefile.linux.configs | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/nvidia/nvgpu/drivers/gpu/nvgpu/Makefile.linux.configs b/nvidia/nvgpu/drivers/gpu/nvgpu/Makefile.linux.configs
+index 431e947f1983..821b908178d4 100644
+--- a/nvidia/nvgpu/drivers/gpu/nvgpu/Makefile.linux.configs
++++ b/nvidia/nvgpu/drivers/gpu/nvgpu/Makefile.linux.configs
+@@ -62,9 +62,9 @@ CONFIG_NVGPU_REMAP := y
+ CONFIG_NVGPU_GSP_SCHEDULER := y
+ 
+ #Enable stress test for GSP
+-ifeq ($(CONFIG_NVGPU_GSP_SCHEDULER),y)
+-CONFIG_NVGPU_GSP_STRESS_TEST := y
+-endif
++#ifeq ($(CONFIG_NVGPU_GSP_SCHEDULER),y)
++#CONFIG_NVGPU_GSP_STRESS_TEST := y
++#endif
+ 
+ ifeq ($(CONFIG_COMMON_CLK),y)
+ ifeq ($(CONFIG_PM_DEVFREQ),y)
+-- 
+2.47.0
+
+
+From e833c6dd718f86ce7a1fd5696189d5012bf6a660 Mon Sep 17 00:00:00 2001
+From: Matt Madison <matt@madison.systems>
+Date: Tue, 8 Feb 2022 12:01:52 -0800
+Subject: [PATCH 11/26] ARM64: update NVIDIA dtb/dtbo generation targets
+
+* Fix the rule generators to create targets for each
+  dtb/dtbo directly under arch/arm64/boot/dts with
+  appropriate dependencies
+
+* Add a pattern rule for .dtbo files so they can be
+  individually built from the top-level make
+
+* Add a 'dtb-overlays' target to build just the dtbos
+
+Signed-off-by: Matt Madison <matt@madison.systems>
+---
+ arch/arm64/Makefile          |  7 +++++++
+ arch/arm64/boot/dts/Makefile | 38 +++++++++++++-----------------------
+ 2 files changed, 21 insertions(+), 24 deletions(-)
+
+diff --git a/arch/arm64/Makefile b/arch/arm64/Makefile
+index d06262298804..eb9497b76f0f 100644
+--- a/arch/arm64/Makefile
++++ b/arch/arm64/Makefile
+@@ -171,6 +171,13 @@ Image.%: Image
+ zinstall install:
+ 	$(Q)$(MAKE) $(build)=$(boot) $@
+ 
++%.dtbo: include/config/kernel.release scripts_dtc
++	$(Q)$(MAKE) $(build)=$(boot)/dts $(boot)/dts/$@
++
++PHONY += dtb-overlays
++dtb-overlays: include/config/kernel.release scripts_dtc
++	$(Q)$(MAKE) $(build)=$(boot)/dts dtb-overlays
++
+ PHONY += vdso_install
+ vdso_install:
+ 	$(Q)$(MAKE) $(build)=arch/arm64/kernel/vdso $@
+diff --git a/arch/arm64/boot/dts/Makefile b/arch/arm64/boot/dts/Makefile
+index 761d36c33d01..6d6a2f08df39 100644
+--- a/arch/arm64/boot/dts/Makefile
++++ b/arch/arm64/boot/dts/Makefile
+@@ -63,42 +63,32 @@ DTBO_NEW_RULE_LIST := $(dtbo-y)
+ dtb-y := $(DTB_LIST)
+ dtbo-y := $(DTBO_LIST)
+ 
+-DTB_OBJS := $(addprefix $(obj)/,$(DTB_LIST))
+-DTBO_OBJS := $(addprefix $(obj)/,$(DTBO_LIST))
++DTB_OBJS := $(addprefix $(obj)/,$(notdir $(DTB_LIST)))
++DTBO_OBJS := $(addprefix $(obj)/,$(notdir $(DTBO_LIST)))
+ 
+ define _define_dtb_rule
+ $(obj)/$(call replace_ddot,$(1)): $(src)/$(patsubst %.dtb,%.dts,$(1)) FORCE
++	$$(call if_changed_dep,dtc)
++ifneq ($(1),$(call replace_ddot,$(1)))
++$(obj)/$(notdir $(1)): $(obj)/$(call replace_ddot,$(1))
++	@cp -f $$< $$@
++endif
+ endef
+ 
+ $(foreach _dtb, $(DTB_NEW_RULE_LIST), $(eval $(call _define_dtb_rule,$(_dtb))))
+ 
+-DTB_OBJS := $(call replace_ddot,$(DTB_OBJS))
+-DTB_NEW_RULE_LIST := $(addprefix $(obj)/,$(DTB_NEW_RULE_LIST))
+-DTB_NEW_RULE_LIST := $(call replace_ddot,$(DTB_NEW_RULE_LIST))
+-
+-$(DTB_NEW_RULE_LIST):
+-	$(call if_changed_dep,dtc)
+-
+ define _define_dtbo_rule
+ $(obj)/$(call replace_ddot,$(1)): $(src)/$(patsubst %.dtbo,%.dts,$(1)) FORCE
++	$$(call if_changed_dep,dtc)
++ifneq ($(1),$(call replace_ddot,$(1)))
++$(obj)/$(notdir $(1)): $(obj)/$(call replace_ddot,$(1))
++	@cp -f $$< $$@
++endif
+ endef
+ 
+ $(foreach _dtbo, $(DTBO_NEW_RULE_LIST), $(eval $(call _define_dtbo_rule,$(_dtbo))))
+ 
+-DTBO_OBJS := $(call replace_ddot,$(DTBO_OBJS))
+-DTBO_NEW_RULE_LIST := $(addprefix $(obj)/,$(DTBO_NEW_RULE_LIST))
+-DTBO_NEW_RULE_LIST := $(call replace_ddot,$(DTBO_NEW_RULE_LIST))
+-
+-$(DTBO_NEW_RULE_LIST):
+-	$(call if_changed_dep,dtc)
+-
+-dtbs: $(DTB_OBJS) $(DTBO_OBJS) FORCE
+-	if [ ! -d arch/arm64/boot/dts/nvidia/ ] ; then \
+-		mkdir arch/arm64/boot/dts/nvidia/ ; \
+-	fi
+-	cp -u $(DTB_OBJS) $(DTBO_OBJS) arch/arm64/boot/dts/nvidia/
+-	if [ -d arch/arm64/boot/dts/_ddot_/ ] ; then \
+-		rm -rf arch/arm64/boot/dts/_ddot_/ ; \
+-	fi
++dtbs: $(DTB_OBJS) $(DTBO_OBJS)
++dtb-overlays: $(DTBO_OBJS)
+ 
+ clean-files := *.dtb *.dtbo *.tmp
+-- 
+2.47.0
+
+
+From 246d646583e2cd2b881f14a2bd235703a8fd646a Mon Sep 17 00:00:00 2001
+From: Matt Madison <matt@madison.systems>
+Date: Tue, 16 Aug 2022 06:00:06 -0700
+Subject: [PATCH 12/26] scripts/Makefile.dtbinst: handle dtbs from NVIDIA
+ source tree overlays
+
+Signed-off-by: Matt Madison <matt@madison.systems>
+---
+ scripts/Makefile.dtbinst | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/scripts/Makefile.dtbinst b/scripts/Makefile.dtbinst
+index 50d580d77ae9..f69eb7bb63fb 100644
+--- a/scripts/Makefile.dtbinst
++++ b/scripts/Makefile.dtbinst
+@@ -17,7 +17,7 @@ include include/config/auto.conf
+ include scripts/Kbuild.include
+ include $(src)/Makefile
+ 
+-dtbs    := $(addprefix $(dst)/, $(dtb-y) $(if $(CONFIG_OF_ALL_DTBS),$(dtb-)))
++dtbs    := $(addprefix $(dst)/, $(notdir $(dtb-y)) $(if $(CONFIG_OF_ALL_DTBS),$(dtb-)))
+ subdirs := $(addprefix $(obj)/, $(subdir-y) $(subdir-m))
+ 
+ __dtbs_install: $(dtbs) $(subdirs)
+-- 
+2.47.0
+
+
+From ae01ebdd3d848e31d9ac5529ece682dfedf1eefe Mon Sep 17 00:00:00 2001
+From: Matt Madison <matt@madison.systems>
+Date: Tue, 16 Aug 2022 07:44:20 -0700
+Subject: [PATCH 13/26] nvidia: nvcsi: fix vi_channel test in
+ csi5_tpg_set_gain()
+
+Looks like the pointer was converted to an array of pointers, but
+the null check wasn't changed to account for this.  Caught by gcc-12.
+
+Signed-off-by: Matt Madison <matt@madison.systems>
+---
+ nvidia/drivers/media/platform/tegra/camera/nvcsi/csi5_fops.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/nvidia/drivers/media/platform/tegra/camera/nvcsi/csi5_fops.c b/nvidia/drivers/media/platform/tegra/camera/nvcsi/csi5_fops.c
+index fab8be2ecb17..cda4872a2b4c 100644
+--- a/nvidia/drivers/media/platform/tegra/camera/nvcsi/csi5_fops.c
++++ b/nvidia/drivers/media/platform/tegra/camera/nvcsi/csi5_fops.c
+@@ -422,7 +422,9 @@ int csi5_tpg_set_gain(struct tegra_csi_channel *chan, int gain_ratio_tpg)
+ 		return -EINVAL;
+ 	}
+ 
+-	if (tegra_chan->tegra_vi_channel == NULL) {
++	vi_port = (tegra_chan->valid_ports > 1) ? port->stream_id : 0;
++
++	if (tegra_chan->tegra_vi_channel[vi_port] == NULL) {
+ 		/* We come here during initial v4l2 ctrl setup during TPG LKM
+ 		 * loading
+ 		 */
+@@ -437,7 +439,6 @@ int csi5_tpg_set_gain(struct tegra_csi_channel *chan, int gain_ratio_tpg)
+ 		port->virtual_channel_id;
+ 	msg.csi_stream_tpg_apply_gain_req.gain_ratio =
+ 		get_tpg_gain_ratio_setting(gain_ratio_tpg);
+-	vi_port = (tegra_chan->valid_ports > 1) ? port->stream_id : 0;
+ 
+ 	err = csi5_send_control_message(tegra_chan->tegra_vi_channel[vi_port], &msg,
+ 			&msg.csi_stream_tpg_apply_gain_resp.result);
+-- 
+2.47.0
+
+
+From 6bda78fb6c38895656ef0046d7bb954d9c1ee503 Mon Sep 17 00:00:00 2001
+From: Matt Madison <matt@madison.systems>
+Date: Tue, 16 Aug 2022 08:01:57 -0700
+Subject: [PATCH 14/26] nvidia: rtcpu: fix null pointer check in tegra_vi_get
+
+The check was being performed on the address of the driver pointer,
+rather than the pointer itself.  Caught by gcc-12.
+
+Signed-off-by: Matt Madison <matt@madison.systems>
+---
+ nvidia/drivers/platform/tegra/rtcpu/vi-notify.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/nvidia/drivers/platform/tegra/rtcpu/vi-notify.c b/nvidia/drivers/platform/tegra/rtcpu/vi-notify.c
+index c9af83ce74e7..5264244836dd 100644
+--- a/nvidia/drivers/platform/tegra/rtcpu/vi-notify.c
++++ b/nvidia/drivers/platform/tegra/rtcpu/vi-notify.c
+@@ -482,7 +482,7 @@ static struct platform_device *tegra_vi_get(struct device *dev)
+ 	if (vi_pdev == NULL)
+ 		return ERR_PTR(-EPROBE_DEFER);
+ 
+-	if (&vi_pdev->dev.driver == NULL) {
++	if (vi_pdev->dev.driver == NULL) {
+ 		platform_device_put(vi_pdev);
+ 		return ERR_PTR(-EPROBE_DEFER);
+ 	}
+-- 
+2.47.0
+
+
+From 34729e4fe9e8dfbdf5657ba805091b8ac6af80e8 Mon Sep 17 00:00:00 2001
+From: Matt Madison <matt@madison.systems>
+Date: Tue, 16 Aug 2022 08:14:59 -0700
+Subject: [PATCH 15/26] nvidia: tegra-camera-rtcpu: fix null pointer check
+
+tegra_camrtc_get_hsp_device() was checking the address of
+the driver field, rather than the driver pointer itself.
+Flagged by gcc-12.
+
+Signed-off-by: Matt Madison <matt@madison.systems>
+---
+ nvidia/drivers/platform/tegra/tegra-camera-rtcpu.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/nvidia/drivers/platform/tegra/tegra-camera-rtcpu.c b/nvidia/drivers/platform/tegra/tegra-camera-rtcpu.c
+index 264f1ae6ccb4..e8ee531f1c5d 100644
+--- a/nvidia/drivers/platform/tegra/tegra-camera-rtcpu.c
++++ b/nvidia/drivers/platform/tegra/tegra-camera-rtcpu.c
+@@ -1083,7 +1083,7 @@ static struct device *tegra_camrtc_get_hsp_device(struct device_node *hsp_node)
+ 	if (pdev == NULL)
+ 		return ERR_PTR(-EPROBE_DEFER);
+ 
+-	if (&pdev->dev.driver == NULL) {
++	if (pdev->dev.driver == NULL) {
+ 		platform_device_put(pdev);
+ 		return ERR_PTR(-EPROBE_DEFER);
+ 	}
+-- 
+2.47.0
+
+
+From 26f181a750ea0c2fdb6ce94419480bef5de2f2ef Mon Sep 17 00:00:00 2001
+From: Jakub Kicinski <kuba@kernel.org>
+Date: Fri, 20 May 2022 12:43:16 -0700
+Subject: [PATCH 16/26] wifi: ath6k: silence false positive
+ -Wno-dangling-pointer warning on GCC 12
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+For some reason GCC 12 decided to complain about the common
+pattern of queuing an object onto a list on the stack in ath6k:
+
+    inlined from ‘ath6kl_htc_mbox_tx’ at drivers/net/wireless/ath/ath6kl/htc_mbox.c:1142:3:
+include/linux/list.h:74:19: warning: storing the address of local variable ‘queue’ in ‘*&packet_15(D)->list.prev’ [-Wdangling-pointer=]
+   74 |         new->prev = prev;
+      |         ~~~~~~~~~~^~~~~~
+
+Move the warning to W=1, hopefully it goes away with a compiler
+update.
+
+Acked-by: Kalle Valo <kvalo@kernel.org>
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/wireless/ath/ath6kl/Makefile | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/drivers/net/wireless/ath/ath6kl/Makefile b/drivers/net/wireless/ath/ath6kl/Makefile
+index dc2b3b46781e..01cc0d50fee6 100644
+--- a/drivers/net/wireless/ath/ath6kl/Makefile
++++ b/drivers/net/wireless/ath/ath6kl/Makefile
+@@ -36,6 +36,11 @@ ath6kl_core-y += wmi.o
+ ath6kl_core-y += core.o
+ ath6kl_core-y += recovery.o
+ 
++# FIXME: temporarily silence -Wdangling-pointer on non W=1+ builds
++ifndef KBUILD_EXTRA_WARN
++CFLAGS_htc_mbox.o += -Wno-dangling-pointer
++endif
++
+ ath6kl_core-$(CONFIG_NL80211_TESTMODE) += testmode.o
+ ath6kl_core-$(CONFIG_ATH6KL_TRACING) += trace.o
+ 
+-- 
+2.47.0
+
+
+From 7393d52ae0b93ba9c52e60e4f5b14a941464c06c Mon Sep 17 00:00:00 2001
+From: Nathan Chancellor <nathan@kernel.org>
+Date: Tue, 24 May 2022 07:56:55 -0700
+Subject: [PATCH 17/26] ath6kl: Use cc-disable-warning to disable
+ -Wdangling-pointer
+
+Clang does not support this option so the build fails:
+
+  error: unknown warning option '-Wno-dangling-pointer' [-Werror,-Wunknown-warning-option]
+
+Use cc-disable-warning so that the option is only added when it is
+supported.
+
+Fixes: bd1d129daa3e ("wifi: ath6k: silence false positive -Wno-dangling-pointer warning on GCC 12")
+Reported-by: "kernelci.org bot" <bot@kernelci.org>
+Signed-off-by: Nathan Chancellor <nathan@kernel.org>
+Reviewed-by: Tom Rix <trix@redhat.com>
+Link: https://lore.kernel.org/r/20220524145655.869822-1-nathan@kernel.org
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/wireless/ath/ath6kl/Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/ath/ath6kl/Makefile b/drivers/net/wireless/ath/ath6kl/Makefile
+index 01cc0d50fee6..a75bfa9fd1cf 100644
+--- a/drivers/net/wireless/ath/ath6kl/Makefile
++++ b/drivers/net/wireless/ath/ath6kl/Makefile
+@@ -38,7 +38,7 @@ ath6kl_core-y += recovery.o
+ 
+ # FIXME: temporarily silence -Wdangling-pointer on non W=1+ builds
+ ifndef KBUILD_EXTRA_WARN
+-CFLAGS_htc_mbox.o += -Wno-dangling-pointer
++CFLAGS_htc_mbox.o += $(call cc-disable-warning, dangling-pointer)
+ endif
+ 
+ ath6kl_core-$(CONFIG_NL80211_TESTMODE) += testmode.o
+-- 
+2.47.0
+
+
+From 755183655690b38bbec3aa91fe0fa5f82c717935 Mon Sep 17 00:00:00 2001
+From: Matt Madison <matt@madison.systems>
+Date: Tue, 16 Aug 2022 11:30:17 -0700
+Subject: [PATCH 18/26] nvidia: net: wireless: disable -Waddress in rtl88xxxx
+ drivers
+
+There are just too many such mistakes in these drivers, in identical
+code copied-and-pasted across all six drivers, to try to fix these
+warnings now being flagged by gcc-12.
+
+Signed-off-by: Matt Madison <matt@madison.systems>
+---
+ nvidia/drivers/net/wireless/realtek/rtl8812au/Makefile | 1 +
+ nvidia/drivers/net/wireless/realtek/rtl8814au/Makefile | 1 +
+ nvidia/drivers/net/wireless/realtek/rtl8821au/Makefile | 1 +
+ nvidia/drivers/net/wireless/realtek/rtl8821cu/Makefile | 1 +
+ nvidia/drivers/net/wireless/realtek/rtl8822bu/Makefile | 1 +
+ nvidia/drivers/net/wireless/realtek/rtl8822ce/Makefile | 1 +
+ 6 files changed, 6 insertions(+)
+
+diff --git a/nvidia/drivers/net/wireless/realtek/rtl8812au/Makefile b/nvidia/drivers/net/wireless/realtek/rtl8812au/Makefile
+index 5b05b30797ef..7a9b4d9d5a2a 100644
+--- a/nvidia/drivers/net/wireless/realtek/rtl8812au/Makefile
++++ b/nvidia/drivers/net/wireless/realtek/rtl8812au/Makefile
+@@ -14,6 +14,7 @@ EXTRA_CFLAGS += -Wno-unused-parameter
+ EXTRA_CFLAGS += -Wno-unused-function
+ EXTRA_CFLAGS += -Wno-unused
+ #EXTRA_CFLAGS += -Wno-uninitialized
++EXTRA_CFLAGS += $(call cc-disable-warning, address)
+ 
+ GCC_VER_49 := $(shell echo `$(CC) -dumpversion | cut -f1-2 -d.` \>= 4.9 | bc )
+ ifeq ($(GCC_VER_49),1)
+diff --git a/nvidia/drivers/net/wireless/realtek/rtl8814au/Makefile b/nvidia/drivers/net/wireless/realtek/rtl8814au/Makefile
+index 9654d017e814..67fb9cde754a 100644
+--- a/nvidia/drivers/net/wireless/realtek/rtl8814au/Makefile
++++ b/nvidia/drivers/net/wireless/realtek/rtl8814au/Makefile
+@@ -14,6 +14,7 @@ EXTRA_CFLAGS += -Wno-unused-variable
+ #EXTRA_CFLAGS += -Wno-unused-function
+ #EXTRA_CFLAGS += -Wno-unused
+ #EXTRA_CFLAGS += -Wno-uninitialized
++EXTRA_CFLAGS += $(call cc-disable-warning, address)
+ 
+ GCC_VER_49 := $(shell echo `$(CC) -dumpversion | cut -f1-2 -d.` \>= 4.9 | bc )
+ ifeq ($(GCC_VER_49),1)
+diff --git a/nvidia/drivers/net/wireless/realtek/rtl8821au/Makefile b/nvidia/drivers/net/wireless/realtek/rtl8821au/Makefile
+index e0c52c513e83..d598a83737d6 100644
+--- a/nvidia/drivers/net/wireless/realtek/rtl8821au/Makefile
++++ b/nvidia/drivers/net/wireless/realtek/rtl8821au/Makefile
+@@ -14,6 +14,7 @@ EXTRA_CFLAGS += -Wno-unused-variable
+ #EXTRA_CFLAGS += -Wno-unused-function
+ #EXTRA_CFLAGS += -Wno-unused
+ #EXTRA_CFLAGS += -Wno-uninitialized
++EXTRA_CFLAGS += $(call cc-disable-warning, address)
+ 
+ GCC_VER_49 := $(shell echo `$(CC) -dumpversion | cut -f1-2 -d.` \>= 4.9 | bc )
+ ifeq ($(GCC_VER_49),1)
+diff --git a/nvidia/drivers/net/wireless/realtek/rtl8821cu/Makefile b/nvidia/drivers/net/wireless/realtek/rtl8821cu/Makefile
+index 1124d672c2b1..a7e92b282363 100644
+--- a/nvidia/drivers/net/wireless/realtek/rtl8821cu/Makefile
++++ b/nvidia/drivers/net/wireless/realtek/rtl8821cu/Makefile
+@@ -14,6 +14,7 @@ EXTRA_CFLAGS += -Wno-unused-variable
+ #EXTRA_CFLAGS += -Wno-unused-function
+ #EXTRA_CFLAGS += -Wno-unused
+ #EXTRA_CFLAGS += -Wno-uninitialized
++EXTRA_CFLAGS += $(call cc-disable-warning, address)
+ 
+ GCC_VER_49 := $(shell echo `$(CC) -dumpversion | cut -f1-2 -d.` \>= 4.9 | bc )
+ ifeq ($(GCC_VER_49),1)
+diff --git a/nvidia/drivers/net/wireless/realtek/rtl8822bu/Makefile b/nvidia/drivers/net/wireless/realtek/rtl8822bu/Makefile
+index 2f5179664b32..f281ccb67a33 100644
+--- a/nvidia/drivers/net/wireless/realtek/rtl8822bu/Makefile
++++ b/nvidia/drivers/net/wireless/realtek/rtl8822bu/Makefile
+@@ -14,6 +14,7 @@ EXTRA_CFLAGS += -Wno-unused-variable
+ #EXTRA_CFLAGS += -Wno-unused-function
+ #EXTRA_CFLAGS += -Wno-unused
+ #EXTRA_CFLAGS += -Wno-uninitialized
++EXTRA_CFLAGS += $(call cc-disable-warning, address)
+ 
+ GCC_VER_49 := $(shell echo `$(CC) -dumpversion | cut -f1-2 -d.` \>= 4.9 | bc )
+ ifeq ($(GCC_VER_49),1)
+diff --git a/nvidia/drivers/net/wireless/realtek/rtl8822ce/Makefile b/nvidia/drivers/net/wireless/realtek/rtl8822ce/Makefile
+index 21d853729789..9a6b738508fa 100644
+--- a/nvidia/drivers/net/wireless/realtek/rtl8822ce/Makefile
++++ b/nvidia/drivers/net/wireless/realtek/rtl8822ce/Makefile
+@@ -15,6 +15,7 @@ EXTRA_CFLAGS += -Wno-unused-variable
+ #EXTRA_CFLAGS += -Wno-unused
+ #EXTRA_CFLAGS += -Wno-uninitialized
+ EXTRA_CFLAGS += -Wno-missing-prototypes
++EXTRA_CFLAGS += $(call cc-disable-warning, address)
+ 
+ GCC_VER_49 := $(shell echo `$(CC) -dumpversion | cut -f1-2 -d.` \>= 4.9 | bc )
+ ifeq ($(GCC_VER_49),1)
+-- 
+2.47.0
+
+
+From 6d7ba8370b3e9e12566b929891a04c69e5f7c942 Mon Sep 17 00:00:00 2001
+From: Matt Madison <matt@madison.systems>
+Date: Tue, 16 Aug 2022 12:24:39 -0700
+Subject: [PATCH 19/26] ARM64: dts: pass base name of file to cpp
+
+The NVIDIA DTS files use the __FILE__ macro to insert
+the file name as a property in the tree, and there are
+drivers that look for this property.
+
+To improve reproducibility of builds, redefine that macro
+to just the base name of the file, excluding the path.
+
+Signed-off-by: Matt Madison <matt@madison.systems>
+---
+ arch/arm64/boot/dts/Makefile | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm64/boot/dts/Makefile b/arch/arm64/boot/dts/Makefile
+index 6d6a2f08df39..4aa2f7039c59 100644
+--- a/arch/arm64/boot/dts/Makefile
++++ b/arch/arm64/boot/dts/Makefile
+@@ -3,6 +3,7 @@
+ DTC_CPP_FLAGS += $(EXTRA_CPP_FLAGS)
+ 
+ DTC_CPP_FLAGS += -DLINUX_VERSION=504 -DTEGRA_HOST1X_DT_VERSION=1
++DTC_CPP_FLAGS += -Wno-builtin-macro-redefined -D__FILE__='"$(notdir $<)"'
+ 
+ DTC_INCLUDE += $(tegra-dtstree)/soc/tegra/kernel-include
+ DTC_INCLUDE += $(tegra-dtstree)/platform/tegra/common/kernel-dts
+-- 
+2.47.0
+
+
+From a8f00d1002290f047bb51e113bca7f24af587b5e Mon Sep 17 00:00:00 2001
+From: Matt Madison <matt@madison.systems>
+Date: Tue, 16 Aug 2022 12:30:26 -0700
+Subject: [PATCH 20/26] lib: remove build_OID_registry path from emitted output
+
+to improve build reproducibility.
+
+Signed-off-by: Matt Madison <matt@madison.systems>
+---
+ lib/build_OID_registry | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/lib/build_OID_registry b/lib/build_OID_registry
+index d7fc32ea8ac2..06f242202036 100755
+--- a/lib/build_OID_registry
++++ b/lib/build_OID_registry
+@@ -35,7 +35,7 @@ close IN_FILE || die;
+ #
+ open C_FILE, ">$ARGV[1]" or die;
+ print C_FILE "/*\n";
+-print C_FILE " * Automatically generated by ", $0, ".  Do not edit\n";
++print C_FILE " * Automatically generated by build_OID_registry.  Do not edit\n";
+ print C_FILE " */\n";
+ 
+ #
+-- 
+2.47.0
+
+
+From b7cc962f4492f2c87365bc4d5e0f0073f210cc59 Mon Sep 17 00:00:00 2001
+From: Matt Madison <matt@madison.systems>
+Date: Tue, 16 Aug 2022 12:32:56 -0700
+Subject: [PATCH 21/26] tty: remove file name from conmakehash emitted output
+
+to improve build reproducibility.
+
+Signed-off-by: Matt Madison <matt@madison.systems>
+---
+ drivers/tty/vt/conmakehash.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/tty/vt/conmakehash.c b/drivers/tty/vt/conmakehash.c
+index cddd789fe46e..789659dde520 100644
+--- a/drivers/tty/vt/conmakehash.c
++++ b/drivers/tty/vt/conmakehash.c
+@@ -246,14 +246,14 @@ int main(int argc, char *argv[])
+ /*\n\
+  * Do not edit this file; it was automatically generated by\n\
+  *\n\
+- * conmakehash %s > [this file]\n\
++ * conmakehash\n\
+  *\n\
+  */\n\
+ \n\
+ #include <linux/types.h>\n\
+ \n\
+ u8 dfont_unicount[%d] = \n\
+-{\n\t", argv[1], fontlen);
++{\n\t", fontlen);
+ 
+   for ( i = 0 ; i < fontlen ; i++ )
+     {
+-- 
+2.47.0
+
+
+From 6768cb7d0060db0dc2d438526759ef663d9e4678 Mon Sep 17 00:00:00 2001
+From: Matt Madison <matt@madison.systems>
+Date: Mon, 18 Jul 2022 14:12:03 -0700
+Subject: [PATCH 22/26] Makefile: add nvmap location to KERNEL_OVERLAYS setting
+
+Signed-off-by: Matt Madison <matt@madison.systems>
+---
+ Makefile | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/Makefile b/Makefile
+index 97a7a77fc5ee..efdcea653716 100644
+--- a/Makefile
++++ b/Makefile
+@@ -9,6 +9,7 @@ ifeq ($(KERNEL_OVERLAYS),)
+ KERNEL_OVERLAYS :=
+ KERNEL_OVERLAYS += $(dir $(lastword $(MAKEFILE_LIST)))/nvidia
+ KERNEL_OVERLAYS += $(dir $(lastword $(MAKEFILE_LIST)))/nvidia/nvgpu
++KERNEL_OVERLAYS += $(dir $(lastword $(MAKEFILE_LIST)))/nvidia/drivers/video/tegra/nvmap
+ else
+ override KERNEL_OVERLAYS := $(subst :, ,$(KERNEL_OVERLAYS))
+ endif
+-- 
+2.47.0
+
+
+From e95c1a32d529274e8cfef97b0fa66463875ab322 Mon Sep 17 00:00:00 2001
+From: Matt Madison <matt@madison.systems>
+Date: Wed, 25 Jan 2023 08:31:34 -0800
+Subject: [PATCH 23/26] nvidia: ar1335: fix/remove useless null address checks
+
+which are causing compilation errors.
+
+Signed-off-by: Matt Madison <matt@madison.systems>
+---
+ nvidia/drivers/media/i2c/ar1335_common.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/nvidia/drivers/media/i2c/ar1335_common.c b/nvidia/drivers/media/i2c/ar1335_common.c
+index dbf15fefae49..96ee2944828d 100644
+--- a/nvidia/drivers/media/i2c/ar1335_common.c
++++ b/nvidia/drivers/media/i2c/ar1335_common.c
+@@ -692,7 +692,7 @@ static int mcu_stream_config(struct i2c_client *client, uint32_t format,
+ 		goto exit;
+ 	}
+ 
+-	for (loop = 0;(&priv->streamdb[loop]) != NULL; loop++) {
++	for (loop = 0; loop < s_data->numfmts; loop++) {
+ 		if (priv->streamdb[loop] == mode) {
+ 			index = loop + frate_index;
+ 			break;
+@@ -2094,7 +2094,7 @@ unsigned short int mcu_bload_calc_crc16(unsigned char *buf, int len)
+ 	unsigned short int crc = 0;
+ 	int i = 0;
+ 
+-	if (!buf || !(buf + len))
++	if (!buf)
+ 		return 0;
+ 
+ 	for (i = 0; i < len; i++) {
+@@ -2109,7 +2109,7 @@ unsigned char mcu_bload_inv_checksum(unsigned char *buf, int len)
+ 	unsigned int checksum = 0x00;
+ 	int i = 0;
+ 
+-	if (!buf || !(buf + len))
++	if (!buf)
+ 		return 0;
+ 
+ 	for (i = 0; i < len; i++) {
+-- 
+2.47.0
+
+
+From da8001cfac18b18abffd6281204fd1ddb5f1d9be Mon Sep 17 00:00:00 2001
+From: Matt Madison <matt@madison.systems>
+Date: Wed, 29 Mar 2023 05:58:31 -0700
+Subject: [PATCH 24/26] nvidia: hid-atv-jarvis: remove useless address check
+
+Signed-off-by: Matt Madison <matt@madison.systems>
+---
+ nvidia/drivers/hid/hid-atv-jarvis.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/nvidia/drivers/hid/hid-atv-jarvis.c b/nvidia/drivers/hid/hid-atv-jarvis.c
+index cb1ae7746697..fdaf3ce0fc86 100644
+--- a/nvidia/drivers/hid/hid-atv-jarvis.c
++++ b/nvidia/drivers/hid/hid-atv-jarvis.c
+@@ -2089,7 +2089,7 @@ static void atvr_remove(struct hid_device *hdev)
+ 		device_remove_file(&hdev->dev, &dev_attr_timeout);
+ 	}
+ 
+-	if (hdev->product == USB_DEVICE_ID_NVIDIA_THUNDERSTRIKE && hdev->uniq) {
++	if (hdev->product == USB_DEVICE_ID_NVIDIA_THUNDERSTRIKE) {
+ 		if (shdr_dev->last_ljsx == 0 || shdr_dev->last_ljsx == 0xffff ||
+ 		    shdr_dev->last_ljsy == 0 || shdr_dev->last_ljsy == 0xffff ||
+ 		    shdr_dev->last_rjsx == 0 || shdr_dev->last_rjsx == 0xffff ||
+-- 
+2.47.0
+
+
+From 6d6304fbf7550ef4418fc3fcbf21f3ae4341592c Mon Sep 17 00:00:00 2001
+From: Matt Madison <matt@madison.systems>
+Date: Sat, 27 May 2023 06:35:24 -0700
+Subject: [PATCH 25/26] net: intel: i40e: disable enum-int-mismatch warnings
+
+to prevent build failures with gcc13.
+
+Signed-off-by: Matt Madison <matt@madison.systems>
+---
+ drivers/net/ethernet/intel/i40e/Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/ethernet/intel/i40e/Makefile b/drivers/net/ethernet/intel/i40e/Makefile
+index 2f21b3e89fd0..96ffe6074f3b 100644
+--- a/drivers/net/ethernet/intel/i40e/Makefile
++++ b/drivers/net/ethernet/intel/i40e/Makefile
+@@ -5,7 +5,7 @@
+ # Makefile for the Intel(R) Ethernet Connection XL710 (i40e.ko) driver
+ #
+ 
+-ccflags-y += -I$(src)
++ccflags-y += -I$(src) $(call cc-disable-warning, enum-int-mismatch)
+ subdir-ccflags-y += -I$(src)
+ 
+ obj-$(CONFIG_I40E) += i40e.o
+-- 
+2.47.0
+
+
+From 4bce4d148ef3ff159ab55c127d8761aeaac5cc28 Mon Sep 17 00:00:00 2001
+From: Matt Madison <matt@madison.systems>
+Date: Sat, 27 May 2023 06:44:37 -0700
+Subject: [PATCH 26/26] net: intel: ice: disable enum-int-mismatch warnings
+
+to resolve compilation failures with gcc13.
+
+Signed-off-by: Matt Madison <matt@madison.systems>
+---
+ drivers/net/ethernet/intel/ice/Makefile | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/net/ethernet/intel/ice/Makefile b/drivers/net/ethernet/intel/ice/Makefile
+index 6da4f43f2348..60165f30967c 100644
+--- a/drivers/net/ethernet/intel/ice/Makefile
++++ b/drivers/net/ethernet/intel/ice/Makefile
+@@ -5,6 +5,8 @@
+ # Makefile for the Intel(R) Ethernet Connection E800 Series Linux Driver
+ #
+ 
++ccflags-y += $(call cc-disable-warning, enum-int-mismatch)
++
+ obj-$(CONFIG_ICE) += ice.o
+ 
+ ice-y := ice_main.o	\
+-- 
+2.47.0
+

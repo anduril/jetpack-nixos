@@ -79,6 +79,14 @@ in
         '';
       };
 
+      super = mkOption {
+        default = false;
+        type = types.bool;
+        description = ''
+          Whether to enable "super mode" for Jetson Orin NX and Nano
+        '';
+      };
+
       carrierBoard = mkOption {
         type = types.enum [
           "generic"

@@ -178,10 +178,6 @@ let
     buildInputs = [ l4t-core ];
 
     postPatch =
-      let
-        # XXX: Temporary override here since NVIDIA didn't update this for 35.6.0
-        l4tVersion = "35.5.0";
-      in
       ''
         # Additional libcuda symlinks
         ln -sf libcuda.so.1.1 lib/libcuda.so.1

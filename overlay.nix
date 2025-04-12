@@ -4,8 +4,8 @@
 
 final: prev:
 let
-  jetpackVersion = "5.1.4";
-  l4tVersion = "35.6.0";
+  jetpackVersion = "5.1.5";
+  l4tVersion = "35.6.1";
   cudaVersion = "11.4";
 
   sourceInfo = import ./sourceinfo {
@@ -25,7 +25,7 @@ in
         # https://repo.download.nvidia.com/jetson/
         src = prev.fetchurl {
           url = with prev.lib.versions; "https://developer.download.nvidia.com/embedded/L4T/r${major l4tVersion}_Release_v${minor l4tVersion}.${patch l4tVersion}/release/Jetson_Linux_R${l4tVersion}_aarch64.tbz2";
-          hash = "sha256-HMB+qUbfBksetda6i8KJ2E5rn0N7X1OOlaDSrmY55gE=";
+          hash = "sha256-nqKEd3R7MJXuec3Q4odDJ9SNTUD1FyluWg/SeeptbUE=";
         };
         # We use a more recent version of bzip2 here because we hit this bug
         # extracting nvidia's archives:

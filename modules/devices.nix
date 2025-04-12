@@ -9,11 +9,12 @@ let
 
   cfg = config.hardware.nvidia-jetpack;
 
+  # TODO: Replace default selection with dynamic logic from nvidia-l4t-init/etc/systemd/nvpower.sh
   nvpModelConf = {
     orin-agx = "${pkgs.nvidia-jetpack.l4t-nvpmodel}/etc/nvpmodel/nvpmodel_p3701_0000.conf";
     orin-agx-industrial = "${pkgs.nvidia-jetpack.l4t-nvpmodel}/etc/nvpmodel/nvpmodel_p3701_0008.conf";
-    orin-nx = "${pkgs.nvidia-jetpack.l4t-nvpmodel}/etc/nvpmodel/nvpmodel_p3767_0000.conf";
-    orin-nano = "${pkgs.nvidia-jetpack.l4t-nvpmodel}/etc/nvpmodel/nvpmodel_p3767_0003.conf";
+    orin-nx = "${pkgs.nvidia-jetpack.l4t-nvpmodel}/etc/nvpmodel/nvpmodel_p3767_0000${lib.optionalString cfg.super "_super"}.conf";
+    orin-nano = "${pkgs.nvidia-jetpack.l4t-nvpmodel}/etc/nvpmodel/nvpmodel_p3767_0003${lib.optionalString cfg.super "_super"}.conf";
     xavier-agx = "${pkgs.nvidia-jetpack.l4t-nvpmodel}/etc/nvpmodel/nvpmodel_t194.conf";
     xavier-agx-industrial = "${pkgs.nvidia-jetpack.l4t-nvpmodel}/etc/nvpmodel/nvpmodel_t194_agxi.conf";
     xavier-nx = "${pkgs.nvidia-jetpack.l4t-nvpmodel}/etc/nvpmodel/nvpmodel_t194_p3668.conf";
@@ -111,7 +112,7 @@ in
         })
 
         (mkIf (cfg.som == "orin-nx" || cfg.som == "orin-nano") {
-          targetBoard = mkDefault "jetson-orin-nano-devkit";
+          targetBoard = mkDefault "jetson-orin-nano-devkit${lib.optionalString cfg.super "-super"}";
           # Use this instead if you want to use the original Xavier NX Devkit module (p3509-a02)
           #targetBoard = mkDefault "p3509-a02+p3767-0000";
           partitionTemplate = mkDefault "${pkgs.nvidia-jetpack.bspSrc}/bootloader/t186ref/cfg/flash_t234_qspi.xml";
