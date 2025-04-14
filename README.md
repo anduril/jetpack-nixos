@@ -199,6 +199,52 @@ CDI specification, so Podman is recommended for running containers on Jetson
 devices. Docker is set to get experimental CDI support in their version 25
 release.
 
+## Configuring CUDA for Nixpkgs
+
+### Importing Nixpkgs
+
+To configure Nixpkgs to advertise CUDA support, ensure it is imported with a config similar to the following:
+
+```nix
+{
+  config = {
+    allowUnfree = true;
+    cudaSupport = true;
+    cudaCapabilities = [ "7.2" "8.7" ];
+  };
+}
+```
+
+> [!IMPORTANT]
+>
+> The `config` attribute set is not part of Nixpkgs' fixed-point, so re-evaluation only occurs through use of `pkgs.extend`.
+> It is imperative that Nixpkgs is properly configured during import.
+
+Breaking down these components:
+
+- `allowUnfree`: CUDA binaries have an unfree license
+- `cudaSupport`: Packages in Nixpkgs enabled CUDA acceleration based on this value
+- `cudaCapabilities`: [Specific CUDA architectures](https://developer.nvidia.com/cuda-gpus) for which CUDA-accelerated packages should generate device code
+
+> [!IMPORTANT]
+>
+> While supplying `config.cudaCapabilities` is optional for x86 and SBSA systems, it is mandatory for Jetsons, as Jetson capabilities are not included in the defaults.
+>
+> Furthermore, it is strongly recommended that `config.cudaCapabilities` is always set explicitly, given it reduces build times, produces smaller closures, and provides the CUDA compiler more opportunities for optimization.
+
+So, the above configuration allows building CUDA-accelerated packages (through `allowUnfree` and `cudaSupport`) and tells Nixpkgs to generate device code targeting Xavier (`"7.2"`) and Orin (`"8.7"`).
+
+### Re-using `jetpack-nixos`'s CUDA package set
+
+While our overlay exposes a CUDA package set through `pkgs.nvidia-jetpack.cudaPackages`, packages like OpenCV and PyTorch don't know to look there.
+Worse yet, even if we overrode the CUDA package sets they recieved, we would need to do the same for all their transitive dependencies!
+
+To make `jetpack-nixos`'s CUDA package set the default, provide Nixpkgs with this overlay:
+
+```nix
+final: _: { inherit (final.nvidia-jetpack) cudaPackages; }
+```
+
 ## Additional Links
 
 Much of this is inspired by the great work done by [OpenEmbedded for Tegra](https://github.com/OE4T).
