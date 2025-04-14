@@ -1,4 +1,6 @@
 { vpi2-samples, writeShellApplication }:
+# Tested via "./result/bin/vpi_sample_05_benchmark <cpu|pva|cuda>" (Try pva especially)
+# Getting a bunch of "pva 16000000.pva0: failed to get firmware" messages, so unsure if its working.
 writeShellApplication {
   name = "vpi2-test";
   text = ''

@@ -5,18 +5,25 @@
 , opencv
 , stdenv
 }:
-# Tested via "./result/bin/vpi_sample_05_benchmark <cpu|pva|cuda>" (Try pva especially)
-# Getting a bunch of "pva 16000000.pva0: failed to get firmware" messages, so unsure if its working.
+let
+  inherit (cudaPackages)
+    cuda_cudart
+    cuda_nvcc
+    vpi2
+    ;
+in
 stdenv.mkDerivation {
+  __structuredAttrs = true;
+  strictDeps = true;
+
   pname = "vpi2-samples";
-  version = debs.common.vpi2-samples.version;
-  src = debs.common.vpi2-samples.src;
+  inherit (debs.common.vpi2-samples) src version;
 
   unpackCmd = "dpkg -x $src source";
   sourceRoot = "source/opt/nvidia/vpi2/samples";
 
-  nativeBuildInputs = [ dpkg cmake ];
-  buildInputs = [ opencv ] ++ (with cudaPackages; [ vpi2 ]);
+  nativeBuildInputs = [ cmake cuda_nvcc dpkg ];
+  buildInputs = [ cuda_cudart opencv vpi2 ];
 
   configurePhase = ''
     runHook preBuild

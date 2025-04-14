@@ -1,4 +1,7 @@
-{ cudaPackages
+{ autoAddDriverRunpath
+, autoPatchelfHook
+, cairo
+, cudaPackages
 , debs
 , dpkg
 , fetchurl
@@ -8,29 +11,52 @@
 , lib
 , libdrm
 , libglvnd
-, libX11
 , opencv
+, pango
 , python3
 , stdenv
 , vulkan-headers
 , vulkan-loader
+, xorg
 }:
 # https://docs.nvidia.com/jetson/l4t-multimedia/group__l4t__mm__test__group.html
+let
+  inherit (cudaPackages)
+    cuda_nvcc
+    cudatoolkit
+    tensorrt
+    ;
+  inherit (xorg) libX11;
+in
 stdenv.mkDerivation {
+  __structuredAttrs = true;
+  strictDeps = true;
+
   pname = "multimedia-samples";
-  src = debs.common.nvidia-l4t-jetson-multimedia-api.src;
-  version = debs.common.nvidia-l4t-jetson-multimedia-api.version;
+  inherit (debs.common.nvidia-l4t-jetson-multimedia-api) src version;
 
   unpackCmd = "dpkg -x $src source";
   sourceRoot = "source/usr/src/jetson_multimedia_api";
 
-  nativeBuildInputs = [ dpkg python3 ];
-  buildInputs = [ libX11 libdrm libglvnd opencv vulkan-headers vulkan-loader ]
-    ++ ([ l4t-cuda l4t-multimedia l4t-camera ])
-    ++ (with cudaPackages; [ cudatoolkit tensorrt ]);
+  nativeBuildInputs = [ autoAddDriverRunpath autoPatchelfHook cuda_nvcc dpkg python3 ];
+  buildInputs = [
+    cairo
+    cudatoolkit
+    l4t-camera
+    l4t-cuda
+    l4t-multimedia
+    libdrm
+    libglvnd
+    libX11
+    opencv
+    pango
+    tensorrt
+    vulkan-headers
+    vulkan-loader
+  ];
 
   # Usually provided by pkg-config, but the samples don't use it.
-  NIX_CFLAGS_COMPILE = [
+  env.NIX_CFLAGS_COMPILE = builtins.toString [
     "-I${lib.getDev libdrm}/include/libdrm"
     "-I${lib.getDev opencv}/include/opencv4"
   ];
@@ -49,10 +75,10 @@ stdenv.mkDerivation {
 
   postPatch = ''
     substituteInPlace samples/Rules.mk \
-      --replace /usr/local/cuda "${cudaPackages.cudatoolkit}"
+      --replace-fail /usr/local/cuda "${cudatoolkit}"
 
     substituteInPlace samples/08_video_dec_drm/Makefile \
-      --replace /usr/bin/python "${python3}/bin/python"
+      --replace-fail /usr/bin/python "${python3}/bin/python"
   '';
 
   installPhase = ''
@@ -62,6 +88,17 @@ stdenv.mkDerivation {
     rm -f $out/bin/*.h
 
     cp -r data $out/
+
+    # patchelf dlopen'd libraries so autoPatchelfHook can find them
+    for exe in $out/bin/*; do
+      patchelf \
+        --add-needed libcairo.so.2 \
+        --add-needed libgobject-2.0.so.0 \
+        --add-needed libpango-1.0.so.0 \
+        --add-needed libpangocairo-1.0.so.0 \
+        "$exe"
+    done
+    unset -v exe
 
     runHook postInstall
   '';

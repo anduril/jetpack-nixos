@@ -1,4 +1,7 @@
 { cupti-samples, writeShellApplication }:
+# NOTE: Must run as root:
+# auto_range_profiling.cu:336: error: function cuptiProfilerInitialize(&profilerInitializeParams) failed with error
+# CUPTI_ERROR_INSUFFICIENT_PRIVILEGES.
 writeShellApplication {
   name = "cupti-test";
   text = ''
