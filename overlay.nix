@@ -122,7 +122,12 @@ in
       inherit (finalCudaPackages) callPackage;
     });
 
-    samples = self.callPackages ./pkgs/samples { };
+    samples = makeScope self.newScope (finalSamples: {
+      callPackages = callPackagesWith (self // finalSamples);
+    } // packagesFromDirectoryRecursive {
+      directory = ./pkgs/samples;
+      inherit (finalSamples) callPackage;
+    });
 
     tests = final.callPackages ./pkgs/tests { inherit l4tVersion; };
 
