@@ -1,5 +1,5 @@
 ### Updating
-- [ ] Update `l4tVersion`, `jetpackVersion`, and `cudaVersion` in overlay.nix
+- [ ] Update `l4tVersion`, `jetpackVersion`, `cudaMajorMinorPatchVersion`, and `cudaPackages.cudaConfig` in overlay.nix
 - [ ] Update branch/revision/sha256s in:
     - [ ] `overlay.nix`
     - [ ] `kernel/default.nix`

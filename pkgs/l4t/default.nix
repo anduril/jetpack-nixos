@@ -21,6 +21,7 @@
 , bc
 , debs
 , l4tVersion
+, cudaPackages
 }:
 let
   # The version currently in nixpkgs 23.11 and master 0.15 is pretty old and
@@ -51,7 +52,13 @@ let
       pname = name;
       inherit version src;
 
-      nativeBuildInputs = [ dpkg ] ++ lib.optional autoPatchelf autoPatchelfHook ++ nativeBuildInputs;
+      # These packages are created outside the CUDA package set and since we want to be able to discover them with
+      # CMake, we need to add the hook (`markForCudatoolkitRootHook`) which allows them to be discovered by our
+      # tooling.
+      nativeBuildInputs =
+        [ cudaPackages.markForCudatoolkitRootHook dpkg ]
+          ++ lib.optional autoPatchelf autoPatchelfHook
+          ++ nativeBuildInputs;
 
       unpackCmd = "dpkg-deb -x $src source";
       inherit sourceRoot;

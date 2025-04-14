@@ -96,16 +96,16 @@ in
   '';
 
   debNormalization = ''
-    pushd "$NIX_BUILD_TOP/$sourceRoot"
+    pushd "$NIX_BUILD_TOP/$sourceRoot" >/dev/null
 
     if [[ -e "$PWD/usr" ]]; then
-      pushd "$PWD/usr"
+      pushd "$PWD/usr" >/dev/null
 
       if [[ -e "$PWD/local/cuda-${cudaMajorMinorVersion}" ]]; then
-        pushd "$PWD/local/cuda-${cudaMajorMinorVersion}"
+        pushd "$PWD/local/cuda-${cudaMajorMinorVersion}" >/dev/null
 
         if [[ -e "$PWD/targets/${debBuilderArgs.targetStringDouble}" ]]; then
-          pushd "$PWD/targets/${debBuilderArgs.targetStringDouble}"
+          pushd "$PWD/targets/${debBuilderArgs.targetStringDouble}" >/dev/null
 
           mv \
             --verbose \
@@ -113,7 +113,7 @@ in
             --target-directory "$NIX_BUILD_TOP/$sourceRoot" \
             "$PWD"/*
 
-          popd
+          popd >/dev/null
 
           echo "removing $PWD/targets"
           rm --recursive --dir "$PWD/targets" || {
@@ -128,7 +128,7 @@ in
           --target-directory "$NIX_BUILD_TOP/$sourceRoot" \
           "$PWD"/*
 
-        popd
+        popd >/dev/null
 
         echo "removing $PWD/local"
         rm --recursive --dir "$PWD/local" || {
@@ -157,7 +157,7 @@ in
       done
       unset -v dir
 
-      popd
+      popd >/dev/null
 
       echo "removing $PWD/usr"
       rm --recursive --dir "$PWD/usr" || {
@@ -188,7 +188,7 @@ in
       rm --force --verbose "$PWD/lib/ld.so.conf"
     fi
 
-    popd
+    popd >/dev/null
   '';
 
   postPatch =
