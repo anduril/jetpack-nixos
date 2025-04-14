@@ -23,11 +23,28 @@
 
         hardware.nvidia-jetpack.enable = true;
       };
+      aarch64_config = {
+        nixpkgs = {
+          buildPlatform = "aarch64-linux";
+          hostPlatform = "aarch64-linux";
+        };
+      };
+      aarch64_cross_config = {
+        nixpkgs = {
+          buildPlatform = "x86_64-linux";
+          hostPlatform = "aarch64-linux";
+        };
+
+      };
     in
     {
       nixosConfigurations = {
-        installer_minimal = nixpkgs.legacyPackages.aarch64-linux.nixos installer_minimal_config;
-        installer_minimal_cross = nixpkgs.legacyPackages.x86_64-linux.pkgsCross.aarch64-multiplatform.nixos installer_minimal_config;
+        installer_minimal = nixpkgs.lib.nixosSystem {
+          modules = [ aarch64_config installer_minimal_config ];
+        };
+        installer_minimal_cross = nixpkgs.lib.nixosSystem {
+          modules = [ aarch64_cross_config installer_minimal_config ];
+        };
       };
 
       nixosModules.default = import ./modules/default.nix;
@@ -55,10 +72,15 @@
             ]);
 
             supportedNixOSConfigurations = lib.mapAttrs
-              (n: c: (nixpkgs.legacyPackages.x86_64-linux.pkgsCross.aarch64-multiplatform.nixos {
-                imports = [ self.nixosModules.default ];
-                hardware.nvidia-jetpack = { enable = true; } // c;
-                networking.hostName = "${c.som}-${c.carrierBoard}"; # Just so it sets the flash binary name.
+              (n: c: (nixpkgs.lib.nixosSystem {
+                modules = [
+                  aarch64_cross_config
+                  self.nixosModules.default
+                  {
+                    hardware.nvidia-jetpack = { enable = true; } // c;
+                    networking.hostName = "${c.som}-${c.carrierBoard}"; # Just so it sets the flash binary name.
+                  }
+                ];
               }).config)
               supportedConfigurations;
 
