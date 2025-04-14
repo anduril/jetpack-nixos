@@ -201,6 +201,11 @@ release.
 
 ## Configuring CUDA for Nixpkgs
 
+> [!NOTE]
+>
+> Nixpkgs as created by NixOS configurations using JetPack NixOS modules is automatically configured to enable CUDA support for Jetson devices.
+> This behavior can be disabled by setting `hardware.nvidia-jetpack.configureCuda` to `false`, in which case Nixpkgs should be configured as described in [Importing Nixpkgs](#importing-nixpkgs).
+
 ### Importing Nixpkgs
 
 To configure Nixpkgs to advertise CUDA support, ensure it is imported with a config similar to the following:
