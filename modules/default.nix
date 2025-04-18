@@ -42,6 +42,18 @@ in
     hardware.nvidia-jetpack = {
       enable = mkEnableOption "NVIDIA Jetson device support";
 
+      configureCuda = mkOption {
+        default = true;
+        type = types.bool;
+        description = ''
+          Configures the instance of Nixpkgs used for the system closure for Jetson devices.
+
+          When enabled, Nixpkgs is instantiated with `config.cudaSupport` set to `true`, so all packages
+          are built with CUDA support enabled. Additionally, `config.cudaCapabilities` is set based on the
+          value of `hardware.nvidia-jetpack.som`, producing binaries targeting the specific Jetson SOM.
+        '';
+      };
+
       # I get this error when enabling modesetting
       # [   14.243184] NVRM gpumgrGetSomeGpu: Failed to retrieve pGpu - Too early call!.
       # [   14.243188] NVRM nvAssertFailedNoLog: Assertion failed: NV_FALSE @ gpu_mgr.c:
@@ -182,6 +194,20 @@ in
       (import ../overlay.nix)
       (import ../overlay-with-config.nix config)
     ];
+
+    # Advertise support for CUDA.
+    nixpkgs.config = mkIf cfg.configureCuda {
+      cudaSupport = lib.mkDefault true;
+      cudaCapabilities =
+        let
+          isGeneric = cfg.som == "generic";
+          isXavier = lib.hasPrefix "xavier-" cfg.som;
+          isOrin = lib.hasPrefix "orin-" cfg.som;
+        in
+        lib.mkDefault
+          (lib.optionals (isXavier || isGeneric) [ "7.2" ]
+            ++ lib.optionals (isOrin || isGeneric) [ "8.7" ]);
+    };
 
     boot.kernelPackages =
       if cfg.kernel.realtime then

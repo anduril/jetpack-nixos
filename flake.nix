@@ -23,11 +23,28 @@
 
         hardware.nvidia-jetpack.enable = true;
       };
+      aarch64_config = {
+        nixpkgs = {
+          buildPlatform = "aarch64-linux";
+          hostPlatform = "aarch64-linux";
+        };
+      };
+      aarch64_cross_config = {
+        nixpkgs = {
+          buildPlatform = "x86_64-linux";
+          hostPlatform = "aarch64-linux";
+        };
+
+      };
     in
     {
       nixosConfigurations = {
-        installer_minimal = nixpkgs.legacyPackages.aarch64-linux.nixos installer_minimal_config;
-        installer_minimal_cross = nixpkgs.legacyPackages.x86_64-linux.pkgsCross.aarch64-multiplatform.nixos installer_minimal_config;
+        installer_minimal = nixpkgs.lib.nixosSystem {
+          modules = [ aarch64_config installer_minimal_config ];
+        };
+        installer_minimal_cross = nixpkgs.lib.nixosSystem {
+          modules = [ aarch64_cross_config installer_minimal_config ];
+        };
       };
 
       nixosModules.default = import ./modules/default.nix;
@@ -55,10 +72,15 @@
             ]);
 
             supportedNixOSConfigurations = lib.mapAttrs
-              (n: c: (nixpkgs.legacyPackages.x86_64-linux.pkgsCross.aarch64-multiplatform.nixos {
-                imports = [ self.nixosModules.default ];
-                hardware.nvidia-jetpack = { enable = true; } // c;
-                networking.hostName = "${c.som}-${c.carrierBoard}"; # Just so it sets the flash binary name.
+              (n: c: (nixpkgs.lib.nixosSystem {
+                modules = [
+                  aarch64_cross_config
+                  self.nixosModules.default
+                  {
+                    hardware.nvidia-jetpack = { enable = true; } // c;
+                    networking.hostName = "${c.som}-${c.carrierBoard}"; # Just so it sets the flash binary name.
+                  }
+                ];
               }).config)
               supportedConfigurations;
 
@@ -94,7 +116,27 @@
       formatter = forAllSystems ({ pkgs, ... }: pkgs.nixpkgs-fmt);
 
       legacyPackages = forAllSystems ({ system, ... }:
-        (import nixpkgs { inherit system; overlays = [ self.overlays.default ]; }).nvidia-jetpack
+        (import nixpkgs {
+          inherit system;
+          config = {
+            allowUnfree = true;
+            cudaCapabilities = [ "7.2" "8.7" ];
+            cudaSupport = true;
+          };
+          overlays = [
+            self.overlays.default
+            (final: prev: {
+              # NOTE: samples (and other packages) may pull in dependencies which depend on CUDA (either directly or
+              # transitively) -- this is problematic for us, because the default CUDA package set is not the one we
+              # construct.
+              # To avoid mixed package sets, we make our CUDA package set the default.
+              inherit (final.nvidia-jetpack) cudaPackages;
+              # TODO: Remove after bumping past 24.11: reset OpenCV's override on cudaPackages.
+              # https://github.com/NixOS/nixpkgs/blob/7ffe0edc685f14b8c635e3d6591b0bbb97365e6c/pkgs/top-level/all-packages.nix#L10540-L10541
+              opencv4 = prev.opencv4.override { inherit (final) cudaPackages; };
+            })
+          ];
+        }).nvidia-jetpack
       );
     };
 }
