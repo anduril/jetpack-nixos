@@ -82,7 +82,7 @@ let
       owner = "NVIDIA";
       repo = "edk2-nvidia";
       rev = "r${l4tVersion}";
-      sha256 = "sha256-ldPKOSdk/1XWiK13/dpUJO6H2v7dqC/Th9hhpNFCct0=";
+      sha256 = "sha256-0Ef+yybdORI9NPWPR+tKwgmRil+I9QQQ16F747w/E6s=";
     };
     patches = edk2NvidiaPatches ++ [
       # Fix Eqos driver to use correct TX clock name
@@ -112,7 +112,7 @@ let
     owner = "NVIDIA";
     repo = "edk2-nvidia-non-osi";
     rev = "r${l4tVersion}";
-    sha256 = "sha256-Pdsxxo+KdXa1lE/RqFBQ20VzNrvLghatT3phQz+hPQI=";
+    sha256 = "sha256-l2rEbBvlXhlXFUyubsmPlWofqjJuDM/t9EqFwFoSdfk=";
   };
 
   edk2-jetson = edk2.overrideAttrs (prev: {
