@@ -160,7 +160,6 @@ in
       python3 ${./pkgs/containers/gen_l4t_json.py} ${self.l4tCsv} ${self.unpackedDebsFilenames} > $out
     '';
     containerDeps = self.callPackage ./pkgs/containers/deps.nix { };
-    nvidia-ctk = self.callPackage ./pkgs/containers/nvidia-ctk.nix { };
 
     # TODO(jared): deprecate this
     devicePkgsFromNixosConfig = config: config.system.build.jetsonDevicePkgs;
