@@ -44,7 +44,7 @@ in
 
       majorVersion = mkOption {
         default = "5";
-        type = types.enum [ "5" ];
+        type = types.enum [ "5" "6" ];
         description = "Jetpack major version to use";
       };
 
