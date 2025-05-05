@@ -140,7 +140,7 @@
               ];
             });
         in
-        pkgs.nvidia-jetpack // { inherit (pkgs) nvidia-jetpack5; }
+        pkgs.nvidia-jetpack // { inherit (pkgs) nvidia-jetpack5 nvidia-jetpack6; }
       );
     };
 }
