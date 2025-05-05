@@ -1,0 +1,40 @@
+diff --git a/BaseTools/Plugin/LinuxGcc5ToolChain/LinuxGcc5ToolChain.py b/BaseTools/Plugin/LinuxGcc5ToolChain/LinuxGcc5ToolChain.py
+index dab7a87997..db18dc8341 100644
+--- a/BaseTools/Plugin/LinuxGcc5ToolChain/LinuxGcc5ToolChain.py
++++ b/BaseTools/Plugin/LinuxGcc5ToolChain/LinuxGcc5ToolChain.py
+@@ -21,35 +21,6 @@ class LinuxGcc5ToolChain(IUefiBuildPlugin):
+ 
+     def do_pre_build(self, thebuilder):
+         self.Logger = logging.getLogger("LinuxGcc5ToolChain")
+-
+-        #
+-        # GCC5 - The ARM and AARCH64 compilers need their paths set if available
+-        if thebuilder.env.GetValue("TOOL_CHAIN_TAG") == "GCC5":
+-
+-            # Start with AARACH64 compiler
+-            ret = self._check_aarch64()
+-            if ret != 0:
+-                self.Logger.critical("Failed in check aarch64")
+-                return ret
+-
+-            # Check arm compiler
+-            ret = self._check_arm()
+-            if ret != 0:
+-                self.Logger.critical("Failed in check arm")
+-                return ret
+-
+-            # Check RISCV64 compiler
+-            ret = self._check_riscv64()
+-            if ret != 0:
+-                self.Logger.critical("Failed in check riscv64")
+-                return ret
+-
+-            # Check LoongArch64 compiler
+-            ret = self._check_loongarch64()
+-            if ret != 0:
+-                self.Logger.critical("Failed in check loongarch64")
+-                return ret
+-
+         return 0
+ 
+     def _check_arm(self):
