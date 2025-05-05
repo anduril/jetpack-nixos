@@ -49,7 +49,12 @@
 
       nixosModules.default = import ./modules/default.nix;
 
-      overlays.default = import ./overlay.nix;
+
+      overlays = rec {
+        jetpack5 = import ./jetpack5-overlay.nix;
+
+        default = jetpack5;
+      };
 
       packages = {
         x86_64-linux =

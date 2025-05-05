@@ -2,6 +2,11 @@
 # advantage of scope's `self.callPackage` (callPackages does not exist under
 # `self`).
 
+{ jetpackMajorMinorPatchVersion
+, l4tMajorMinorPatchVersion
+, cudaMajorMinorPatchVersion
+, bspHash
+}:
 final: _:
 let
   inherit (final.lib)
@@ -18,9 +23,6 @@ let
     versions
     ;
 
-  jetpackMajorMinorPatchVersion = "5.1.5";
-  l4tMajorMinorPatchVersion = "35.6.1";
-  cudaMajorMinorPatchVersion = "11.4.298";
   cudaMajorMinorVersion = versions.majorMinor cudaMajorMinorPatchVersion;
 
   l4tMajorVersion = versions.major l4tMajorMinorPatchVersion;
@@ -41,10 +43,11 @@ in
       {
         # https://developer.nvidia.com/embedded/jetson-linux-archive
         # https://repo.download.nvidia.com/jetson/
-        src = final.fetchurl {
-          url = "https://developer.download.nvidia.com/embedded/L4T/r${versions.major l4tMajorMinorPatchVersion}_Release_v${versions.minor l4tMajorMinorPatchVersion}.${versions.patch l4tMajorMinorPatchVersion}/release/Jetson_Linux_R${l4tMajorMinorPatchVersion}_aarch64.tbz2";
-          hash = "sha256-nqKEd3R7MJXuec3Q4odDJ9SNTUD1FyluWg/SeeptbUE=";
-        };
+        src = final.fetchurl
+          {
+            url = "https://developer.download.nvidia.com/embedded/L4T/r${versions.major l4tMajorMinorPatchVersion}_Release_v${versions.minor l4tMajorMinorPatchVersion}.${versions.patch l4tMajorMinorPatchVersion}/release/Jetson_Linux_R${l4tMajorMinorPatchVersion}_aarch64.tbz2";
+            hash = bspHash;
+          };
         # We use a more recent version of bzip2 here because we hit this bug
         # extracting nvidia's archives:
         # https://bugs.launchpad.net/ubuntu/+source/bzip2/+bug/1834494
