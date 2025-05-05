@@ -27,6 +27,9 @@ let
 
   l4tMajorVersion = versions.major l4tMajorMinorPatchVersion;
 
+  l4tAtLeast = versionAtLeast l4tMajorMinorPatchVersion;
+  l4tOlder = versionOlder l4tMajorMinorPatchVersion;
+
   sourceInfo = import ./sourceinfo {
     inherit l4tMajorMinorPatchVersion;
     inherit (final) lib fetchurl fetchgit;
@@ -35,6 +38,7 @@ in
 makeScope final.newScope (self: {
   inherit (sourceInfo) debs gitRepos;
   inherit jetpackMajorMinorPatchVersion l4tMajorMinorPatchVersion cudaMajorMinorVersion;
+  inherit l4tAtLeast l4tOlder;
 
   callPackages = callPackagesWith (final // self);
 
@@ -132,9 +136,13 @@ makeScope final.newScope (self: {
 
   tests = final.callPackages ./pkgs/tests { inherit l4tMajorMinorPatchVersion; };
 
-  kernelPackagesOverlay = final: _: {
-    nvidia-display-driver = final.callPackage ./pkgs/kernels/r${l4tMajorVersion}/display-driver.nix { inherit (self) gitRepos l4tMajorMinorPatchVersion; };
-  };
+  kernelPackagesOverlay = final: _:
+    if self.l4tAtLeast "36" then {
+      devicetree = self.callPackage ./pkgs/kernels/r${l4tMajorVersion}/devicetree.nix { };
+      nvidia-oot-modules = final.callPackage ./pkgs/kernels/r${l4tMajorVersion}/oot-modules.nix { inherit (self) bspSrc gitRepos l4tMajorMinorPatchVersion; };
+    } else {
+      nvidia-display-driver = final.callPackage ./pkgs/kernels/r${l4tMajorVersion}/display-driver.nix { inherit (self) gitRepos l4tMajorMinorPatchVersion; };
+    };
 
   kernel = self.callPackage ./pkgs/kernels/r${l4tMajorVersion} { kernelPatches = [ ]; };
   kernelPackages = (final.linuxPackagesFor self.kernel).extend self.kernelPackagesOverlay;
