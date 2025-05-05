@@ -116,27 +116,31 @@
       formatter = forAllSystems ({ pkgs, ... }: pkgs.nixpkgs-fmt);
 
       legacyPackages = forAllSystems ({ system, ... }:
-        (import nixpkgs {
-          inherit system;
-          config = {
-            allowUnfree = true;
-            cudaCapabilities = [ "7.2" "8.7" ];
-            cudaSupport = true;
-          };
-          overlays = [
-            self.overlays.default
-            (final: prev: {
-              # NOTE: samples (and other packages) may pull in dependencies which depend on CUDA (either directly or
-              # transitively) -- this is problematic for us, because the default CUDA package set is not the one we
-              # construct.
-              # To avoid mixed package sets, we make our CUDA package set the default.
-              inherit (final.nvidia-jetpack) cudaPackages;
-              # TODO: Remove after bumping past 24.11: reset OpenCV's override on cudaPackages.
-              # https://github.com/NixOS/nixpkgs/blob/7ffe0edc685f14b8c635e3d6591b0bbb97365e6c/pkgs/top-level/all-packages.nix#L10540-L10541
-              opencv4 = prev.opencv4.override { inherit (final) cudaPackages; };
-            })
-          ];
-        }).nvidia-jetpack
+        let
+          pkgs =
+            (import nixpkgs {
+              inherit system;
+              config = {
+                allowUnfree = true;
+                cudaCapabilities = [ "7.2" "8.7" ];
+                cudaSupport = true;
+              };
+              overlays = [
+                self.overlays.default
+                (final: prev: {
+                  # NOTE: samples (and other packages) may pull in dependencies which depend on CUDA (either directly or
+                  # transitively) -- this is problematic for us, because the default CUDA package set is not the one we
+                  # construct.
+                  # To avoid mixed package sets, we make our CUDA package set the default.
+                  inherit (final.nvidia-jetpack) cudaPackages;
+                  # TODO: Remove after bumping past 24.11: reset OpenCV's override on cudaPackages.
+                  # https://github.com/NixOS/nixpkgs/blob/7ffe0edc685f14b8c635e3d6591b0bbb97365e6c/pkgs/top-level/all-packages.nix#L10540-L10541
+                  opencv4 = prev.opencv4.override { inherit (final) cudaPackages; };
+                })
+              ];
+            });
+        in
+        pkgs.nvidia-jetpack // { inherit (pkgs) nvidia-jetpack5; }
       );
     };
 }
