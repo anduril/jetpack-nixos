@@ -3,7 +3,7 @@
 - [ ] Update branch/revision/sha256s in:
     - [ ] `overlay.nix`
     - [ ] `pkgs/kernels/r${l4tMajorVersion}/default.nix`
-    - [ ] `pkgs/uefi-firmware/default.nix`
+    - [ ] `pkgs/uefi-firmware/r${l4tMajorVersion}/default.nix`
     - [ ] Grep for "sha256 = ", see if there is anything else not covered
 - [ ] Update the kernel version in `kernel/default.nix` if it chaged.
 - [ ] Run `debs-update.py` and `gitrepos-update.py` under `sourceinfo` to generate new sourceinfo json files
