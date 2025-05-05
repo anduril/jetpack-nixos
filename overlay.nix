@@ -77,7 +77,7 @@ in
         self.gitRepos
     );
 
-    inherit (final.callPackages ./pkgs/uefi-firmware { inherit (self) l4tVersion; })
+    inherit (final.callPackages ./pkgs/uefi-firmware/r${l4tMajorVersion} { inherit (self) l4tVersion; })
       edk2-jetson uefi-firmware;
 
     inherit (final.callPackages ./pkgs/optee {
