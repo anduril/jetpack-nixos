@@ -23,6 +23,8 @@ let
   cudaMajorMinorPatchVersion = "11.4.298";
   cudaVersion = versions.majorMinor cudaMajorMinorPatchVersion;
 
+  l4tMajorVersion = versions.major l4tVersion;
+
   sourceInfo = import ./sourceinfo {
     inherit l4tVersion;
     inherit (final) lib fetchurl fetchgit;
@@ -132,13 +134,13 @@ in
     tests = final.callPackages ./pkgs/tests { inherit l4tVersion; };
 
     kernelPackagesOverlay = final: _: {
-      nvidia-display-driver = final.callPackage ./kernel/display-driver.nix { inherit (self) gitRepos l4tVersion; };
+      nvidia-display-driver = final.callPackage ./pkgs/kernels/r${l4tMajorVersion}/display-driver.nix { inherit (self) gitRepos l4tVersion; };
     };
 
-    kernel = self.callPackage ./kernel { kernelPatches = [ ]; };
+    kernel = self.callPackage ./pkgs/kernels/r${l4tMajorVersion} { kernelPatches = [ ]; };
     kernelPackages = (final.linuxPackagesFor self.kernel).extend self.kernelPackagesOverlay;
 
-    rtkernel = self.callPackage ./kernel { kernelPatches = [ ]; realtime = true; };
+    rtkernel = self.callPackage ./pkgs/kernels/r${l4tMajorVersion} { kernelPatches = [ ]; realtime = true; };
     rtkernelPackages = (final.linuxPackagesFor self.rtkernel).extend self.kernelPackagesOverlay;
 
     nxJetsonBenchmarks = self.callPackage ./pkgs/jetson-benchmarks {
