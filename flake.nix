@@ -52,6 +52,7 @@
 
       overlays = rec {
         jetpack5 = import ./jetpack5-overlay.nix;
+        jetpack6 = import ./jetpack6-overlay.nix;
 
         default = jetpack5;
       };
