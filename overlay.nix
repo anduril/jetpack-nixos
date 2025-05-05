@@ -12,5 +12,17 @@ final: prev:
     final
     prev;
 
+  nvidia-jetpack6 = import ./mk-overlay.nix
+    {
+      # Below 3 are from release notes
+      jetpackMajorMinorPatchVersion = "6.2";
+      l4tMajorMinorPatchVersion = "36.4.3";
+      cudaMajorMinorPatchVersion = "12.6.10";
+
+      bspHash = "sha256-lJpEBJxM5qjv31cuoIIMh09u5dQco+STW58OONEYc9I=";
+    }
+    final
+    prev;
+
   nvidia-jetpack = final.nvidia-jetpack5;
 }

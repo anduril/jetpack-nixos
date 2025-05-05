@@ -15,7 +15,7 @@ let
 
   cfg = config.hardware.nvidia-jetpack;
 
-  jetpackVersions = [ "5" ];
+  jetpackVersions = [ "5" "6" ];
 
   teeApplications = pkgs.symlinkJoin {
     name = "tee-applications";
