@@ -5,6 +5,7 @@
 { jetpackMajorMinorPatchVersion
 , l4tMajorMinorPatchVersion
 , cudaMajorMinorPatchVersion
+, cudaDriverMajorMinorVersion
 , bspHash
 }:
 final: _:
@@ -180,4 +181,5 @@ makeScope final.newScope (self: {
   # Instead, we must either use final.callPackages or packagesFromDirectoryRecursive.
   // final.callPackages ./pkgs/l4t {
   inherit (self) debs l4tMajorMinorPatchVersion;
+  inherit cudaDriverMajorMinorVersion;
 })
