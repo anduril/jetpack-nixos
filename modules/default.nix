@@ -439,7 +439,7 @@ in
               --ldconfig-path ${lib.getExe' pkgs.glibc "ldconfig"} \
               --dev-root=/ \
               --mode=csv \
-              --csv.file=${pkgs.nvidia-jetpack.l4tCsv} \
+              $(for f in ${pkgs.nvidia-jetpack.l4tCsv}/*; do echo "--csv.file=$f"; done) \
               --output="$RUNTIME_DIRECTORY/jetpack-nixos"
           '';
       };
