@@ -147,7 +147,7 @@ in
         })
       ];
 
-    boot.kernelPatches = lib.mkIf (cfg.som == "orin-nx") [
+    boot.kernelPatches = lib.mkIf (cfg.som == "orin-nx" && lib.versions.majorMinor config.system.build.kernel.version == "5.10") [
       {
         name = "disable-usb-otg";
         patch = null;
