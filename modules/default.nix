@@ -27,6 +27,12 @@ let
 
   nvidiaDockerActive = with config.virtualisation; docker.enable && docker.enableNvidia;
   nvidiaPodmanActive = with config.virtualisation; podman.enable && podman.enableNvidia;
+
+  checkValidSoms = soms: cfg.som == "generic" || lib.lists.any (s: lib.hasPrefix s cfg.som) soms;
+  validSomsAssertion = majorVersion: soms: {
+    assertion = cfg.majorVersion == majorVersion -> checkValidSoms soms;
+    message = "Jetpack ${majorVersion} only supports som families: ${lib.strings.concatStringsSep " " soms} (or generic). Configured som: ${cfg.som}.";
+  };
 in
 {
   imports = [
@@ -186,6 +192,8 @@ in
         assertion = (nvidiaDockerActive || nvidiaPodmanActive) -> (!config.hardware.nvidia-container-toolkit.enable);
         message = "hardware.nvidia-container-toolkit.enable does not work with jetson devices (yet), use virtualisation.{docker,podman}.enableNvidia instead";
       }
+      (validSomsAssertion "5" [ "xavier" "orin" ])
+      (validSomsAssertion "6" [ "orin" ])
     ];
 
     # Use mkOptionDefault so that we prevent conflicting with the priority that
