@@ -76,13 +76,24 @@ let
         fi
 
         if [[ -d lib/aarch64-linux-gnu ]]; then
-          mv lib/aarch64-linux-gnu/* lib
+          if [[ -n "$(ls lib/aarch64-linux-gnu)" ]] ; then
+            mv -v -t lib lib/aarch64-linux-gnu/*
+          fi
           rm -rf lib/aarch64-linux-gnu
         fi
 
         if [[ -d lib/tegra ]]; then
-          mv lib/tegra/* lib
+          if [[ -n "$(ls lib/tegra)" ]] ; then
+            mv -v -t lib lib/tegra/*
+          fi
           rm -rf lib/tegra
+        fi
+
+        if [[ -d lib/nvidia ]]; then
+          if [[ -n "$(ls lib/nvidia)" ]] ; then
+            mv -v -t lib lib/nvidia/*
+          fi
+          rm -rf lib/nvidia
         fi
 
         ${postPatch}
