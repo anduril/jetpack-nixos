@@ -178,10 +178,11 @@ let
     # TODO: Replace this with appendRunpaths which is available in 23.11
     preFixup = ''
       postFixupHooks+=('
+        # ls to filter out libnvidia-vulkan-producer.so, which is only present in r35
         patchelf --add-rpath ${lib.makeLibraryPath [ libglvnd ]} \
           $out/lib/libEGL_nvidia.so.0 \
           $out/lib/libGLX_nvidia.so.0 \
-          $out/lib/libnvidia-vulkan-producer.so
+          $(ls $out/lib/libnvidia-vulkan-producer.so)
 
         patchelf --add-rpath ${lib.makeLibraryPath (with xorg; [ libX11 libXext libxcb ])} \
           $out/lib/libGLX_nvidia.so.0 \
