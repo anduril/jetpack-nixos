@@ -1,4 +1,5 @@
 { l4tMajorMinorPatchVersion
+, l4tAtLeast
 , bspSrc
 , buildPackages
 , lib
@@ -21,16 +22,17 @@ let
     pname = "optee_client";
     version = l4tMajorMinorPatchVersion;
     src = nvopteeSrc;
-    patches = [
-      ./0001-Don-t-prepend-foo-bar-baz-to-TEEC_LOAD_PATH.patch
-      (fetchpatch {
-        name = "tee-supplicant-Allow-for-TA-load-path-to-be-specified-at-runtime.patch";
-        url = "https://github.com/OP-TEE/optee_client/commit/f3845d8bee3645eedfcc494be4db034c3c69e9ab.patch";
-        stripLen = 1;
-        extraPrefix = "optee/optee_client/";
-        hash = "sha256-XjFpMbyXy74sqnc8l+EgTaPXqwwHcvni1Z68ShokTGc=";
-      })
-    ];
+    patches =
+      if l4tAtLeast "36" then [ ] else [
+        ./0001-Don-t-prepend-foo-bar-baz-to-TEEC_LOAD_PATH.patch
+        (fetchpatch {
+          name = "tee-supplicant-Allow-for-TA-load-path-to-be-specified-at-runtime.patch";
+          url = "https://github.com/OP-TEE/optee_client/commit/f3845d8bee3645eedfcc494be4db034c3c69e9ab.patch";
+          stripLen = 1;
+          extraPrefix = "optee/optee_client/";
+          hash = "sha256-XjFpMbyXy74sqnc8l+EgTaPXqwwHcvni1Z68ShokTGc=";
+        })
+      ];
     nativeBuildInputs = [ pkg-config ];
     buildInputs = [ libuuid ];
     enableParallelBuilding = true;
@@ -204,6 +206,9 @@ let
         # `warning: /build/source/build/rk3399/release/bl31/bl31.elf has a LOAD segment with RWX permissions`
         # See also: https://developer.trustedfirmware.org/T996
         "LDFLAGS=-no-warn-rwx-segments"
+      ] ++ lib.optionals (l4tAtLeast "36" && socType == "t234") [
+        "BRANCH_PROTECTION=3"
+        "ARM_ARCH_MINOR=3"
       ];
 
       enableParallelBuilding = true;
