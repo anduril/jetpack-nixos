@@ -23,7 +23,7 @@ _: {
         isJetson = true;
         minCudaMajorMinorVersion = "11.4";
         dontDefaultAfterCudaMajorMinorVersion = null;
-        maxCudaMajorMinorVersion = "12.2";
+        maxCudaMajorMinorVersion = "12.8";
       };
     };
     # NVCC compatibilities come from
@@ -42,6 +42,19 @@ _: {
           # https://forums.developer.nvidia.com/t/cuda-11-5-samples-throw-multiple-error-attribute-malloc-does-not-take-arguments/192750/15
           # maxMajorVersion = "11";
           maxMajorVersion = "10";
+          minMajorVersion = "6";
+        };
+      };
+
+      # Maximum Clang version is 18
+      # https://docs.nvidia.com/cuda/archive/12.6.0/cuda-installation-guide-linux/index.html#host-compiler-support-policy
+      "12.6" = {
+        clang = {
+          maxMajorVersion = "18";
+          minMajorVersion = "7";
+        };
+        gcc = {
+          maxMajorVersion = "13";
           minMajorVersion = "6";
         };
       };
