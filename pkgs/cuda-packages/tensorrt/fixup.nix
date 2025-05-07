@@ -7,6 +7,8 @@
 , libcublas
 , libcudla
 , patchelf
+, cudaAtLeast
+, l4t-dla-compiler ? null # something bad if cudaAtLeast "12" passes
 }:
 prevAttrs: {
   # Samples, lib, and static all reference a FHS
@@ -20,6 +22,8 @@ prevAttrs: {
     cudnn
     libcublas
     libcudla
+  ] ++ lib.optionals (cudaAtLeast "12") [
+    l4t-dla-compiler
   ];
 
   debNormalization =
