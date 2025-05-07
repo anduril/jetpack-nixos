@@ -51,7 +51,7 @@ in
       enable = mkEnableOption "NVIDIA Jetson device support";
 
       majorVersion = mkOption {
-        default = "5";
+        default = if cfg.som == "generic" || lib.hasPrefix "orin" cfg.som then "6" else "5";
         type = types.enum [ "5" "6" ];
         description = "Jetpack major version to use";
       };
