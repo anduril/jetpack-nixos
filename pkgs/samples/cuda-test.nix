@@ -6,11 +6,11 @@ writeShellApplication {
       deviceQuery deviceQueryDrv bandwidthTest clock clock_nvrtc
       matrixMul matrixMulCUBLAS matrixMulDrv matrixMulDynlinkJIT
     )
-    # clock_nvrtc expects .cu files under $PWD/data
-    cd ${cuda-samples}/bin
     for binary in "''${BINARIES[@]}"; do
-      echo " * Running $binary"
-      ./"$binary"
+      real="$(find ${cuda-samples} -type f -name "$binary")"
+      echo " * Running $real"
+      # clock_nvrtc expects .cu files under $PWD/data
+      pushd "$(dirname "$real")" && "$real" && popd
       echo
       echo
     done
