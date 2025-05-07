@@ -1,18 +1,23 @@
 # NOTE: All fixups must be at least binary functions to avoid callPackage adding override attributes.
 { backendStdenv
 , cudaAtLeast
-, cudaConfig
-, cudaMajorMinorPatchVersion
-, cudaMajorMinorVersion
 , cudaOlder
 , lib
-, makeBinaryWrapper
 , setupCudaHook
 }:
 let
   inherit (lib.strings) concatStringsSep optionalString;
 in
+let cudaStdenv = backendStdenv; in
 finalAttrs: prevAttrs: {
+  # The nvcc and cicc binaries contain hard-coded references to /usr
+  allowFHSReferences = true;
+  # Entries here will be in nativeBuildInputs when cuda_nvcc is in nativeBuildInputs
+  propagatedBuildInputs = prevAttrs.propagatedBuildInputs or [ ] ++ [
+    # nvccHook
+    cudaStdenv.cc
+  ];
+
   # Patch the nvcc.profile.
   # Syntax:
   # - `=` for assignment,
@@ -73,8 +78,7 @@ finalAttrs: prevAttrs: {
       # Always move the nvvm directory to the bin output.
       ''
         moveToOutput "nvvm" "''${!outputBin:?}"
-        echo "moving nvvm/lib64 to nvvm/lib"
-        mv "''${!outputBin:?}/nvvm/lib64" "''${!outputBin:?}/nvvm/lib"
+        mv --verbose --no-clobber "''${!outputBin:?}/nvvm/lib64" "''${!outputBin:?}/nvvm/lib"
       ''
       # Create a directory for our manual propagation.
       + ''
@@ -98,7 +102,7 @@ finalAttrs: prevAttrs: {
             "''${!outputInclude:?}/include"
       ''
       # Add the dependency on the include output to the nvcc.profile.
-      + ''
+      + lib.optionalString (cudaOlder "12") ''
         echo "adding ''${!outputInclude:?} to propagatedBuildInputs of ''${!outputBin:?}"
         printWords "''${!outputInclude:?}" >> "''${!outputBin:?}/nix-support/native-propagated-build-inputs"
       ''
@@ -106,7 +110,11 @@ finalAttrs: prevAttrs: {
       + (
         let
           # TODO: Should we also patch the LIBRARIES line's use of $(TOP)/$(_TARGET_DIR_)?
-          oldNvvmDir = concatStringsSep "/" [ "$(TOP)" "$(_NVVM_BRANCH_)" ];
+          oldNvvmDir = lib.concatStringsSep "/" (
+            [ "$(TOP)" ]
+            ++ lib.optionals (cudaOlder "12.5") [ "$(_NVVM_BRANCH_)" ]
+            ++ lib.optionals (cudaAtLeast "12.5") [ "nvvm" ]
+          );
           newNvvmDir = ''''${!outputBin:?}/nvvm'';
         in
         # Unconditional patching to switch to the correct NVVM paths.
@@ -122,11 +130,11 @@ finalAttrs: prevAttrs: {
         # Add the dependency on backendStdenv.cc and the new NVVM directories to the nvcc.profile.
         # NOTE: Escape the dollar sign in the variable expansion to prevent early expansion.
         + ''
-          echo "adding backendStdenv.cc and ${newNvvmDir} to nvcc.profile"
+          echo "adding cudaStdenv.cc and ${newNvvmDir} to nvcc.profile"
           cat << EOF >> "''${!outputBin:?}/bin/nvcc.profile"
 
           # Fix a compatible backend compiler
-          PATH += "${backendStdenv.cc}/bin":
+          PATH += "${cudaStdenv.cc}/bin":
 
           # Expose the split-out nvvm
           LIBRARIES =+ \$(_SPACE_) "-L${newNvvmDir}/lib"
@@ -140,7 +148,7 @@ finalAttrs: prevAttrs: {
   # NOTE: mkDerivation's setup.sh clobbers all dependency files in fixupPhase, so we must register the paths in postFixup.
   postFixup =
     prevAttrs.postFixup or ""
-    + ''
+    + lib.optionalString (cudaOlder "12") (''
       echo "adding setupCudaHook to propagatedBuildInputs of ''${!outputBin:?}"
       printWords "${setupCudaHook}" >> "''${!outputBin:?}/nix-support/propagated-build-inputs"
     ''
@@ -149,10 +157,7 @@ finalAttrs: prevAttrs: {
     + ''
       echo "adding backendStdenv.cc to propagatedNativeBuildInputs of ''${!outputBin:?}"
       printWords "${backendStdenv.cc}" >> "''${!outputBin:?}/nix-support/propagated-native-build-inputs"
-    '';
-
-  # The nvcc and cicc binaries contain hard-coded references to /usr
-  allowFHSReferences = true;
+    '');
 
   meta = prevAttrs.meta or { } // {
     mainProgram = "nvcc";
