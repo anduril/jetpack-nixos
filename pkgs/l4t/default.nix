@@ -21,6 +21,7 @@
 , bc
 , debs
 , l4tMajorMinorPatchVersion
+, l4tAtLeast
 , cudaPackages
 , cudaDriverMajorMinorVersion
 }:
@@ -243,6 +244,14 @@ let
     '';
   };
 
+  # Only for L4T r36+
+  l4t-dla-compiler = buildFromDeb {
+    name = "nvidia-l4t-dla-compiler";
+    src = debs.common."nvidia-l4t-dla-compiler".src;
+    version = debs.common."nvidia-l4t-dla-compiler".version;
+    buildInputs = [ l4t-cuda ];
+  };
+
   # TODO: Make nvwifibt systemd scripts work
   l4t-firmware = buildFromDeb {
     name = "nvidia-l4t-firmware";
@@ -439,4 +448,7 @@ in
     l4t-tools
     l4t-wayland
     l4t-xusb-firmware;
+} // lib.optionalAttrs (l4tAtLeast "36") {
+  inherit
+    l4t-dla-compiler;
 }

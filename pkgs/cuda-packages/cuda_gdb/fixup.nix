@@ -4,6 +4,7 @@
 , lib
 , python3
 , stdenv
+, gmp
 }:
 let
   inherit (lib.attrsets) recursiveUpdate;
@@ -17,6 +18,7 @@ prevAttrs: {
 
   buildInputs =
     prevAttrs.buildInputs or [ ]
+    ++ optionals (cudaAtLeast "12") [ gmp ]
     # aarch64, sbsa needs expat
     ++ optionals stdenv.hostPlatform.isAarch64 [ expat ];
 

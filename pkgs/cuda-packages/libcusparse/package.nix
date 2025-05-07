@@ -1,6 +1,7 @@
 { deb-builder }:
 deb-builder {
   sourceName = "libcusparse";
+  fixupFns = [ ./fixup.nix ];
   outputs = [
     "out"
     "dev"

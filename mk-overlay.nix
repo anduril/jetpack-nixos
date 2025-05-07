@@ -180,6 +180,6 @@ makeScope final.newScope (self: {
   # attribute set, we cannot use self.callPackages because we would end up with infinite recursion.
   # Instead, we must either use final.callPackages or packagesFromDirectoryRecursive.
   // final.callPackages ./pkgs/l4t {
-  inherit (self) debs l4tMajorMinorPatchVersion;
-  inherit cudaDriverMajorMinorVersion;
+  inherit (self) debs;
+  inherit l4tMajorMinorPatchVersion cudaDriverMajorMinorVersion l4tAtLeast;
 })
