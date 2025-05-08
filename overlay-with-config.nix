@@ -88,8 +88,11 @@ final: prev: (
               sync
               reboot -f
             else
-              echo "Flashing platform firmware unsuccessful. Entering console"
+              echo "Flashing platform firmware unsuccessful."
+              ${lib.optionalString (cfg.firmware.secureBoot.pkcFile == null) ''
+              echo "Entering console"
               exec ${prev.pkgsStatic.busybox}/bin/sh
+              ''}
             fi
           '';
         in
