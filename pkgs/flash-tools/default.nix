@@ -27,6 +27,7 @@
 , fetchzip
 , bc
 , openssl
+, sbsigntool
 , bspSrc
 , l4tVersion
 , symlinkJoin
@@ -123,6 +124,7 @@ let
       dosfstools
       bc
       openssl
+      sbsigntool # In l4t_uefi_sign_image.sh, which is needed by RCM flashing
 
       # Needed by bootloader/tegraflash_impl_t234.py
       gcc

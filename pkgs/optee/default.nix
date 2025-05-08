@@ -124,6 +124,30 @@ let
     meta.platforms = [ "aarch64-linux" ];
   };
 
+  buildCpuBlPayloadDec = args: stdenv.mkDerivation {
+    pname = "cpubl-payload-dec";
+    version = l4tVersion;
+    src = nvopteeSrc;
+    patches = [ ./0001-nvoptee-no-install-makefile.patch ];
+    nativeBuildInputs = [ (buildPackages.python3.withPackages (p: [ p.cryptography ])) ];
+    enableParallelBuilding = true;
+    makeFlags = [
+      "-C optee/samples/cpubl-payload-dec"
+      "CROSS_COMPILE=${stdenv.cc.targetPrefix}"
+      "TA_DEV_KIT_DIR=${buildOpteeTaDevKit args}/export-ta_arm64"
+      "OPTEE_CLIENT_EXPORT=${opteeClient}"
+      "O=$(PWD)/out"
+    ];
+    installPhase = ''
+      runHook preInstall
+
+      install -Dm755 -t $out out/early_ta/cpubl-payload-dec/*.stripped.elf
+
+      runHook postInstall
+    '';
+    meta.platforms = [ "aarch64-linux" ];
+  };
+
   buildHwKeyAgent = args: stdenv.mkDerivation {
     pname = "hwkey-agent";
     version = l4tVersion;
@@ -202,11 +226,13 @@ let
       opteeDTB = buildOpteeDTB args;
 
       nvLuksSrv = buildNvLuksSrv args;
+      cpuBlPayloadDec = buildCpuBlPayloadDec args;
       hwKeyAgent = buildHwKeyAgent args;
 
       opteeOS = buildOptee ({
         earlyTaPaths = [
           "${nvLuksSrv}/b83d14a8-7128-49df-9624-35f14f65ca6c.stripped.elf"
+          "${cpuBlPayloadDec}/0e35e2c9-b329-4ad9-a2f5-8ca9bbbd7713.stripped.elf"
           "${hwKeyAgent}/82154947-c1bc-4bdf-b89d-04f93c0ea97c.stripped.elf"
         ];
       } // args);
