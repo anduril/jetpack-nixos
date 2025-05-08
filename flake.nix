@@ -56,7 +56,7 @@
           let
             supportedConfigurations = lib.listToAttrs (map
               (c: {
-                name = "${c.som}" + (lib.optionalString (c.super or false) "-super") + "-${c.carrierBoard}";
+                name = c.som + lib.optionalString (c.super or false) "-super" + "-${c.carrierBoard}" + lib.optionalString (c ? majorVersion) "-jp${c.majorVersion}";
                 value = c;
               }) [
               { som = "orin-agx"; carrierBoard = "devkit"; }
@@ -65,6 +65,12 @@
               { som = "orin-nano"; carrierBoard = "devkit"; }
               { som = "orin-nx"; carrierBoard = "devkit"; super = true; }
               { som = "orin-nano"; carrierBoard = "devkit"; super = true; }
+              { som = "orin-agx"; carrierBoard = "devkit"; majorVersion = "5"; }
+              { som = "orin-agx-industrial"; carrierBoard = "devkit"; majorVersion = "5"; }
+              { som = "orin-nx"; carrierBoard = "devkit"; majorVersion = "5"; }
+              { som = "orin-nano"; carrierBoard = "devkit"; majorVersion = "5"; }
+              { som = "orin-nx"; carrierBoard = "devkit"; super = true; majorVersion = "5"; }
+              { som = "orin-nano"; carrierBoard = "devkit"; super = true; majorVersion = "5"; }
               { som = "xavier-agx"; carrierBoard = "devkit"; }
               { som = "xavier-agx-industrial"; carrierBoard = "devkit"; } # TODO: Entirely untested
               { som = "xavier-nx"; carrierBoard = "devkit"; }
