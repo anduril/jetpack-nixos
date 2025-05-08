@@ -86,7 +86,9 @@ let
         ${mkRcmBootScript {
           kernelPath = "${config.system.build.kernel}/${config.system.boot.loader.kernelFile}";
           initrdPath = "${flashInitrd}/initrd";
-          kernelCmdline = "console=ttyTCU0,115200";
+          kernelCmdline = lib.concatStringsSep " " [
+            "console=ttyTCU0,115200" "sdhci_tegra.en_boot_part_access=1"
+          ];
           # During the initrd flash script, we upload two edk2 builds to the
           # board, one that is only used temporarily to boot into our
           # kernel/initrd to perform the flashing, and another one that is
