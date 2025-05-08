@@ -142,6 +142,25 @@ in
                 The path to the UEFI DB Signature List (ESL).
               '';
             };
+
+            signer.cert = mkOption {
+              type = lib.types.path;
+              description = ''
+                x509 certificate used for signing.
+                https://uefi.org/specs/UEFI/2.10/08_Services_Runtime_Services.html#using-the-efi-variable-authentication-descriptor
+              '';
+            };
+            signer.key = mkOption {
+              type = lib.types.path;
+              description = ''
+                RSA Private key in PEM format used for signing.
+                This is currently only used for RCM payload verification used in initrd flash script.
+                Besides this specific option, UEFI secure boot behaves as it normally would for any other NixOS system.
+                Do _not_ include a signing key in the Nix store. How to do this
+                is left as an exercise to the reader.
+                https://uefi.org/specs/UEFI/2.10/08_Services_Runtime_Services.html#using-the-efi-variable-authentication-descriptor
+              '';
+            };
           };
 
           capsuleAuthentication = {

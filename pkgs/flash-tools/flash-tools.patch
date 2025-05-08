@@ -1,6 +1,6 @@
-diff -Naur bsp-5.1.4/bootloader/l4t_bup_gen.func bsp-5.1.4-new/bootloader/l4t_bup_gen.func
---- bsp-5.1.4/bootloader/l4t_bup_gen.func	1969-12-31 16:00:01.000000000 -0800
-+++ bsp-5.1.4-new/bootloader/l4t_bup_gen.func	2024-10-27 17:38:54.890791212 -0700
+diff -Naur bsp-5.1.5/bootloader/l4t_bup_gen.func bsp-5.1.5-new/bootloader/l4t_bup_gen.func
+--- bsp-5.1.5/bootloader/l4t_bup_gen.func	1969-12-31 16:00:01.000000000 -0800
++++ bsp-5.1.5-new/bootloader/l4t_bup_gen.func	2025-05-06 16:03:46.283865204 -0700
 @@ -23,7 +23,6 @@
  
  declare -A ENTRY_LIST
@@ -9,15 +9,16 @@ diff -Naur bsp-5.1.4/bootloader/l4t_bup_gen.func bsp-5.1.4-new/bootloader/l4t_bu
  
  PART_NAME=""
  IMAGE_SIGNED=0
-diff -Naur bsp-5.1.4/flash.sh bsp-5.1.4-new/flash.sh
---- bsp-5.1.4/flash.sh	1969-12-31 16:00:01.000000000 -0800
-+++ bsp-5.1.4-new/flash.sh	2024-10-27 17:41:11.472780429 -0700
-@@ -2711,6 +2711,8 @@
+diff -Naur bsp-5.1.5/flash.sh bsp-5.1.5-new/flash.sh
+--- bsp-5.1.5/flash.sh	1969-12-31 16:00:01.000000000 -0800
++++ bsp-5.1.5-new/flash.sh	2025-05-06 16:03:25.411864346 -0700
+@@ -2737,6 +2737,9 @@
  		fi
  		cmdline+="${string} ";
  	done
 +
 +	# Just use the cmdline as-is, needed for RCM-boot in jetpack-nixos
++	cmdline="${CMDLINE}"
  fi;
  
  ##########################################################################

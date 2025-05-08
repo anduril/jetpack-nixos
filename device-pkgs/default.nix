@@ -40,10 +40,16 @@ let
     };
   };
 
+  # Inside a Nix derivation (sandboxed), call the flash.sh scripts and others
+  # to produce a flashcmd.txt that will be run directly. This removes most of
+  # the dynamism available to the flash script and requires specifying many
+  # more environment variables which are normally autodetected
+  useFlashCmd = builtins.length cfg.firmware.variants == 1;
+
   # With either produce a standard flash script, which does variant detection,
   # or if there is only a single variant, will produce a script specialized to
   # that particular variant.
-  mkFlashScriptAuto = if builtins.length cfg.firmware.variants == 1 then mkFlashCmdScript else (mkFlashScript nvidia-jetpack.flash-tools);
+  mkFlashScriptAuto = if useFlashCmd then mkFlashCmdScript else (mkFlashScript nvidia-jetpack.flash-tools);
 
   # Generate a flash script using the built configuration options set in a NixOS configuration
   flashScript = writeShellApplication {
@@ -61,8 +67,38 @@ let
 
         export CMDLINE="${builtins.toString kernelCmdline}"
         export INITRD_IN_BOOTIMG="yes"
+      '' + lib.optionalString (cfg.firmware.secureBoot.pkcFile != null) ''
+        # If secure boot is enabled, nvidia requires the kernel to be signed
+        (
+          ${cfg.firmware.secureBoot.preSignCommands pkgs}
+          # See l4t_uefi_sign_image.sh from BSP, or tools/README_uefi_secureboot.txt
+          # This is not good
+          bash ./l4t_uefi_sign_image.sh --image ./kernel/Image --cert ${cfg.firmware.uefi.secureBoot.signer.cert} --key ${cfg.firmware.uefi.secureBoot.signer.key} --mode nosplit
+        )
       '';
-      flashArgs = [ "--rcm-boot" ] ++ cfg.flashScriptOverrides.flashArgs;
+
+      flashArgs =
+        [ "--rcm-boot" ]
+        # A little jank, but don't have the flash script itself actually flash, just produce the flashcmd.txt file
+        # We need to sign the boot.img file afterwards in this script
+        ++ lib.optional (cfg.firmware.secureBoot.pkcFile != null) "--no-flash"
+        ++ cfg.flashScriptOverrides.flashArgs;
+
+      postFlashCommands = lib.optionalString (cfg.firmware.secureBoot.pkcFile != null) ''
+        (
+          # If secure boot is enabled, the boot.img needs to be signed.
+          cd bootloader
+          ${cfg.firmware.secureBoot.preSignCommands pkgs}
+          # See l4t_uefi_sign_image.sh from BSP, or tools/README_uefi_secureboot.txt
+          bash ../l4t_uefi_sign_image.sh --image boot.img --cert ${cfg.firmware.uefi.secureBoot.signer.cert} --key ${cfg.firmware.uefi.secureBoot.signer.key} --mode append
+        )
+      '' + lib.optionalString (!useFlashCmd && cfg.firmware.secureBoot.pkcFile != null) ''
+        (
+          # Now execute flash
+          echo "Flashing device now"
+          cd bootloader; bash ./flashcmd.txt
+        )
+      '';
     }
   );
 
