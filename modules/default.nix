@@ -286,14 +286,15 @@ in
       '';
 
       boot.extraModulePackages =
-        (
-          # For Orin. Unsupported with PREEMPT_RT.
-          lib.optional (cfg.majorVersion == "5" && !cfg.kernel.realtime)
-            config.boot.kernelPackages.nvidia-display-driver
-        ) ++ (
-          lib.optional (jetpackAtLeast "6")
-            config.boot.kernelPackages.nvidia-oot-modules
-        );
+        # For Orin. Unsupported with PREEMPT_RT.
+        lib.optionals (cfg.majorVersion == "5" && !cfg.kernel.realtime)
+          [ config.boot.kernelPackages.nvidia-display-driver ]
+        ++
+        lib.optionals (jetpackAtLeast "6") [
+          (pkgs.nvidia-jetpack.kernelPackages.nvidia-oot-modules.overrideAttrs {
+            inherit (config.boot.kernelPackages) kernel;
+          })
+        ];
 
       hardware.firmware = with pkgs.nvidia-jetpack; [
         l4t-firmware
