@@ -1,4 +1,4 @@
-{ l4tVersion
+{ l4tMajorMinorPatchVersion
 , bspSrc
 , buildPackages
 , lib
@@ -18,7 +18,7 @@ let
 
   opteeClient = stdenv.mkDerivation {
     pname = "optee_client";
-    version = l4tVersion;
+    version = l4tMajorMinorPatchVersion;
     src = nvopteeSrc;
     patches = [
       ./0001-Don-t-prepend-foo-bar-baz-to-TEEC_LOAD_PATH.patch
@@ -72,7 +72,7 @@ let
     in
     stdenv.mkDerivation {
       inherit pname;
-      version = l4tVersion;
+      version = l4tMajorMinorPatchVersion;
       src = nvopteeSrc;
       patches = opteePatches;
       postPatch = ''
@@ -101,7 +101,7 @@ let
 
   buildNvLuksSrv = args: stdenv.mkDerivation {
     pname = "nvluks-srv";
-    version = l4tVersion;
+    version = l4tMajorMinorPatchVersion;
     src = nvopteeSrc;
     patches = [ ./0001-nvoptee-no-install-makefile.patch ./0002-Exit-with-non-zero-status-code-on-TEEC_InvokeCommand.patch ];
     nativeBuildInputs = [ (buildPackages.python3.withPackages (p: [ p.cryptography ])) ];
@@ -126,7 +126,7 @@ let
 
   buildCpuBlPayloadDec = args: stdenv.mkDerivation {
     pname = "cpubl-payload-dec";
-    version = l4tVersion;
+    version = l4tMajorMinorPatchVersion;
     src = nvopteeSrc;
     patches = [ ./0001-nvoptee-no-install-makefile.patch ];
     nativeBuildInputs = [ (buildPackages.python3.withPackages (p: [ p.cryptography ])) ];
@@ -150,7 +150,7 @@ let
 
   buildHwKeyAgent = args: stdenv.mkDerivation {
     pname = "hwkey-agent";
-    version = l4tVersion;
+    version = l4tMajorMinorPatchVersion;
     src = nvopteeSrc;
     patches = [ ./0001-nvoptee-no-install-makefile.patch ];
     nativeBuildInputs = [ (buildPackages.python3.withPackages (p: [ p.cryptography ])) ];
@@ -187,7 +187,7 @@ let
   buildArmTrustedFirmware = lib.makeOverridable ({ socType, ... }:
     stdenv.mkDerivation {
       pname = "arm-trusted-firmware";
-      version = l4tVersion;
+      version = l4tMajorMinorPatchVersion;
       src = atfSrc;
       makeFlags = [
         "-C arm-trusted-firmware"

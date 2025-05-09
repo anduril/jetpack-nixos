@@ -1,4 +1,4 @@
-{ lib, stdenvNoCC, bash, util-linux, e2fsprogs, tegra-eeprom-tool, l4tVersion, efiSysMountPoint ? "/boot" }:
+{ lib, stdenvNoCC, bash, util-linux, e2fsprogs, tegra-eeprom-tool, l4tMajorMinorPatchVersion, efiSysMountPoint ? "/boot" }:
 
 stdenvNoCC.mkDerivation {
   name = "ota-utils";
@@ -34,7 +34,7 @@ stdenvNoCC.mkDerivation {
     done
 
     substituteInPlace $out/bin/ota-check-firmware \
-      --replace "@l4tVersion@" "${l4tVersion}"
+      --replace "@l4tMajorMinorPatchVersion@" "${l4tMajorMinorPatchVersion}"
 
     patchShebangs --host $out/bin
 
