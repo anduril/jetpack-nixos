@@ -49,7 +49,7 @@ At this point, your device should have a working UEFI firmware accessible either
 
 Now, build and write the customized installer ISO to a USB drive:
 ```shell
-$ nix build github:anduril/jetpack-nixos#iso_minimal
+$ nix build github:anduril/jetpack-nixos#iso_minimal # iso_minimal_jp5 for Xavier (or otherwise wanting to use Jetpack 5)
 $ sudo dd if=./result/iso/nixos-22.11pre-git-aarch64-linux.iso of=/dev/sdX bs=1M oflag=sync status=progress
 ```
 (Replace `/dev/sdX` with the correct path for your USB drive)

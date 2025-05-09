@@ -34,7 +34,9 @@
           buildPlatform = "x86_64-linux";
           hostPlatform = "aarch64-linux";
         };
-
+      };
+      jetpack5_config = {
+        hardware.nvidia-jetpack.majorVersion = "5";
       };
     in
     {
@@ -44,6 +46,12 @@
         };
         installer_minimal_cross = nixpkgs.lib.nixosSystem {
           modules = [ aarch64_cross_config installer_minimal_config ];
+        };
+        installer_minimal_jp5 = nixpkgs.lib.nixosSystem {
+          modules = [ aarch64_config installer_minimal_config jetpack5_config ];
+        };
+        installer_minimal_cross_jp5 = nixpkgs.lib.nixosSystem {
+          modules = [ aarch64_cross_config installer_minimal_config jetpack5_config ];
         };
       };
 
@@ -95,8 +103,8 @@
             uefiCapsuleUpdates = lib.mapAttrs' (n: c: lib.nameValuePair "uefi-capsule-update-${n}" c.system.build.uefiCapsuleUpdate) supportedNixOSConfigurations;
           in
           {
-            # TODO: Untested
             iso_minimal = self.nixosConfigurations.installer_minimal_cross.config.system.build.isoImage;
+            iso_minimal_jp5 = self.nixosConfigurations.installer_minimal_cross_jp5.config.system.build.isoImage;
 
             inherit (self.legacyPackages.x86_64-linux)
               board-automation python-jetson;
@@ -110,6 +118,7 @@
 
         aarch64-linux = {
           iso_minimal = self.nixosConfigurations.installer_minimal.config.system.build.isoImage;
+          iso_minimal_jp5 = self.nixosConfigurations.installer_minimal_jp5.config.system.build.isoImage;
         };
       };
 
