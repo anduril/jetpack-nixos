@@ -78,7 +78,7 @@ final: prev: (
 
       flashInitrd =
         let
-          modules = [ "qspi_mtd" "spi_tegra210_qspi" "at24" "spi_nor" ];
+          modules = if lib.versions.majorMinor config.system.build.kernel.version == "5.10" then [ "qspi_mtd" "spi_tegra210_qspi" "at24" "spi_nor" ] else [ "mtdblock" "spi_tegra210_quad" ];
           modulesClosure = prev.makeModulesClosure {
             rootModules = modules;
             kernel = config.system.modulesTree;
