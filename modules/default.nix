@@ -271,7 +271,13 @@ in
       ++ lib.optional (lib.hasPrefix "xavier-" cfg.som || cfg.som == "generic") "video=efifb:off"; # Disable efifb driver, which crashes Xavier NX and possibly AGX
 
       boot.initrd.includeDefaultModules = false; # Avoid a bunch of modules we may not get from tegra_defconfig
-      boot.initrd.availableKernelModules = [ "xhci-tegra" "ucsi_ccg" "typec_ucsi" "typec" ]; # Make sure USB firmware makes it into initrd
+      boot.initrd.availableKernelModules = [ "xhci-tegra" "ucsi_ccg" "typec_ucsi" "typec" ] # Make sure USB firmware makes it into initrd
+        ++ lib.optionals (pkgs.nvidia-jetpack.l4tAtLeast "36") [
+        "tegra_mce"
+        "phy-tegra-xusb"
+        "i2c-tegra"
+        "fusb301"
+      ];
 
       boot.kernelModules =
         [ "nvgpu" ]
