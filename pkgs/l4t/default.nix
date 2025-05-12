@@ -22,6 +22,7 @@
 , debs
 , l4tMajorMinorPatchVersion
 , l4tAtLeast
+, l4tOlder
 , cudaPackages
 , cudaDriverMajorMinorVersion
 }:
@@ -310,7 +311,7 @@ let
     '';
     buildInputs = [ l4t-core l4t-cuda l4t-nvsci pango alsa-lib ] ++ (with gst_all_1; [ gstreamer gst-plugins-base ]);
 
-    patches = [
+    patches = lib.optionals (l4tOlder "36") [
       (fetchpatch {
         url = "https://raw.githubusercontent.com/OE4T/meta-tegra/af0a93313c13e9eac4e80082d8a8e8ac5f7ad6e8/recipes-multimedia/argus/files/0005-Remove-DO-NOT-USE-declarations-from-v4l2_nv_extensio.patch";
         sha256 = "sha256-meHF7uS2TFMoh0qGCmjGzR8hfhE0cCwSP2T3ufzwM0s=";
