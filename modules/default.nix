@@ -273,10 +273,17 @@ in
       boot.initrd.includeDefaultModules = false; # Avoid a bunch of modules we may not get from tegra_defconfig
       boot.initrd.availableKernelModules = [ "xhci-tegra" "ucsi_ccg" "typec_ucsi" "typec" ] # Make sure USB firmware makes it into initrd
         ++ lib.optionals (pkgs.nvidia-jetpack.l4tAtLeast "36") [
+        "nvme"
         "tegra_mce"
         "phy-tegra-xusb"
         "i2c-tegra"
         "fusb301"
+        # PCIe for nvme, ethernet, etc.
+        "phy_tegra194_p2u"
+        "pcie_tegra194"
+        # Ethernet for AGX
+        "nvpps"
+        "nvethernet"
       ];
 
       boot.kernelModules =
