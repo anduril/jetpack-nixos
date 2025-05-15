@@ -135,7 +135,7 @@ makeScope final.newScope (self: {
     inherit (finalSamples) callPackage;
   });
 
-  tests = final.callPackages ./pkgs/tests { inherit l4tMajorMinorPatchVersion; };
+  tests = final.callPackages ./pkgs/tests { inherit l4tMajorMinorPatchVersion l4tAtLeast; };
 
   kernelPackagesOverlay = final: _:
     if self.l4tAtLeast "36" then {
