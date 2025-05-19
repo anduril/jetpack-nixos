@@ -233,17 +233,26 @@ let
     '';
   };
 
-  l4t-cupva = buildFromDeb {
-    name = "cupva";
-    src = debs.common."cupva-2.3-l4t".src;
-    version = debs.common."cupva-2.3-l4t".version;
-    buildInputs = [ stdenv.cc.cc.lib l4t-cuda l4t-nvsci l4t-pva ];
-    postPatch = ''
-      mkdir -p lib
-      mv opt/nvidia/cupva-2.3/lib/aarch64-linux-gnu/* lib/
-      rm -rf opt
-    '';
-  };
+  l4t-cupva = buildFromDeb
+    (
+      let
+        cupvaMajorMinorVersion = {
+          "35" = "2.3";
+          "36" = "2.5";
+        }.${lib.versions.major l4tMajorMinorPatchVersion};
+      in
+      {
+        name = "cupva";
+        src = debs.common."cupva-${cupvaMajorMinorVersion}-l4t".src;
+        version = debs.common."cupva-${cupvaMajorMinorVersion}-l4t".version;
+        buildInputs = [ stdenv.cc.cc.lib l4t-cuda l4t-nvsci l4t-pva ];
+        postPatch = ''
+          mkdir -p lib
+          mv opt/nvidia/cupva-${cupvaMajorMinorVersion}/lib/aarch64-linux-gnu/* lib/
+          rm -rf opt
+        '';
+      }
+    );
 
   # Only for L4T r36+
   l4t-dla-compiler = buildFromDeb {
