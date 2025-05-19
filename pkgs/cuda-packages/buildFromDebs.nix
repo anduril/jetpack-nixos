@@ -70,6 +70,22 @@ stdenv.mkDerivation (args // {
       rm -rf lib/aarch64-linux-gnu
     fi
 
+    if [[ -e "$PWD/lib64" ]]; then
+      nixErrorLog "TODO(@connorbaker): $PWD/lib64's exists, copy everything into lib and make lib64 a symlink to lib"
+      ls -la "$PWD/lib64"
+      ls -laR "$PWD/lib64/"
+      exit 1
+    elif [[ -d "$PWD/lib" ]]; then
+      if [[ -L "$PWD/lib64" ]]; then
+        echo "removing existing symlink $PWD/lib64"
+        rm "$PWD/lib64"
+      fi
+      if [[ -n "$(find "$PWD/lib" -not \( -path "$PWD/lib/stubs" -prune \) -name \*.so)" ]] ; then
+        echo "symlinking $PWD/lib64 -> $PWD/lib"
+        ln -rs "$PWD/lib" "$PWD/lib64"
+      fi
+    fi
+
     rm -f lib/ld.so.conf
 
     ${postPatch}
