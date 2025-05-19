@@ -1,5 +1,5 @@
 { alsa-lib
-, buildFHSUserEnv
+, buildFHSEnv
 , buildFromDebs
 , dbus
 , debs
@@ -78,7 +78,7 @@ in
 # nsys-ui has some hardcoded /usr access so use fhs instead of trying to patchelf
   # it also comes with its own qt6 .so, trying to use Nix qt6 libs results in weird
   # behavior(blank window) so just supply qt6 dependency instead of qt6 itself
-buildFHSUserEnv {
+buildFHSEnv {
   pname = "nsys-ui";
   inherit (nsight_out) version;
   targetPkgs =
