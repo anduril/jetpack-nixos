@@ -176,8 +176,10 @@ in
         echo "removing existing symlink $PWD/lib64"
         rm "$PWD/lib64"
       fi
-      echo "symlinking $PWD/lib64 -> $PWD/lib"
-      ln -rs "$PWD/lib" "$PWD/lib64"
+      if [[ -n "$(find "$PWD/lib" -not \( -path "$PWD/lib/stubs" -prune \) -name \*.so)" ]] ; then
+        echo "symlinking $PWD/lib64 -> $PWD/lib"
+        ln -rs "$PWD/lib" "$PWD/lib64"
+      fi
     fi
 
     if [[ -d "$PWD/etc/ld.so.conf.d" ]]; then
