@@ -205,7 +205,7 @@ let
     else
       throw "Unsupported architecture";
 
-  jetson-edk2-uefi =
+  mkStuartDrv = platformBuild: 
     # TODO: edk2.mkDerivation doesn't have a way to override the edk version used!
     # Make it not via passthru ?
     stdenv.mkDerivation (finalAttrs: {
@@ -290,8 +290,8 @@ let
       '';
 
       buildPhase = ''
-        stuart_setup -c edk2-nvidia/Platform/NVIDIA/Jetson/PlatformBuild.py
-        stuart_build -c edk2-nvidia/Platform/NVIDIA/Jetson/PlatformBuild.py --target ${buildTarget}
+        stuart_setup -c ${platformBuild}
+        stuart_build -c ${platformBuild} --target ${buildTarget}
       '';
 
       installPhase = ''
@@ -300,6 +300,9 @@ let
         runHook postInstall
       '';
     });
+
+  jetson-edk2-uefi = mkStuartDrv "edk2-nvidia/Platform/NVIDIA/Jetson/PlatformBuild.py";
+  jetson-edk2-uefi-minimal = mkStuartDrv "edk2-nvidia/Platform/NVIDIA/JetsonMinimal/PlatformBuild.py";
 
   uefi-firmware = runCommand "uefi-firmware-${l4tMajorMinorPatchVersion}"
     {
@@ -320,8 +323,12 @@ let
         cp $filename $out/dtbs/$(basename "$filename" ".dtb").dtbo
       done
 
+      python3 ${edk2-nvidia}/Silicon/NVIDIA/edk2nv/FormatUefiBinary.py \
+        ${jetson-edk2-uefi-minimal}/FV/UEFI_NS.Fv \
+        $out/uefi_jetson_minimal.bin
+
       # Get rid of any string references to source(s)
-      nuke-refs $out/uefi_jetson.bin
+      nuke-refs $out/uefi_jetson.bin $out/uefi_jetson_minimal.bin
     '';
 in
 {
