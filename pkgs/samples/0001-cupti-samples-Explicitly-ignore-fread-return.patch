@@ -1,0 +1,28 @@
+From c9c6455af16a0d325fafc48c20d17f14796576d8 Mon Sep 17 00:00:00 2001
+From: Elliot Berman <eberman@anduril.com>
+Date: Tue, 29 Apr 2025 16:36:27 -0700
+Subject: [PATCH 1/2] cupti-samples: Explicitly ignore fread() return
+
+Suppresses -Wunused-result.
+---
+ extensions/include/c_util/FileOp.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/extensions/include/c_util/FileOp.h b/extensions/include/c_util/FileOp.h
+index ae0bf76..0e187c6 100644
+--- a/extensions/include/c_util/FileOp.h
++++ b/extensions/include/c_util/FileOp.h
+@@ -44,7 +44,7 @@ bool ReadBinaryFile(const char* pFileName, std::vector<uint8_t>& image)
+     }
+ 
+     image.resize((size_t)fileLength);
+-    fread(&image[0], 1, image.size(), fp);
++    (void)fread(&image[0], 1, image.size(), fp);
+     fclose(fp);
+     return true;
+-}
+\ No newline at end of file
++}
+-- 
+2.49.0
+

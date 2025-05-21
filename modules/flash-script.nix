@@ -42,7 +42,7 @@ let
       fi
 
       CUR_VER=$(cat /sys/devices/virtual/dmi/id/bios_version)
-      NEW_VER=${pkgs.nvidia-jetpack.l4tVersion}
+      NEW_VER=${pkgs.nvidia-jetpack.l4tMajorMinorPatchVersion}${lib.optionalString (cfg.majorVersion == "6") "-nix"}
 
       if [[ "$CUR_VER" != "$NEW_VER" ]]; then
         echo "Current Jetson firmware version is: $CUR_VER"
