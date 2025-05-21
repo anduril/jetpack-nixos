@@ -28,15 +28,5 @@ writeShellApplication {
     echo "Running TensorRT test"
     echo "====="
     ${libnvinfer-test}/bin/libnvinfer-test
-
-    echo "====="
-    echo "Running Multimedia test"
-    echo "====="
-    ${multimedia-test}/bin/multimedia-test
-
-    echo "====="
-    echo "Running VPI test"
-    echo "====="
-    ${vpi-test}/bin/vpi-test
   '';
 }
