@@ -98,6 +98,13 @@ let
       # using one from the kernel-dtb partition.
       # See: https://github.com/anduril/jetpack-nixos/pull/18
       ./edk2-uefi-dtb.patch
+
+      # Include patches to fix "Assertion 3" mentioned here:
+      # https://forums.developer.nvidia.com/t/assertion-issue-in-uefi-during-boot/315628
+      # From this PR: https://github.com/NVIDIA/edk2-nvidia/pull/110
+      # As of (2025-05-23), this is still not fixed in any release branch of 35.x.x
+      ./0001-fix-varint-read-records-per-erase-block-and-fix-leak.patch
+      ./0002-fix-bug-in-block-erase-logic.patch
     ];
     postPatch = lib.optionalString errorLevelInfo ''
       sed -i 's#PcdDebugPrintErrorLevel|.*#PcdDebugPrintErrorLevel|0x8000004F#' Platform/NVIDIA/NVIDIA.common.dsc.inc
