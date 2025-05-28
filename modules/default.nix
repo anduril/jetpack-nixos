@@ -42,6 +42,12 @@ in
     hardware.nvidia-jetpack = {
       enable = mkEnableOption "NVIDIA Jetson device support";
 
+      majorVersion = mkOption {
+        default = "5";
+        type = types.enum [ "5" ];
+        description = "Jetpack major version to use";
+      };
+
       configureCuda = mkOption {
         default = true;
         type = types.bool;
@@ -191,7 +197,7 @@ in
     # user's overlay is merged before ours and that overlay depends on
     # something defined in our overlay.
     nixpkgs.overlays = lib.mkBefore [
-      (import ../overlay.nix)
+      (import ../jetpack${cfg.majorVersion}-overlay.nix)
       (import ../overlay-with-config.nix config)
     ];
 
