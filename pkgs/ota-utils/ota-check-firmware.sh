@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 FW_VER=$(cat /sys/devices/virtual/dmi/id/bios_version)
-SW_VER=@l4tVersion@
+SW_VER=@l4tMajorMinorPatchVersion@
 
 echo "Current firmware version is: ${FW_VER}"
 echo "Current software version is: ${SW_VER}"

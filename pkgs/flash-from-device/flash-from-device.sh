@@ -75,7 +75,7 @@ program_spi_partition() {
     # within the defined BCT partition
     if [ "$partname" = "BCT" ]; then
         local slotsize
-        slotsize=$(cat /sys/class/mtd/mtd0/erasesize)
+        slotsize=16384
         if [ -z "$slotsize" ]; then
             return 1
         fi
@@ -147,7 +147,7 @@ erase_bootdev() {
     BOOTDEV_TYPE=
 
     # Detect type to erase
-    while IFS=", " read -r partnumber partloc start_location partsize partfile partattrs partsha; do
+    while IFS=", " read -r partnumber partloc start_location partsize partfile filesize partattrs partsha; do
         devnum=$(echo "$partloc" | cut -d':' -f 1)
         instnum=$(echo "$partloc" | cut -d':' -f 2)
         partname=$(echo "$partloc" | cut -d':' -f 3)

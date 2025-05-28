@@ -1,0 +1,13 @@
+diff --git a/Silicon/NVIDIA/edk2nv/stuart/builder.py b/Silicon/NVIDIA/edk2nv/stuart/builder.py
+index 692400d2..f4e37d05 100644
+--- a/Silicon/NVIDIA/edk2nv/stuart/builder.py
++++ b/Silicon/NVIDIA/edk2nv/stuart/builder.py
+@@ -323,7 +323,7 @@ class NVIDIAPlatformBuilder(UefiBuilder):
+                     self.settings.GetGuid(), reason_dynamic)
+ 
+         # Set additional build variables
+-        cur_time = datetime.datetime.now()
++        cur_time = datetime.datetime.fromtimestamp(int(os.getenv("SOURCE_DATE_EPOCH")))
+         build_ts = cur_time.astimezone().replace(microsecond=0).isoformat()
+         self.env.SetValue("BLD_*_BUILD_DATE_TIME", build_ts, reason_dynamic)
+         epoch_time = int(time.time())

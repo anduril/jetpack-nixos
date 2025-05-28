@@ -1,6 +1,6 @@
-{ deb-builder }:
+{ deb-builder, cudaOlder }:
 deb-builder {
-  sourceName = "cuda-thrust";
+  sourceName = "cuda-${if cudaOlder "12" then "thrust" else "cccl"}";
   packageName = "cuda_cccl";
   outputs = [
     "out"

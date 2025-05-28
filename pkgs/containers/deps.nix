@@ -2,6 +2,7 @@
 , runCommand
 , dpkg
 , debs
+, l4tMajorMinorPatchVersion
 }:
 
 runCommand "container-deps" { nativeBuildInputs = [ dpkg ]; }
@@ -21,4 +22,4 @@ runCommand "container-deps" { nativeBuildInputs = [ dpkg ]; }
           fi
         '')
         debFiles)))
-      (lib.importJSON ./l4t.json)))
+      (lib.importJSON ./r${lib.versions.majorMinor l4tMajorMinorPatchVersion}-l4t.json)))

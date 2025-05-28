@@ -4,6 +4,7 @@
 , lib
 , python3
 , stdenv
+, gmp
 }:
 let
   inherit (lib.attrsets) recursiveUpdate;
@@ -17,6 +18,7 @@ prevAttrs: {
 
   buildInputs =
     prevAttrs.buildInputs or [ ]
+    ++ optionals (cudaAtLeast "12") [ gmp ]
     # aarch64, sbsa needs expat
     ++ optionals stdenv.hostPlatform.isAarch64 [ expat ];
 
@@ -25,12 +27,11 @@ prevAttrs: {
     prevAttrs.postInstall or ""
     # Remove binaries requiring Python3 versions we do not have
     + optionalString (cudaAtLeast "12.5") ''
-      pushd "''${!outputBin:?}/bin" >/dev/null
       echo "removing cuda-gdb-python*-tui binaries for Python 3 versions we do not have"
-      mv "cuda-gdb-python${python3MajorMinorVersion}-tui" ../
-      rm -f cuda-gdb-python*-tui
-      mv "../cuda-gdb-python${python3MajorMinorVersion}-tui" . 
-      popd >/dev/null
+      find "''${!outputBin:?}/bin" \
+        -name cuda-gdb-python\*-tui \
+        \( ! -name "cuda-gdb-python${python3MajorMinorVersion}-tui" \) \
+        -print -delete
     '';
 
   passthru = recursiveUpdate (prevAttrs.passthru or { }) {

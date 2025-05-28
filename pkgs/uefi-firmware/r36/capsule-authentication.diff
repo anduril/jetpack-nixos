@@ -1,0 +1,14 @@
+diff --git a/Platform/NVIDIA/NVIDIA.common.dsc.inc b/Platform/NVIDIA/NVIDIA.common.dsc.inc
+index 8e8ddbbe..84b8a84b 100644
+--- a/Platform/NVIDIA/NVIDIA.common.dsc.inc
++++ b/Platform/NVIDIA/NVIDIA.common.dsc.inc
+@@ -945,6 +945,9 @@ gEfiSecurityPkgTokenSpaceGuid.PcdSingleBootApplicationGuid|{ GUID("cbf481fb-b373
+   gNVIDIATokenSpaceGuid.PcdNvLogToScratchRegs|TRUE
+ !endif
+ 
++  !include PublicCapsuleKey.cer.gEfiSecurityPkgTokenSpaceGuid.PcdPkcs7CertBuffer.inc
++  !include PublicCapsuleKey.cer.gFmpDevicePkgTokenSpaceGuid.PcdFmpDevicePkcs7CertBufferXdr.inc
++
+ [PcdsDynamicDefault]
+   #
+   # Enable emulated variable NV mode in variable driver.
