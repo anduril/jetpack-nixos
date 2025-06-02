@@ -14,8 +14,10 @@ finalAttrs: prevAttrs: {
   # Not sure about the version number though!
   # NOTE: Add symlinks inside $stubs/lib so autoPatchelfHook can find them -- it doesn't recurse into subdirectories.
   postInstall =
-    prevAttrs.postInstall or ""
-    + optionalString (elem "stubs" finalAttrs.outputs) ''
+    (prevAttrs.postInstall or "") + ''
+      # What this is pointing to was moved by multi-output logic, remove
+      [[ -L ''${!outputLib}/lib64 ]] && rm ''${!outputLib}/lib64
+    '' + optionalString (elem "stubs" finalAttrs.outputs) ''
       pushd "''${!outputStubs:?}/lib/stubs" >/dev/null
       if [[ -f libnvidia-ml.so && ! -f libnvidia-ml.so.1 ]]; then
         echo "creating versioned symlink for libnvidia-ml.so stub"
