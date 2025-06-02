@@ -332,7 +332,10 @@ in
   # TODO(@connorbaker): https://github.com/NixOS/nixpkgs/issues/323126.
   # _multioutPropagateDev() currently expects a space-separated string rather than an array.
   # Because it is a postFixup hook, we correct it in preFixup.
-  preFixup = ''
+  preFixup = lib.optionalString stdenv.hostPlatform.isAarch64 ''
+    # What this is pointing to was moved by multi-output logic, remove
+    [[ -L ''${!outputLib}/lib64 ]] && rm ''${!outputLib}/lib64
+  '' + ''
     echo "converting propagatedBuildOutputs to a space-separated string"
     export propagatedBuildOutputs="''${propagatedBuildOutputs[@]}"
   '';
