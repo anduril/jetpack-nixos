@@ -1,6 +1,6 @@
 # NixOS module for NVIDIA Jetson devices
 
-This repository packages components from NVIDIA's [Jetpack SDK](https://developer.nvidia.com/embedded/jetpack) for use with NixOS, including:
+This repository packages components from NVIDIA's [JetPack SDK](https://developer.nvidia.com/embedded/jetpack) for use with NixOS, including:
  * Platform firmware flashing scripts
  * A 5.10 Linux kernel from NVIDIA, which includes some open-source drivers like nvgpu
  * An [EDK2-based UEFI firmware](https://github.com/NVIDIA/edk2-nvidia)
@@ -11,19 +11,22 @@ This repository packages components from NVIDIA's [Jetpack SDK](https://develope
    - Graphics: Wayland, GBM, EGL, Vulkan
    - Power/fan control: nvpmodel, nvfancontrol
 
-This package is based on the Jetpack 5 release, and will only work with devices supported by Jetpack 5.1:
- * Jetson Orin AGX
- * Jetson Orin NX
- * Jetson Xavier AGX
- * Jetson Xavier NX
+This package supports JetPack 5 and 6. It works with NVIDIA's developer kits supported by these versions only:
 
-The Jetson Nano, TX2, and TX1 devices are _not_ supported, since support for them was dropped upstream in Jetpack 5.
-In the future, when the Orin Nano is released, it should be possible to make it work as well.
+|       Device       | JetPack 5 | JetPack 6 |
+| ------------------ | --------- | --------- |
+| Jetson Orin AGX    |     ✓     |     ✓     |
+| Jetson Orin NX     |     ✓     |     ✓     |
+| Jetson Orin Nano   |     ✓     |     ✓     |
+| Jetson Xavier AGX  |     ✓     |           |
+| Jetson Xavier NX   |     ✓     |           |
+
+The Jetson Nano, TX2, and TX1 devices are _not_ supported, since support for them was dropped upstream in JetPack 5.
 
 ## Getting started
 
 ### Flashing UEFI firmware
-This step may be optional if your device already has recent-enough firmware which includes UEFI. (Post-Jetpack 5. Only newly shipped Orin devices might have this)
+This step may be optional if your device already has recent-enough firmware which includes UEFI. (Post-JetPack 5. Only newly shipped Orin devices might have this)
 If you are unsure, I'd recommend flashing the firmware anyway.
 
 Plug in your Jetson device, press the "power" button" and ensure the power light turns on.
@@ -49,7 +52,7 @@ At this point, your device should have a working UEFI firmware accessible either
 
 Now, build and write the customized installer ISO to a USB drive:
 ```shell
-$ nix build github:anduril/jetpack-nixos#iso_minimal # iso_minimal_jp5 for Xavier (or otherwise wanting to use Jetpack 5)
+$ nix build github:anduril/jetpack-nixos#iso_minimal # iso_minimal_jp5 for Xavier (or otherwise wanting to use JetPack 5)
 $ sudo dd if=./result/iso/nixos-22.11pre-git-aarch64-linux.iso of=/dev/sdX bs=1M oflag=sync status=progress
 ```
 (Replace `/dev/sdX` with the correct path for your USB drive)
@@ -95,6 +98,20 @@ Concretely, that means that you cannot modify the EFI variables from Linux, so U
 You may need to enter the firmware menu and reorder it manually so NixOS will boot first.
 (See [this issue](https://forums.developer.nvidia.com/t/using-uefi-runtime-variables-on-xavier-agx/227970))
 
+### JetPack Versions
+The major JetPack version may be changed by setting `hardware.nvidia-jetpack.majorVersion`.
+It defaults to the latest version supported by the board (e.g. JetPack 6 for Orin and JetPack 5 for Xavier).
+The "generic" som defaults to JetPack 6.
+
+Note that the JetPack firmware of a given version is incompatible with the kernel and rootfs of
+the other. You cannot run the JetPack 5 firmware with the JetPack 6 kernel (and vice versa). Be
+certain when upgrading that you are able to update both simulatenously. 
+
+If not installing JetPack 6 firmware via flashing scripts, it is recommended to install the
+JetPack 6 bootloader configuration (without live switch), then install the capsule update,
+and finally reboot. The effect is that the device reboots, installs the JetPack 6 firmware
+via a capsule update, and when finished, boots into a NixOS configuration for JetPack 6.
+
 ### Graphical Output
 As of 2023-12-09, the status of graphical output on Jetsons is described below.
 If you have problems with configurations that are expected to work, try different ports (HDMI/DP/USB-C), different cables, and rebooting with the cables initially connected or disconnected.
@@ -127,7 +144,7 @@ Set `hardware.nvidia-jetpack.modesetting.enable = true;`
 Weston and sway have been tested working on Orin devices, but do not work on Xavier devices.
 
 ### Updating firmware from device
-Recent versions of Jetpack (>=5.1) support updating the device firmware from the device using the UEFI Capsule update mechanism.
+Recent versions of JetPack (>=5.1) support updating the device firmware from the device using the UEFI Capsule update mechanism.
 This can be done as a more convenient alternative to physically attaching to the device and re-running the flash script.
 These updates can be performed automatically after a `nixos-rebuild switch` if the `hardware.nvidia-jetpack.bootloader.autoUpdate` setting is set to true.
 Otherwise, the instructions to apply the update manually are below.
