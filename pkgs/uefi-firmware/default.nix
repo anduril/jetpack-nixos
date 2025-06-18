@@ -159,11 +159,12 @@ let
 
   buildTarget = if debugMode then "DEBUG" else "RELEASE";
 
-  jetson-edk2-uefi =
+  mkJetsonUefi =
+    platform:
     # TODO: edk2.mkDerivation doesn't have a way to override the edk version used!
     # Make it not via passthru ?
     stdenv.mkDerivation (finalAttrs: {
-      pname = "jetson-edk2-uefi";
+      pname = "${platform}-edk2-uefi";
       version = l4tVersion;
 
       # Initialize the build dir with the build tools from edk2
@@ -223,7 +224,7 @@ let
 
         # The BUILDID_STRING and BUILD_DATE_TIME are used
         # just by nvidia, not generic edk2
-        build -a ${targetArch} -b ${buildTarget} -t ${buildType} -p Platform/NVIDIA/Jetson/Jetson.dsc -n $NIX_BUILD_CORES \
+        build -a ${targetArch} -b ${buildTarget} -t ${buildType} -p Platform/NVIDIA/${platform}/${platform}.dsc -n $NIX_BUILD_CORES \
           -D BUILDID_STRING=${l4tVersion} \
           -D BUILD_DATE_TIME="$(date --utc --iso-8601=seconds --date=@$SOURCE_DATE_EPOCH)" \
           ${lib.optionalString (trustedPublicCertPemFile != null) "-D CUSTOM_CAPSULE_CERT"} \
@@ -239,6 +240,9 @@ let
       '';
     });
 
+  jetson-edk2-uefi = mkJetsonUefi "Jetson";
+  jetson-edk-uefi-stmm-optee = mkJetsonUefi "StandaloneMmOptee";
+
   uefi-firmware = runCommand "uefi-firmware-${l4tVersion}"
     {
       nativeBuildInputs = [ python3 nukeReferences ];
@@ -252,6 +256,10 @@ let
       ${jetson-edk2-uefi}/AARCH64/L4TLauncher.efi \
       $out/L4TLauncher.efi
 
+    python3 ${edk2-nvidia}/Silicon/NVIDIA/Tools/FormatUefiBinary.py \
+      ${jetson-edk-uefi-stmm-optee}/FV/UEFI_MM.Fv \
+      $out/standalonemm_optee.bin
+
     mkdir -p $out/dtbs
     for filename in ${jetson-edk2-uefi}/AARCH64/Silicon/NVIDIA/Tegra/DeviceTree/DeviceTree/OUTPUT/*.dtb; do
       cp $filename $out/dtbs/$(basename "$filename" ".dtb").dtbo
@@ -259,6 +267,7 @@ let
 
     # Get rid of any string references to source(s)
     nuke-refs $out/uefi_jetson.bin
+    nuke-refs $out/standalonemm_optee.bin
   '';
 in
 {

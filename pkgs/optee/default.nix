@@ -10,6 +10,7 @@
 , nukeReferences
 , fetchpatch
 , gitRepos
+, uefi-firmware
 }:
 
 let
@@ -63,7 +64,7 @@ let
         "PLATFORM=tegra"
         "PLATFORM_FLAVOR=${socType}"
         "CFG_WITH_STMM_SP=y"
-        "CFG_STMM_PATH=${bspSrc}/bootloader/standalonemm_optee_${socType}.bin"
+        "CFG_STMM_PATH=${uefi-firmware}/standalonemm_optee.bin"
         "NV_CCC_PREBUILT=${nvCccPrebuilt}"
         "O=$(out)"
       ]
