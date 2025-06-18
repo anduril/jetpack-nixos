@@ -82,7 +82,7 @@ in
       # Nvidia's recommended toolchain is gcc9:
       # https://nv-tegra.nvidia.com/r/gitweb?p=tegra/optee-src/nv-optee.git;a=blob;f=optee/atf_and_optee_README.txt;h=591edda3d4ec96997e054ebd21fc8326983d3464;hb=5ac2ab218ba9116f1df4a0bb5092b1f6d810e8f7#l33
       stdenv = final.gcc9Stdenv;
-      inherit (self) bspSrc gitRepos l4tVersion;
+      inherit (self) bspSrc gitRepos l4tVersion uefi-firmware;
     }) buildTOS buildOpteeTaDevKit opteeClient;
     genEkb = self.callPackage ./pkgs/optee/gen-ekb.nix { };
 
