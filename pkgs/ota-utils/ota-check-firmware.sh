@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
-FW_VER=$(cat /sys/devices/virtual/dmi/id/bios_version)
-SW_VER=@l4tVersion@
+CURRENT_FW_VER=$(cat /sys/devices/virtual/dmi/id/bios_version || echo Unknown)
+EXPECTED_FW_VER=$(cat /etc/jetson_expected_bios_version || echo Unknown)
 
-echo "Current firmware version is: ${FW_VER}"
-echo "Current software version is: ${SW_VER}"
+echo "Current firmware version is: ${CURRENT_FW_VER}"
+echo "Expected firmware version is: ${EXPECTED_FW_VER}"
 
-if [[ "$FW_VER" != "$SW_VER" ]]; then
+if [[ "$CURRENT_FW_VER" != "$EXPECTED_FW_VER" ]]; then
     exit 1
 fi

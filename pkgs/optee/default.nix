@@ -64,10 +64,10 @@ let
         "PLATFORM=tegra"
         "PLATFORM_FLAVOR=${socType}"
         "CFG_WITH_STMM_SP=y"
-        "CFG_STMM_PATH=${uefi-firmware}/standalonemm_optee.bin"
         "NV_CCC_PREBUILT=${nvCccPrebuilt}"
         "O=$(out)"
       ]
+      ++ (lib.optional (uefi-firmware != null) "CFG_STMM_PATH=${uefi-firmware}/standalonemm_optee.bin")
       ++ (lib.optional (taPublicKeyFile != null) "TA_PUBLIC_KEY=${taPublicKeyFile}")
       ++ extraMakeFlags;
     in

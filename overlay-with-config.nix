@@ -44,6 +44,22 @@ final: prev: (
         errorLevelInfo = cfg.firmware.uefi.errorLevelInfo;
         edk2NvidiaPatches = cfg.firmware.uefi.edk2NvidiaPatches;
         edk2UefiPatches = cfg.firmware.uefi.edk2UefiPatches;
+
+        # A hash of something that represents everything that goes into the
+        # platform firmware so that we can include it in the firmware version.
+        # BUP should include everything relevant. However, bup also includes a
+        # reference to uefi-firmware which would cause infinite recursion while
+        # calculating the derivation hashes, so we need to "quotient out" the
+        # uefi-firmware.  We do a fancy override scope here to make a version
+        # of the bup that is otherwise identical, but does not depend on
+        # uefi-firmware. The level of magic here can be frightening.
+        uniqueHash =
+          let
+            cursedBup = (finalJetpack.overrideScope (a: b: {
+              uefi-firmware = null;
+            })).bup;
+          in
+          builtins.hashString "sha256" "${cursedBup}";
       } // lib.optionalAttrs cfg.firmware.uefi.capsuleAuthentication.enable {
         inherit (cfg.firmware.uefi.capsuleAuthentication) trustedPublicCertPemFile;
       });
