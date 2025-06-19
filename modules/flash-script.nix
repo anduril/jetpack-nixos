@@ -10,7 +10,7 @@ let
 
   cfg = config.hardware.nvidia-jetpack;
 
-  canUpdateFirmware = cfg.firmware.autoUpdate && cfg.som != null && cfg.flashScriptOverrides.targetBoard != null;
+  canUpdateFirmware = cfg.firmware.autoUpdate && cfg.som != "generic" && cfg.flashScriptOverrides.targetBoard != null;
 
   updateFirmware = pkgs.writeShellApplication {
     name = "update-jetson-firmware";
@@ -570,7 +570,7 @@ in
         '';
     };
 
-    environment.systemPackages = lib.mkIf (cfg.firmware.autoUpdate && cfg.som != null && cfg.flashScriptOverrides.targetBoard != null) [
+    environment.systemPackages = lib.mkIf canUpdateFirmware [
       (pkgs.writeShellScriptBin "ota-apply-capsule-update-included" ''
         ${pkgs.nvidia-jetpack.otaUtils}/bin/ota-apply-capsule-update ${pkgs.nvidia-jetpack.uefiCapsuleUpdate}
       '')
