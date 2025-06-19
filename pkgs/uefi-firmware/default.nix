@@ -16,6 +16,7 @@
 , applyPatches
 , nukeReferences
 , l4tVersion
+, uniqueHash ? ""
 , # Optional path to a boot logo that will be converted and cropped into the format required
   bootLogo ? null
 , # Patches to apply to edk2-nvidia source tree
@@ -222,10 +223,13 @@ let
       buildPhase = ''
         runHook preBuild
 
+        # Keep in sync with passthru.biosVersion below
+        BUILD_HASH=$(printf "%s-%s" "${uniqueHash}" "$out" | sha256sum | head -c 12)
+
         # The BUILDID_STRING and BUILD_DATE_TIME are used
         # just by nvidia, not generic edk2
         build -a ${targetArch} -b ${buildTarget} -t ${buildType} -p Platform/NVIDIA/${platform}/${platform}.dsc -n $NIX_BUILD_CORES \
-          -D BUILDID_STRING=${l4tVersion} \
+          -D BUILDID_STRING="${l4tVersion}-''${BUILD_HASH}" \
           -D BUILD_DATE_TIME="$(date --utc --iso-8601=seconds --date=@$SOURCE_DATE_EPOCH)" \
           ${lib.optionalString (trustedPublicCertPemFile != null) "-D CUSTOM_CAPSULE_CERT"} \
           $buildFlags
@@ -246,6 +250,8 @@ let
   uefi-firmware = runCommand "uefi-firmware-${l4tVersion}"
     {
       nativeBuildInputs = [ python3 nukeReferences ];
+      # Keep in sync with BUILDID_STRING and BUILD_HASH above
+      passthru.biosVersion = "${l4tVersion}-" + lib.substring 0 12 (builtins.hashString "sha256" "${uniqueHash}-${jetson-edk2-uefi}");
     } ''
     mkdir -p $out
     python3 ${edk2-nvidia}/Silicon/NVIDIA/Tools/FormatUefiBinary.py \

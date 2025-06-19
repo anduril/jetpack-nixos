@@ -41,14 +41,7 @@ let
         exit 1
       fi
 
-      CUR_VER=$(cat /sys/devices/virtual/dmi/id/bios_version)
-      NEW_VER=${pkgs.nvidia-jetpack.l4tVersion}
-
-      if [[ "$CUR_VER" != "$NEW_VER" ]]; then
-        echo "Current Jetson firmware version is: $CUR_VER"
-        echo "New Jetson firmware version is: $NEW_VER"
-        echo
-
+      if ! ota-check-firmware; then
         # Set efi vars here as well as in systemd service, in case we're
         # upgrading from an older nixos generation that doesn't have the
         # systemd service. Plus, this ota-setup-efivars will be from the
@@ -575,5 +568,10 @@ in
         ${pkgs.nvidia-jetpack.otaUtils}/bin/ota-apply-capsule-update ${pkgs.nvidia-jetpack.uefiCapsuleUpdate}
       '')
     ];
+
+    # biosVersion can only be evaluated if there is buildable firmware, which requires som being set
+    environment.etc = lib.mkIf (cfg.som != "generic") {
+      jetson_expected_bios_version.text = pkgs.nvidia-jetpack.uefi-firmware.biosVersion;
+    };
   };
 }
