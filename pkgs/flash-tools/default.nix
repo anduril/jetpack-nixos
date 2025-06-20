@@ -29,14 +29,14 @@
 , openssl
 , sbsigntool
 , bspSrc
-, l4tVersion
+, l4tMajorMinorPatchVersion
 , symlinkJoin
 }:
 
 let
   flash-tools = stdenv.mkDerivation {
     pname = "flash-tools";
-    version = l4tVersion;
+    version = l4tMajorMinorPatchVersion;
 
     src = bspSrc;
 
