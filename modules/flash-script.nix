@@ -568,10 +568,5 @@ in
         ${pkgs.nvidia-jetpack.otaUtils}/bin/ota-apply-capsule-update ${pkgs.nvidia-jetpack.uefiCapsuleUpdate}
       '')
     ];
-
-    # biosVersion can only be evaluated if there is buildable firmware, which requires som being set
-    environment.etc = lib.mkIf (cfg.som != "generic") {
-      jetson_expected_bios_version.text = pkgs.nvidia-jetpack.uefi-firmware.biosVersion;
-    };
   };
 }

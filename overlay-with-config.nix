@@ -36,6 +36,9 @@ final: prev: (
 
       otaUtils = prevJetpack.otaUtils.override {
         inherit (config.boot.loader.efi) efiSysMountPoint;
+
+        # uefi-firmware can be evaluated only if som is set
+        expectedBiosVersion = if (cfg.som != "generic") then finalJetpack.uefi-firmware.biosVersion else "Unknown";
       };
 
       uefi-firmware = prevJetpack.uefi-firmware.override ({

@@ -1,4 +1,4 @@
-{ lib, stdenvNoCC, bash, util-linux, e2fsprogs, tegra-eeprom-tool, efiSysMountPoint ? "/boot" }:
+{ lib, stdenvNoCC, bash, util-linux, e2fsprogs, tegra-eeprom-tool, efiSysMountPoint ? "/boot", expectedBiosVersion ? "Unknown" }:
 
 stdenvNoCC.mkDerivation {
   name = "ota-utils";
@@ -32,6 +32,9 @@ stdenvNoCC.mkDerivation {
         --replace "@ota_helpers@" "$out/share/ota_helpers.func"
       sed -i '2a export PATH=${lib.makeBinPath [ util-linux e2fsprogs tegra-eeprom-tool ]}:$PATH' $out/bin/$fname
     done
+
+    substituteInPlace $out/bin/ota-check-firmware \
+      --replace "@expectedBiosVersion@" "${expectedBiosVersion}"
 
     patchShebangs --host $out/bin
 
