@@ -20,7 +20,7 @@
 , makeWrapper
 , bc
 , debs
-, l4tVersion
+, l4tMajorMinorPatchVersion
 , cudaPackages
 }:
 let
@@ -202,9 +202,9 @@ let
         # well as libnvidia-ptxjitcompiler in the same package. meta-tegra does a
         # similar thing where they pull libnvidia-ptxjitcompiler out of
         # l4t-3d-core and place it in the same package as libcuda.
-        dpkg --fsys-tarfile ${debs.t234.nvidia-l4t-3d-core.src} | tar -xO ./usr/lib/aarch64-linux-gnu/tegra/libnvidia-ptxjitcompiler.so.${l4tVersion} > lib/libnvidia-ptxjitcompiler.so.${l4tVersion}
-        ln -sf libnvidia-ptxjitcompiler.so.${l4tVersion} lib/libnvidia-ptxjitcompiler.so.1
-        ln -sf libnvidia-ptxjitcompiler.so.${l4tVersion} lib/libnvidia-ptxjitcompiler.so
+        dpkg --fsys-tarfile ${debs.t234.nvidia-l4t-3d-core.src} | tar -xO ./usr/lib/aarch64-linux-gnu/tegra/libnvidia-ptxjitcompiler.so.${l4tMajorMinorPatchVersion} > lib/libnvidia-ptxjitcompiler.so.${l4tMajorMinorPatchVersion}
+        ln -sf libnvidia-ptxjitcompiler.so.${l4tMajorMinorPatchVersion} lib/libnvidia-ptxjitcompiler.so.1
+        ln -sf libnvidia-ptxjitcompiler.so.${l4tMajorMinorPatchVersion} lib/libnvidia-ptxjitcompiler.so
       '';
 
     # libcuda.so actually depends on libnvcucompat.so at runtime (probably

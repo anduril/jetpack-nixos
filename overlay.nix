@@ -18,22 +18,22 @@ let
     versions
     ;
 
-  jetpackVersion = "5.1.5";
-  l4tVersion = "35.6.1";
+  jetpackMajorMinorPatchVersion = "5.1.5";
+  l4tMajorMinorPatchVersion = "35.6.1";
   cudaMajorMinorPatchVersion = "11.4.298";
-  cudaVersion = versions.majorMinor cudaMajorMinorPatchVersion;
+  cudaMajorMinorVersion = versions.majorMinor cudaMajorMinorPatchVersion;
 
-  l4tMajorVersion = versions.major l4tVersion;
+  l4tMajorVersion = versions.major l4tMajorMinorPatchVersion;
 
   sourceInfo = import ./sourceinfo {
-    inherit l4tVersion;
+    inherit l4tMajorMinorPatchVersion;
     inherit (final) lib fetchurl fetchgit;
   };
 in
 {
   nvidia-jetpack = makeScope final.newScope (self: {
     inherit (sourceInfo) debs gitRepos;
-    inherit jetpackVersion l4tVersion cudaVersion;
+    inherit jetpackMajorMinorPatchVersion l4tMajorMinorPatchVersion cudaMajorMinorVersion;
 
     callPackages = callPackagesWith (final // self);
 
@@ -42,7 +42,7 @@ in
         # https://developer.nvidia.com/embedded/jetson-linux-archive
         # https://repo.download.nvidia.com/jetson/
         src = final.fetchurl {
-          url = "https://developer.download.nvidia.com/embedded/L4T/r${versions.major l4tVersion}_Release_v${versions.minor l4tVersion}.${versions.patch l4tVersion}/release/Jetson_Linux_R${l4tVersion}_aarch64.tbz2";
+          url = "https://developer.download.nvidia.com/embedded/L4T/r${versions.major l4tMajorMinorPatchVersion}_Release_v${versions.minor l4tMajorMinorPatchVersion}.${versions.patch l4tMajorMinorPatchVersion}/release/Jetson_Linux_R${l4tMajorMinorPatchVersion}_aarch64.tbz2";
           hash = "sha256-nqKEd3R7MJXuec3Q4odDJ9SNTUD1FyluWg/SeeptbUE=";
         };
         # We use a more recent version of bzip2 here because we hit this bug
@@ -55,20 +55,20 @@ in
     '';
 
     # Here for convenience, to see what is in upstream Jetpack
-    unpackedDebs = final.runCommand "unpackedDebs-${l4tVersion}" { nativeBuildInputs = [ final.buildPackages.dpkg ]; } ''
+    unpackedDebs = final.runCommand "unpackedDebs-${l4tMajorMinorPatchVersion}" { nativeBuildInputs = [ final.buildPackages.dpkg ]; } ''
       mkdir -p $out
       ${concatStringsSep "\n" (mapAttrsToList (n: p: "echo Unpacking ${n}; dpkg -x ${p.src} $out/${n}") self.debs.common)}
       ${concatStringsSep "\n" (mapAttrsToList (n: p: "echo Unpacking ${n}; dpkg -x ${p.src} $out/${n}") self.debs.t234)}
     '';
 
     # Also just for convenience,
-    unpackedDebsFilenames = final.runCommand "unpackedDebsFilenames-${l4tVersion}" { nativeBuildInputs = [ final.buildPackages.dpkg ]; } ''
+    unpackedDebsFilenames = final.runCommand "unpackedDebsFilenames-${l4tMajorMinorPatchVersion}" { nativeBuildInputs = [ final.buildPackages.dpkg ]; } ''
       mkdir -p $out
       ${concatStringsSep "\n" (mapAttrsToList (n: p: "echo Extracting file list from ${n}; dpkg --fsys-tarfile ${p.src} | tar --list > $out/${n}") self.debs.common)}
       ${concatStringsSep "\n" (mapAttrsToList (n: p: "echo Extracting file list from ${n}; dpkg --fsys-tarfile ${p.src} | tar --list > $out/${n}") self.debs.t234)}
     '';
 
-    unpackedGitRepos = final.runCommand "unpackedGitRepos-${l4tVersion}" { } (
+    unpackedGitRepos = final.runCommand "unpackedGitRepos-${l4tMajorMinorPatchVersion}" { } (
       mapAttrsToList
         (relpath: repo: ''
           mkdir -p $out/${relpath}
@@ -77,14 +77,14 @@ in
         self.gitRepos
     );
 
-    inherit (final.callPackages ./pkgs/uefi-firmware/r${l4tMajorVersion} { inherit (self) l4tVersion; })
+    inherit (final.callPackages ./pkgs/uefi-firmware/r${l4tMajorVersion} { inherit (self) l4tMajorMinorPatchVersion; })
       edk2-jetson uefi-firmware;
 
     inherit (final.callPackages ./pkgs/optee {
       # Nvidia's recommended toolchain is gcc9:
       # https://nv-tegra.nvidia.com/r/gitweb?p=tegra/optee-src/nv-optee.git;a=blob;f=optee/atf_and_optee_README.txt;h=591edda3d4ec96997e054ebd21fc8326983d3464;hb=5ac2ab218ba9116f1df4a0bb5092b1f6d810e8f7#l33
       stdenv = final.gcc9Stdenv;
-      inherit (self) bspSrc gitRepos l4tVersion uefi-firmware;
+      inherit (self) bspSrc gitRepos l4tMajorMinorPatchVersion uefi-firmware;
     }) buildTOS buildOpteeTaDevKit opteeClient;
     genEkb = self.callPackage ./pkgs/optee/gen-ekb.nix { };
 
@@ -101,11 +101,9 @@ in
 
     cudaPackages = makeScope self.newScope (finalCudaPackages: {
       # Versions
-      inherit (self) cudaVersion;
-      inherit cudaMajorMinorPatchVersion;
-      cudaMajorMinorVersion = finalCudaPackages.cudaVersion;
-      cudaMajorVersion = versions.major finalCudaPackages.cudaVersion;
-      cudaVersionDashes = replaceStrings [ "." ] [ "-" ] cudaVersion;
+      inherit cudaMajorMinorPatchVersion cudaMajorMinorVersion;
+      cudaMajorVersion = versions.major finalCudaPackages.cudaMajorMinorVersion;
+      cudaVersionDashes = replaceStrings [ "." ] [ "-" ] cudaMajorMinorVersion;
 
       # Utilities
       callPackages = callPackagesWith (self // finalCudaPackages);
@@ -131,10 +129,10 @@ in
       inherit (finalSamples) callPackage;
     });
 
-    tests = final.callPackages ./pkgs/tests { inherit l4tVersion; };
+    tests = final.callPackages ./pkgs/tests { inherit l4tMajorMinorPatchVersion; };
 
     kernelPackagesOverlay = final: _: {
-      nvidia-display-driver = final.callPackage ./pkgs/kernels/r${l4tMajorVersion}/display-driver.nix { inherit (self) gitRepos l4tVersion; };
+      nvidia-display-driver = final.callPackage ./pkgs/kernels/r${l4tMajorVersion}/display-driver.nix { inherit (self) gitRepos l4tMajorMinorPatchVersion; };
     };
 
     kernel = self.callPackage ./pkgs/kernels/r${l4tMajorVersion} { kernelPatches = [ ]; };
@@ -172,6 +170,6 @@ in
   # attribute set, we cannot use self.callPackages because we would end up with infinite recursion.
   # Instead, we must either use final.callPackages or packagesFromDirectoryRecursive.
   // final.callPackages ./pkgs/l4t {
-    inherit (self) debs l4tVersion;
+    inherit (self) debs l4tMajorMinorPatchVersion;
   });
 }
