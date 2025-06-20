@@ -24,16 +24,6 @@ let
         exit 0
       fi
 
-      # This directory is populated by ota-apply-capsule-update, don't run if
-      # we already have a capsule update present on the ESP. We check the exact
-      # path that we populate because it is possible for multiple capsule
-      # updates to be applied at once, so we don't want other files in this
-      # directory to influence our behavior.
-      if [[ -e ${config.boot.loader.efi.efiSysMountPoint}/EFI/UpdateCapsule/TEGRA_BL.Cap ]]; then
-        echo "Existing capsule update for platform firmware exists, exiting"
-        exit 0
-      fi
-
       # Jetpack 5.0 didn't expose this DMI variable,
       if [[ ! -f /sys/devices/virtual/dmi/id/bios_version ]]; then
         echo "Unable to determine current Jetson firmware version."
