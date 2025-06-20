@@ -78,7 +78,7 @@ final: prev: (
 
       flashInitrd =
         let
-          modules = [ "qspi_mtd" "spi_tegra210_qspi" "at24" "spi_nor" ];
+          modules = if lib.versions.majorMinor config.system.build.kernel.version == "5.10" then [ "qspi_mtd" "spi_tegra210_qspi" "at24" "spi_nor" ] else [ "mtdblock" "spi_tegra210_quad" ];
           modulesClosure = prev.makeModulesClosure {
             rootModules = modules;
             kernel = config.system.modulesTree;
@@ -140,7 +140,7 @@ final: prev: (
         dtbsDir = config.hardware.deviceTree.package;
       } // (builtins.removeAttrs args [ "additionalDtbOverlays" ]));
 
-      bup = prev.runCommand "bup-${config.networking.hostName}-${finalJetpack.l4tVersion}"
+      bup = prev.runCommand "bup-${config.networking.hostName}-${finalJetpack.l4tMajorMinorPatchVersion}"
         {
           inherit (cfg.firmware.secureBoot) requiredSystemFeatures;
         }
@@ -152,8 +152,23 @@ final: prev: (
               ${cfg.firmware.secureBoot.preSignCommands final.buildPackages}
             '' + lib.concatMapStringsSep "\n"
               (v: with v;
-              "BOARDID=${boardid} BOARDSKU=${boardsku} FAB=${fab} BOARDREV=${boardrev} FUSELEVEL=${fuselevel} CHIPREV=${chiprev} ${lib.optionalString (chipsku != null) "CHIP_SKU=${chipsku}"} ${lib.optionalString (ramcode != null) "RAMCODE=${ramcode}"} ./flash.sh ${lib.optionalString (cfg.flashScriptOverrides.partitionTemplate != null) "-c flash.xml"} --no-flash --bup --multi-spec ${builtins.toString cfg.flashScriptOverrides.flashArgs}"
-              )
+              (lib.concatStringsSep " " [
+                "BOARDID=${boardid}"
+                "BOARDSKU=${boardsku}"
+                "FAB=${fab}"
+                "BOARDREV=${boardrev}"
+                "FUSELEVEL=${fuselevel}"
+                "CHIPREV=${chiprev}"
+                (lib.optionalString (chipsku != null) "CHIP_SKU=${chipsku}")
+                (lib.optionalString (ramcode != null) "RAMCODE=${ramcode}")
+                "./flash.sh"
+                (lib.optionalString (cfg.flashScriptOverrides.partitionTemplate != null) "-c flash.xml")
+                "--no-flash"
+                (lib.optionalString (cfg.majorVersion == "6") "--sign")
+                "--bup"
+                "--multi-spec"
+                (builtins.toString cfg.flashScriptOverrides.flashArgs)
+              ]))
               cfg.firmware.variants;
           }) + ''
           mkdir -p $out
@@ -163,7 +178,7 @@ final: prev: (
       # See l4t_generate_soc_bup.sh
       # python ${edk2-jetson}/BaseTools/BinWrappers/PosixLike/GenerateCapsule -v --encode --monotonic-count 1
       # NOTE: providing null public certs here will use the test certs in the EDK2 repo
-      uefiCapsuleUpdate = prev.runCommand "uefi-${config.networking.hostName}-${finalJetpack.l4tVersion}.Cap"
+      uefiCapsuleUpdate = prev.runCommand "uefi-${config.networking.hostName}-${finalJetpack.l4tMajorMinorPatchVersion}.Cap"
         {
           nativeBuildInputs = [ prev.buildPackages.python3 prev.buildPackages.openssl ];
           inherit (cfg.firmware.uefi.capsuleAuthentication) requiredSystemFeatures;
@@ -181,7 +196,7 @@ final: prev: (
           ${finalJetpack.socType}
         '');
 
-      signedFirmware = final.runCommand "signed-${hostName}-${finalJetpack.l4tVersion}"
+      signedFirmware = final.runCommand "signed-${hostName}-${finalJetpack.l4tMajorMinorPatchVersion}"
         { inherit (cfg.firmware.secureBoot) requiredSystemFeatures; }
         (finalJetpack.mkFlashScript final.pkgsBuildBuild.nvidia-jetpack.flash-tools {
           flashCommands = ''

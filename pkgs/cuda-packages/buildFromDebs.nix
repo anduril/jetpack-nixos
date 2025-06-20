@@ -1,4 +1,4 @@
-{ stdenv, debs, lib, dpkg, autoPatchelfHook, autoAddDriverRunpath, cudaVersion }:
+{ stdenv, debs, lib, dpkg, autoPatchelfHook, autoAddDriverRunpath, cudaMajorMinorVersion }:
 
 { pname
 , srcs
@@ -43,11 +43,11 @@ stdenv.mkDerivation (args // {
       rm -rf local
     fi
 
-    if [[ -d cuda-${cudaVersion} ]]; then
-      [[ -L cuda-${cudaVersion}/include ]] && rm -r cuda-${cudaVersion}/include
-      [[ -L cuda-${cudaVersion}/lib64 ]] && rm -r cuda-${cudaVersion}/lib64 && ln -s lib lib64
-      cp -r cuda-${cudaVersion}/. .
-      rm -rf cuda-${cudaVersion}
+    if [[ -d cuda-${cudaMajorMinorVersion} ]]; then
+      [[ -L cuda-${cudaMajorMinorVersion}/include ]] && rm -r cuda-${cudaMajorMinorVersion}/include
+      [[ -L cuda-${cudaMajorMinorVersion}/lib64 ]] && rm -r cuda-${cudaMajorMinorVersion}/lib64 && ln -s lib lib64
+      cp -r cuda-${cudaMajorMinorVersion}/. .
+      rm -rf cuda-${cudaMajorMinorVersion}
     fi
 
     if [[ -d targets ]]; then

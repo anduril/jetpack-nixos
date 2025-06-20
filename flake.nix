@@ -1,6 +1,6 @@
 {
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-24.11";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.05";
   };
 
   outputs = { self, nixpkgs, ... }:
@@ -19,7 +19,7 @@
           self.nixosModules.default
         ];
         # Avoids a bunch of extra modules we don't have in the tegra_defconfig, like "ata_piix",
-        disabledModules = [ "profiles/all-hardware.nix" ];
+        hardware.enableAllHardware = lib.mkForce false;
 
         hardware.nvidia-jetpack.enable = true;
       };
@@ -34,7 +34,9 @@
           buildPlatform = "x86_64-linux";
           hostPlatform = "aarch64-linux";
         };
-
+      };
+      jetpack5_config = {
+        hardware.nvidia-jetpack.majorVersion = "5";
       };
     in
     {
@@ -44,6 +46,12 @@
         };
         installer_minimal_cross = nixpkgs.lib.nixosSystem {
           modules = [ aarch64_cross_config installer_minimal_config ];
+        };
+        installer_minimal_jp5 = nixpkgs.lib.nixosSystem {
+          modules = [ aarch64_config installer_minimal_config jetpack5_config ];
+        };
+        installer_minimal_cross_jp5 = nixpkgs.lib.nixosSystem {
+          modules = [ aarch64_cross_config installer_minimal_config jetpack5_config ];
         };
       };
 
@@ -56,7 +64,7 @@
           let
             supportedConfigurations = lib.listToAttrs (map
               (c: {
-                name = "${c.som}" + (lib.optionalString (c.super or false) "-super") + "-${c.carrierBoard}";
+                name = c.som + lib.optionalString (c.super or false) "-super" + "-${c.carrierBoard}" + lib.optionalString (c ? majorVersion) "-jp${c.majorVersion}";
                 value = c;
               }) [
               { som = "orin-agx"; carrierBoard = "devkit"; }
@@ -65,6 +73,12 @@
               { som = "orin-nano"; carrierBoard = "devkit"; }
               { som = "orin-nx"; carrierBoard = "devkit"; super = true; }
               { som = "orin-nano"; carrierBoard = "devkit"; super = true; }
+              { som = "orin-agx"; carrierBoard = "devkit"; majorVersion = "5"; }
+              { som = "orin-agx-industrial"; carrierBoard = "devkit"; majorVersion = "5"; }
+              { som = "orin-nx"; carrierBoard = "devkit"; majorVersion = "5"; }
+              { som = "orin-nano"; carrierBoard = "devkit"; majorVersion = "5"; }
+              { som = "orin-nx"; carrierBoard = "devkit"; super = true; majorVersion = "5"; }
+              { som = "orin-nano"; carrierBoard = "devkit"; super = true; majorVersion = "5"; }
               { som = "xavier-agx"; carrierBoard = "devkit"; }
               { som = "xavier-agx-industrial"; carrierBoard = "devkit"; } # TODO: Entirely untested
               { som = "xavier-nx"; carrierBoard = "devkit"; }
@@ -89,8 +103,8 @@
             uefiCapsuleUpdates = lib.mapAttrs' (n: c: lib.nameValuePair "uefi-capsule-update-${n}" c.system.build.uefiCapsuleUpdate) supportedNixOSConfigurations;
           in
           {
-            # TODO: Untested
             iso_minimal = self.nixosConfigurations.installer_minimal_cross.config.system.build.isoImage;
+            iso_minimal_jp5 = self.nixosConfigurations.installer_minimal_cross_jp5.config.system.build.isoImage;
 
             inherit (self.legacyPackages.x86_64-linux)
               board-automation python-jetson;
@@ -104,6 +118,7 @@
 
         aarch64-linux = {
           iso_minimal = self.nixosConfigurations.installer_minimal.config.system.build.isoImage;
+          iso_minimal_jp5 = self.nixosConfigurations.installer_minimal_jp5.config.system.build.isoImage;
         };
       };
 
@@ -116,27 +131,31 @@
       formatter = forAllSystems ({ pkgs, ... }: pkgs.nixpkgs-fmt);
 
       legacyPackages = forAllSystems ({ system, ... }:
-        (import nixpkgs {
-          inherit system;
-          config = {
-            allowUnfree = true;
-            cudaCapabilities = [ "7.2" "8.7" ];
-            cudaSupport = true;
-          };
-          overlays = [
-            self.overlays.default
-            (final: prev: {
-              # NOTE: samples (and other packages) may pull in dependencies which depend on CUDA (either directly or
-              # transitively) -- this is problematic for us, because the default CUDA package set is not the one we
-              # construct.
-              # To avoid mixed package sets, we make our CUDA package set the default.
-              inherit (final.nvidia-jetpack) cudaPackages;
-              # TODO: Remove after bumping past 24.11: reset OpenCV's override on cudaPackages.
-              # https://github.com/NixOS/nixpkgs/blob/7ffe0edc685f14b8c635e3d6591b0bbb97365e6c/pkgs/top-level/all-packages.nix#L10540-L10541
-              opencv4 = prev.opencv4.override { inherit (final) cudaPackages; };
-            })
-          ];
-        }).nvidia-jetpack
+        let
+          pkgs =
+            (import nixpkgs {
+              inherit system;
+              config = {
+                allowUnfree = true;
+                cudaCapabilities = [ "7.2" "8.7" ];
+                cudaSupport = true;
+              };
+              overlays = [
+                self.overlays.default
+                (final: prev: {
+                  # NOTE: samples (and other packages) may pull in dependencies which depend on CUDA (either directly or
+                  # transitively) -- this is problematic for us, because the default CUDA package set is not the one we
+                  # construct.
+                  # To avoid mixed package sets, we make our CUDA package set the default.
+                  inherit (final.nvidia-jetpack) cudaPackages;
+                  # TODO: Remove after bumping past 24.11: reset OpenCV's override on cudaPackages.
+                  # https://github.com/NixOS/nixpkgs/blob/7ffe0edc685f14b8c635e3d6591b0bbb97365e6c/pkgs/top-level/all-packages.nix#L10540-L10541
+                  opencv4 = prev.opencv4.override { inherit (final) cudaPackages; };
+                })
+              ];
+            });
+        in
+        pkgs.nvidia-jetpack // { inherit (pkgs) nvidia-jetpack5 nvidia-jetpack6; }
       );
     };
 }
