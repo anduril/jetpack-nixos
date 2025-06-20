@@ -17,8 +17,7 @@ if ! mountpoint -q @efiSysMountPoint@; then
 	exit 1
 fi
 
-mkdir -p @efiSysMountPoint@/EFI/UpdateCapsule
-cp "$capsuleFile" @efiSysMountPoint@/EFI/UpdateCapsule/TEGRA_BL.Cap
+install -Dm0644 "$capsuleFile" @efiSysMountPoint@/EFI/UpdateCapsule/TEGRA_BL.Cap
 sync @efiSysMountPoint@/EFI/UpdateCapsule/TEGRA_BL.Cap
 
 set_efi_var OsIndications-8be4df61-93ca-11d2-aa0d-00e098032b8c "\x07\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00"
