@@ -20,7 +20,12 @@ let
       # update. This script could potentially run in a few places, for example
       # in <nixpkgs/nixos/lib/make-disk-image.nix>.
       if systemd-detect-virt --quiet; then
-        echo "virtualisation detected, skipping jetson firmware update"
+        echo "Skipping Jetson firmware update because we've detected we are in a virtualized environment."
+        exit 0
+      fi
+
+      if [[ -n "$JETPACK_NIXOS_SKIP_CAPSULE_UPDATE" ]]; then
+        echo "Skipping Jetson firmware update because JETPACK_NIXOS_SKIP_CAPSULE_UPDATE is set"
         exit 0
       fi
 
