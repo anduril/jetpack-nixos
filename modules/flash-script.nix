@@ -24,7 +24,7 @@ let
         exit 0
       fi
 
-      if [[ -n "$JETPACK_NIXOS_SKIP_CAPSULE_UPDATE" ]]; then
+      if [[ ! -v JETPACK_NIXOS_SKIP_CAPSULE_UPDATE ]]; then
         echo "Skipping Jetson firmware update because JETPACK_NIXOS_SKIP_CAPSULE_UPDATE is set"
         exit 0
       fi
