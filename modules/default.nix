@@ -24,9 +24,6 @@ let
     name = "tee-supplicant-plugins";
     paths = cfg.firmware.optee.supplicant.plugins;
   };
-
-  nvidiaDockerActive = with config.virtualisation; docker.enable && docker.enableNvidia;
-  nvidiaPodmanActive = with config.virtualisation; podman.enable && podman.enableNvidia;
 in
 {
   imports = [
@@ -171,14 +168,6 @@ in
           setting nixpkgs.hostPlatform to "aarch64-linux" or otherwise using an
           aarch64-linux compatible package set.
         '';
-      }
-      {
-        assertion = nvidiaDockerActive -> lib.versionAtLeast config.virtualisation.docker.package.version "25";
-        message = "Docker version < 25 does not support CDI";
-      }
-      {
-        assertion = (nvidiaDockerActive || nvidiaPodmanActive) -> (!config.hardware.nvidia-container-toolkit.enable);
-        message = "hardware.nvidia-container-toolkit.enable does not work with jetson devices (yet), use virtualisation.{docker,podman}.enableNvidia instead";
       }
     ];
 
@@ -373,28 +362,12 @@ in
       otaUtils # Tools for UEFI capsule updates
     ];
 
-    systemd.services.nvidia-cdi-generate = {
-      enable = nvidiaDockerActive || nvidiaPodmanActive;
-      serviceConfig = {
-        Type = "oneshot";
-        RemainAfterExit = true;
-        RuntimeDirectory = "cdi";
-      };
-      wantedBy = [ "multi-user.target" ];
-      script =
-        let
-          exe = lib.getExe pkgs.nvidia-jetpack.nvidia-ctk;
-        in
-        ''
-          ${exe} cdi generate \
-            --nvidia-ctk-path=${exe} \
-            --driver-root=${pkgs.nvidia-jetpack.containerDeps} \
-            --ldconfig-path ${lib.getExe' pkgs.glibc "ldconfig"} \
-            --dev-root=/ \
-            --mode=csv \
-            --csv.file=${pkgs.nvidia-jetpack.l4tCsv} \
-            --output="$RUNTIME_DIRECTORY/jetpack-nixos"
-        '';
+    hardware.nvidia-container-toolkit = {
+      suppressNvidiaDriverAssertion = true;
+      discovery-mode = "csv";
+      csv-files = [
+        pkgs.nvidia-jetpack.l4tCsv
+      ];
     };
 
     # Used by libEGL_nvidia.so.0
