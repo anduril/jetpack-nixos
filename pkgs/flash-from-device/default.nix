@@ -1,13 +1,14 @@
 { lib, pkgsStatic, runCommand, tegra-eeprom-tool-static }:
 
 let
-  # Workaround build failure with pkgsStatic.mtdutils in NixOS 24.11
-  # > configure: WARNING: cannot find CMocka library required for unit tests
-  # > configure: unit tests can optionally be disabled
-  # > configure: error: missing one or more dependencies
   mtdutils = pkgsStatic.mtdutils.overrideAttrs (_: {
-    configureFlags = [ ];
-    doCheck = false;
+    # Grab patches merged after 2.3.0 to let mtdutils build with musl
+    # https://lists.openembedded.org/g/openembedded-core/topic/patch_mtd_utils_upgrade_to/111205949
+    src = fetchGit {
+      url = "git://git.infradead.org/mtd-utils.git";
+      rev = "77981a2888c711268b0e7f32af6af159c2288e23";
+    };
+    version = "2.3.0-unstable-2025-06-02";
   });
 
   # Make the package smaller so it doesn't blow up the initrd size
