@@ -1,9 +1,9 @@
 ### Updating
-- [ ] Update `l4tVersion`, `jetpackVersion`, `cudaMajorMinorPatchVersion`, and `cudaPackages.cudaConfig` in overlay.nix
+- [ ] Update `l4tMajorMinorPatchVersion`, `jetpackMajorMinorPatchVersion`, `cudaMajorMinorPatchVersion`, and `cudaPackages.cudaConfig` in overlay.nix
 - [ ] Update branch/revision/sha256s in:
     - [ ] `overlay.nix`
-    - [ ] `kernel/default.nix`
-    - [ ] `pkgs/uefi-firmware/default.nix`
+    - [ ] `pkgs/kernels/r${l4tMajorVersion}/default.nix`
+    - [ ] `pkgs/uefi-firmware/r${l4tMajorVersion}/default.nix`
     - [ ] Grep for "sha256 = ", see if there is anything else not covered
 - [ ] Update the kernel version in `kernel/default.nix` if it chaged.
 - [ ] Run `debs-update.py` and `gitrepos-update.py` under `sourceinfo` to generate new sourceinfo json files
@@ -12,7 +12,7 @@
 - [ ] Ensure the soc variants in `modules/flash-script.nix` match those in `jetson_board_spec.cfg` from BSP
 - [ ] Ensure logic in `pkgs/ota-utils/ota_helpers.func` matches `nvidia-l4t-init/opt/nvidia/nv-l4t-bootloader-config.sh`
 - [ ] Run `nix build .#genL4tJson` and copy output to `pkgs/containers/l4t.json`
-- [ ] Run `skopeo inspect docker://nvcr.io/nvidia/l4t-jetpack/r${l4tVersion}` to update FOD for l4t-jetpack OCI image in `./pkgs/tests/default.nix`
+- [ ] Run `skopeo inspect docker://nvcr.io/nvidia/l4t-jetpack/r${l4tMajorMinorPatchVersion}` to update FOD for l4t-jetpack OCI image in `./pkgs/tests/default.nix`
 - [ ] Grep for the previous version strings e.g. "35.4.1"
 
 ### Testing

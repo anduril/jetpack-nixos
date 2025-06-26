@@ -15,7 +15,7 @@
 , libuuid
 , applyPatches
 , nukeReferences
-, l4tVersion
+, l4tMajorMinorPatchVersion
 , uniqueHash ? ""
 , # Optional path to a boot logo that will be converted and cropped into the format required
   bootLogo ? null
@@ -50,7 +50,7 @@ let
     src = fetchFromGitHub {
       owner = "NVIDIA";
       repo = "edk2";
-      rev = "r${l4tVersion}-edk2-stable202208";
+      rev = "r${l4tMajorMinorPatchVersion}-edk2-stable202208";
       fetchSubmodules = true;
       sha256 = "sha256-w+rZq7Wjni62MJds6QmqpLod+zSFZ/qAN7kRDOit+jo=";
     };
@@ -67,14 +67,14 @@ let
   edk2-platforms = fetchFromGitHub {
     owner = "NVIDIA";
     repo = "edk2-platforms";
-    rev = "r${l4tVersion}-upstream-20220830";
+    rev = "r${l4tMajorMinorPatchVersion}-upstream-20220830";
     sha256 = "sha256-PjAJEbbswOLYupMg/xEqkAOJuAC8SxNsQlb9YBswRfo=";
   };
 
   edk2-non-osi = fetchFromGitHub {
     owner = "NVIDIA";
     repo = "edk2-non-osi";
-    rev = "r${l4tVersion}-upstream-20220830";
+    rev = "r${l4tMajorMinorPatchVersion}-upstream-20220830";
     sha256 = "sha256-EPtI63jYhEIo4uVTH3lUt9NC/lK5vPVacUAc5qgmz9M=";
   };
 
@@ -82,7 +82,7 @@ let
     src = fetchFromGitHub {
       owner = "NVIDIA";
       repo = "edk2-nvidia";
-      rev = "r${l4tVersion}";
+      rev = "r${l4tMajorMinorPatchVersion}";
       sha256 = "sha256-0Ef+yybdORI9NPWPR+tKwgmRil+I9QQQ16F747w/E6s=";
     };
     patches = edk2NvidiaPatches ++ [
@@ -119,7 +119,7 @@ let
   edk2-nvidia-non-osi = fetchFromGitHub {
     owner = "NVIDIA";
     repo = "edk2-nvidia-non-osi";
-    rev = "r${l4tVersion}";
+    rev = "r${l4tMajorMinorPatchVersion}";
     sha256 = "sha256-l2rEbBvlXhlXFUyubsmPlWofqjJuDM/t9EqFwFoSdfk=";
   };
 
@@ -166,7 +166,7 @@ let
     # Make it not via passthru ?
     stdenv.mkDerivation (finalAttrs: {
       pname = "${platform}-edk2-uefi";
-      version = l4tVersion;
+      version = l4tMajorMinorPatchVersion;
 
       # Initialize the build dir with the build tools from edk2
       src = edk2-src;
@@ -229,7 +229,7 @@ let
         # The BUILDID_STRING and BUILD_DATE_TIME are used
         # just by nvidia, not generic edk2
         build -a ${targetArch} -b ${buildTarget} -t ${buildType} -p Platform/NVIDIA/${platform}/${platform}.dsc -n $NIX_BUILD_CORES \
-          -D BUILDID_STRING="${l4tVersion}-''${BUILD_HASH}" \
+          -D BUILDID_STRING="${l4tMajorMinorPatchVersion}-''${BUILD_HASH}" \
           -D BUILD_DATE_TIME="$(date --utc --iso-8601=seconds --date=@$SOURCE_DATE_EPOCH)" \
           ${lib.optionalString (trustedPublicCertPemFile != null) "-D CUSTOM_CAPSULE_CERT"} \
           $buildFlags
@@ -247,11 +247,11 @@ let
   jetson-edk2-uefi = mkJetsonUefi "Jetson";
   jetson-edk-uefi-stmm-optee = mkJetsonUefi "StandaloneMmOptee";
 
-  uefi-firmware = runCommand "uefi-firmware-${l4tVersion}"
+  uefi-firmware = runCommand "uefi-firmware-${l4tMajorMinorPatchVersion}"
     {
       nativeBuildInputs = [ python3 nukeReferences ];
       # Keep in sync with BUILDID_STRING and BUILD_HASH above
-      passthru.biosVersion = "${l4tVersion}-" + lib.substring 0 12 (builtins.hashString "sha256" "${uniqueHash}-${jetson-edk2-uefi}");
+      passthru.biosVersion = "${l4tMajorMinorPatchVersion}-" + lib.substring 0 12 (builtins.hashString "sha256" "${uniqueHash}-${jetson-edk2-uefi}");
     } ''
     mkdir -p $out
     python3 ${edk2-nvidia}/Silicon/NVIDIA/Tools/FormatUefiBinary.py \

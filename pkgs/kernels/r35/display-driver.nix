@@ -3,12 +3,12 @@
 , lib
 , kernel
 , gitRepos
-, l4tVersion
+, l4tMajorMinorPatchVersion
 }:
 
 stdenv.mkDerivation {
   pname = "nvidia-display-driver";
-  version = "jetson_${l4tVersion}";
+  version = "jetson_${l4tMajorMinorPatchVersion}";
 
   src = gitRepos."tegra/kernel-src/nv-kernel-display-driver";
 

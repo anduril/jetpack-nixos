@@ -1,4 +1,4 @@
-{ l4tVersion
+{ l4tMajorMinorPatchVersion
 , dockerTools
 , writeShellScriptBin
 }:

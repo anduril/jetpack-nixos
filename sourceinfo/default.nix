@@ -1,7 +1,7 @@
-{ lib, fetchurl, fetchgit, l4tVersion }:
+{ lib, fetchurl, fetchgit, l4tMajorMinorPatchVersion }:
 
 let
-  debsJSON = lib.importJSON (./r${lib.versions.majorMinor l4tVersion}-debs.json);
+  debsJSON = lib.importJSON (./r${lib.versions.majorMinor l4tMajorMinorPatchVersion}-debs.json);
   baseURL = "https://repo.download.nvidia.com/jetson";
   repos = [ "t194" "t234" "common" ];
 
@@ -11,7 +11,7 @@ let
   };
   debs = lib.mapAttrs (repo: pkgs: lib.mapAttrs (pkgname: pkg: pkg // { src = fetchDeb repo pkg; }) pkgs) debsJSON;
 
-  gitJSON = lib.importJSON (./r${l4tVersion}-gitrepos.json);
+  gitJSON = lib.importJSON (./r${l4tMajorMinorPatchVersion}-gitrepos.json);
   gitRepos = lib.mapAttrs
     (relpath: info: fetchgit {
       inherit (info) url rev hash;

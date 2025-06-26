@@ -15,6 +15,8 @@ let
 
   cfg = config.hardware.nvidia-jetpack;
 
+  jetpackVersions = [ "5" ];
+
   teeApplications = pkgs.symlinkJoin {
     name = "tee-applications";
     paths = cfg.firmware.optee.supplicant.trustedApplications;
@@ -41,6 +43,12 @@ in
   options = {
     hardware.nvidia-jetpack = {
       enable = mkEnableOption "NVIDIA Jetson device support";
+
+      majorVersion = mkOption {
+        default = "5";
+        type = types.enum jetpackVersions;
+        description = "Jetpack major version to use";
+      };
 
       configureCuda = mkOption {
         default = true;
@@ -192,6 +200,19 @@ in
     # something defined in our overlay.
     nixpkgs.overlays = lib.mkBefore [
       (import ../overlay.nix)
+      (
+        let
+          otherJetpacks = builtins.filter (v: v != cfg.majorVersion) jetpackVersions;
+          mkWarnValue = v: lib.warn "nvidia-jetpack${v} is unsupported when nixos is configured to use Jetpack ${cfg.majorVersion}" { };
+        in
+        final: prev:
+          # set default nvidia-jetpack to our jetpack version
+          { nvidia-jetpack = final."nvidia-jetpack${cfg.majorVersion}"; }
+          # and warn/fail if anyone tries to evaluate something else
+          // builtins.listToAttrs (builtins.map
+            (v: { name = "nvidia-jetpack${v}"; value = mkWarnValue v; })
+            otherJetpacks)
+      )
       (import ../overlay-with-config.nix config)
     ];
 

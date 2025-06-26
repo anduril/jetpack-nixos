@@ -1,9 +1,9 @@
-{ gitRepos, l4tVersion, stdenv, python3 }:
+{ gitRepos, l4tMajorMinorPatchVersion, stdenv, python3 }:
 
 stdenv.mkDerivation {
   pname = "gen_ekb.py";
   src = gitRepos."tegra/optee-src/nv-optee";
-  version = l4tVersion;
+  version = l4tMajorMinorPatchVersion;
   dontBuild = true;
   buildInputs = [
     (python3.withPackages (p: with p; [

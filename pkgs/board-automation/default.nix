@@ -1,13 +1,13 @@
 { stdenv
 , bspSrc
-, l4tVersion
+, l4tMajorMinorPatchVersion
 , python3  # python3 is required for nvtopo.py
 , makeWrapper
 }:
 
 stdenv.mkDerivation {
   pname = "board-automation";
-  version = l4tVersion;
+  version = l4tMajorMinorPatchVersion;
 
   src = bspSrc;
 
