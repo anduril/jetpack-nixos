@@ -1,0 +1,39 @@
+From e0b4eac5ccf0f85fa4b6cdd2793c9a7e3efac26b Mon Sep 17 00:00:00 2001
+From: Elliot Berman <eberman@anduril.com>
+Date: Tue, 29 Apr 2025 16:42:41 -0700
+Subject: [PATCH 2/2] cupti_samples: Fix include path search for common headers
+
+---
+ pm_sampling/Makefile  | 2 +-
+ sass_metrics/Makefile | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/pm_sampling/Makefile b/pm_sampling/Makefile
+index 7b5a98d..fb8b2db 100644
+--- a/pm_sampling/Makefile
++++ b/pm_sampling/Makefile
+@@ -9,7 +9,7 @@ endif
+ CUDA_INSTALL_PATH ?= ../../../..
+ CUPTI_INSTALL_PATH ?= $(CUDA_INSTALL_PATH)/extras/CUPTI
+ NVCC := "$(CUDA_INSTALL_PATH)/bin/nvcc"
+-INCLUDES := -I"$(CUDA_INSTALL_PATH)/include" -I$(CUPTI_INSTALL_PATH)/include -I$(CUPTI_INSTALL_PATH)/samples/common
++INCLUDES := -I"$(CUDA_INSTALL_PATH)/include" -I../../include -I../common
+ 
+ ifeq ($(OS),Windows_NT)
+     LIB_PATH ?= $(CUPTI_INSTALL_PATH)\lib64
+diff --git a/sass_metrics/Makefile b/sass_metrics/Makefile
+index ad37da3..d0be6e1 100644
+--- a/sass_metrics/Makefile
++++ b/sass_metrics/Makefile
+@@ -9,7 +9,7 @@ endif
+ CUDA_INSTALL_PATH ?= ../../../..
+ CUPTI_INSTALL_PATH ?= $(CUDA_INSTALL_PATH)/extras/CUPTI
+ NVCC := "$(CUDA_INSTALL_PATH)/bin/nvcc"
+-INCLUDES := -I"$(CUDA_INSTALL_PATH)/include" -I"$(CUPTI_INSTALL_PATH)/include" -I"$(CUPTI_INSTALL_PATH)/samples/common"
++INCLUDES := -I"$(CUDA_INSTALL_PATH)/include" -I"../../include" -I"../common"
+ TARGET_ARCH ?= $(HOST_ARCH)
+ TARGET_OS ?= $(shell uname | tr A-Z a-z)
+ 
+-- 
+2.49.0
+

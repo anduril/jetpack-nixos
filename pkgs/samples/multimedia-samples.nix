@@ -8,6 +8,7 @@
 , l4t-camera
 , l4t-cuda
 , l4t-multimedia
+, l4tOlder
 , lib
 , libdrm
 , libglvnd
@@ -63,10 +64,17 @@ stdenv.mkDerivation {
 
   # TODO: Unify this with headers in l4t-jetson-multimedia-api
   patches = [
-    (fetchurl {
-      url = "https://raw.githubusercontent.com/OE4T/meta-tegra/af0a93313c13e9eac4e80082d8a8e8ac5f7ad6e8/recipes-multimedia/argus/files/0005-Remove-DO-NOT-USE-declarations-from-v4l2_nv_extensio.patch";
-      sha256 = "sha256-IJ1teGEUxYDEPYSvYZbqdmUYg9tOORN7WGYpDaUUnHY=";
-    })
+    (if (l4tOlder "36") then
+      (fetchurl {
+        url = "https://raw.githubusercontent.com/OE4T/meta-tegra/af0a93313c13e9eac4e80082d8a8e8ac5f7ad6e8/recipes-multimedia/argus/files/0005-Remove-DO-NOT-USE-declarations-from-v4l2_nv_extensio.patch";
+        sha256 = "sha256-IJ1teGEUxYDEPYSvYZbqdmUYg9tOORN7WGYpDaUUnHY=";
+      })
+    else
+      (fetchurl {
+        url = "https://raw.githubusercontent.com/OE4T/meta-tegra/2b51abd5b3e2436f8eeb98e8f985806521379174/recipes-multimedia/argus/files/0001-Remove-DO-NOT-USE-declarations-from-v4l2_nv_extensio.patch";
+        sha256 = "sha256-J9Hhm7oOptUR39KMbxZB1+esAlKWTyyKk1Ep3ZlJ488=";
+      })
+    )
     (fetchurl {
       url = "https://raw.githubusercontent.com/OE4T/meta-tegra/4f825ddeb2e9a1b5fbff623955123c20b82c8274/recipes-multimedia/argus/tegra-mmapi-samples/0004-samples-classes-fix-a-data-race-in-shutting-down-deq.patch";
       sha256 = "sha256-mkS2eKuDvXDhHkIglUGcYbEWGxCP5gRSdmEvuVw/chI=";

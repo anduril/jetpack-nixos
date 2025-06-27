@@ -34,7 +34,9 @@
           buildPlatform = "x86_64-linux";
           hostPlatform = "aarch64-linux";
         };
-
+      };
+      jetpack5_config = {
+        hardware.nvidia-jetpack.majorVersion = "5";
       };
     in
     {
@@ -44,6 +46,12 @@
         };
         installer_minimal_cross = nixpkgs.lib.nixosSystem {
           modules = [ aarch64_cross_config installer_minimal_config ];
+        };
+        installer_minimal_jp5 = nixpkgs.lib.nixosSystem {
+          modules = [ aarch64_config installer_minimal_config jetpack5_config ];
+        };
+        installer_minimal_cross_jp5 = nixpkgs.lib.nixosSystem {
+          modules = [ aarch64_cross_config installer_minimal_config jetpack5_config ];
         };
       };
 
@@ -56,7 +64,7 @@
           let
             supportedConfigurations = lib.listToAttrs (map
               (c: {
-                name = "${c.som}" + (lib.optionalString (c.super or false) "-super") + "-${c.carrierBoard}";
+                name = c.som + lib.optionalString (c.super or false) "-super" + "-${c.carrierBoard}" + lib.optionalString (c ? majorVersion) "-jp${c.majorVersion}";
                 value = c;
               }) [
               { som = "orin-agx"; carrierBoard = "devkit"; }
@@ -65,6 +73,12 @@
               { som = "orin-nano"; carrierBoard = "devkit"; }
               { som = "orin-nx"; carrierBoard = "devkit"; super = true; }
               { som = "orin-nano"; carrierBoard = "devkit"; super = true; }
+              { som = "orin-agx"; carrierBoard = "devkit"; majorVersion = "5"; }
+              { som = "orin-agx-industrial"; carrierBoard = "devkit"; majorVersion = "5"; }
+              { som = "orin-nx"; carrierBoard = "devkit"; majorVersion = "5"; }
+              { som = "orin-nano"; carrierBoard = "devkit"; majorVersion = "5"; }
+              { som = "orin-nx"; carrierBoard = "devkit"; super = true; majorVersion = "5"; }
+              { som = "orin-nano"; carrierBoard = "devkit"; super = true; majorVersion = "5"; }
               { som = "xavier-agx"; carrierBoard = "devkit"; }
               { som = "xavier-agx-industrial"; carrierBoard = "devkit"; } # TODO: Entirely untested
               { som = "xavier-nx"; carrierBoard = "devkit"; }
@@ -89,8 +103,8 @@
             uefiCapsuleUpdates = lib.mapAttrs' (n: c: lib.nameValuePair "uefi-capsule-update-${n}" c.system.build.uefiCapsuleUpdate) supportedNixOSConfigurations;
           in
           {
-            # TODO: Untested
             iso_minimal = self.nixosConfigurations.installer_minimal_cross.config.system.build.isoImage;
+            iso_minimal_jp5 = self.nixosConfigurations.installer_minimal_cross_jp5.config.system.build.isoImage;
 
             inherit (self.legacyPackages.x86_64-linux)
               board-automation python-jetson;
@@ -104,6 +118,7 @@
 
         aarch64-linux = {
           iso_minimal = self.nixosConfigurations.installer_minimal.config.system.build.isoImage;
+          iso_minimal_jp5 = self.nixosConfigurations.installer_minimal_jp5.config.system.build.isoImage;
         };
       };
 
@@ -140,7 +155,7 @@
               ];
             });
         in
-        pkgs.nvidia-jetpack // { inherit (pkgs) nvidia-jetpack5; }
+        pkgs.nvidia-jetpack // { inherit (pkgs) nvidia-jetpack5 nvidia-jetpack6; }
       );
     };
 }

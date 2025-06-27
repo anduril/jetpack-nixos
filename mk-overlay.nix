@@ -5,6 +5,7 @@
 { jetpackMajorMinorPatchVersion
 , l4tMajorMinorPatchVersion
 , cudaMajorMinorPatchVersion
+, cudaDriverMajorMinorVersion
 , bspHash
 }:
 final: _:
@@ -27,6 +28,9 @@ let
 
   l4tMajorVersion = versions.major l4tMajorMinorPatchVersion;
 
+  l4tAtLeast = versionAtLeast l4tMajorMinorPatchVersion;
+  l4tOlder = versionOlder l4tMajorMinorPatchVersion;
+
   sourceInfo = import ./sourceinfo {
     inherit l4tMajorMinorPatchVersion;
     inherit (final) lib fetchurl fetchgit;
@@ -35,6 +39,7 @@ in
 makeScope final.newScope (self: {
   inherit (sourceInfo) debs gitRepos;
   inherit jetpackMajorMinorPatchVersion l4tMajorMinorPatchVersion cudaMajorMinorVersion;
+  inherit l4tAtLeast l4tOlder;
 
   callPackages = callPackagesWith (final // self);
 
@@ -85,7 +90,7 @@ makeScope final.newScope (self: {
     # Nvidia's recommended toolchain is gcc9:
     # https://nv-tegra.nvidia.com/r/gitweb?p=tegra/optee-src/nv-optee.git;a=blob;f=optee/atf_and_optee_README.txt;h=591edda3d4ec96997e054ebd21fc8326983d3464;hb=5ac2ab218ba9116f1df4a0bb5092b1f6d810e8f7#l33
     stdenv = final.gcc9Stdenv;
-    inherit (self) bspSrc gitRepos l4tMajorMinorPatchVersion uefi-firmware;
+    inherit (self) bspSrc gitRepos l4tMajorMinorPatchVersion l4tAtLeast uefi-firmware;
   }) buildTOS buildOpteeTaDevKit opteeClient;
   genEkb = self.callPackage ./pkgs/optee/gen-ekb.nix { };
 
@@ -130,11 +135,15 @@ makeScope final.newScope (self: {
     inherit (finalSamples) callPackage;
   });
 
-  tests = final.callPackages ./pkgs/tests { inherit l4tMajorMinorPatchVersion; };
+  tests = final.callPackages ./pkgs/tests { inherit l4tMajorMinorPatchVersion l4tAtLeast; };
 
-  kernelPackagesOverlay = final: _: {
-    nvidia-display-driver = final.callPackage ./pkgs/kernels/r${l4tMajorVersion}/display-driver.nix { inherit (self) gitRepos l4tMajorMinorPatchVersion; };
-  };
+  kernelPackagesOverlay = final: _:
+    if self.l4tAtLeast "36" then {
+      devicetree = self.callPackage ./pkgs/kernels/r${l4tMajorVersion}/devicetree.nix { };
+      nvidia-oot-modules = final.callPackage ./pkgs/kernels/r${l4tMajorVersion}/oot-modules.nix { inherit (self) bspSrc gitRepos l4tMajorMinorPatchVersion; };
+    } else {
+      nvidia-display-driver = final.callPackage ./pkgs/kernels/r${l4tMajorVersion}/display-driver.nix { inherit (self) gitRepos l4tMajorMinorPatchVersion; };
+    };
 
   kernel = self.callPackage ./pkgs/kernels/r${l4tMajorVersion} { kernelPatches = [ ]; };
   kernelPackages = (final.linuxPackagesFor self.kernel).extend self.kernelPackagesOverlay;
@@ -171,5 +180,6 @@ makeScope final.newScope (self: {
   # attribute set, we cannot use self.callPackages because we would end up with infinite recursion.
   # Instead, we must either use final.callPackages or packagesFromDirectoryRecursive.
   // final.callPackages ./pkgs/l4t {
-  inherit (self) debs l4tMajorMinorPatchVersion;
+  inherit (self) debs;
+  inherit l4tMajorMinorPatchVersion cudaDriverMajorMinorVersion l4tAtLeast l4tOlder;
 })

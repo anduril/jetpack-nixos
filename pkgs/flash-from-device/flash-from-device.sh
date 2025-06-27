@@ -71,11 +71,11 @@ program_spi_partition() {
             return 1
         fi
     fi
-    # Multiple copies of the BCT get installed at erase-block boundaries
+    # Multiple copies of the BCT get installed at 16KiB boundaries
     # within the defined BCT partition
     if [ "$partname" = "BCT" ]; then
         local slotsize
-        slotsize=$(cat /sys/class/mtd/mtd0/erasesize)
+        slotsize=16384
         if [ -z "$slotsize" ]; then
             return 1
         fi

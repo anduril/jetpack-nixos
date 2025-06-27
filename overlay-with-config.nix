@@ -78,7 +78,7 @@ final: prev: (
 
       flashInitrd =
         let
-          modules = [ "qspi_mtd" "spi_tegra210_qspi" "at24" "spi_nor" ];
+          modules = if lib.versions.majorMinor config.system.build.kernel.version == "5.10" then [ "qspi_mtd" "spi_tegra210_qspi" "at24" "spi_nor" ] else [ "mtdblock" "spi_tegra210_quad" ];
           modulesClosure = prev.makeModulesClosure {
             rootModules = modules;
             kernel = config.system.modulesTree;
@@ -152,8 +152,23 @@ final: prev: (
               ${cfg.firmware.secureBoot.preSignCommands final.buildPackages}
             '' + lib.concatMapStringsSep "\n"
               (v: with v;
-              "BOARDID=${boardid} BOARDSKU=${boardsku} FAB=${fab} BOARDREV=${boardrev} FUSELEVEL=${fuselevel} CHIPREV=${chiprev} ${lib.optionalString (chipsku != null) "CHIP_SKU=${chipsku}"} ${lib.optionalString (ramcode != null) "RAMCODE=${ramcode}"} ./flash.sh ${lib.optionalString (cfg.flashScriptOverrides.partitionTemplate != null) "-c flash.xml"} --no-flash --bup --multi-spec ${builtins.toString cfg.flashScriptOverrides.flashArgs}"
-              )
+              (lib.concatStringsSep " " [
+                "BOARDID=${boardid}"
+                "BOARDSKU=${boardsku}"
+                "FAB=${fab}"
+                "BOARDREV=${boardrev}"
+                "FUSELEVEL=${fuselevel}"
+                "CHIPREV=${chiprev}"
+                (lib.optionalString (chipsku != null) "CHIP_SKU=${chipsku}")
+                (lib.optionalString (ramcode != null) "RAMCODE=${ramcode}")
+                "./flash.sh"
+                (lib.optionalString (cfg.flashScriptOverrides.partitionTemplate != null) "-c flash.xml")
+                "--no-flash"
+                (lib.optionalString (cfg.majorVersion == "6") "--sign")
+                "--bup"
+                "--multi-spec"
+                (builtins.toString cfg.flashScriptOverrides.flashArgs)
+              ]))
               cfg.firmware.variants;
           }) + ''
           mkdir -p $out

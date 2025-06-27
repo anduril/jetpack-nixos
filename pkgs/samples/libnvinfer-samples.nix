@@ -13,6 +13,7 @@ let
     cuda_nvcc
     cuda_profiler_api
     cudatoolkit
+    cudaOlder
     cudnn
     flags
     libcublas
@@ -32,7 +33,7 @@ stdenv.mkDerivation {
   nativeBuildInputs = [ autoAddDriverRunpath cuda_nvcc dpkg ];
   buildInputs = [ cuda_cudart cuda_profiler_api cudnn libcublas tensorrt ];
 
-  postPatch = ''
+  postPatch = lib.optionalString (cudaOlder "12") ''
     substituteInPlace Makefile.config \
       --replace-fail \
         '-I"$(CUDNN_INSTALL_DIR)/include"' \

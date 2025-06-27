@@ -46,6 +46,9 @@
   ${lib.optionalString (dtbsDir != null) "cp -r ${dtbsDir}/. kernel/dtb/"}
   ${lib.optionalString (uefi-firmware != null) ''
   cp ${uefi-firmware}/uefi_jetson.bin bootloader/uefi_jetson.bin
+  if [ -e "${uefi-firmware}/uefi_jetson_minimal.bin" ] ; then
+    cp ${uefi-firmware}/uefi_jetson_minimal.bin bootloader/uefi_jetson_minimal.bin
+  fi
 
   # For normal NixOS usage, we'd probably use systemd-boot or GRUB instead,
   # but lets replace the upstream L4TLauncher EFI payload anyway

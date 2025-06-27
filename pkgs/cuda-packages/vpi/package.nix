@@ -6,16 +6,24 @@
 , l4t-multimedia
 , libcufft
 , libnpp
+, l4tMajorMinorPatchVersion
+, lib
 ,
 }:
+let
+  majorVersion = {
+    "35" = "2";
+    "36" = "3";
+  }.${lib.versions.major l4tMajorMinorPatchVersion};
+in
 buildFromDebs {
-  pname = "vpi2";
-  version = debs.common.vpi2-dev.version;
+  pname = "vpi${majorVersion}";
+  version = debs.common."vpi${majorVersion}-dev".version;
   srcs = [
-    debs.common.libnvvpi2.src
-    debs.common.vpi2-dev.src
+    debs.common."libnvvpi${majorVersion}".src
+    debs.common."vpi${majorVersion}-dev".src
   ];
-  sourceRoot = "source/opt/nvidia/vpi2";
+  sourceRoot = "source/opt/nvidia/vpi${majorVersion}";
   buildInputs = [
     l4t-core
     l4t-3d-core

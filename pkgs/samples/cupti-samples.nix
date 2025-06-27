@@ -10,6 +10,7 @@ let
   inherit (cudaPackages)
     cuda_nvcc
     cudatoolkit
+    cudaAtLeast
     cudaMajorMinorVersion
     cudaVersionDashes
     flags
@@ -40,8 +41,14 @@ stdenv.mkDerivation {
 
   enableParallelBuilding = true;
 
+  patches = lib.optionals (cudaAtLeast "12") [
+    ./0001-cupti-samples-Explicitly-ignore-fread-return.patch
+    ./0002-cupti_samples-Fix-include-path-search-for-common-hea.patch
+  ];
+
   # Sample directories which we won't build.
   ignoredSampleDirs = {
+    common = 1;
     extensions = 1;
   };
 
@@ -87,8 +94,12 @@ stdenv.mkDerivation {
       # Skip directories that don't exist or are ignored
       [[ ! -d $sampleDir || ''${ignoredSampleDirs["$sampleDir"]-0} -eq 1 ]] && continue
       # Install the sample, using the special name if it exists and the directory name if it doesn't.
-      install -Dm755 -t "$out/bin" \
-        "$sampleDir/''${sampleExes["$sampleDir"]:-"$sampleDir"}"
+      file="$sampleDir/''${sampleExes["$sampleDir"]:-"$sampleDir"}"
+      if [[ -x $file ]] ; then
+        install -Dm755 -t "$out/bin" "$file"
+      elif [[ -e $file.so ]] ; then
+        install -Dm555 -t "$out/lib" "$file"
+      fi
     done
     unset -v sampleDir
 

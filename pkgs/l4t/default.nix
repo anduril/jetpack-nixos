@@ -21,7 +21,10 @@
 , bc
 , debs
 , l4tMajorMinorPatchVersion
+, l4tAtLeast
+, l4tOlder
 , cudaPackages
+, cudaDriverMajorMinorVersion
 }:
 let
   # The version currently in nixpkgs 23.11 and master 0.15 is pretty old and
@@ -76,13 +79,24 @@ let
         fi
 
         if [[ -d lib/aarch64-linux-gnu ]]; then
-          mv lib/aarch64-linux-gnu/* lib
+          if [[ -n "$(ls lib/aarch64-linux-gnu)" ]] ; then
+            mv -v -t lib lib/aarch64-linux-gnu/*
+          fi
           rm -rf lib/aarch64-linux-gnu
         fi
 
         if [[ -d lib/tegra ]]; then
-          mv lib/tegra/* lib
+          if [[ -n "$(ls lib/tegra)" ]] ; then
+            mv -v -t lib lib/tegra/*
+          fi
           rm -rf lib/tegra
+        fi
+
+        if [[ -d lib/nvidia ]]; then
+          if [[ -n "$(ls lib/nvidia)" ]] ; then
+            mv -v -t lib lib/nvidia/*
+          fi
+          rm -rf lib/nvidia
         fi
 
         ${postPatch}
@@ -167,10 +181,11 @@ let
     # TODO: Replace this with appendRunpaths which is available in 23.11
     preFixup = ''
       postFixupHooks+=('
+        # ls to filter out libnvidia-vulkan-producer.so, which is only present in r35
         patchelf --add-rpath ${lib.makeLibraryPath [ libglvnd ]} \
           $out/lib/libEGL_nvidia.so.0 \
           $out/lib/libGLX_nvidia.so.0 \
-          $out/lib/libnvidia-vulkan-producer.so
+          $(ls $out/lib/libnvidia-vulkan-producer.so)
 
         patchelf --add-rpath ${lib.makeLibraryPath (with xorg; [ libX11 libXext libxcb ])} \
           $out/lib/libGLX_nvidia.so.0 \
@@ -189,6 +204,10 @@ let
     buildInputs = [ l4t-core ];
 
     postPatch =
+      let
+        version = lib.defaultTo l4tMajorMinorPatchVersion cudaDriverMajorMinorVersion;
+        folder = if cudaDriverMajorMinorVersion == null then "tegra" else "nvidia";
+      in
       ''
         # Additional libcuda symlinks
         ln -sf libcuda.so.1.1 lib/libcuda.so.1
@@ -202,9 +221,9 @@ let
         # well as libnvidia-ptxjitcompiler in the same package. meta-tegra does a
         # similar thing where they pull libnvidia-ptxjitcompiler out of
         # l4t-3d-core and place it in the same package as libcuda.
-        dpkg --fsys-tarfile ${debs.t234.nvidia-l4t-3d-core.src} | tar -xO ./usr/lib/aarch64-linux-gnu/tegra/libnvidia-ptxjitcompiler.so.${l4tMajorMinorPatchVersion} > lib/libnvidia-ptxjitcompiler.so.${l4tMajorMinorPatchVersion}
-        ln -sf libnvidia-ptxjitcompiler.so.${l4tMajorMinorPatchVersion} lib/libnvidia-ptxjitcompiler.so.1
-        ln -sf libnvidia-ptxjitcompiler.so.${l4tMajorMinorPatchVersion} lib/libnvidia-ptxjitcompiler.so
+        dpkg --fsys-tarfile ${debs.t234.nvidia-l4t-3d-core.src} | tar -xO ./usr/lib/aarch64-linux-gnu/${folder}/libnvidia-ptxjitcompiler.so.${version} > lib/libnvidia-ptxjitcompiler.so.${version}
+        ln -sf libnvidia-ptxjitcompiler.so.${version} lib/libnvidia-ptxjitcompiler.so.1
+        ln -sf libnvidia-ptxjitcompiler.so.${version} lib/libnvidia-ptxjitcompiler.so
       '';
 
     # libcuda.so actually depends on libnvcucompat.so at runtime (probably
@@ -214,16 +233,33 @@ let
     '';
   };
 
-  l4t-cupva = buildFromDeb {
-    name = "cupva";
-    src = debs.common."cupva-2.3-l4t".src;
-    version = debs.common."cupva-2.3-l4t".version;
-    buildInputs = [ stdenv.cc.cc.lib l4t-cuda l4t-nvsci l4t-pva ];
-    postPatch = ''
-      mkdir -p lib
-      mv opt/nvidia/cupva-2.3/lib/aarch64-linux-gnu/* lib/
-      rm -rf opt
-    '';
+  l4t-cupva = buildFromDeb
+    (
+      let
+        cupvaMajorMinorVersion = {
+          "35" = "2.3";
+          "36" = "2.5";
+        }.${lib.versions.major l4tMajorMinorPatchVersion};
+      in
+      {
+        name = "cupva";
+        src = debs.common."cupva-${cupvaMajorMinorVersion}-l4t".src;
+        version = debs.common."cupva-${cupvaMajorMinorVersion}-l4t".version;
+        buildInputs = [ stdenv.cc.cc.lib l4t-cuda l4t-nvsci l4t-pva ];
+        postPatch = ''
+          mkdir -p lib
+          mv opt/nvidia/cupva-${cupvaMajorMinorVersion}/lib/aarch64-linux-gnu/* lib/
+          rm -rf opt
+        '';
+      }
+    );
+
+  # Only for L4T r36+
+  l4t-dla-compiler = buildFromDeb {
+    name = "nvidia-l4t-dla-compiler";
+    src = debs.common."nvidia-l4t-dla-compiler".src;
+    version = debs.common."nvidia-l4t-dla-compiler".version;
+    buildInputs = [ l4t-cuda ];
   };
 
   # TODO: Make nvwifibt systemd scripts work
@@ -284,7 +320,7 @@ let
     '';
     buildInputs = [ l4t-core l4t-cuda l4t-nvsci pango alsa-lib ] ++ (with gst_all_1; [ gstreamer gst-plugins-base ]);
 
-    patches = [
+    patches = lib.optionals (l4tOlder "36") [
       (fetchpatch {
         url = "https://raw.githubusercontent.com/OE4T/meta-tegra/af0a93313c13e9eac4e80082d8a8e8ac5f7ad6e8/recipes-multimedia/argus/files/0005-Remove-DO-NOT-USE-declarations-from-v4l2_nv_extensio.patch";
         sha256 = "sha256-meHF7uS2TFMoh0qGCmjGzR8hfhE0cCwSP2T3ufzwM0s=";
@@ -377,7 +413,8 @@ let
     buildInputs = [ stdenv.cc.cc.lib l4t-core ];
     postPatch = ''
       # Remove a utility that bring in too many libraries
-      rm bin/nv_macsec_wpa_supplicant
+      # bin/ on L4T r35; sbin/ on L4T r36
+      rm -f bin/nv_macsec_wpa_supplicant sbin/nv_wpa_supplicant_wifi sbin/wpa_supplicant
 
       # This just contains a symlink to a binary already in /bin (nvcapture-status-decoder)
       rm -rf opt
@@ -421,4 +458,7 @@ in
     l4t-tools
     l4t-wayland
     l4t-xusb-firmware;
+} // lib.optionalAttrs (l4tAtLeast "36") {
+  inherit
+    l4t-dla-compiler;
 }
