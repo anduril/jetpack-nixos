@@ -158,6 +158,13 @@ in
         type = types.bool;
         description = "Enable boot.kernelParams default console configuration";
       };
+
+      container-toolkit.enable = mkOption {
+        default = nvidiaDockerActive || nvidiaPodmanActive;
+        defaultText = "false";
+        type = types.bool;
+        description = "Enable dynamic CDI configuration for Jetson devices.";
+      };
     };
   };
 
@@ -181,14 +188,20 @@ in
         '';
       }
       {
-        assertion = nvidiaDockerActive -> lib.versionAtLeast config.virtualisation.docker.package.version "25";
+        assertion = (config.virtualisation.docker.enable && cfg.container-toolkit.enable) -> lib.versionAtLeast config.virtualisation.docker.package.version "25";
         message = "Docker version < 25 does not support CDI";
       }
       {
-        assertion = (nvidiaDockerActive || nvidiaPodmanActive) -> (!config.hardware.nvidia-container-toolkit.enable);
-        message = "hardware.nvidia-container-toolkit.enable does not work with jetson devices (yet), use virtualisation.{docker,podman}.enableNvidia instead";
+        assertion = !config.hardware.nvidia-container-toolkit.enable;
+        message = "hardware.nvidia-container-toolkit.enable does not work with jetson devices (yet), use hardware.nvidia-jetpack.container-toolkit.enable instead";
       }
     ];
+
+    warnings = (lib.optionals nvidiaDockerActive [
+      "You have set virtualisation.docker.enableNvidia. This option is deprecated, please set hardware.nvidia-jetpack.container-toolkit.enable instead."
+    ]) ++ (lib.optionals nvidiaPodmanActive [
+      "You have set virtualisation.podman.enableNvidia. This option is deprecated, please set hardware.nvidia-jetpack.container-toolkit.enable instead."
+    ]);
 
     # Use mkOptionDefault so that we prevent conflicting with the priority that
     # `nixos-generate-config` uses.
@@ -394,8 +407,7 @@ in
       otaUtils # Tools for UEFI capsule updates
     ];
 
-    systemd.services.nvidia-cdi-generate = {
-      enable = nvidiaDockerActive || nvidiaPodmanActive;
+    systemd.services.nvidia-cdi-generate = lib.mkIf cfg.container-toolkit.enable {
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
