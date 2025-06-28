@@ -291,7 +291,7 @@ let
         unset STRIP
 
         export WORKSPACE=$(pwd)
-        GIT_SYNC_REVISION=$(printf "%s-%s" "${uniqueHash}" "$out" | sha256sum | head -c 12)
+        export GIT_SYNC_REVISION=$(printf "%s-%s" "${uniqueHash}" "$out" | sha256sum | head -c 12)
         CFLAGS=$NIX_CFLAGS_COMPILE_FOR_BUILD LDFLAGS=$NIX_LDFLAGS_FOR_BUILD python edk2/BaseTools/Edk2ToolsBuild.py -t GCC5
 
         ${lib.optionalString (trustedPublicCertPemFile != null) ''
