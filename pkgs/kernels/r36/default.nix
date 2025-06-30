@@ -44,11 +44,6 @@ buildLinux (args // {
   ] ++ kernelPatches;
 
   structuredExtraConfig = with lib.kernel; {
-    # stage-1 links /lib/firmware to the /nix/store path in the initramfs.
-    # However, since it's builtin and not a module, that's too late, since
-    # the kernel will have already tried loading!
-    EXTRA_FIRMWARE_DIR = freeform "${l4t-xusb-firmware}/lib/firmware";
-
     # Override the default CMA_SIZE_MBYTES=32M setting in common-config.nix with the default from tegra_defconfig
     # Otherwise, nvidia's driver craps out
     CMA_SIZE_MBYTES = lib.mkForce (freeform "64");
