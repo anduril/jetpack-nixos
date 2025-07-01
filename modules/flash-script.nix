@@ -45,6 +45,8 @@ let
         ota-setup-efivars ${cfg.flashScriptOverrides.targetBoard}
 
         ota-apply-capsule-update ${pkgs.nvidia-jetpack.uefiCapsuleUpdate}
+      else
+        ota-abort-capsule-update
       fi
     '';
   };
