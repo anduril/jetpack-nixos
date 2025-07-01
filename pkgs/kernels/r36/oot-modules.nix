@@ -41,6 +41,7 @@ let
         ./0001-nvidia-drm-Guard-nv_dev-in-nv_drm_suspend_resume.patch
         ./0002-ANDURIL-Add-some-missing-BASE_CFLAGS.patch
         ./0003-ANDURIL-Update-drm_gem_object_vmap_has_map_arg-test.patch
+        ./0004-ANDURIL-override-KERNEL_SOURCES-and-KERNEL_OUTPUT-if.patch
       ];
     })
     (applyPatches {
