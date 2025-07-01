@@ -288,14 +288,14 @@ in
 
       boot.kernelModules =
         [ "nvgpu" ]
-        ++ lib.optionals cfg.modesetting.enable [
-          "tegra-udrm" # For Xavier`
-          "nvidia-drm" # For Orin
-        ];
+        ++ lib.optionals (cfg.modesetting.enable && checkValidSoms [ "xavier" ]) [ "tegra-udrm" ]
+        ++ lib.optionals (cfg.modesetting.enable && checkValidSoms [ "orin" ]) [ "nvidia-drm" ];
 
-      boot.extraModprobeConfig = lib.optionalString cfg.modesetting.enable ''
+      boot.extraModprobeConfig = lib.optionalString (jetpackAtLeast "6") ''
+        options nvgpu devfreq_timer="delayed"
+      '' + lib.optionalString cfg.modesetting.enable ''
         options tegra-udrm modeset=1
-        options nvidia-drm modeset=1
+        options nvidia-drm modeset=1 ${lib.optionalString (cfg.majorVersion == "6") "fbdev=1"}
       '';
 
       boot.extraModulePackages =
