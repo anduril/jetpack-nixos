@@ -9,6 +9,13 @@ let
       rev = "77981a2888c711268b0e7f32af6af159c2288e23";
     };
     version = "2.3.0-unstable-2025-06-02";
+
+    # Workaround build failure with pkgsStatic.mtdutils in NixOS 24.11
+    # > configure: WARNING: cannot find CMocka library required for unit tests
+    # > configure: unit tests can optionally be disabled
+    # > configure: error: missing one or more dependencies
+    configureFlags = [ ];
+    doCheck = false;
   });
 
   # Make the package smaller so it doesn't blow up the initrd size
