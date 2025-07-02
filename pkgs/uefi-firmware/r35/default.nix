@@ -50,7 +50,7 @@ let
     src = fetchFromGitHub {
       owner = "NVIDIA";
       repo = "edk2";
-      rev = "r${l4tMajorMinorPatchVersion}-edk2-stable202208";
+      rev = "r${l4tMajorMinorPatchVersion}";
       fetchSubmodules = true;
       sha256 = "sha256-w+rZq7Wjni62MJds6QmqpLod+zSFZ/qAN7kRDOit+jo=";
     };
@@ -67,14 +67,14 @@ let
   edk2-platforms = fetchFromGitHub {
     owner = "NVIDIA";
     repo = "edk2-platforms";
-    rev = "r${l4tMajorMinorPatchVersion}-upstream-20220830";
+    rev = "r${l4tMajorMinorPatchVersion}";
     sha256 = "sha256-PjAJEbbswOLYupMg/xEqkAOJuAC8SxNsQlb9YBswRfo=";
   };
 
   edk2-non-osi = fetchFromGitHub {
     owner = "NVIDIA";
     repo = "edk2-non-osi";
-    rev = "r${l4tMajorMinorPatchVersion}-upstream-20220830";
+    rev = "r${l4tMajorMinorPatchVersion}";
     sha256 = "sha256-EPtI63jYhEIo4uVTH3lUt9NC/lK5vPVacUAc5qgmz9M=";
   };
 
@@ -83,7 +83,7 @@ let
       owner = "NVIDIA";
       repo = "edk2-nvidia";
       rev = "r${l4tMajorMinorPatchVersion}";
-      sha256 = "sha256-0Ef+yybdORI9NPWPR+tKwgmRil+I9QQQ16F747w/E6s=";
+      sha256 = "sha256-q0SxS6mRJpD0t+TPvf4Sp+n+VBx/5PeqWXC2mgUJQ98=";
     };
     patches = edk2NvidiaPatches ++ [
       # Fix Eqos driver to use correct TX clock name
