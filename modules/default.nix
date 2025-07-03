@@ -442,11 +442,21 @@ in
           RuntimeDirectory = "cdi";
         };
         wantedBy = [ "multi-user.target" ];
+        requires = [ "modprobe@nvgpu.service" ];
+        before = lib.optionals nvidiaDockerActive [
+          "docker.service"
+          "docker.socket"
+        ];
         script =
           let
             exe = lib.getExe pkgs.nvidia-jetpack.nvidia-ctk;
           in
           ''
+            # /dev/nvgpu/igpu0/power is available as soon as the nvgpu kernel
+            # module is loaded, however we want to wait until further character
+            # devices exist before generating the CDI yaml.
+            udevadm wait --settle /dev/nvgpu/igpu0/ctrl
+
             ${exe} cdi generate \
               --nvidia-ctk-path=${exe} \
               --driver-root=${pkgs.nvidia-jetpack.containerDeps} \
