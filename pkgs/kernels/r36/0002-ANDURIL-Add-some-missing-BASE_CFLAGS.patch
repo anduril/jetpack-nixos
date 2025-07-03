@@ -1,7 +1,7 @@
 From 31473d1beb229e885073d17a4d547e3015fe2791 Mon Sep 17 00:00:00 2001
 From: Elliot Berman <eberman@anduril.com>
 Date: Tue, 20 May 2025 10:01:39 -0700
-Subject: [PATCH 2/3] ANDURIL: Add some missing BASE_CFLAGS
+Subject: [PATCH 2/4] ANDURIL: Add some missing BASE_CFLAGS
 
 After inspecting KBUILD_CFLAGS, observed some flags from the conftest
 were missing. Add -fshort-wchar to avoid the following conftest

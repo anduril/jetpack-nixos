@@ -1,7 +1,7 @@
 From f1a1f36fcac33d65488e63ad16ffa510553fb968 Mon Sep 17 00:00:00 2001
 From: Elliot Berman <eberman@anduril.com>
 Date: Tue, 20 May 2025 10:06:14 -0700
-Subject: [PATCH 3/3] ANDURIL: Update drm_gem_object_vmap_has_map_arg test
+Subject: [PATCH 3/4] ANDURIL: Update drm_gem_object_vmap_has_map_arg test
 
 Kernel has renamed "struct dma_buf_map" as "struct iosys_map" and GCC
 doesn't like the implicit cast. Use untyped pointer to make GCC fine
