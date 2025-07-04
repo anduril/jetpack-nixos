@@ -464,7 +464,7 @@ in
 
     # These are from l4t_generate_soc_bup.sh, plus some additional ones found in the wild.
     hardware.nvidia-jetpack.firmware.variants =
-      if (cfg.som != null) then
+      if (cfg.som != "generic") then
         (lib.mkOptionDefault (
           {
             xavier-agx = [
