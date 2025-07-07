@@ -1,17 +1,19 @@
 #!/usr/bin/env nix-shell
 #!nix-shell -i python -p "python3.withPackages (ps: with ps; [ debian ])"
 
+# Usage: ./sourceinfo/debs-update.py r36.4.4 > sourceinfo/r36.4-debs.json
+
 import gzip
 import json
 import re
 import urllib.request
+import sys
 
 from debian.debian_support import Version
 
 
 BASE_URL = 'https://repo.download.nvidia.com/jetson'
 REPOS = ['t234', 'common']
-VERSION = 'r35.6'
 
 def fetch_debs(url):
     fd = urllib.request.urlopen(url)
@@ -45,8 +47,9 @@ def fetch_debs(url):
 
 
 def main():
+    version = ".".join(sys.argv[1].removeprefix("r").split(sep=".", maxsplit=2)[:2])
     data = {
-        repo: fetch_debs(f'{BASE_URL}/{repo}/dists/{VERSION}/main/binary-arm64/Packages.gz')
+        repo: fetch_debs(f'{BASE_URL}/{repo}/dists/r{version}/main/binary-arm64/Packages.gz')
         for repo in REPOS
     }
     print(json.dumps(data, sort_keys=True, indent=2, separators=(',', ': ')))
