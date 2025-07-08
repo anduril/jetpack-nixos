@@ -124,10 +124,14 @@ let
     {
       nativeBuildInputs = [ python3 nukeReferences ];
       # Keep in sync with FIRMWARE_VERSION_BASE and GIT_SYNC_REVISION above
+      # TODO: this was failing with infinite recursion, maybe fixed
       passthru = {
         biosVersion = "${l4tMajorMinorPatchVersion}-" + lib.substring 0 12 (builtins.hashString "sha256" "${uniqueHash}-${jetsonUefi}");
         inherit jetsonUefi jetsonStandaloneMMOptee;
       } // patchedRepos;
+
+      # TODO: this was our fix
+      #passthru.biosVersion = "${l4tMajorMinorPatchVersion}-" + lib.substring 0 12 (builtins.hashString "sha256" "${uniqueHash}");
     }
     ''
       mkdir -p $out
