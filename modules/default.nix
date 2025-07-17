@@ -465,6 +465,10 @@ in
     (lib.mkIf (jetpackAtLeast "6")
       {
         hardware.deviceTree.dtbSource = pkgs.nvidia-jetpack.kernelPackages.devicetree;
+
+        # Nvidia's jammy kernel has downstream apparmor patches which require "apparmor"
+        # to appear sufficiently early in the `lsm=<list of security modules>` kernel argument
+        security.lsm = lib.mkIf config.security.apparmor.enable (lib.mkBefore [ "apparmor" ]);
       })
   ]);
 }
