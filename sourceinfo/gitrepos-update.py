@@ -3,15 +3,15 @@
 
 # This script is intended to be run against the source_sync.sh file in the unpacked BSP
 
+# usage:
+# nix build .\#bspSrc
+# ./sourceinfo/gitrepos-update.py r36.4.4 ./result/source/source_sync.sh
+
 import json
 import re
 import subprocess
 import sys
 import os
-
-VERSION = '35.6.2'
-TAG = 'jetson_' + VERSION
-FILENAME = 'r' + VERSION + '-gitrepos.json'
 
 REPOS_TO_SKIP = [
     '3rdparty/dtc' # This doesn't have tags...
@@ -22,7 +22,12 @@ def fetch_git(url, ref):
     return json.loads(result.stdout)
 
 def main():
-    script_contents = open(sys.argv[1]).read()
+    version = sys.argv[1].removeprefix("r")
+
+    tag = f"jetson_{version}"
+    filename = f"r{version}-gitrepos.json"
+
+    script_contents = open(sys.argv[2]).read()
     m = re.search(r'^SOURCE_INFO="(.*?)^"$', script_contents, re.MULTILINE | re.DOTALL)
 
     if m is None:
@@ -33,8 +38,8 @@ def main():
     data = {}
 
     # Since theses are bigger files, we do this incrementally
-    if os.path.exists(FILENAME):
-        with open(FILENAME) as fd:
+    if os.path.exists(filename):
+        with open(filename) as fd:
             data = json.load(fd)
 
     for line in source_info.split('\n'):
@@ -44,9 +49,9 @@ def main():
 
         if relpath not in data and relpath not in REPOS_TO_SKIP:
             print(f"Checking out {giturl}")
-            data[relpath] = fetch_git(giturl, TAG)
+            data[relpath] = fetch_git(giturl, tag)
 
-        with open(FILENAME, 'w') as fd:
+        with open(filename, 'w') as fd:
             fd.write(json.dumps(data, sort_keys=True, indent=2, separators=(',', ': ')))
 
 if __name__ == "__main__":
