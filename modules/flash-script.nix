@@ -50,6 +50,14 @@ let
       fi
     '';
   };
+
+  checkCompatSpec = pkgs.writeShellApplication {
+    name = "ota-check-tegra-compatability-spec";
+    text = ''
+      [ -n "''${SKIP_TEGRA_COMPAT_CHECK+set}" ] && exit 0
+      exec ${lib.getExe' pkgs.nvidia-jetpack.otaUtils "ota-check-compat"} ${pkgs.nvidia-jetpack.bupSpecs}
+    '';
+  };
 in
 {
   imports = with lib; [
@@ -434,6 +442,10 @@ in
 
       # Left here for compatibility
       inherit (pkgs.nvidia-jetpack) uefiCapsuleUpdate flashScript initrdFlashScript fuseScript signedFirmware;
+    };
+
+    system.preSwitchChecks = lib.mkIf canUpdateFirmware {
+      jetsonCheckSpecCompatability = "${lib.getExe checkCompatSpec}";
     };
 
     hardware.nvidia-jetpack.flashScriptOverrides.flashArgs = lib.mkAfter (

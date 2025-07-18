@@ -150,6 +150,7 @@ final: prev: (
             # TODO: Remove preSignCommands when we switch to using signedFirmware directly
             flashCommands = ''
               ${cfg.firmware.secureBoot.preSignCommands final.buildPackages}
+              touch nix-multispec
             '' + lib.concatMapStringsSep "\n"
               (v: with v;
               (lib.concatStringsSep " " [
@@ -168,10 +169,17 @@ final: prev: (
                 "--bup"
                 "--multi-spec"
                 (builtins.toString cfg.flashScriptOverrides.flashArgs)
-              ]))
+              ]) + ''
+
+                find bootloader/multi_signed -maxdepth 1 -type d -name ${boardid}\* -printf "%f\n" >> nix-multispec
+              '')
               cfg.firmware.variants;
           }) + ''
           mkdir -p $out
+          # it's likely that the nix-multispec has duplicate entries because
+          # boardid is the same across the different variants.
+          # sort -u to remove the duplicates.
+          sort -u nix-multispec > $out/nix-multispec
           cp -r bootloader/payloads_*/* $out/
         '');
 
@@ -195,6 +203,8 @@ final: prev: (
           -o $out \
           ${finalJetpack.socType}
         '');
+
+      bupSpecs = prev.runCommand "${config.networking.hostName}-specs" { } "cp ${finalJetpack.bup}/nix-multispec $out";
 
       signedFirmware = final.runCommand "signed-${hostName}-${finalJetpack.l4tMajorMinorPatchVersion}"
         { inherit (cfg.firmware.secureBoot) requiredSystemFeatures; }
