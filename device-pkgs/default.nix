@@ -70,7 +70,7 @@ let
       '' + lib.optionalString (cfg.firmware.secureBoot.pkcFile != null) ''
         # If secure boot is enabled, nvidia requires the kernel to be signed
         (
-          ${cfg.firmware.secureBoot.preSignCommands pkgs}
+          ${cfg.firmware.secureBoot.preSignCommands buildPackages}
           # See l4t_uefi_sign_image.sh from BSP, or tools/README_uefi_secureboot.txt
           # This is not good
           bash ./l4t_uefi_sign_image.sh --image ./kernel/Image --cert ${cfg.firmware.uefi.secureBoot.signer.cert} --key ${cfg.firmware.uefi.secureBoot.signer.key} --mode nosplit
@@ -88,7 +88,7 @@ let
         (
           # If secure boot is enabled, the boot.img needs to be signed.
           cd bootloader
-          ${cfg.firmware.secureBoot.preSignCommands pkgs}
+          ${cfg.firmware.secureBoot.preSignCommands buildPackages}
           # See l4t_uefi_sign_image.sh from BSP, or tools/README_uefi_secureboot.txt
           bash ../l4t_uefi_sign_image.sh --image boot.img --cert ${cfg.firmware.uefi.secureBoot.signer.cert} --key ${cfg.firmware.uefi.secureBoot.signer.key} --mode append
         )
