@@ -10,7 +10,9 @@ let
     mkEnableOption
     mkIf
     mkOption
+    nameValuePair
     types
+    versionOlder
     ;
 
   cfg = config.hardware.nvidia-jetpack;
@@ -227,14 +229,25 @@ in
         (
           let
             otherJetpacks = builtins.filter (v: v != cfg.majorVersion) jetpackVersions;
-            mkWarnValue = v: lib.warn "nvidia-jetpack${v} is unsupported when nixos is configured to use Jetpack ${cfg.majorVersion}" { };
           in
           final: prev:
+            let
+              # NVIDIA generally provides the ability to run older software releases on newer firmware/drivers.
+              # As a result, we allow newer versions of JetPack to reference packages from previous releases, but
+              # forbid older versions from referencing packages from newer releases.
+              # Since this function is only applied to `otherJetpacks`, we know the version is never a match for
+              # our current version and need only allow package sets which are strictly older.
+              mkWarnIfNewer = v:
+                if versionOlder v cfg.majorVersion then
+                  prev."nvidia-jetpack${v}"
+                else
+                  lib.warn "nvidia-jetpack${v} is unsupported when NixOS is configured to use JetPack ${cfg.majorVersion}" { };
+            in
             # set default nvidia-jetpack to our jetpack version
             { nvidia-jetpack = final."nvidia-jetpack${cfg.majorVersion}"; }
             # and warn/fail if anyone tries to evaluate something else
             // builtins.listToAttrs (builtins.map
-              (v: { name = "nvidia-jetpack${v}"; value = mkWarnValue v; })
+              (v: nameValuePair "nvidia-jetpack${v}" (mkWarnIfNewer v))
               otherJetpacks)
         )
         (import ../overlay-with-config.nix config)
