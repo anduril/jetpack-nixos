@@ -43,8 +43,10 @@ let
     # use t194. No guarantee that will stay the same in the future, so we
     # should consider choosing the right package set based on the SoC.
     { name
-    , src ? debs.t234.${name}.src
-    , version ? debs.t234.${name}.version
+    , repo ? "t234"
+    , deb ? debs.${repo}.${name}
+    , src ? deb.src
+    , version ? deb.version
     , sourceRoot ? "source"
     , nativeBuildInputs ? [ ]
     , autoPatchelf ? true
@@ -283,6 +285,7 @@ let
 
   l4t-gstreamer = buildFromDeb {
     name = "nvidia-l4t-gstreamer";
+    repo = if l4tAtLeast "36" then "common" else "t234";
     buildInputs = [ l4t-camera l4t-cuda l4t-multimedia wayland ];
   };
 
