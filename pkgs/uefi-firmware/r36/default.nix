@@ -139,10 +139,10 @@ let
       owner = "NVIDIA";
       repo = "edk2-nvidia";
       rev = "r${l4tMajorMinorPatchVersion}";
-      sha256 = "sha256-Ri+0vrxvd7eE7TP/KBM0ET2jX0fupdC3+Dli+IshUP8=";
+      sha256 = "sha256-Hz4IfDotlWRBRad8gfPAUVc2C1+bkTSW04+JpA3aqTY=";
     };
     patches = edk2NvidiaPatches ++ [
-      ###### git log r36.4.3-updates ^r36.4.3 ######
+      ###### git log r36.4.3-updates ^r36.4.3 (kept these even in 36.4.4) ######
       (fetchpatch {
         # fix: Leave DisplayHandoff enabled on ACPI boot
         url = "https://github.com/NVIDIA/edk2-nvidia/commit/7b2c3a5b0b1639a71df6770152d547f2d27740a5.patch";
@@ -163,7 +163,6 @@ let
         url = "https://github.com/NVIDIA/edk2-nvidia/commit/9d4a790e7786d9699405f15927f2fc391915bb19.patch";
         hash = "sha256-MVzWEzzKPRfDWiqgGnfl9dwgDnPLJxjsvijH5jM2Pgw=";
       })
-      # skip chore(github): Migrate to upload-artifact@v4 (#126) b/c not needed, could be added
       (fetchpatch {
         # fix: switch default value of PcdSocDisplayHandoffMode to Auto (#125)
         url = "https://github.com/NVIDIA/edk2-nvidia/commit/a85e6cecf3e37eda685c7c8c9041a570a6397640.patch";
@@ -197,7 +196,7 @@ let
     repo = "edk2-nvidia-non-osi";
     name = repo;
     rev = "r${l4tMajorMinorPatchVersion}";
-    sha256 = "sha256-qQs1jO/h6+j9WLfz1OtYpgZutEeX284BlcUKJWvghEE=";
+    sha256 = "sha256-5BjT7kZqU8ek9GC7f1KuomC2JYyWWFMawrZN2CPHGjY=";
   };
 
   pythonEnv = buildPackages.python312.withPackages (ps: callPackage ./pyenv.nix { inherit ps edk2-nvidia; });
