@@ -81,6 +81,9 @@ Include the following in your `configuration.nix` (or the equivalent in your `fl
   hardware.nvidia-jetpack.enable = true;
   hardware.nvidia-jetpack.som = "xavier-agx"; # Other options include orin-agx, xavier-nx, and xavier-nx-emmc
   hardware.nvidia-jetpack.carrierBoard = "devkit";
+
+  # Enable GPU support - needed even for CUDA and containers
+  hardware.graphics.enable = true;
 }
 ```
 The Xavier AGX contains some critical firmware paritions on the eMMC.
