@@ -442,18 +442,30 @@ in
           RuntimeDirectory = "cdi";
         };
         wantedBy = [ "multi-user.target" ];
+        wants = [ "modprobe@nvgpu.service" ];
+        after = [ "modprobe@nvgpu.service" ];
+        before = lib.optionals nvidiaDockerActive [
+          "docker.service"
+          "docker.socket"
+        ];
         script =
           let
             exe = lib.getExe pkgs.nvidia-jetpack.nvidia-ctk;
           in
           ''
+            # Wait until all devices are present before generating CDI
+            # configuration. Also ensure that we aren't passing any directories
+            # or glob patterns to udevadm (Jetpack 6 CSVs seem to add these,
+            # though the Jetpack 5 CSVs do not have them).
+            udevadm wait --settle --timeout 10 $(find ${pkgs.nvidia-jetpack.l4tCsv}/ -type f -exec grep '/dev/' {} \; | grep -v -e '\*' -e 'by-path' | cut -d',' -f2 | tr -d '\n') || true
+
             ${exe} cdi generate \
               --nvidia-ctk-path=${exe} \
               --driver-root=${pkgs.nvidia-jetpack.containerDeps} \
               --ldconfig-path ${lib.getExe' pkgs.glibc "ldconfig"} \
               --dev-root=/ \
               --mode=csv \
-              $(for f in ${pkgs.nvidia-jetpack.l4tCsv}/*; do echo "--csv.file=$f"; done) \
+              $(find ${pkgs.nvidia-jetpack.l4tCsv}/ -type f -printf "--csv.file=%p ") \
               --output="$RUNTIME_DIRECTORY/jetpack-nixos"
           '';
       };

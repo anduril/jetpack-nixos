@@ -219,6 +219,8 @@ CDI specification, so Podman is recommended for running containers on Jetson
 devices. Docker is set to get experimental CDI support in their version 25
 release.
 
+If you are using Podman, it is recommended to add a dependency to any systemd services that run podman to specify `After=nvidia-cdi-generate.service`. Due to Podman's daemonless nature, this ensures that the CDI configuration files are generated prior to container start.
+
 ## Configuring CUDA for Nixpkgs
 
 > [!NOTE]
