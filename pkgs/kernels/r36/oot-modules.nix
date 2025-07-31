@@ -87,6 +87,16 @@ stdenv.mkDerivation (finalAttrs: {
     "INSTALL_MOD_PATH=$(out)"
   ];
 
+  postInstall = ''
+    mkdir -p $dev
+    cat **/Module.symvers > $dev/Module.symvers
+  '';
+
+  outputs = [
+    "out"
+    "dev"
+  ];
+
   # # GCC 14.2 seems confused about DRM_MODESET_LOCK_ALL_BEGIN/DRM_MODESET_LOCK_ALL_END in nvdisplay/kernel-open/nvidia-drm/nvidia-drm-drv.c:1344
   # extraMakeFlags = [ "KCFLAGS=-Wno-error=unused-label" ];
 
