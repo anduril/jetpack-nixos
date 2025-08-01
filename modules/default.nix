@@ -444,9 +444,8 @@ in
         wantedBy = [ "multi-user.target" ];
         wants = [ "modprobe@nvgpu.service" ];
         after = [ "modprobe@nvgpu.service" ];
-        before = lib.optionals nvidiaDockerActive [
+        before = lib.optionals config.virtualisation.docker.enable [
           "docker.service"
-          "docker.socket"
         ];
         script =
           let
