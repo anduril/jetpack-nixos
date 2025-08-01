@@ -436,6 +436,16 @@ in
       inherit (pkgs.nvidia-jetpack) uefiCapsuleUpdate flashScript initrdFlashScript fuseScript signedFirmware;
     };
 
+    system.preSwitchChecks = lib.mkIf canUpdateFirmware {
+      jetsonCheckSpecCompatability = "${lib.getExe (pkgs.writeShellApplication {
+      name = "ota-check-tegra-compatability-spec";
+      text = ''
+        [ -n "''${SKIP_TEGRA_COMPAT_CHECK+set}" ] && exit 0
+        exec ${lib.getExe' pkgs.nvidia-jetpack.otaUtils "ota-check-compat"} ${pkgs.nvidia-jetpack.bupSpecs}
+      '';
+    })}";
+    };
+
     hardware.nvidia-jetpack.flashScriptOverrides.flashArgs = lib.mkAfter (
       lib.optional (cfg.firmware.secureBoot.pkcFile != null) "-u ${cfg.firmware.secureBoot.pkcFile}" ++
       lib.optional (cfg.firmware.secureBoot.sbkFile != null) "-v ${cfg.firmware.secureBoot.sbkFile}" ++
