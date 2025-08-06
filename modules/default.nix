@@ -449,7 +449,7 @@ in
         ];
         script =
           let
-            exe = lib.getExe pkgs.nvidia-jetpack.nvidia-ctk;
+            exe = lib.getExe pkgs.nvidia-container-toolkit;
           in
           ''
             # Wait until all devices are present before generating CDI
