@@ -139,7 +139,7 @@ let
       owner = "NVIDIA";
       repo = "edk2-nvidia";
       rev = "r${l4tMajorMinorPatchVersion}";
-      sha256 = "sha256-Hz4IfDotlWRBRad8gfPAUVc2C1+bkTSW04+JpA3aqTY=";
+      sha256 = "sha256-eTX+/B6TtpYyeoeQxJcoN2eS+Mh4DtLthabW7p7jzYQ=";
     };
     patches = edk2NvidiaPatches ++ [
       ###### git log r36.4.3-updates ^r36.4.3 (kept these even in 36.4.4) ######
@@ -162,11 +162,6 @@ let
         # fix: bug in secureboot hash compute and optimize reads
         url = "https://github.com/NVIDIA/edk2-nvidia/commit/9d4a790e7786d9699405f15927f2fc391915bb19.patch";
         hash = "sha256-MVzWEzzKPRfDWiqgGnfl9dwgDnPLJxjsvijH5jM2Pgw=";
-      })
-      (fetchpatch {
-        # fix: switch default value of PcdSocDisplayHandoffMode to Auto (#125)
-        url = "https://github.com/NVIDIA/edk2-nvidia/commit/a85e6cecf3e37eda685c7c8c9041a570a6397640.patch";
-        hash = "sha256-f4XSCEYE1NOF4sr/OfHxcD/n06o5aod33+6TWyMaoRs=";
       })
       #####################################################
 
