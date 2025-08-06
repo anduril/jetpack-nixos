@@ -449,7 +449,9 @@ in
         ];
         script =
           let
-            exe = lib.getExe pkgs.nvidia-container-toolkit;
+            # NOTE: This may be removed when bumping to a version of Nixpkgs which includes
+            # https://github.com/NixOS/nixpkgs/pull/431310
+            exe = lib.getExe' pkgs.nvidia-container-toolkit "nvidia-ctk";
           in
           ''
             # Wait until all devices are present before generating CDI
