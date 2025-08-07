@@ -86,7 +86,7 @@ final: prev: (
             rootModules = modules;
             kernel = config.system.modulesTree;
             firmware = config.hardware.firmware;
-            allowMissing = false;
+            allowMissing = true;
           };
           manufacturer = "NixOS";
           product = "serial";
