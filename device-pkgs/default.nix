@@ -11,6 +11,9 @@
 , nvidia-jetpack
 , writeShellApplication
 , buildPackages
+, writeText
+, tio
+, expect
 }:
 
 let
@@ -118,7 +121,7 @@ let
   initrdFlashScript =
     writeShellApplication {
       name = "initrd-flash-${hostName}";
-      text = import ./initrdflash-script.nix { inherit mkRcmBootScript config flashInitrd lib; };
+      text = import ./initrdflash-script.nix { inherit mkRcmBootScript config flashInitrd lib writeText tio expect; };
       meta.platforms = [ "x86_64-linux" ];
     };
 
