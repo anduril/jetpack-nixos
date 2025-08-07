@@ -12,6 +12,7 @@
 , writeShellApplication
 , buildPackages
 , writeText
+, deviceTree
 , tio
 , expect
 }:
@@ -25,6 +26,7 @@ let
     chipId
     flashInitrd
     mkFlashScript
+    l4tMajorMinorPatchVersion
     ;
 
   # This produces a script where we have already called the ./flash.sh script
@@ -121,7 +123,7 @@ let
   initrdFlashScript =
     writeShellApplication {
       name = "initrd-flash-${hostName}";
-      text = import ./initrdflash-script.nix { inherit mkRcmBootScript config flashInitrd lib writeText tio expect; };
+      text = import ./initrdflash-script.nix { inherit mkRcmBootScript config flashInitrd lib l4tMajorMinorPatchVersion writeText deviceTree tio expect; };
       meta.platforms = [ "x86_64-linux" ];
     };
 
