@@ -177,7 +177,7 @@ erase_bootdev() {
       echo "ERR: SPI boot device, but mtd0 device does not exist" >&2
       return 1
     fi
-    echo "Erasing /dev/mtd0"
+    echo "Erasing /dev/mtd0, this may take a while without any output..."
     flash_erase /dev/mtd0 0 0
   else
     echo "ERR: unknown boot device type: $BOOTDEV_TYPE" >&2
