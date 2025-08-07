@@ -440,6 +440,13 @@ in
           default = "";
           description = "Additional commands to be added to the flash script while it is being constructed.";
         };
+
+        additionalInitrdFlashModules = mkOption {
+          type = types.listOf types.str;
+          default = config.boot.initrd.availableKernelModules;
+          defaultText = lib.literalExpression "config.boot.initrd.availableKernelModules";
+          description = "Additional kernel modules to be loaded during the initrd flashing method.";
+        };
       };
 
       flashScript = mkOption {
