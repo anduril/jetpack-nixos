@@ -70,19 +70,29 @@ in
         continue
       fi
 
+      echo "loading image ${l4tImage} with tag $image..."
       "$runtime" load --input=${l4tImage}
+      echo "loaded image"
 
+      echo "testing without NVIDIA passthru, which should fail"
       if "$runtime" run --rm "$image"; then
-        echo "container run w/o nvidia passthru unexpectedly succeeded"
+        echo "container run without NVIDIA passthru unexpectedly succeeded"
         exit 1
       fi
+      echo "test without NVIDIA passthru failed, as expected"
 
+      echo "testing with NVIDIA passthru, which should succeed"
       if ! "$runtime" run --rm --device=nvidia.com/gpu=all "$image"; then
-        echo "container run w/nvidia passthru unexpectedly failed"
+        echo "container run with NVIDIA passthru unexpectedly failed"
         exit 1
       fi
+      echo "test with NVIDIA passthru succeeded, as expected"
 
+      echo "removing image $image..."
       "$runtime" image rm "$image"
+      echo "removed image $image"
+
+      echo "finished testing $runtime"
     done
   '';
 }
