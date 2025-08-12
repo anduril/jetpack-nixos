@@ -106,6 +106,14 @@ let
       # As of (2025-05-23), this is still not fixed in any release branch of 35.x.x
       ./0001-fix-varint-read-records-per-erase-block-and-fix-leak.patch
       ./0002-fix-bug-in-block-erase-logic.patch
+
+      # fix: split ftw writes if they span blocks
+      # https://forums.developer.nvidia.com/t/possible-uefi-memory-leak-and-partition-full/308540/50
+      # https://github.com/NVIDIA/edk2-nvidia/issues/114
+      (fetchpatch {
+        url = "https://github.com/NVIDIA/edk2-nvidia/commit/c101ba515b2737fb78d8929c2852f5c8f9607330.patch";
+        sha256 = "sha256-M+9y5lmUoUrc985MDuZzHIa2EySqoPWzRu2QSTc0Q1A=";
+      })
     ];
     postPatch = lib.optionalString errorLevelInfo ''
       sed -i 's#PcdDebugPrintErrorLevel|.*#PcdDebugPrintErrorLevel|0x8000004F#' Platform/NVIDIA/NVIDIA.common.dsc.inc
