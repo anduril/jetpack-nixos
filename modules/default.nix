@@ -27,9 +27,6 @@ let
     paths = cfg.firmware.optee.supplicant.plugins;
   };
 
-  nvidiaDockerActive = with config.virtualisation; docker.enable && docker.enableNvidia;
-  nvidiaPodmanActive = with config.virtualisation; podman.enable && podman.enableNvidia;
-
   checkValidSoms = soms: cfg.som == "generic" || lib.lists.any (s: lib.hasPrefix s cfg.som) soms;
   validSomsAssertion = majorVersion: soms: {
     assertion = cfg.majorVersion == majorVersion -> checkValidSoms soms;
@@ -49,6 +46,11 @@ in
   ];
 
   options = {
+    # Allow disabling upstream's NVIDIA modules, which conflict with JetPack NixOS' driver handling.
+    hardware.nvidia.enabled = lib.mkOption {
+      readOnly = false;
+    };
+
     hardware.nvidia-jetpack = {
       enable = mkEnableOption "NVIDIA Jetson device support";
 
@@ -167,12 +169,10 @@ in
         description = "Enable boot.kernelParams default console configuration";
       };
 
-      container-toolkit.enable = mkOption {
-        default = nvidiaDockerActive || nvidiaPodmanActive;
-        defaultText = "false";
-        type = types.bool;
-        description = "Enable dynamic CDI configuration for Jetson devices.";
-      };
+      container-toolkit.enable =
+        lib.modules.mkRenamedOptionModule
+          [ "hardware" "nvidia-jetpack" "container-toolkit" "enable" ]
+          [ "hardware" "nvidia-container-toolkit" "enable" ];
     };
   };
 
@@ -196,23 +196,9 @@ in
             aarch64-linux compatible package set.
           '';
         }
-        {
-          assertion = (config.virtualisation.docker.enable && cfg.container-toolkit.enable) -> lib.versionAtLeast config.virtualisation.docker.package.version "25";
-          message = "Docker version < 25 does not support CDI";
-        }
-        {
-          assertion = !config.hardware.nvidia-container-toolkit.enable;
-          message = "hardware.nvidia-container-toolkit.enable does not work with jetson devices (yet), use hardware.nvidia-jetpack.container-toolkit.enable instead";
-        }
         (validSomsAssertion "5" [ "xavier" "orin" ])
         (validSomsAssertion "6" [ "orin" ])
       ];
-
-      warnings = (lib.optionals nvidiaDockerActive [
-        "You have set virtualisation.docker.enableNvidia. This option is deprecated, please set hardware.nvidia-jetpack.container-toolkit.enable instead."
-      ]) ++ (lib.optionals nvidiaPodmanActive [
-        "You have set virtualisation.podman.enableNvidia. This option is deprecated, please set hardware.nvidia-jetpack.container-toolkit.enable instead."
-      ]);
 
       # Use mkOptionDefault so that we prevent conflicting with the priority that
       # `nixos-generate-config` uses.
@@ -359,6 +345,25 @@ in
           l4t-wayland
         ];
 
+      hardware.nvidia = {
+        # The JetPack stack isn't compatible with the upstream NVIDIA modules, which are meant for desktop and
+        # datacenter GPUs. We need to disable them so they do not break our Jetson closures.
+        # NOTE: Yes, they use "enabled" instead of "enable":
+        # https://github.com/NixOS/nixpkgs/blob/ce01daebf8489ba97bd1609d185ea276efdeb121/nixos/modules/hardware/video/nvidia.nix#L27
+        enabled = lib.mkForce false;
+
+        # Since some modules use `hardware.nvidia.package` directly, we must ensure it is set to a reasonable package
+        # to avoid bloating the Jetson closure with drivers for desktop or datacenter GPUs.
+        # As an example, see:
+        # https://github.com/NixOS/nixpkgs/blob/ce01daebf8489ba97bd1609d185ea276efdeb121/nixos/modules/services/hardware/nvidia-container-toolkit/default.nix#L173
+        package = lib.mkForce config.hardware.graphics.package;
+      };
+
+      hardware.nvidia-container-toolkit.enable = lib.mkDefault (
+        with config.virtualisation;
+        docker.enable && docker.enableNvidia || podman.enable && podman.enableNvidia
+      );
+
       services.udev.packages = [
         (pkgs.runCommand "jetson-udev-rules" { } ''
           install -D -t $out/etc/udev/rules.d ${pkgs.nvidia-jetpack.l4t-init}/etc/udev/rules.d/99-tegra-devices.rules
@@ -382,6 +387,14 @@ in
           '';
         }
       );
+
+      # `videoDrivers` is normally used to populate `drivers`. Since we don't do that, make sure we have `videoDrivers`
+      # contain the string "nvidia", as other modules scan the list to see what functionality to enable.
+      # NOTE: Adding "nvidia" to `videoDrivers` is enough to automatically enable upstream NixOS' NVIDIA modules, since
+      # there is a default driver package (the SBSA driver on aarch64-linux):
+      # https://github.com/NixOS/nixpkgs/blob/ce01daebf8489ba97bd1609d185ea276efdeb121/nixos/modules/hardware/video/nvidia.nix#L8
+      # Those modules would configure the device incorrectly, so we must disable `config.hardware.nvidia` separately.
+      services.xserver.videoDrivers = [ "nvidia" ];
 
       # If we aren't using modesetting, we won't have a DRM device with the
       # "master-of-seat" tag, so "loginctl show-seat seat0" reports
@@ -435,40 +448,6 @@ in
         otaUtils # Tools for UEFI capsule updates
       ];
 
-      systemd.services.nvidia-cdi-generate = lib.mkIf cfg.container-toolkit.enable {
-        serviceConfig = {
-          Type = "oneshot";
-          RemainAfterExit = true;
-          RuntimeDirectory = "cdi";
-        };
-        wantedBy = [ "multi-user.target" ];
-        wants = [ "modprobe@nvgpu.service" ];
-        after = [ "modprobe@nvgpu.service" ];
-        before = lib.optionals config.virtualisation.docker.enable [
-          "docker.service"
-        ];
-        script =
-          let
-            exe = lib.getExe pkgs.nvidia-jetpack.nvidia-ctk;
-          in
-          ''
-            # Wait until all devices are present before generating CDI
-            # configuration. Also ensure that we aren't passing any directories
-            # or glob patterns to udevadm (Jetpack 6 CSVs seem to add these,
-            # though the Jetpack 5 CSVs do not have them).
-            udevadm wait --settle --timeout 10 $(find ${pkgs.nvidia-jetpack.l4tCsv}/ -type f -exec grep '/dev/' {} \; | grep -v -e '\*' -e 'by-path' | cut -d',' -f2 | tr -d '\n') || true
-
-            ${exe} cdi generate \
-              --nvidia-ctk-path=${exe} \
-              --driver-root=${pkgs.nvidia-jetpack.containerDeps} \
-              --ldconfig-path ${lib.getExe' pkgs.glibc "ldconfig"} \
-              --dev-root=/ \
-              --mode=csv \
-              $(find ${pkgs.nvidia-jetpack.l4tCsv}/ -type f -printf "--csv.file=%p ") \
-              --output="$RUNTIME_DIRECTORY/jetpack-nixos"
-          '';
-      };
-
       # Used by libEGL_nvidia.so.0
       environment.etc."egl/egl_external_platform.d".source =
         "${pkgs.addDriverRunpath.driverLink}/share/egl/egl_external_platform.d/";
@@ -481,5 +460,102 @@ in
         # to appear sufficiently early in the `lsm=<list of security modules>` kernel argument
         security.lsm = lib.mkIf config.security.apparmor.enable (lib.mkBefore [ "apparmor" ]);
       })
+    (mkIf config.hardware.nvidia-container-toolkit.enable {
+      systemd.services.nvidia-container-toolkit-cdi-generator = {
+        # TODO: Upstream waits on `system-udev-settle.service`:
+        # https://github.com/NixOS/nixpkgs/blob/ce01daebf8489ba97bd1609d185ea276efdeb121/nixos/modules/services/hardware/nvidia-container-toolkit/default.nix#L240
+        # That's not recommended; instead we should have udev rules for the devices we care about so we can wait on them specifically.
+        wants = [ "modprobe@nvgpu.service" ];
+        after = [ "modprobe@nvgpu.service" ];
+
+        # TODO: A previous version of this service included the following note:
+        #
+        #  # Wait until all devices are present before generating CDI
+        #  # configuration. Also ensure that we aren't passing any directories
+        #  # or glob patterns to udevadm (Jetpack 6 CSVs seem to add these,
+        #  # though the Jetpack 5 CSVs do not have them).
+        #  udevadm wait --settle --timeout 10 $(find ${pkgs.nvidia-jetpack.l4tCsv}/ -type f -exec grep '/dev/' {} \; | grep -v -e '\*' -e 'by-path' | cut -d',' -f2 | tr -d '\n') || true
+        #
+        # Investigate if globs pose a problem for JetPack 5/6.
+
+        # TODO: This should be upstreamed.
+        before = lib.mkMerge [
+          (mkIf config.virtualisation.docker.enable [ "docker.service" ])
+          (mkIf config.virtualisation.podman.enable [ "podman.service" ])
+        ];
+      };
+
+      hardware.nvidia-container-toolkit = {
+        # TODO: Issues to address in nvidia-container-toolkit-cdi-generator:
+        # - Warning about "Failed to locate symlink /etc/vulkan/icd.d/nvidia_icd.json" on the host
+        # - Log reports "Generated CDI spec with version 0.8.0" but actual CDI JSON shows `"cdiVersion": "0.5.0"`
+
+        csv-files =
+          let
+            inherit (pkgs.nvidia-jetpack) l4tCsv;
+          in
+          lib.map (fileName: "${l4tCsv}/${fileName}") l4tCsv.fileNames;
+
+        # Must be set to "csv" when `csv-files` are provided.
+        discovery-mode = lib.mkForce "csv";
+
+        # Unsupported.
+        mount-nvidia-docker-1-directories = lib.mkForce false;
+
+        # Unsupported as Jetson doesn't provide the same binaries as other platforms; ours are captured by the CSV
+        # files in l4tCsv and are always included in the container.
+        mount-nvidia-executables = lib.mkForce false;
+
+        extraArgs = [
+          # Jetson requires `--driver-root`
+          "--driver-root"
+          pkgs.nvidia-jetpack.containerDeps.outPath
+          # `--dev-root` defaults to `/dev`, but it should be root
+          "--dev-root"
+          "/"
+          # The cdi generation creates a hook for us mounting "libcuda.so.1::/usr/lib/aarch64-linux-gnu/tegra/libcuda.so".
+          # Because the provided CSV does about the same thing, and we cannot disable the hook, we ignore the CSV entry.
+          "--csv.ignore-pattern"
+          "/usr/lib/aarch64-linux-gnu/tegra/libcuda.so" # For JetPack 5
+          "--csv.ignore-pattern"
+          "/usr/lib/aarch64-linux-gnu/nvidia/libcuda.so" # For JetPack 6
+        ];
+
+        # NOTE: The upstream NixOS module for `nvidia-container-toolkit` includes `hardware.nvidia.package` in the list
+        # of mounts, but we don't want that because that's for desktop/datacenter GPU drivers, so we use `lib.mkForce`
+        # to make the list of mounts anew.
+        mounts =
+          let
+            makePassthroughMount = path: {
+              hostPath = path;
+              containerPath = path;
+            };
+
+            # For reference, the packages used to create driverLink are here:
+            # https://github.com/NixOS/nixpkgs/blob/ce01daebf8489ba97bd1609d185ea276efdeb121/nixos/modules/hardware/graphics.nix#L10
+            driverLinkConstituents = [
+              config.hardware.graphics.package
+              # Recall that `config.hardware.graphics.extraPackages` creates l4tCoreWrapper inline, which
+              # symlinks to l4t-core. In order for those symlinks to resolve, their target must also be included
+              # in the list of mounts; as such, we need l4t-core.
+              pkgs.nvidia-jetpack.l4t-core
+            ]
+            ++ config.hardware.graphics.extraPackages;
+          in
+          lib.mkForce (
+            lib.map makePassthroughMount [
+              "${lib.getLib pkgs.glibc}/lib"
+              "${lib.getLib pkgs.glibc}/lib64"
+              pkgs.addDriverRunpath.driverLink
+            ]
+            # NOTE: Is it not enough to include the driverLink -- the symlinks to the Nix store won't resolve.
+            # We must include all the the packages which go into producing it as well.
+            # TODO: This can/should be upstreamed. Ultimately, this behavior is very similar to the
+            # nix-required-mounts hook, which can add the GPU to the sandbox, where we also need the closure
+            # of all packages involved.
+            ++ lib.map (drv: makePassthroughMount drv.outPath) driverLinkConstituents
+          );
+      };
+    })
   ]);
 }
