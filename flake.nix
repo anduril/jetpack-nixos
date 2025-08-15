@@ -128,7 +128,7 @@
         '';
       });
 
-      formatter = forAllSystems ({ pkgs, ... }: pkgs.nixpkgs-fmt);
+      formatter = forAllSystems ({ pkgs, ... }: import ./treefmt.nix pkgs);
 
       legacyPackages = forAllSystems ({ system, ... }:
         let
