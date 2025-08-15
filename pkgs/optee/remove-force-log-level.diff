@@ -1,0 +1,14 @@
+diff --git a/optee/optee_os/core/arch/arm/plat-tegra/conf.mk b/optee/optee_os/core/arch/arm/plat-tegra/conf.mk
+index 69f025e..9945200 100644
+--- a/optee/optee_os/core/arch/arm/plat-tegra/conf.mk
++++ b/optee/optee_os/core/arch/arm/plat-tegra/conf.mk
+@@ -61,9 +61,6 @@ $(call force,CFG_RPMB_TESTKEY,n)
+ # Enable PKCS11 tests in xtest
+ $(call force,CFG_PKCS11_TA,y)
+ 
+-# Set the default log level to INFO
+-$(call force,CFG_TEE_CORE_LOG_LEVEL,2)
+-
+ # Do not halt system if an invalid EKB is detected
+ $(call force,CFG_JETSON_MANDATORY_EKB,n)
+ 

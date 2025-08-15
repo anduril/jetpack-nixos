@@ -264,6 +264,23 @@ in
               source tree.
             '';
           };
+
+          coreLogLevel = mkOption {
+            type = types.int;
+            default = 2;
+            description = ''
+              OP-TEE core log level, corresponds to CFG_TEE_CORE_LOG_LEVEL
+            '';
+          };
+
+          taLogLevel = mkOption {
+            type = types.int;
+            default = cfg.firmware.optee.coreLogLevel;
+            defaultText = "hardware.nvidia-jetpack.firmware.optee.coreLogLevel";
+            description = ''
+              OP-TEE trusted application log level, corresponds to CFG_TEE_TA_LOG_LEVEL
+            '';
+          };
         };
 
         eksFile = mkOption {

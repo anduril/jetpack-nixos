@@ -13,9 +13,8 @@ final: prev: (
 
     tosArgs = {
       inherit (final.nvidia-jetpack) socType;
-      inherit (cfg.firmware.optee) taPublicKeyFile;
+      inherit (cfg.firmware.optee) taPublicKeyFile extraMakeFlags coreLogLevel taLogLevel;
       opteePatches = cfg.firmware.optee.patches;
-      extraMakeFlags = cfg.firmware.optee.extraMakeFlags;
     };
 
     flashTools = cfg.flasherPkgs.callPackages (import ./device-pkgs { inherit config; pkgs = final; }) { };

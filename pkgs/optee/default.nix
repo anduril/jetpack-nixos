@@ -52,6 +52,8 @@ let
                                     , extraMakeFlags ? [ ]
                                     , opteePatches ? [ ]
                                     , taPublicKeyFile ? null
+                                    , coreLogLevel ? 2
+                                    , taLogLevel ? coreLogLevel
                                     , ...
                                     }:
     let
@@ -68,6 +70,8 @@ let
         "CFG_WITH_STMM_SP=y"
         "NV_CCC_PREBUILT=${nvCccPrebuilt}"
         "O=$(out)"
+        "CFG_TEE_CORE_LOG_LEVEL=${toString coreLogLevel}"
+        "CFG_TEE_TA_LOG_LEVEL=${toString taLogLevel}"
       ]
       ++ (lib.optional (uefi-firmware != null) "CFG_STMM_PATH=${uefi-firmware}/standalonemm_optee.bin")
       ++ (lib.optional (taPublicKeyFile != null) "TA_PUBLIC_KEY=${taPublicKeyFile}")
@@ -77,7 +81,7 @@ let
       inherit pname;
       version = l4tMajorMinorPatchVersion;
       src = nvopteeSrc;
-      patches = opteePatches;
+      patches = opteePatches ++ [ ./remove-force-log-level.diff ];
       postPatch = ''
         patchShebangs $(find optee/optee_os -type d -name scripts -printf '%p ')
       '';
