@@ -13,13 +13,15 @@ import subprocess
 import sys
 import os
 
-REPOS_TO_SKIP = [
-    '3rdparty/dtc' # This doesn't have tags...
-]
+REPOS_TO_SKIP = ["3rdparty/dtc"]  # This doesn't have tags...
+
 
 def fetch_git(url, ref):
-    result = subprocess.run(['nix-prefetch-git', '--quiet', url, ref], check=True, capture_output=True)
+    result = subprocess.run(
+        ["nix-prefetch-git", "--quiet", url, ref], check=True, capture_output=True
+    )
     return json.loads(result.stdout)
+
 
 def main():
     version = sys.argv[1].removeprefix("r")
@@ -42,8 +44,8 @@ def main():
         with open(filename) as fd:
             data = json.load(fd)
 
-    for line in source_info.split('\n'):
-        k, relpath, giturl, _ = line.split(':')
+    for line in source_info.split("\n"):
+        k, relpath, giturl, _ = line.split(":")
 
         giturl = "https://" + giturl
 
@@ -51,9 +53,9 @@ def main():
             print(f"Checking out {giturl}")
             data[relpath] = fetch_git(giturl, tag)
 
-        with open(filename, 'w') as fd:
-            fd.write(json.dumps(data, sort_keys=True, indent=2, separators=(',', ': ')))
+        with open(filename, "w") as fd:
+            fd.write(json.dumps(data, sort_keys=True, indent=2, separators=(",", ": ")))
+
 
 if __name__ == "__main__":
     main()
-
