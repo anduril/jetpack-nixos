@@ -6,6 +6,6 @@ EXPECTED_FW_VER=@expectedBiosVersion@
 echo "Current firmware version is: ${CURRENT_FW_VER}"
 echo "Expected firmware version is: ${EXPECTED_FW_VER}"
 
-if [[ "$CURRENT_FW_VER" != "$EXPECTED_FW_VER" ]]; then
-    exit 1
+if [[ $CURRENT_FW_VER != "$EXPECTED_FW_VER" ]]; then
+  exit 1
 fi

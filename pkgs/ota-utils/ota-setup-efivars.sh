@@ -15,6 +15,6 @@ if [[ ! -e /sys/firmware/efi/efivars/TegraPlatformSpec-781e084c-a330-417c-b678-3
 fi
 
 if [[ ! -e /sys/firmware/efi/efivars/TegraPlatformCompatSpec-781e084c-a330-417c-b678-38e696380cb9 ]]; then
-    # TODO: We should also replace this value if ours is different
-    set_efi_var TegraPlatformCompatSpec-781e084c-a330-417c-b678-38e696380cb9 "\x07\x00\x00\x00${compatspec}-${targetBoard}-"
+  # TODO: We should also replace this value if ours is different
+  set_efi_var TegraPlatformCompatSpec-781e084c-a330-417c-b678-38e696380cb9 "\x07\x00\x00\x00${compatspec}-${targetBoard}-"
 fi

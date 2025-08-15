@@ -13,8 +13,8 @@ detect_can_write_runtime_uefi_vars "$boardspec"
 # updates can still be written to an ESP partition at @efiSysMountPoint@ on
 # other devices (e.g. nvme)
 if ! mountpoint -q @efiSysMountPoint@; then
-	echo "@efiSysMountPoint@ is not mounted"
-	exit 1
+  echo "@efiSysMountPoint@ is not mounted"
+  exit 1
 fi
 
 install -Dm0644 "$capsuleFile" @efiSysMountPoint@/EFI/UpdateCapsule/TEGRA_BL.Cap
