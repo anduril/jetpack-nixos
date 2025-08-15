@@ -1,9 +1,14 @@
 {
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-25.05";
+
+    treefmt-nix = {
+      url = "github:numtide/treefmt-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { self, nixpkgs, ... }:
+  outputs = { self, nixpkgs, treefmt-nix, ... }:
     let
       inherit (nixpkgs) lib;
 
@@ -128,7 +133,15 @@
         '';
       });
 
-      formatter = forAllSystems ({ pkgs, ... }: pkgs.nixpkgs-fmt);
+      formatter = forAllSystems ({ pkgs, ... }: (treefmt-nix.lib.evalModule pkgs (
+        { ... }:
+        {
+          projectRootFile = "flake.nix";
+          programs.nixpkgs-fmt.enable = true;
+          programs.shfmt.enable = true;
+          programs.black.enable = true;
+        }
+      )).config.build.wrapper);
 
       legacyPackages = forAllSystems ({ system, ... }:
         let
