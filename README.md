@@ -71,7 +71,7 @@ When prompted, press ESC to enter the UEFI firmware menu.
 In the "Boot Manager", select the correct USB device and boot directly into it.
 
 Follow the [NixOS manual](https://nixos.org/manual/nixos/stable/index.html#sec-installation) for installation instructions, using the instructions specific to UEFI devices.
-Include the following in your `configuration.nix` (or the equivalent in your `flake.nix`) before installing:
+Include the following in your `configuration.nix` before installing:
 ```nix
 {
   imports = [
@@ -85,7 +85,34 @@ Include the following in your `configuration.nix` (or the equivalent in your `fl
   # Enable GPU support - needed even for CUDA and containers
   hardware.graphics.enable = true;
 }
+
 ```
+#### If you prefer using flakes do this instead:
+For your `flake.nix`, include the following:
+```nix
+{
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    jetpack.url = "github:anduril/jetpack-nixos/master"; # Add this line
+  };
+  outputs = inputs@{ self, nixpkgs, jetpack, ... } : { # Add jetpack
+    nixosConfigurations.nixos = nixpkgs.lib.nixosSystem {
+      modules = [ ./configuration.nix jetpack.nixosModules.default ]; # Add jetpack.nixosModules.default
+  };
+}
+```
+And include this in your conf, i.e. `configuration.nix`
+```nix
+{
+  hardware.nvidia-jetpack.enable = true;
+  hardware.nvidia-jetpack.som = "xavier-agx"; # Other options include orin-agx, xavier-nx, and xavier-nx-emmc
+  hardware.nvidia-jetpack.carrierBoard = "devkit";
+
+  # Enable GPU support - needed even for CUDA and containers
+  hardware.graphics.enable = true;
+}
+```
+
 The Xavier AGX contains some critical firmware paritions on the eMMC.
 If you are installing NixOS to the eMMC, be sure to not remove these partitions!
 You can remove and replace the "UDA" partition if you want to install NixOS to the eMMC.
