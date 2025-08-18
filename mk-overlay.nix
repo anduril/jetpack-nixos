@@ -161,8 +161,7 @@ makeScope final.newScope (self: {
         cudaVersionDashes = replaceStrings [ "." ] [ "-" ] cudaMajorMinorVersion;
 
         # Utilities
-        callPackage = callPackageWith (final // self // finalCudaPackages);
-        callPackages = callPackagesWith (final // self // finalCudaPackages);
+        callPackages = callPackagesWith (pkgs' // pkgs'.nvidia-jetpack // finalCudaPackages);
         cudaAtLeast = versionAtLeast finalCudaPackages.cudaMajorMinorPatchVersion;
         cudaOlder = versionOlder finalCudaPackages.cudaMajorMinorPatchVersion;
         inherit (self) debs; # NOTE: The presence of debs is used as a condition in construciton of pkgs'.
@@ -216,7 +215,8 @@ makeScope final.newScope (self: {
       ]
       ++ _cuda.extensions);
     in
-    makeScope pkgs'.newScope (
+    # NOTE: We must ensure the scope allows us to draw on the contents of nvidia-jetpack.
+    makeScope pkgs'.nvidia-jetpack.newScope (
       extends composedExtensions passthruFunction
     );
 
