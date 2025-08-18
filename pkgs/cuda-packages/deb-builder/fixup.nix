@@ -4,7 +4,6 @@
 { autoAddDriverRunpath
 , autoPatchelfHook
 , config
-, cudaConfig
 , cudaMajorMinorVersion
 , dpkg
 , flags
@@ -13,7 +12,6 @@
 , stdenv
 }:
 let
-  inherit (cudaConfig) hostRedistSystem;
   inherit (lib) licenses sourceTypes;
   inherit (lib.attrsets) attrValues;
   inherit (lib.lists)
@@ -433,7 +431,7 @@ in
     # a required package missing.
     # NOTE: Use this when a broken condition means evaluation can fail!
     badPlatformsConditions = {
-      "Platform is not supported" = hostRedistSystem == "unsupported";
+      "Platform is not supported" = !flags.isJetsonBuild;
     };
   };
 
