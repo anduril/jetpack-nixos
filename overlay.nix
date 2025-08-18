@@ -61,9 +61,9 @@ in
   # accordingly. If it is not, default to nvidia-jetpack5.
   nvidia-jetpack =
     if final.cudaPackages ? debs then
-      if (assert final.nvidia-jetpack5.cudaPackages.cudaMajorMinorVersion == "11.4"; final.cudaPackages.cudaMajorMinorVersion == "11.4") then
+      if final.nvidia-jetpack5.cudaPackages.cudaMajorMinorVersion == final.cudaPackages.cudaMajorMinorVersion then
         final.nvidia-jetpack5
-      else if (assert final.nvidia-jetpack6.cudaPackages.cudaMajorMinorVersion == "12.6"; final.cudaPackages.cudaMajorMinorVersion == "12.6") then
+      else if final.nvidia-jetpack6.cudaPackages.cudaMajorMinorVersion == final.cudaPackages.cudaMajorMinorVersion then
         final.nvidia-jetpack6
       else
         builtins.throw "unrecognized cudaPackages (version ${final.cudaPackages.cudaMajorMinorVersion}) providing `debs` attribute"
