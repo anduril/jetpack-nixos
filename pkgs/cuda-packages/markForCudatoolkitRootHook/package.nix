@@ -1,12 +1,11 @@
 # Internal hook, used by cudatoolkit and cuda redist packages
 # to accommodate automatic CUDAToolkit_ROOT construction
-{ config
-, cudaConfig
+{ backendStdenv
+, config
 , lib
 , makeSetupHook
 }:
 let
-  inherit (cudaConfig) hostRedistSystem;
   inherit (lib.attrsets) attrValues;
   inherit (lib.lists) any optionals;
   inherit (lib.trivial) id;
@@ -16,7 +15,7 @@ let
   finalAttrs = {
     name = "mark-for-cudatoolkit-root-hook";
     passthru.badPlatformsConditions = {
-      "Platform is not supported" = hostRedistSystem == "unsupported";
+      "Platform is not supported" = backendStdenv.hostRedistSystem == "unsupported";
     };
     meta = {
       description = "Setup hook which marks CUDA packages for inclusion in CUDA environment variables";
