@@ -28,8 +28,8 @@ let
         cuda-samples = fetchFromGitHub {
           owner = "NVIDIA";
           repo = "cuda-samples";
-          tag = "v12.2";
-          sha256 = "sha256-3+1gFQfrfv66dWeclA+905nsmOYstf36iPcBSAQToTo=";
+          tag = "v12.5"; # There is no 12.6 tag
+          hash = "sha256-LL9A6olrpSAqePumNzQbAdljnzhOehmqqOy5sJieJk8=";
         };
 
         extraPrefix = "/share";
@@ -41,9 +41,9 @@ let
           imageName = "nvcr.io/nvidia/l4t-jetpack";
           os = "linux";
           arch = "arm64";
-          imageDigest = "sha256:b3bbd7e3f3a0879a6672adc64aef7742ba12f9baaf1451c91215942c46e4e2fa";
-          finalImageTag = "r36.3.0";
-          sha256 = "sha256-gPNavdjoShqg8jTlAmWJiAqPqT/KXtU+BFSlxhSBQx4=";
+          imageDigest = "sha256:34ccf0f3b63c6da9eee45f2e79de9bf7fdf3beda9abfd72bbf285ae9d40bb673";
+          finalImageTag = "r36.4.0";
+          sha256 = "sha256-+5+GRmyCl2ZcdYIJHU5snuFzEx1QkZic9bhtx9ZjXeo=";
         };
 
         copyToRoot = [
@@ -70,19 +70,29 @@ in
         continue
       fi
 
+      echo "loading image ${l4tImage} with tag $image..."
       "$runtime" load --input=${l4tImage}
+      echo "loaded image"
 
+      echo "testing without NVIDIA passthru, which should fail"
       if "$runtime" run --rm "$image"; then
-        echo "container run w/o nvidia passthru unexpectedly succeeded"
+        echo "container run without NVIDIA passthru unexpectedly succeeded"
         exit 1
       fi
+      echo "test without NVIDIA passthru failed, as expected"
 
+      echo "testing with NVIDIA passthru, which should succeed"
       if ! "$runtime" run --rm --device=nvidia.com/gpu=all "$image"; then
-        echo "container run w/nvidia passthru unexpectedly failed"
+        echo "container run with NVIDIA passthru unexpectedly failed"
         exit 1
       fi
+      echo "test with NVIDIA passthru succeeded, as expected"
 
+      echo "removing image $image..."
       "$runtime" image rm "$image"
+      echo "removed image $image"
+
+      echo "finished testing $runtime"
     done
   '';
 }
