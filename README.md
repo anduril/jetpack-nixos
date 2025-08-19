@@ -92,8 +92,9 @@ For your `flake.nix`, include the following:
 ```nix
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
     jetpack.url = "github:anduril/jetpack-nixos/master"; # Add this line
+    jetpack.inputs.nixpkgs.follows = "nixpkgs";
   };
   outputs = inputs@{ self, nixpkgs, jetpack, ... } : { # Add jetpack
     nixosConfigurations.nixos = nixpkgs.lib.nixosSystem {
