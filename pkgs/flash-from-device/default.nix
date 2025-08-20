@@ -36,6 +36,6 @@ runCommand name { meta.mainProgram = name; } ''
   EOF
   cat ${./flash-from-device.sh} >> $out/bin/flash-from-device
   substituteInPlace $out/bin/flash-from-device \
-    --replace "@ota_helpers_func@" "${../ota-utils/ota_helpers.func}"
+    --replace "@ota_helpers_func@" "${../ota-utils/ota_helpers.sh}"
   chmod +x $out/bin/flash-from-device
 ''

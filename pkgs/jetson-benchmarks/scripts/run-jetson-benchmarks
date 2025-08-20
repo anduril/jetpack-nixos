@@ -2,11 +2,11 @@
 
 set -euo pipefail
 
-script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 
 WORKDIR=$(mktemp -d)
 function on_exit() {
-    sudo rm -rf "$WORKDIR"
+  sudo rm -rf "$WORKDIR"
 }
 trap on_exit EXIT
 
