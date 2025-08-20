@@ -227,27 +227,23 @@ You can run OCI containers with jetpack-nixos by enabling the following nixos op
 
 ```nix
 {
-  virtualisation.podman.enable = true;
-  virtualisation.podman.enableNvidia = true;
+  hardware.nvidia-container-toolkit.enable = true;
+  virtualisation = {
+    docker.enable = true;
+    podman.enable = true;
+  };
 }
 ```
 
-Note that on newer nixpkgs the `virtualisation.{docker,podman}.enableNvidia` option is deprecated in favor of using `hardware.nvidia-container-toolkit.enable` instead. This new option does not work yet with Jetson devices, see [this issue](https://github.com/nixos/nixpkgs/issues/344729).
+Note that on newer nixpkgs the `virtualisation.{docker,podman}.enableNvidia` option is deprecated in favor of using `hardware.nvidia-container-toolkit.enable` instead.
 
 To run a container with access to nvidia hardware, you must specify a device to
 passthrough to the container in the [CDI](https://github.com/cncf-tags/container-device-interface/blob/main/SPEC.md#overview)
 format. By default, there will be a single device setup of the kind
 "nvidia.com/gpu" named "all". To use this device, pass
-`--device=nvidia.com/gpu=all` when starting your container. If you need to
-configure more CDI devices on the NixOS host, just note that the path
-/var/run/cdi/jetpack-nixos.yaml will be taken by jetpack-nixos.
+`--device=nvidia.com/gpu=all` when starting your container.
 
-As of December 2023, Docker does not have a released version that supports the
-CDI specification, so Podman is recommended for running containers on Jetson
-devices. Docker is set to get experimental CDI support in their version 25
-release.
-
-If you are using Podman, it is recommended to add a dependency to any systemd services that run podman to specify `After=nvidia-cdi-generate.service`. Due to Podman's daemonless nature, this ensures that the CDI configuration files are generated prior to container start.
+If you are using Podman, it is recommended to add a dependency to any systemd services that run podman to specify `After=nvidia-container-toolkit-cdi-generator.service`. Due to Podman's daemonless nature, this ensures that the CDI configuration files are generated prior to container start.
 
 ## Configuring CUDA for Nixpkgs
 
