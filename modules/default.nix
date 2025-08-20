@@ -43,6 +43,7 @@ in
     ./nvargus-daemon.nix
     ./flash-script.nix
     ./devices.nix
+    (lib.modules.mkRenamedOptionModule [ "hardware" "nvidia-jetpack" "container-toolkit" "enable" ] [ "hardware" "nvidia-container-toolkit" "enable" ])
   ];
 
   options = {
@@ -168,11 +169,6 @@ in
         type = types.bool;
         description = "Enable boot.kernelParams default console configuration";
       };
-
-      container-toolkit.enable =
-        lib.modules.mkRenamedOptionModule
-          [ "hardware" "nvidia-jetpack" "container-toolkit" "enable" ]
-          [ "hardware" "nvidia-container-toolkit" "enable" ];
     };
   };
 
