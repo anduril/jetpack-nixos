@@ -4,6 +4,7 @@
 , lib
 , fetchurl
 , fetchpatch
+, patchelfUnstable
 , autoPatchelfHook
 , dpkg
 , expat
@@ -27,16 +28,6 @@
 , cudaDriverMajorMinorVersion
 }:
 let
-  # The version currently in nixpkgs 23.11 and master 0.15 is pretty old and
-  # doesn't have the --rename-dynamic-symbols feature we need
-  patchelf_new = buildPackages.patchelf.overrideAttrs (_: rec {
-    version = "0.18.0";
-    src = fetchurl {
-      url = "https://github.com/NixOS/patchelf/releases/download/${version}/patchelf-${version}.tar.bz2";
-      sha256 = "sha256-GVKyp4K6V2J5whHulC40F0j9tEmX9wTdU970bNBVRws=";
-    };
-  });
-
   # Wrapper around mkDerivation that has some sensible defaults to extract a .deb file from the L4T BSP pacckage
   buildFromDeb =
     # Nicely, the t194 and t234 packages are currently identical, so we just
@@ -171,7 +162,7 @@ let
       echo NvOsLibraryLoad NvOsLibraryLoad_3d > $remapFile
       for lib in $(find ./lib -name "*.so*"); do
         if isELF $lib; then
-          ${patchelf_new}/bin/patchelf "$lib" \
+          ${lib.getExe patchelfUnstable} "$lib" \
             --rename-dynamic-symbols "$remapFile" \
             --replace-needed libnvos.so libnvos_3d.so
         fi
@@ -368,7 +359,7 @@ let
       echo NvOsLibraryLoad NvOsLibraryLoad_multimedia > $remapFile
       for lib in $(find ./lib -name "*.so*"); do
         if isELF $lib; then
-          ${patchelf_new}/bin/patchelf "$lib" \
+          ${lib.getExe patchelfUnstable} "$lib" \
             --rename-dynamic-symbols "$remapFile" \
             --replace-needed libnvos.so libnvos_multimedia.so
         fi
