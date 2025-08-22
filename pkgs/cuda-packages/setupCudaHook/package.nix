@@ -1,13 +1,12 @@
 # Currently propagated by cuda_nvcc or cudatoolkit, rather than used directly
 { backendStdenv
 , config
-, cudaConfig
+, flags
 , lib
 , makeSetupHook
 }:
 let
   inherit (backendStdenv) cc hostPlatform;
-  inherit (cudaConfig) hostRedistSystem;
   inherit (lib.attrsets) attrValues;
   inherit (lib.lists) any optionals;
   inherit (lib.trivial) id;
@@ -31,7 +30,7 @@ let
     };
 
     passthru.badPlatformsConditions = {
-      "Platform is not supported" = hostRedistSystem == "unsupported";
+      "Platform is not supported" = !flags.isJetsonBuild;
     };
 
     meta = {
