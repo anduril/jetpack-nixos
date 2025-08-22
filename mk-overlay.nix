@@ -21,6 +21,7 @@ let
     makeScope
     mapAttrsToList
     packagesFromDirectoryRecursive
+    optionalAttrs
     replaceStrings
     versionAtLeast
     versionOlder
@@ -192,15 +193,30 @@ makeScope final.newScope (self: {
         # We create an attribute for a broken derivation to avoid missing attribute evaluation errors.
         nccl = final.emptyFile.overrideAttrs {
           name = "nccl-is-unavailable-on-jetson-devices";
-          meta.broken = true;
+          meta.platforms = [ "x86_64-linux" ];
         };
 
         # The CUDA compatibility library is unavailable on JetPack relases because the CUDA driver and runtime versions match.
+        # NOTE: Upstream may check for existence or nullity of cuda_compat, but does not explicitly check
+        # meta.unavailable (which is unreliable anyway since meta is not checked recursively).
         cuda_compat = null;
+
+        # Likewise, autoAddCudaCompatRunpath doesn't exist in the JetPack CUDA package set.
+        autoAddCudaCompatRunpath = null;
+
+        # Early releases of JetPack may not support or provide these packages.
+        # Since later overlays may replace these, we can generically set them to null.
+        cusparselt = null;
+        libcufile = null;
 
         # Aliases
         # TODO(@connorbaker): Deprecation warnings.
         cudaFlags = finalCudaPackages.flags;
+      } // optionalAttrs (versionOlder cudaMajorMinorPatchVersion "11.8") {
+        # cuda_nvprof is expected to exist for CUDA versions prior to 11.8.
+        # However, JetPack NixOS provides cuda_profiler_api, so just include a reference to that.
+        # https://github.com/NixOS/nixpkgs/blob/9cb344e96d5b6918e94e1bca2d9f3ea1e9615545/pkgs/development/python-modules/torch/source/default.nix#L543-L545
+        cuda_nvprof = finalCudaPackages.cuda_profiler_api;
       };
 
       composedExtensions = composeManyExtensions ([
