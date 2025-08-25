@@ -15,7 +15,7 @@ let
 
   cfg = config.hardware.nvidia-jetpack;
 
-  jetpackVersions = [ "5" "6" ];
+  jetpackVersions = [ "5" "6" "7" ];
 
   teeApplications = pkgs.symlinkJoin {
     name = "tee-applications";
@@ -34,6 +34,23 @@ let
   };
 
   jetpackAtLeast = lib.versionAtLeast cfg.majorVersion;
+
+  # Extract from linux firmware so that the 1GiB+ size of linux-firmware
+  # doesn't become a runtime dependency in a nixos system's closure.
+  extractLinuxFirmware = name: paths: (pkgs.runCommand name { }
+    (lib.concatLines (map
+      # all files in linux-firmware are read-only
+      (firmwarePath: ''
+        if [[ -f $(realpath ${pkgs.linux-firmware}/lib/firmware/${firmwarePath}) ]]; then
+          install -Dm0444 \
+            --target-directory=$(dirname $out/lib/firmware/${firmwarePath}) \
+            ${pkgs.linux-firmware}/lib/firmware/${firmwarePath}
+        else
+          echo "WARNING: lib/firmware/${firmwarePath} does not exist in linux-firmware ${pkgs.linux-firmware.version}"
+        fi
+      ''
+      )
+      paths)));
 in
 {
   imports = [
@@ -246,11 +263,19 @@ in
         # Needed on Orin at least, but upstream has it for both
         "nvidia.rm_firmware_active=all"
       ]
-      ++ lib.optionals cfg.console.enable [
+      ++ lib.optionals (cfg.console.enable && (checkValidSoms ["xavier" "orin"])) [
         "console=tty0" # Output to HDMI/DP. May need fbcon=map:0 as well
         "console=ttyTCU0,115200" # Provides console on "Tegra Combined UART" (TCU)
       ]
-      ++ lib.optional (lib.hasPrefix "xavier-" cfg.som || cfg.som == "generic") "video=efifb:off"; # Disable efifb driver, which crashes Xavier NX and possibly AGX
+      ++ lib.optionals (cfg.console.enable && (checkValidSoms [ "thor" ])) [
+        "console=tty0"
+        "console=ttyUTC0,115200"
+        "earlycon=tegra_utc,mmio32,0xc5a0000"
+      ]
+      ++ lib.optional (lib.hasPrefix "xavier-" cfg.som || cfg.som == "generic") "video=efifb:off" # Disable efifb driver, which crashes Xavier NX and possibly AGX
+      ++ lib.optionals (pkgs.nvidia-jetpack.l4tAtLeast "38") [
+        "clk_ignore_unused"
+      ];
 
       boot.initrd.includeDefaultModules = false; # Avoid a bunch of modules we may not get from tegra_defconfig
       boot.initrd.availableKernelModules = [ "xhci-tegra" "ucsi_ccg" "typec_ucsi" "typec" ] # Make sure USB firmware makes it into initrd
@@ -266,6 +291,19 @@ in
         # Ethernet for AGX
         "nvpps"
         "nvethernet"
+      ] ++ lib.optionals (pkgs.nvidia-jetpack.l4tAtLeast "38") [
+        "pwm-fan"
+        "uas"
+        "r8152"
+        "phy-tegra194-p2u"
+        "nvme-core"
+        "tegra-bpmp-thermal"
+        "pwm-tegra"
+        "tegra_vblk"
+        "tegra_hv_vblk_oops"
+        "ufs-tegra"
+        "nvpps"
+        "pcie-tegra264"
       ];
 
       boot.kernelModules =
@@ -293,9 +331,12 @@ in
 
       hardware.firmware = with pkgs.nvidia-jetpack; [
         l4t-firmware
-        l4t-xusb-firmware # usb firmware also present in linux-firmware package, but that package is huge and has much more than needed
         cudaPackages.vpi-firmware # Optional, but needed for pva_auth_allowlist firmware file used by VPI2
-      ];
+      ] ++ (if (l4tOlder "36") then [
+        l4t-xusb-firmware # usb firmware also present in linux-firmware package, but that package is huge and has much more than needed
+      ] else [
+        (extractLinuxFirmware "xusb-firmware" [ "nvidia/tegra186/xusb.bin" "rtl_nic/rtl8153a-4.fw" ])
+      ]);
 
       hardware.deviceTree.enable = true;
 
@@ -365,7 +406,12 @@ in
           install -D -t $out/etc/udev/rules.d ${pkgs.nvidia-jetpack.l4t-init}/etc/udev/rules.d/99-tegra-devices.rules
           sed -i \
             -e '/camera_device_detect/d' \
-            -e 's#/bin/mknod#${pkgs.coreutils}/bin/mknod#' \
+            -e 's#/bin/mknod#${lib.getExe' pkgs.coreutils "mknod"}#' \
+            -e 's#/bin/rm#${lib.getExe' pkgs.coreutils "rm"}#' \
+            -e 's#/bin/cut#${lib.getExe' pkgs.coreutils "cut"}#' \
+            -e 's#/bin/grep#${lib.getExe pkgs.gnugrep}#' \
+            -e 's#/bin/bash /etc/systemd/nvpower.sh#${pkgs.nvidia-jetpack.l4t-nvpmodel}/etc/systemd/nvpower.sh#' \
+            -e 's#/bin/bash#${lib.getExe pkgs.bash}#' \
             $out/etc/udev/rules.d/99-tegra-devices.rules
         '')
       ];

@@ -391,7 +391,8 @@ in
         };
 
         partitionTemplate = mkOption {
-          type = types.path;
+          type = types.nullOr types.path;
+          default = null;
           description = ".xml file describing partition template to use when flashing";
         };
 
