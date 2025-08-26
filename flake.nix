@@ -38,6 +38,42 @@
       jetpack5_config = {
         hardware.nvidia-jetpack.majorVersion = "5";
       };
+
+      supportedConfigurations = lib.listToAttrs (map
+        (c: {
+          name = c.som + lib.optionalString (c.super or false) "-super" + "-${c.carrierBoard}" + lib.optionalString (c ? majorVersion) "-jp${c.majorVersion}";
+          value = c;
+        }) [
+        { som = "orin-agx"; carrierBoard = "devkit"; }
+        { som = "orin-agx-industrial"; carrierBoard = "devkit"; }
+        { som = "orin-nx"; carrierBoard = "devkit"; }
+        { som = "orin-nano"; carrierBoard = "devkit"; }
+        { som = "orin-nx"; carrierBoard = "devkit"; super = true; }
+        { som = "orin-nano"; carrierBoard = "devkit"; super = true; }
+        { som = "orin-agx"; carrierBoard = "devkit"; majorVersion = "5"; }
+        { som = "orin-agx-industrial"; carrierBoard = "devkit"; majorVersion = "5"; }
+        { som = "orin-nx"; carrierBoard = "devkit"; majorVersion = "5"; }
+        { som = "orin-nano"; carrierBoard = "devkit"; majorVersion = "5"; }
+        { som = "orin-nx"; carrierBoard = "devkit"; super = true; majorVersion = "5"; }
+        { som = "orin-nano"; carrierBoard = "devkit"; super = true; majorVersion = "5"; }
+        { som = "xavier-agx"; carrierBoard = "devkit"; }
+        { som = "xavier-agx-industrial"; carrierBoard = "devkit"; } # TODO: Entirely untested
+        { som = "xavier-nx"; carrierBoard = "devkit"; }
+        { som = "xavier-nx-emmc"; carrierBoard = "devkit"; }
+      ]);
+
+      supportedNixOSConfigurations = lib.mapAttrs
+        (n: c: (nixpkgs.lib.nixosSystem {
+          modules = [
+            aarch64_cross_config
+            self.nixosModules.default
+            {
+              hardware.nvidia-jetpack = { enable = true; } // c;
+              networking.hostName = "${c.som}-${c.carrierBoard}"; # Just so it sets the flash binary name.
+            }
+          ];
+        }))
+        supportedConfigurations;
     in
     {
       nixosConfigurations = {
@@ -53,7 +89,7 @@
         installer_minimal_cross_jp5 = nixpkgs.lib.nixosSystem {
           modules = [ aarch64_cross_config installer_minimal_config jetpack5_config ];
         };
-      };
+      } // supportedNixOSConfigurations;
 
       nixosModules.default = import ./modules/default.nix;
 
@@ -62,45 +98,10 @@
       packages = {
         x86_64-linux =
           let
-            supportedConfigurations = lib.listToAttrs (map
-              (c: {
-                name = c.som + lib.optionalString (c.super or false) "-super" + "-${c.carrierBoard}" + lib.optionalString (c ? majorVersion) "-jp${c.majorVersion}";
-                value = c;
-              }) [
-              { som = "orin-agx"; carrierBoard = "devkit"; }
-              { som = "orin-agx-industrial"; carrierBoard = "devkit"; }
-              { som = "orin-nx"; carrierBoard = "devkit"; }
-              { som = "orin-nano"; carrierBoard = "devkit"; }
-              { som = "orin-nx"; carrierBoard = "devkit"; super = true; }
-              { som = "orin-nano"; carrierBoard = "devkit"; super = true; }
-              { som = "orin-agx"; carrierBoard = "devkit"; majorVersion = "5"; }
-              { som = "orin-agx-industrial"; carrierBoard = "devkit"; majorVersion = "5"; }
-              { som = "orin-nx"; carrierBoard = "devkit"; majorVersion = "5"; }
-              { som = "orin-nano"; carrierBoard = "devkit"; majorVersion = "5"; }
-              { som = "orin-nx"; carrierBoard = "devkit"; super = true; majorVersion = "5"; }
-              { som = "orin-nano"; carrierBoard = "devkit"; super = true; majorVersion = "5"; }
-              { som = "xavier-agx"; carrierBoard = "devkit"; }
-              { som = "xavier-agx-industrial"; carrierBoard = "devkit"; } # TODO: Entirely untested
-              { som = "xavier-nx"; carrierBoard = "devkit"; }
-              { som = "xavier-nx-emmc"; carrierBoard = "devkit"; }
-            ]);
 
-            supportedNixOSConfigurations = lib.mapAttrs
-              (n: c: (nixpkgs.lib.nixosSystem {
-                modules = [
-                  aarch64_cross_config
-                  self.nixosModules.default
-                  {
-                    hardware.nvidia-jetpack = { enable = true; } // c;
-                    networking.hostName = "${c.som}-${c.carrierBoard}"; # Just so it sets the flash binary name.
-                  }
-                ];
-              }).config)
-              supportedConfigurations;
-
-            flashScripts = lib.mapAttrs' (n: c: lib.nameValuePair "flash-${n}" c.system.build.flashScript) supportedNixOSConfigurations;
-            initrdFlashScripts = lib.mapAttrs' (n: c: lib.nameValuePair "initrd-flash-${n}" c.system.build.initrdFlashScript) supportedNixOSConfigurations;
-            uefiCapsuleUpdates = lib.mapAttrs' (n: c: lib.nameValuePair "uefi-capsule-update-${n}" c.system.build.uefiCapsuleUpdate) supportedNixOSConfigurations;
+            flashScripts = lib.mapAttrs' (n: c: lib.nameValuePair "flash-${n}" c.config.system.build.flashScript) supportedNixOSConfigurations;
+            initrdFlashScripts = lib.mapAttrs' (n: c: lib.nameValuePair "initrd-flash-${n}" c.config.system.build.initrdFlashScript) supportedNixOSConfigurations;
+            uefiCapsuleUpdates = lib.mapAttrs' (n: c: lib.nameValuePair "uefi-capsule-update-${n}" c.config.system.build.uefiCapsuleUpdate) supportedNixOSConfigurations;
           in
           {
             iso_minimal = self.nixosConfigurations.installer_minimal_cross.config.system.build.isoImage;
