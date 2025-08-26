@@ -92,6 +92,9 @@ in
         type = types.enum [
           "generic"
           "devkit"
+
+          # Use this, if you would like to use Orin NX SOM with the original Xavier NX Devkit module (p3509-a02),
+          "xavierNxDevkit"
         ];
         default = "generic";
         description = ''
@@ -164,6 +167,12 @@ in
         (validSomsAssertion "5" [ "xavier" "orin" ])
         (validSomsAssertion "6" [ "orin" ])
         (validSomsAssertion "7" [ "thor" ])
+        {
+          assertion = ! (cfg.carrierBoard == "xavierNxDevkit" && cfg.som != "orin-nx");
+          message = ''
+            Invalid combination! XavierNxDevkit carrier board only valid with Orin NX SOM.
+          '';
+        }
       ];
 
       # Use mkOptionDefault so that we prevent conflicting with the priority that
