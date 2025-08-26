@@ -18,24 +18,23 @@ let
     ];
   };
 
-  mkCopyProjectCommand = project: ''
-    mkdir -p "$out/${project.name}"
-    cp --no-preserve=all -vr "${project}"/. "$out/${project.name}"
+  mkCopyProjectCommand = name: project: ''
+    mkdir -p "$out/${name}"
+    cp --no-preserve=all -vr "${project}"/. "$out/${name}"
   '';
 
-  l4t-oot-projects = [
-    (gitRepos.hwpm.overrideAttrs { name = "hwpm"; })
-    (applyPatches {
-      name = "nvidia-oot";
+  l4t-oot-projects = {
+    inherit (gitRepos) hwpm nvgpu;
+
+    nvidia-oot = applyPatches {
       src = gitRepos.nvidia-oot;
       patches = [
         ./0001-rtl8822ce-Fix-Werror-address.patch
         ./0002-sound-Fix-include-path-for-tegra-virt-alt-include.patch
       ];
-    })
-    (gitRepos.nvgpu.overrideAttrs { name = "nvgpu"; })
-    (applyPatches {
-      name = "nvdisplay";
+    };
+
+    nvdisplay = applyPatches {
       src = gitRepos.nvdisplay;
       patches = [
         ./0001-nvidia-drm-Guard-nv_dev-in-nv_drm_suspend_resume.patch
@@ -43,17 +42,17 @@ let
         ./0003-ANDURIL-Update-drm_gem_object_vmap_has_map_arg-test.patch
         ./0004-ANDURIL-override-KERNEL_SOURCES-and-KERNEL_OUTPUT-if.patch
       ];
-    })
-    (applyPatches {
-      name = "nvethernetrm";
+    };
+
+    nvethernetrm = applyPatches {
       src = gitRepos.nvethernetrm;
       # Some directories in the git repo are RO.
       # This works for L4T b/c they use different output directory
       postPatch = ''
         chmod -R u+w osi
       '';
-    })
-  ];
+    };
+  };
 
   l4t-oot-modules-sources = runCommand "l4t-oot-sources" { }
     (
@@ -63,7 +62,7 @@ let
         cp "${patchedBsp}/source/Makefile" "$out/Makefile"
       ''
       # copy the projects
-      + lib.strings.concatMapStringsSep "\n" mkCopyProjectCommand l4t-oot-projects
+      + lib.strings.concatMapAttrsStringSep "\n" mkCopyProjectCommand l4t-oot-projects
       # See bspSrc/source/source_sync.sh symlink at end of file
       + ''
         ln -vsrf "$out/nvethernetrm" "$out/nvidia-oot/drivers/net/ethernet/nvidia/nvethernet/nvethernetrm"
