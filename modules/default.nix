@@ -73,7 +73,7 @@ in
       enable = mkEnableOption "NVIDIA Jetson device support";
 
       majorVersion = mkOption {
-        default = if cfg.som == "generic" || lib.hasPrefix "orin" cfg.som then "6" else "5";
+        default = if lib.hasPrefix "thor" cfg.som then "7" else if cfg.som == "generic" || lib.hasPrefix "orin" cfg.som then "6" else "5";
         type = types.enum jetpackVersions;
         description = "Jetpack major version to use";
       };
@@ -116,6 +116,7 @@ in
           "orin-agx-industrial"
           "orin-nx"
           "orin-nano"
+          "thor-agx"
           "xavier-agx"
           "xavier-agx-industrial"
           "xavier-nx"
@@ -211,6 +212,7 @@ in
         }
         (validSomsAssertion "5" [ "xavier" "orin" ])
         (validSomsAssertion "6" [ "orin" ])
+        (validSomsAssertion "7" [ "thor" ])
       ];
 
       # Use mkOptionDefault so that we prevent conflicting with the priority that

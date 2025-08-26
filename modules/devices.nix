@@ -98,6 +98,10 @@ in
           '';
       in
       mkMerge [
+        (mkIf (cfg.som == "thor-agx") {
+          targetBoard = mkDefault "jetson-agx-thor-devkit";
+        })
+
         (mkIf (cfg.som == "orin-agx") {
           targetBoard = mkDefault "jetson-agx-orin-devkit";
           # We don't flash the sdmmc with kernel/initrd/etc at all. Just let it be a

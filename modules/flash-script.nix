@@ -529,6 +529,10 @@ in
               { boardid = "3767"; boardsku = "0004"; fab = "000"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; chipsku = "00:00:00:D6"; } # Orin Nano 4GB
               { boardid = "3767"; boardsku = "0005"; fab = "000"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; chipsku = "00:00:00:D5"; } # legacy Orin Nano devkit module
             ];
+
+            thor-agx = [
+              { boardid = "3834"; boardsku = "0008"; fab = "000"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; chipsku = "00:00:00:A0"; } # Thor AGX Devkit
+            ];
           }.${cfg.som}
         )) else lib.mkOptionDefault [ ];
 
