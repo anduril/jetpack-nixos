@@ -454,7 +454,7 @@ in
 } // lib.optionalAttrs (l4tAtLeast "36") {
   inherit
     l4t-dla-compiler;
-} // lib.optionalAttrs (l4tOlder "36") {
+} // lib.optionalAttrs (l4tOlder "38") { # l4t 38+ removes this package, uses upstream firmware
   inherit
     l4t-xusb-firmware;
 }

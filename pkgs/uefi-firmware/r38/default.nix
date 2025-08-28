@@ -23,7 +23,8 @@
 , # Patches to apply to edk2 source tree
   edk2UefiPatches ? [ ]
 , debugMode ? false
-, defconfig ? "t26x_general"
+, socFamily ? "t26x"
+, defconfig ? "${socFamily}_general"
 , errorLevelInfo ? debugMode
 , # Enables a bunch more info messages
 
@@ -227,7 +228,7 @@ let
         inherit jetsonUefi jetsonStandaloneMMOptee;
       } // patchedRepos;
     }
-    ''
+    (''
       mkdir -p $out
       python3 ${patchedRepos.edk2-nvidia}/Silicon/NVIDIA/edk2nv/FormatUefiBinary.py \
         ${jetsonUefi}/FV/UEFI_NS.Fv \
@@ -242,14 +243,15 @@ let
         cp $filename $out/dtbs/$(basename "$filename" ".dtb").dtbo
       done
 
+      # Get rid of any string references to source(s)
+      nuke-refs $out/uefi_jetson.bin
+    '' + lib.optionalString (socFamily == "t19x" || socFamily == "t23x") ''
       python3 ${patchedRepos.edk2-nvidia}/Silicon/NVIDIA/edk2nv/FormatUefiBinary.py \
         ${jetsonStandaloneMMOptee}/FV/UEFI_MM.Fv \
         $out/standalonemm_optee.bin
 
-      # Get rid of any string references to source(s)
-      nuke-refs $out/uefi_jetson.bin
       nuke-refs $out/standalonemm_optee.bin
-    '';
+    '');
 in
 {
   inherit uefi-firmware;

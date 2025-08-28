@@ -60,6 +60,7 @@ let
       nvCccPrebuilt = {
         t194 = "";
         t234 = "${nvopteeSrc}/optee/optee_os/prebuilt/t234/libcommon_crypto.a";
+        t264 = "${nvopteeSrc}/optee/optee_os/prebuilt/t264/libcommon_crypto.a";
       }.${socType};
 
       makeFlags = [
@@ -67,13 +68,15 @@ let
         "CROSS_COMPILE64=${stdenv.cc.targetPrefix}"
         "PLATFORM=tegra"
         "PLATFORM_FLAVOR=${socType}"
-        "CFG_WITH_STMM_SP=y"
         "NV_CCC_PREBUILT=${nvCccPrebuilt}"
         "O=$(out)"
         "CFG_TEE_CORE_LOG_LEVEL=${toString coreLogLevel}"
         "CFG_TEE_TA_LOG_LEVEL=${toString taLogLevel}"
       ]
-      ++ (lib.optional (uefi-firmware != null) "CFG_STMM_PATH=${uefi-firmware}/standalonemm_optee.bin")
+      ++ (lib.optionals (socType == "t194" || socType == "t234") [
+          "CFG_WITH_STMM_SP=y"
+          "CFG_STMM_PATH=${uefi-firmware}/standalonemm_optee.bin"
+      ])
       ++ (lib.optional (taPublicKeyFile != null) "TA_PUBLIC_KEY=${taPublicKeyFile}")
       ++ extraMakeFlags;
     in
@@ -240,12 +243,15 @@ let
       hwKeyAgent = buildHwKeyAgent args;
 
       opteeOS = buildOptee ({
-        earlyTaPaths = [
+        earlyTaPaths = lib.optionals (socType == "t194" || socType == "t234") [
           "${nvLuksSrv}/b83d14a8-7128-49df-9624-35f14f65ca6c.stripped.elf"
           "${cpuBlPayloadDec}/0e35e2c9-b329-4ad9-a2f5-8ca9bbbd7713.stripped.elf"
           "${hwKeyAgent}/82154947-c1bc-4bdf-b89d-04f93c0ea97c.stripped.elf"
         ];
       } // args);
+
+      teeRaw = "${opteeOS}/core/tee-raw.bin";
+      dtb = "${opteeDTB}/tegra${lib.removePrefix "t" socType}-optee.dtb";
 
       image = buildPackages.runCommand "tos.img"
         {
@@ -255,16 +261,33 @@ let
         mkdir -p $out
         ${buildPackages.python3}/bin/python3 ${bspSrc}/nv_tegra/tos-scripts/gen_tos_part_img.py \
           --monitor ${armTrustedFirmware}/bl31.bin \
-          --os ${opteeOS}/core/tee-raw.bin \
-          --dtb ${opteeDTB}/*.dtb \
+          --os ${teeRaw} \
+          --dtb ${dtb} \
           --tostype optee \
           $out/tos.img
 
         # Get rid of any string references to source(s)
         nuke-refs $out/*
       '';
+
+      imageSpTool = buildPackages.runCommand "tos.img"
+        {
+          nativeBuildInputs = [ nukeReferences ];
+          passthru = { inherit nvLuksSrv hwKeyAgent; };
+        } ''
+          mkdir -p $out
+          ${lib.getExe buildPackages.python3} ${armTrustedFirmware.src}/arm-trusted-firmware.t234/tools/sptool/sptool.py \
+            -i ${teeRaw}:${dtb} \
+            -o $out/tos.img
+
+          nuke-refs $out/*
+        '';
     in
-    image;
+    {
+      t194 = image;
+      t234 = image;
+      t264 = imageSpTool;
+    }.${socType};
 in
 {
   inherit buildTOS buildOpteeTaDevKit opteeClient;
