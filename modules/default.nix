@@ -408,6 +408,39 @@ in
       # Include nv_tegra_release, just so we can tell what version our NixOS machine was built from.
       environment.etc."nv_tegra_release".source = "${pkgs.nvidia-jetpack.l4t-core}/etc/nv_tegra_release";
 
+      # For some unknown reason, the libnvscf.so library has a dlopen call to a hard path:
+      # `/usr/lib/aarch64-linux-gnu/tegra-egl/libEGL_nvidia.so.0`
+      # This causes loading errors for libargus applications and the nvargus-daemon.
+      # Errors will look like this:
+      # SCF: Error NotSupported: Failed to load EGL library
+      # To fix this, create a symlink to the correct EGL library in the above directory.
+      #
+      # An alternative approach would be to wrap the library with an LD_PRELOAD to a dlopen call
+      # that replaces the hardcoded path with the correct path.
+      # However, since dynamic library symbol lookups start with the calling binary,
+      # this override would have to happen at the binary level, which means every binary
+      # would need to be wrapped. This is less desirable than simply adding the following symlink.
+      systemd.services.create-libegl-symlink =
+        let
+          linkEglLib = pkgs.writeShellScriptBin "link-egl-lib" ''
+            ${lib.getExe' pkgs.coreutils "mkdir"} -p /usr/lib/aarch64-linux-gnu/tegra-egl
+            ${lib.getExe' pkgs.coreutils "ln"} -s /run/opengl-driver/lib/libEGL_nvidia.so.0 /usr/lib/aarch64-linux-gnu/tegra-egl/libEGL_nvidia.so.0
+          '';
+        in
+        {
+          enable = true;
+          description = "Create a symlink for libEGL_nvidia.so.0 at /usr/lib/aarch64-linux-gnu/tegra-egl/";
+          unitConfig = {
+            ConditionPathExists = "!/usr/lib/aarch64-linux-gnu/tegra-egl/libEGL_nvidia.so.0";
+          };
+          serviceConfig = {
+            type = "oneshot";
+            ExecStart = lib.getExe linkEglLib;
+          };
+          wantedBy = [ "multi-user.target" ];
+        };
+
+
       # https://developer.ridgerun.com/wiki/index.php/Xavier/JetPack_5.0.2/Performance_Tuning
       systemd.services.jetson_clocks = mkIf cfg.maxClock {
         enable = true;
