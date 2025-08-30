@@ -92,10 +92,10 @@ makeScope final.newScope (self: {
   }) buildTOS buildOpteeTaDevKit opteeClient;
   genEkb = self.callPackage ./pkgs/optee/gen-ekb.nix { };
 
-  flash-tools = self.callPackage ./pkgs/flash-tools { };
+  flash-tools = self.callPackage ./flasher-pkgs/flash-tools { };
 
   # Allows automation of Orin AGX devkit
-  board-automation = self.callPackage ./pkgs/board-automation { };
+  board-automation = self.callPackage ./flasher-pkgs/board-automation { };
 
   # Allows automation of Xavier AGX devkit
   python-jetson = final.python3.pkgs.callPackage ./pkgs/python-jetson { };
