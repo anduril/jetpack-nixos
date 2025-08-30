@@ -17,7 +17,7 @@ final: prev: (
       opteePatches = cfg.firmware.optee.patches;
     };
 
-    flashTools = cfg.flasherPkgs.callPackages (import ./device-pkgs { inherit config; pkgs = final; }) { };
+    flashTools = cfg.flasherPkgs.callPackages (import ./flasher-pkgs { inherit config; pkgs = final; }) { };
   in
   {
     nvidia-jetpack = prev.nvidia-jetpack.overrideScope (finalJetpack: prevJetpack: {
@@ -129,7 +129,7 @@ final: prev: (
       # you give it, so if your flash-tools is for an x86_64-linux
       # hostPlatform, then mkFlashScript will generate script commands that
       # will need to be ran on x86_64-linux.
-      mkFlashScript = flash-tools: args: import ./device-pkgs/flash-script.nix ({
+      mkFlashScript = flash-tools: args: import ./flasher-pkgs/flash-script.nix ({
         inherit lib flash-tools;
         inherit (cfg.firmware) eksFile;
         inherit (cfg.flashScriptOverrides) flashArgs partitionTemplate preFlashCommands postFlashCommands;
@@ -230,7 +230,7 @@ final: prev: (
 
       # Use the flash-tools produced by mkFlashScript, we need whatever changes
       # the script made, as well as the flashcmd.txt from it
-      flash-tools-flashcmd = finalJetpack.callPackage ./device-pkgs/flash-tools-flashcmd.nix {
+      flash-tools-flashcmd = finalJetpack.callPackage ./flasher-pkgs/flash-tools-flashcmd.nix {
         inherit cfg;
       };
     } // flashTools);
