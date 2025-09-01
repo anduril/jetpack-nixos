@@ -71,6 +71,9 @@ let
     );
 in
 stdenv.mkDerivation (finalAttrs: {
+  __structuredAttrs = true;
+  strictDeps = true;
+
   pname = "l4t-oot-modules";
   version = "${l4tMajorMinorPatchVersion}";
   src = l4t-oot-modules-sources;
