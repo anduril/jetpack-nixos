@@ -3,7 +3,6 @@
 , buildPackages
 , gitRepos
 , kernel
-, kernelModuleMakeFlags
 , l4tMajorMinorPatchVersion
 , lib
 , runCommand
@@ -71,21 +70,20 @@ let
       ''
     );
 in
-stdenv.mkDerivation {
-  __structuredAttrs = true;
-  strictDeps = true;
-
+stdenv.mkDerivation (finalAttrs: {
   pname = "l4t-oot-modules";
   version = "${l4tMajorMinorPatchVersion}";
   src = l4t-oot-modules-sources;
 
-  nativeBuildInputs = kernel.moduleBuildDependencies;
+  inherit kernel;
+
+  nativeBuildInputs = finalAttrs.kernel.moduleBuildDependencies;
   depsBuildBuild = [ buildPackages.stdenv.cc ];
 
   # See bspSrc/source/Makefile
-  makeFlags = kernelModuleMakeFlags ++ [
-    "KERNEL_HEADERS=${kernel.dev}/lib/modules/${kernel.modDirVersion}/source"
-    "KERNEL_OUTPUT=${kernel.dev}/lib/modules/${kernel.modDirVersion}/build"
+  makeFlags = finalAttrs.kernel.makeFlags ++ [
+    "KERNEL_HEADERS=${finalAttrs.kernel.dev}/lib/modules/${finalAttrs.kernel.modDirVersion}/source"
+    "KERNEL_OUTPUT=${finalAttrs.kernel.dev}/lib/modules/${finalAttrs.kernel.modDirVersion}/build"
     "INSTALL_MOD_PATH=$(out)"
   ];
 
@@ -104,4 +102,4 @@ stdenv.mkDerivation {
 
   buildFlags = [ "modules" ];
   installTargets = [ "modules_install" ];
-}
+})
