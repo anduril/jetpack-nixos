@@ -78,7 +78,7 @@ let
       '';
 
       flashArgs =
-        [ "--rcm-boot" ]
+        [ "--rcm-boot" "-r" ]
         # A little jank, but don't have the flash script itself actually flash, just produce the flashcmd.txt file
         # We need to sign the boot.img file afterwards in this script
         ++ lib.optional (cfg.firmware.secureBoot.pkcFile != null) "--no-flash"
@@ -162,4 +162,4 @@ let
     meta.platforms = [ "x86_64-linux" ];
   };
 in
-{ inherit flashScript initrdFlashScript fuseScript rcmBoot; }
+{ inherit flashScript initrdFlashScript fuseScript rcmBoot; } // lib.optionalAttrs ((lib.hasPrefix "orin-" cfg.som) || (lib.hasPrefix "xavier-" cfg.som)) { inherit flashScript;}

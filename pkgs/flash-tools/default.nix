@@ -31,6 +31,7 @@
 , bspSrc
 , l4tMajorMinorPatchVersion
 , symlinkJoin
+, xmlstarlet
 }:
 
 let
@@ -132,6 +133,8 @@ let
       # Needed by bootloader/tegraflash_impl_t234.py
       gcc
       dtc
+
+      xmlstarlet
 
       # flash.sh wants lz4c, which used to be a symlink to lz4, but does not
       # exist in more recent nixpkgs.
