@@ -85,7 +85,6 @@ Include the following in your `configuration.nix` before installing:
   # Enable GPU support - needed even for CUDA and containers
   hardware.graphics.enable = true;
 }
-
 ```
 #### If you prefer using flakes do this instead:
 For your `flake.nix`, include the following:
@@ -98,7 +97,8 @@ For your `flake.nix`, include the following:
   };
   outputs = inputs@{ self, nixpkgs, jetpack, ... } : { # Add jetpack
     nixosConfigurations.nixos = nixpkgs.lib.nixosSystem {
-      modules = [ ./configuration.nix jetpack.nixosModules.default ]; # Add jetpack.nixosModules.default
+      modules = [./configuration.nix jetpack.nixosModules.default]; # Add jetpack.nixosModules.default
+    };
   };
 }
 ```
