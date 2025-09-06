@@ -206,19 +206,11 @@ in
       # something defined in our overlay.
       nixpkgs.overlays = lib.mkBefore [
         (import ../overlay.nix)
-        (
-          let
-            otherJetpacks = builtins.filter (v: v != cfg.majorVersion) jetpackVersions;
-            mkWarnValue = v: lib.warn "nvidia-jetpack${v} is unsupported when nixos is configured to use Jetpack ${cfg.majorVersion}" { };
-          in
-          final: prev:
-            # set default nvidia-jetpack to our jetpack version
-            { nvidia-jetpack = final."nvidia-jetpack${cfg.majorVersion}"; }
-            # and warn/fail if anyone tries to evaluate something else
-            // builtins.listToAttrs (builtins.map
-              (v: { name = "nvidia-jetpack${v}"; value = mkWarnValue v; })
-              otherJetpacks)
-        )
+        # Since the default version of nvidia-jetpack depends on the default CUDA package set,
+        # we can just set that.
+        (final: prev: {
+          cudaPackages = final."cudaPackages_${lib.versions.major final."nvidia-jetpack${cfg.majorVersion}".cudaMajorMinorVersion}";
+        })
         (import ../overlay-with-config.nix config)
       ];
 
