@@ -210,7 +210,7 @@ let
         # `warning: /build/source/build/rk3399/release/bl31/bl31.elf has a LOAD segment with RWX permissions`
         # See also: https://developer.trustedfirmware.org/T996
         "LDFLAGS=-no-warn-rwx-segments"
-      ] ++ lib.optionals (l4tAtLeast "36" && socType == "t234") [
+      ] ++ lib.optionals (l4tAtLeast "36" && socType != "t194") [
         "BRANCH_PROTECTION=3"
         "ARM_ARCH_MINOR=3"
       ];

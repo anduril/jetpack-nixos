@@ -34,7 +34,7 @@ let
     # use t194. No guarantee that will stay the same in the future, so we
     # should consider choosing the right package set based on the SoC.
     { name
-    , repo ? "t234"
+    , repo ? if l4tAtLeast "38" then "som" else "t234"
     , deb ? debs.${repo}.${name}
     , src ? deb.src
     , version ? deb.version
@@ -450,9 +450,11 @@ in
     l4t-nvsci
     l4t-pva
     l4t-tools
-    l4t-wayland
-    l4t-xusb-firmware;
+    l4t-wayland;
 } // lib.optionalAttrs (l4tAtLeast "36") {
   inherit
     l4t-dla-compiler;
+} // lib.optionalAttrs (l4tOlder "36") {
+  inherit
+    l4t-xusb-firmware;
 }
