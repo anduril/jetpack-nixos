@@ -295,6 +295,36 @@ in
       ];
 
       hardware.deviceTree.enable = true;
+      hardware.deviceTree.dtboBuildExtraIncludePaths = {
+        "5" = let dtsTree = "${config.hardware.deviceTree.kernelPackage.src}/nvidia"; in lib.mkMerge [
+          [
+            "${dtsTree}/soc/tegra/kernel-include"
+            "${dtsTree}/platform/tegra/common/kernel-dts"
+          ]
+          (lib.optionals (checkValidSoms [ "xavier" ]) [
+            "${dtsTree}/soc/t18x/kernel-include"
+            "${dtsTree}/soc/t18x/kernel-dts"
+            "${dtsTree}/platform/t18x/common/kernel-dts"
+          ])
+          (lib.optionals (checkValidSoms [ "orin" ]) [
+            "${dtsTree}/soc/t23x/kernel-include"
+            "${dtsTree}/soc/t23x/kernel-dts"
+            "${dtsTree}/platform/t23x/common/kernel-dts"
+            "${dtsTree}/platform/t23x/automotive/kernel-dts/common/linux/"
+          ])
+        ];
+        # See DTC_INCLUDE inside ${gitRepos."kernel-devicetree"}/generic-dts/Makefile
+        "6" = let dtsTree = "${config.hardware.deviceTree.dtbSource.src}/hardware/nvidia"; in [
+          # SOC independent common include
+          "${dtsTree}/tegra/nv-public"
+
+          # SOC T23X specific common include
+          "${dtsTree}/t23x/nv-public/include/kernel"
+          "${dtsTree}/t23x/nv-public/include/nvidia-oot"
+          "${dtsTree}/t23x/nv-public/include/platforms"
+          "${dtsTree}/t23x/nv-public"
+        ];
+      }.${cfg.majorVersion};
 
       hardware.graphics.package = pkgs.nvidia-jetpack.l4t-3d-core;
       hardware.graphics.extraPackages =
