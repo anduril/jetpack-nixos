@@ -93,6 +93,9 @@ stdenv.mkDerivation (finalAttrs: {
   postInstall = ''
     mkdir -p $dev
     cat **/Module.symvers > $dev/Module.symvers
+
+    mkdir -p $dev/include/nvidia
+    install -m 0644 out/nvidia-conftest/nvidia/conftest.h $dev/include/nvidia/
   '';
 
   outputs = [
