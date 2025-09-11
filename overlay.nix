@@ -58,18 +58,24 @@ in
 
   # The choice of CUDA version drives the version of nvidia-jetpack made the default. If the default version of the
   # CUDA package set is one of our JetPack-constructed CUDA package sets, choose a version of nvidia-jetpack
-  # accordingly. If it is not, default to nvidia-jetpack5.
+  # accordingly. If it is not, check if it is in the range of CUDA versions supported by the release or cuda_compat.
+  # If all else fails, throw.
   nvidia-jetpack =
-    if final.cudaPackages ? debs then
-      if final.nvidia-jetpack5.cudaPackages.cudaMajorMinorVersion == final.cudaPackages.cudaMajorMinorVersion then
-        final.nvidia-jetpack5
-      else if final.nvidia-jetpack6.cudaPackages.cudaMajorMinorVersion == final.cudaPackages.cudaMajorMinorVersion then
-        final.nvidia-jetpack6
-      else
-        builtins.throw "unrecognized cudaPackages (version ${final.cudaPackages.cudaMajorMinorVersion}) providing `debs` attribute"
+    let
+      jp5 = final.nvidia-jetpack5;
+      jp5CP = jp5.cudaPackages;
+      jp6 = final.nvidia-jetpack6;
+      jp6CP = jp6.cudaPackages;
+      cp = final.cudaPackages;
+    in
+    if jp5CP.cudaMajorMinorVersion == cp.cudaMajorMinorVersion
+      || (cp.cudaAtLeast jp5CP.cudaMajorMinorVersion && cp.cudaOlder "12.3") then
+      jp5
+    else if jp6CP.cudaMajorMinorVersion == cp.cudaMajorMinorVersion
+      || (cp.cudaAtLeast jp6CP.cudaMajorMinorVersion && cp.cudaOlder "13.0") then
+      jp6
     else
-      final.nvidia-jetpack5;
-
+      builtins.throw "unsupported cudaPackages (version ${cp.cudaMajorMinorVersion})";
 
   # Set cudaPackage package sets to our JetPack-constructed package sets if we are targeting Jetson capabilities.
   # NOTE: We cannot lift the conditionals out further without causing infinite recursion, as the fixed-point would be
