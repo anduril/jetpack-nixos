@@ -298,6 +298,18 @@ in
       ];
 
       hardware.deviceTree.enable = true;
+      hardware.deviceTree.dtboBuildExtraIncludePaths = {
+        "5" = let cfg = config.hardware.deviceTree; in [
+          "${lib.getDev cfg.kernelPackage}/lib/modules/${cfg.kernelPackage.modDirVersion}/source/nvidia/soc/tegra/kernel-include"
+        ];
+        # See DTC_INCLUDE inside ${gitRepos."kernel-devicetree"}/generic-dts/Makefile
+        "6" = let t23x = pkgs.nvidia-jetpack.gitRepos."hardware/nvidia/t23x/nv-public"; in [
+          "${t23x}/include/kernel"
+          "${t23x}/include/nvidia-oot"
+          "${t23x}/include/platforms"
+          "${t23x}"
+        ];
+      }.${cfg.majorVersion};
 
       hardware.graphics.package = pkgs.nvidia-jetpack.l4t-3d-core;
       hardware.graphics.extraPackages =
