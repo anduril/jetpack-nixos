@@ -7,6 +7,7 @@
 
 let
   inherit (lib)
+    mkBefore
     mkEnableOption
     mkIf
     mkOption
@@ -223,18 +224,16 @@ in
       ];
 
       # Advertise support for CUDA.
-      nixpkgs.config = mkIf cfg.configureCuda {
-        cudaSupport = lib.mkDefault true;
+      nixpkgs.config = mkIf cfg.configureCuda (mkBefore {
+        cudaSupport = true;
         cudaCapabilities =
           let
             isGeneric = cfg.som == "generic";
             isXavier = lib.hasPrefix "xavier-" cfg.som;
             isOrin = lib.hasPrefix "orin-" cfg.som;
           in
-          lib.mkDefault
-            (lib.optionals (isXavier || isGeneric) [ "7.2" ]
-              ++ lib.optionals (isOrin || isGeneric) [ "8.7" ]);
-      };
+          lib.optionals (isXavier || isGeneric) [ "7.2" ] ++ lib.optionals (isOrin || isGeneric) [ "8.7" ];
+      });
 
       boot.kernelPackages =
         if cfg.kernel.realtime then
