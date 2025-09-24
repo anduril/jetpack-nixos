@@ -24,27 +24,9 @@ let
   '';
 
   l4t-oot-projects = {
-    inherit (gitRepos) hwpm nvgpu;
-
-    nvidia-oot = applyPatches {
-      src = gitRepos.nvidia-oot;
-      patches = [
-        ./0001-rtl8822ce-Fix-Werror-address.patch
-        ./0002-sound-Fix-include-path-for-tegra-virt-alt-include.patch
-      ];
-    };
-
-    nvdisplay = applyPatches {
-      src = gitRepos.nvdisplay;
-      patches = [
-        ./0001-nvidia-drm-Guard-nv_dev-in-nv_drm_suspend_resume.patch
-        ./0002-ANDURIL-Add-some-missing-BASE_CFLAGS.patch
-        ./0003-ANDURIL-Update-drm_gem_object_vmap_has_map_arg-test.patch
-        ./0004-ANDURIL-override-KERNEL_SOURCES-and-KERNEL_OUTPUT-if.patch
-      ];
-    };
-
+    inherit (gitRepos) hwpm nvidia-oot nvgpu nvdisplay unifiedgpudisp;
     nvethernetrm = applyPatches {
+      name = "nvethernetrm";
       src = gitRepos.nvethernetrm;
       # Some directories in the git repo are RO.
       # This works for L4T b/c they use different output directory
@@ -60,6 +42,7 @@ let
       ''
         mkdir -p "$out"
         cp "${patchedBsp}/source/Makefile" "$out/Makefile"
+        cp "${patchedBsp}/source/kernel_src_build_env.sh" "$out/kernel_src_build_env.sh"
       ''
       # copy the projects
       + lib.strings.concatMapAttrsStringSep "\n" mkCopyProjectCommand l4t-oot-projects
@@ -70,9 +53,6 @@ let
     );
 in
 stdenv.mkDerivation (finalAttrs: {
-  __structuredAttrs = true;
-  strictDeps = true;
-
   pname = "l4t-oot-modules";
   version = "${l4tMajorMinorPatchVersion}";
   src = l4t-oot-modules-sources;
@@ -87,6 +67,9 @@ stdenv.mkDerivation (finalAttrs: {
     "KERNEL_HEADERS=${finalAttrs.kernel.dev}/lib/modules/${finalAttrs.kernel.modDirVersion}/source"
     "KERNEL_OUTPUT=${finalAttrs.kernel.dev}/lib/modules/${finalAttrs.kernel.modDirVersion}/build"
     "INSTALL_MOD_PATH=$(out)"
+    # Maybe TODO: get these from kernel_src_build_env.sh directly
+    "kernel_name=noble"
+    "system_type=l4t"
   ];
 
   postInstall = ''

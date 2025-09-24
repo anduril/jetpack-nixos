@@ -13,13 +13,14 @@ This repository packages components from NVIDIA's [JetPack SDK](https://develope
 
 This package supports JetPack 5 and 6. It works with NVIDIA's developer kits supported by these versions only:
 
-|       Device       | JetPack 5 | JetPack 6 |
-| ------------------ | --------- | --------- |
-| Jetson Orin AGX    |     ✓     |     ✓     |
-| Jetson Orin NX     |     ✓     |     ✓     |
-| Jetson Orin Nano   |     ✓     |     ✓     |
-| Jetson Xavier AGX  |     ✓     |           |
-| Jetson Xavier NX   |     ✓     |           |
+|       Device       | JetPack 5 | JetPack 6 | Jetpack 7 |
+| ------------------ | --------- | --------- | --------- |
+| Jetson Thor AGX    |           |           |     ✓     |
+| Jetson Orin AGX    |     ✓     |     ✓     |           |
+| Jetson Orin NX     |     ✓     |     ✓     |           |
+| Jetson Orin Nano   |     ✓     |     ✓     |           |
+| Jetson Xavier AGX  |     ✓     |           |           |
+| Jetson Xavier NX   |     ✓     |           |           |
 
 The Jetson Nano, TX2, and TX1 devices are _not_ supported, since support for them was dropped upstream in JetPack 5.
 

@@ -32,5 +32,20 @@ final: prev:
     final
     prev;
 
+  nvidia-jetpack7 = import ./mk-overlay.nix
+    {
+      jetpackMajorMinorPatchVersion = "7.0";
+      l4tMajorMinorPatchVersion = "38.2.0";
+      cudaMajorMinorPatchVersion = "13.0.0";
+
+      # TBD
+      cudaDriverMajorMinorVersion = null;
+
+      bspHash = "sha256-vvNSWX2OvLG+3/Hyq+9ZV9vTT6qMjP99nR5XbBjHpG0=";
+      bspPatches = [ ./pkgs/r38-bsp.patch ];
+    }
+    final
+    prev;
+
   nvidia-jetpack = final.nvidia-jetpack5;
 }
