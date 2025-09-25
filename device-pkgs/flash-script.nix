@@ -55,7 +55,9 @@
   cp ${uefi-firmware}/L4TLauncher.efi bootloader/BOOTAA64.efi
 
   # Replace additional dtbos
-  cp ${uefi-firmware}/dtbs/*.dtbo kernel/dtb/
+  if [ -e ${uefi-firmware}/dtbs ]; then
+    cp ${uefi-firmware}/dtbs/*.dtbo kernel/dtb/
+  fi
   ''}
   ${lib.optionalString (tosImage != null) ''
   cp ${tosImage}/tos.img bootloader/tos-optee_${socType}.img

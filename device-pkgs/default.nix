@@ -11,7 +11,9 @@
 , nvidia-jetpack
 , writeShellApplication
 , buildPackages
-}:
+, runCommand
+, ...
+}@x86Pkgs:
 
 let
   cfg = config.hardware.nvidia-jetpack;
@@ -161,5 +163,38 @@ let
     };
     meta.platforms = [ "x86_64-linux" ];
   };
+
+  signedFirmware = runCommand "signed-${hostName}-${nvidia-jetpack.l4tMajorMinorPatchVersion}"
+    { inherit (cfg.firmware.secureBoot) requiredSystemFeatures; }
+    (mkFlashScript nvidia-jetpack.flash-tools {
+      flashCommands = ''
+        ${cfg.firmware.secureBoot.preSignCommands x86Pkgs}
+      '' + lib.concatMapStringsSep "\n"
+        (v: with v; ''
+          BOARDID=${boardid} BOARDSKU=${boardsku} FAB=${fab} BOARDREV=${boardrev} FUSELEVEL=${fuselevel} CHIPREV=${chiprev} ${lib.optionalString (chipsku != null) "CHIP_SKU=${chipsku}"} ${lib.optionalString (ramcode != null) "RAMCODE=${ramcode}"} ./flash.sh ${lib.optionalString (cfg.flashScriptOverrides.partitionTemplate != null) "-c flash.xml"} --no-root-check --no-flash --sign ${builtins.toString cfg.flashScriptOverrides.flashArgs}
+
+          outdir=$out/${boardid}-${fab}-${boardsku}-${boardrev}-${if fuselevel == "fuselevel_production" then "1" else "0"}-${chiprev}--
+          mkdir -p $outdir
+
+          cp -v bootloader/signed/flash.idx $outdir/
+
+          # Copy files referenced by flash.idx
+          while IFS=", " read -r partnumber partloc start_location partsize partfile partattrs partsha; do
+            if [[ "$partfile" != "" ]]; then
+              if [[ -f "bootloader/signed/$partfile" ]]; then
+                cp -v "bootloader/signed/$partfile" $outdir/
+              elif [[ -f "bootloader/$partfile" ]]; then
+                cp -v "bootloader/$partfile" $outdir/
+              else
+                echo "Unable to find $partfile"
+                exit 1
+              fi
+            fi
+          done < bootloader/signed/flash.idx
+
+          rm -rf bootloader/signed
+        '')
+        cfg.firmware.variants;
+    });
 in
-{ inherit flashScript initrdFlashScript fuseScript rcmBoot; } // lib.optionalAttrs ((lib.hasPrefix "orin-" cfg.som) || (lib.hasPrefix "xavier-" cfg.som)) { inherit flashScript;}
+{ inherit initrdFlashScript fuseScript rcmBoot signedFirmware; flashScript = initrdFlashScript; } // lib.optionalAttrs ((lib.hasPrefix "orin-" cfg.som) || (lib.hasPrefix "xavier-" cfg.som)) { inherit flashScript;}

@@ -238,11 +238,6 @@ let
         ${jetsonUefi}/AARCH64/L4TLauncher.efi \
         $out/L4TLauncher.efi
 
-      mkdir -p $out/dtbs
-      for filename in ${jetsonUefi}/AARCH64/Silicon/NVIDIA/Tegra/DeviceTree/DeviceTree/OUTPUT/*.dtb; do
-        cp $filename $out/dtbs/$(basename "$filename" ".dtb").dtbo
-      done
-
       # Get rid of any string references to source(s)
       nuke-refs $out/uefi_jetson.bin
     '' + lib.optionalString (socFamily == "t19x" || socFamily == "t23x") ''
