@@ -38,6 +38,8 @@ let
   };
 in
 makeScope final.newScope (self: {
+  ##############################################################################
+  # Core L4T BSP sources
   inherit (sourceInfo) debs gitRepos;
   inherit jetpackMajorMinorPatchVersion l4tMajorMinorPatchVersion cudaMajorMinorVersion;
   inherit l4tAtLeast l4tOlder;
@@ -82,12 +84,17 @@ makeScope final.newScope (self: {
       self.gitRepos
   );
 
+  ##############################################################################
+  # On-device firmware
   inherit (final.callPackages ./pkgs/uefi-firmware/r${l4tMajorVersion} { inherit (self) l4tMajorMinorPatchVersion; })
     edk2-jetson uefi-firmware;
 
   inherit (final.callPackages ./pkgs/optee {
     inherit (self) bspSrc gitRepos l4tMajorMinorPatchVersion l4tAtLeast uefi-firmware;
   }) buildTOS buildOpteeTaDevKit opteeClient;
+
+  ##############################################################################
+  # Flashing and interacting with Jetson devices (conventionally: host tools)
   genEkb = self.callPackage ./pkgs/optee/gen-ekb.nix { };
 
   flash-tools = self.callPackage ./flasher-pkgs/flash-tools { };
@@ -101,6 +108,15 @@ makeScope final.newScope (self: {
   tegra-eeprom-tool = final.callPackage ./pkgs/tegra-eeprom-tool { };
   tegra-eeprom-tool-static = final.pkgsStatic.callPackage ./pkgs/tegra-eeprom-tool { };
 
+
+  ##############################################################################
+  # On-device scripts/tools for dealing w/Jetson firmware
+  flashFromDevice = self.callPackage ./pkgs/flash-from-device { };
+
+  otaUtils = self.callPackage ./pkgs/ota-utils { };
+
+  ##############################################################################
+  # CUDA
   cudaPackages = makeScope self.newScope (finalCudaPackages: {
     # Versions
     inherit cudaMajorMinorPatchVersion cudaMajorMinorVersion;
@@ -124,6 +140,8 @@ makeScope final.newScope (self: {
     inherit (finalCudaPackages) callPackage;
   });
 
+  ##############################################################################
+  # Demos
   samples = makeScope self.newScope (finalSamples: {
     callPackages = callPackagesWith (self // finalSamples);
   } // packagesFromDirectoryRecursive {
@@ -133,6 +151,18 @@ makeScope final.newScope (self: {
 
   tests = final.callPackages ./pkgs/tests { inherit l4tMajorMinorPatchVersion l4tAtLeast; };
 
+  nxJetsonBenchmarks = self.callPackage ./pkgs/jetson-benchmarks {
+    targetSom = "nx";
+  };
+  xavierAgxJetsonBenchmarks = self.callPackage ./pkgs/jetson-benchmarks {
+    targetSom = "xavier-agx";
+  };
+  orinAgxJetsonBenchmarks = self.callPackage ./pkgs/jetson-benchmarks {
+    targetSom = "orin-agx";
+  };
+
+  ##############################################################################
+  # Linux Kernel
   kernelPackagesOverlay = final: _:
     if self.l4tAtLeast "36" then {
       devicetree = self.callPackage ./pkgs/kernels/r${l4tMajorVersion}/devicetree.nix { };
@@ -147,20 +177,8 @@ makeScope final.newScope (self: {
   rtkernel = self.callPackage ./pkgs/kernels/r${l4tMajorVersion} { kernelPatches = [ ]; realtime = true; };
   rtkernelPackages = (final.linuxPackagesFor self.rtkernel).extend self.kernelPackagesOverlay;
 
-  nxJetsonBenchmarks = self.callPackage ./pkgs/jetson-benchmarks {
-    targetSom = "nx";
-  };
-  xavierAgxJetsonBenchmarks = self.callPackage ./pkgs/jetson-benchmarks {
-    targetSom = "xavier-agx";
-  };
-  orinAgxJetsonBenchmarks = self.callPackage ./pkgs/jetson-benchmarks {
-    targetSom = "orin-agx";
-  };
-
-  flashFromDevice = self.callPackage ./pkgs/flash-from-device { };
-
-  otaUtils = self.callPackage ./pkgs/ota-utils { };
-
+  ##############################################################################
+  # Containers
   l4tCsv = self.callPackage ./pkgs/containers/l4t-csv.nix { };
   genL4tJson = final.runCommand "l4t.json" { nativeBuildInputs = [ final.buildPackages.python3 ]; } ''
     python3 ${./pkgs/containers/gen_l4t_json.py} ${self.l4tCsv} ${self.unpackedDebsFilenames} > $out

@@ -33,13 +33,8 @@ final: prev: (
         else if lib.hasPrefix "xavier-" cfg.som then "0x19"
         else throw "Unknown SoC type";
 
-      otaUtils = prevJetpack.otaUtils.override {
-        inherit (config.boot.loader.efi) efiSysMountPoint;
-
-        # uefi-firmware can be evaluated only if som is set
-        expectedBiosVersion = if (cfg.som != "generic") then finalJetpack.uefi-firmware.biosVersion else "Unknown";
-      };
-
+      ##########################################################################
+      # On-device firmware
       uefi-firmware = prevJetpack.uefi-firmware.override ({
         bootLogo = cfg.firmware.uefi.logo;
         debugMode = cfg.firmware.uefi.debugMode;
@@ -66,15 +61,21 @@ final: prev: (
         inherit (cfg.firmware.uefi.capsuleAuthentication) trustedPublicCertPemFile;
       });
 
-      flash-tools = prevJetpack.flash-tools.overrideAttrs ({ patches ? [ ], postPatch ? "", ... }: {
-        patches = patches ++ cfg.flashScriptOverrides.patches;
-        postPatch = postPatch + cfg.flashScriptOverrides.postPatch;
-      });
-
       tosImage = finalJetpack.buildTOS tosArgs;
       taDevKit = finalJetpack.buildOpteeTaDevKit tosArgs;
+
+      ##############################################################################
+      # On-device scripts/tools for dealing w/Jetson firmware
       inherit (finalJetpack.tosImage) nvLuksSrv hwKeyAgent;
 
+      otaUtils = prevJetpack.otaUtils.override {
+        inherit (config.boot.loader.efi) efiSysMountPoint;
+
+        # uefi-firmware can be evaluated only if som is set
+        expectedBiosVersion = if (cfg.som != "generic") then finalJetpack.uefi-firmware.biosVersion else "Unknown";
+      };
+
+      # initrd used "initrd flashing" (rcm mode) to write firmware blobs
       flashInitrd =
         let
           modules = if lib.versions.majorMinor config.system.build.kernel.version == "5.10" then [ "qspi_mtd" "spi_tegra210_qspi" "at24" "spi_nor" ] else [ "mtdblock" "spi_tegra210_quad" ];
@@ -121,6 +122,17 @@ final: prev: (
           ];
         };
 
+      ##########################################################################
+      # Flashing and interacting with Jetson devices (conventionally: host tools)
+      flash-tools = prevJetpack.flash-tools.overrideAttrs ({ patches ? [ ], postPatch ? "", ... }: {
+        patches = patches ++ cfg.flashScriptOverrides.patches;
+        postPatch = postPatch + cfg.flashScriptOverrides.postPatch;
+      });
+
+
+      ##########################################################################
+      # Wrappers around L4T flash.sh tools, where our Nixified binaries have been substituted in
+
       # mkFlashScript is declared here due to its dependence on values from
       # `config`, but it is not inherently tied to any one particular
       # hostPlatform or buildPlatform (for example, it can be used to build
@@ -139,6 +151,14 @@ final: prev: (
         dtbsDir = config.hardware.deviceTree.package;
       } // (builtins.removeAttrs args [ "additionalDtbOverlays" ]));
 
+      # Use the flash-tools produced by mkFlashScript, we need whatever changes
+      # the script made, as well as the flashcmd.txt from it
+      flash-tools-flashcmd = finalJetpack.callPackage ./flasher-pkgs/flash-tools-flashcmd.nix {
+        inherit cfg;
+      };
+
+      ##########################################################################
+      # L4T BSP firmware output blobs
       bup = prev.runCommand "bup-${config.networking.hostName}-${finalJetpack.l4tMajorMinorPatchVersion}"
         {
           inherit (cfg.firmware.secureBoot) requiredSystemFeatures;
@@ -227,12 +247,6 @@ final: prev: (
             '')
             cfg.firmware.variants;
         });
-
-      # Use the flash-tools produced by mkFlashScript, we need whatever changes
-      # the script made, as well as the flashcmd.txt from it
-      flash-tools-flashcmd = finalJetpack.callPackage ./flasher-pkgs/flash-tools-flashcmd.nix {
-        inherit cfg;
-      };
     } // flashTools);
   }
 )
