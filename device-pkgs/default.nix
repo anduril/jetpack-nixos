@@ -116,6 +116,8 @@ let
     meta.platforms = [ "x86_64-linux" ];
   };
 
+  checkValidSoms = soms: cfg.som == "generic" || lib.lists.any (s: lib.hasPrefix s cfg.som) soms;
+
   # TODO: The flash script should not have the kernel output in its runtime closure
   initrdFlashScript =
     writeShellApplication {
@@ -124,9 +126,17 @@ let
         ${mkRcmBootScript {
           kernelPath = "${config.system.build.kernel}/${config.system.boot.loader.kernelFile}";
           initrdPath = "${flashInitrd}/initrd";
-          kernelCmdline = lib.concatStringsSep " " [
-            "console=ttyTCU0,115200" "sdhci_tegra.en_boot_part_access=1"
-          ];
+          kernelCmdline = lib.concatStringsSep " " ((lib.optionals (checkValidSoms [ "xavier" "orin" ]) [
+          "console=tty0" # Output to HDMI/DP. May need fbcon=map:0 as well
+          "console=ttyTCU0,115200" # Provides console on "Tegra Combined UART" (TCU)
+          ]) ++ (lib.optionals (checkValidSoms [ "thor" ]) [
+            "console=tty0"
+            "console=ttyUTC0,115200"
+            "earlycon=tegra_utc,mmio32,0xc5a0000"
+            "clk_ignore_unused"
+          ]) ++ [
+            "sdhci_tegra.en_boot_part_access=1"
+          ]);
           # During the initrd flash script, we upload two edk2 builds to the
           # board, one that is only used temporarily to boot into our
           # kernel/initrd to perform the flashing, and another one that is

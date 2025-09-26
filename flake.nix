@@ -69,7 +69,7 @@
       supportedNixOSConfigurations = lib.mapAttrs
         (n: c: (nixpkgs.lib.nixosSystem {
           modules = [
-            aarch64_cross_config
+            aarch64_config
             self.nixosModules.default
             {
               hardware.nvidia-jetpack = { enable = true; } // c;

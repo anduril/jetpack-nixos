@@ -1,4 +1,5 @@
-# See also: nvidia-l4t-init/opt/nvidia/nv-l4t-bootloader-config.sh
+# See also: nvidia-l4t-init/opt/nvidia/nv-l4t-bootloader-config.sh (JP5/6)
+# nvidia-l4t-bootloader-utils/opt/nvidia/l4t-bootloader-config/nv-l4t-bootloader-config.sh (JP7)
 # and meta-tegra recipes-bsp/tools/setup-nv-boot-control
 
 generate_compat_spec() {
@@ -64,6 +65,15 @@ generate_compat_spec() {
     else
       fab=""
     fi
+    boardrev=""
+    chiprev=""
+    ;;
+
+  # Thor AGX
+  3834)
+    # Maybe TODO? Only the 000 fab exists today...
+    fab="000"
+    boardsku=""
     boardrev=""
     chiprev=""
     ;;

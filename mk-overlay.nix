@@ -101,7 +101,7 @@ makeScope final.newScope (self: {
     #
     # Jetson 35.x: Keeping gcc9 as per NVIDIA recommends
     stdenv = if self.l4tAtLeast "36" then final.gcc13Stdenv else final.gcc9Stdenv;
-    inherit (self) bspSrc gitRepos l4tMajorMinorPatchVersion l4tAtLeast uefi-firmware;
+    inherit (self) bspSrc gitRepos l4tMajorMinorPatchVersion l4tAtLeast l4tOlder uefi-firmware;
   }) buildTOS buildOpteeTaDevKit opteeClient;
   genEkb = self.callPackage ./pkgs/optee/gen-ekb.nix { };
 
