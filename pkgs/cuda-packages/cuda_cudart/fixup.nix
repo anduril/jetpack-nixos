@@ -5,7 +5,8 @@
 }:
 prevAttrs: {
   # Include the static libraries as well since CMake needs them during the configure phase.
-  propagatedBuildOutputs = prevAttrs.propagatedBuildOutputs or [ ] ++ [ "static" ];
+  # Include the stubs libraries so packages linking against CUDA::cuda_driver also build (e.g., llama-cpp).
+  propagatedBuildOutputs = prevAttrs.propagatedBuildOutputs or [ ] ++ [ "static" "stubs" ];
 
   postPatch =
     prevAttrs.postPatch or ""
