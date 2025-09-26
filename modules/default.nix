@@ -285,9 +285,7 @@ in
           [ config.boot.kernelPackages.nvidia-display-driver ]
         ++
         lib.optionals (jetpackAtLeast "6") [
-          (pkgs.nvidia-jetpack.kernelPackages.nvidia-oot-modules.overrideAttrs {
-            inherit (config.boot.kernelPackages) kernel;
-          })
+          pkgs.nvidia-jetpack.kernelPackages.nvidia-oot-modules
         ];
 
       hardware.firmware = with pkgs.nvidia-jetpack; [
