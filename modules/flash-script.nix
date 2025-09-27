@@ -244,6 +244,22 @@ in
             };
           };
 
+          pkcs11Support = mkOption {
+            type = types.bool;
+            default = false;
+            description = ''
+              Adds OP-TEE's PKCS#11 TA.
+            '';
+          };
+
+          xtest = mkOption {
+            type = types.bool;
+            default = false;
+            description = ''
+              Adds OP-TEE's xtest and related TA/Plugins
+            '';
+          };
+
           patches = mkOption {
             type = types.listOf types.path;
             default = [ ];

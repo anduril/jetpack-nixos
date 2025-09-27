@@ -73,6 +73,8 @@ final: prev: (
 
       tosImage = finalJetpack.buildTOS tosArgs;
       taDevKit = finalJetpack.buildOpteeTaDevKit tosArgs;
+      pkcs11Ta = finalJetpack.buildPkcs11Ta tosArgs;
+      opteeXtest = finalJetpack.buildOpteeXtest tosArgs;
       inherit (finalJetpack.tosImage) nvLuksSrv hwKeyAgent;
 
       flashInitrd =

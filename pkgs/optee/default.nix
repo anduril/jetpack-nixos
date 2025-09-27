@@ -1,5 +1,6 @@
 { l4tMajorMinorPatchVersion
 , l4tAtLeast
+, l4tOlder
 , bspSrc
 , buildPackages
 , lib
@@ -12,6 +13,7 @@
 , fetchpatch
 , gitRepos
 , uefi-firmware
+, openssl
 }:
 
 let
@@ -44,6 +46,52 @@ let
       "INCLUDEDIR=/include"
     ];
     meta.platforms = [ "aarch64-linux" ];
+  };
+
+  buildOpteeXtest = args: stdenv.mkDerivation {
+    pname = "optee_xtest";
+    version = l4tMajorMinorPatchVersion;
+    src = nvopteeSrc;
+    nativeBuildInputs = [
+      (buildPackages.python3.withPackages (p: [ p.cryptography ]))
+    ] ++ lib.optionals (l4tOlder "36") [ openssl ];
+
+    buildInputs = [ ] ++ lib.optionals (l4tOlder "36") [ openssl ];
+
+    postPatch = ''
+      patchShebangs --build $(find optee/optee_test -type d -name scripts -printf '%p ')
+    '';
+    makeFlags = [
+      "-C optee/optee_test"
+      "CROSS_COMPILE=${stdenv.cc.targetPrefix}"
+      "OPTEE_CLIENT_EXPORT=${opteeClient}"
+      "TA_DEV_KIT_DIR=${buildOpteeTaDevKit args}/export-ta_arm64"
+      "O=$(PWD)/out"
+    ] ++ lib.optionals (l4tAtLeast "36") [
+      "WITH_OPENSSL=n"
+    ];
+    installPhase = ''
+      runHook preInstall
+
+      install -Dm 755 ./out/xtest/xtest $out/bin/xtest
+      find ./out -name "*.ta" -exec cp {} $out \;
+
+      runHook postInstall
+    '';
+  };
+
+  buildPkcs11Ta = args: stdenv.mkDerivation {
+    pname = "pkcs11ta";
+    version = l4tMajorMinorPatchVersion;
+    dontUnpack = true;
+    installPhase = ''
+      runHook preInstall
+
+      mkdir $out
+      install -Dm 755 ${buildOptee args}/ta/pkcs11/fd02c9da-306c-48c7-a49c-bbd827ae86ee.ta $out
+
+      runHook postInstall
+    '';
   };
 
   buildOptee = lib.makeOverridable ({ pname ? "optee-os"
@@ -267,5 +315,5 @@ let
     image;
 in
 {
-  inherit buildTOS buildOpteeTaDevKit opteeClient;
+  inherit buildTOS buildOpteeTaDevKit opteeClient buildPkcs11Ta buildOpteeXtest;
 }
