@@ -452,6 +452,10 @@ in
         wantedBy = [ "multi-user.target" ];
       };
 
+      hardware.nvidia-jetpack.firmware.optee.supplicant.trustedApplications = [ ]
+        ++ lib.optional cfg.firmware.optee.pkcs11Support pkgs.nvidia-jetpack.pkcs11Ta
+        ++ lib.optional cfg.firmware.optee.xtest pkgs.nvidia-jetpack.opteeXtest;
+
       systemd.services.tee-supplicant =
         let
           args = lib.escapeShellArgs (
@@ -474,7 +478,7 @@ in
       environment.systemPackages = with pkgs.nvidia-jetpack; [
         l4t-tools
         otaUtils # Tools for UEFI capsule updates
-      ];
+      ] ++ lib.optional cfg.firmware.optee.xtest pkgs.nvidia-jetpack.opteeXtest;
 
       # Used by libEGL_nvidia.so.0
       environment.etc."egl/egl_external_platform.d".source =
