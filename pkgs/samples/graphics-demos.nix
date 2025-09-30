@@ -9,14 +9,17 @@
 , stdenv
 , wayland
 , xorg
+, l4tAtLeast
 }:
 # TODO: Add wayland and x11 tests for graphics demos....
 let
   inherit (xorg) libX11 libXau;
+
+  repo = if l4tAtLeast "38" then "som" else "t234";
 in
 stdenv.mkDerivation {
   pname = "graphics-demos";
-  inherit (debs.t234.nvidia-l4t-graphics-demos) src version;
+  inherit (debs.${repo}.nvidia-l4t-graphics-demos) src version;
 
   unpackCmd = "dpkg -x $src source";
   sourceRoot = "source/usr/src/nvidia/graphics_demos";
