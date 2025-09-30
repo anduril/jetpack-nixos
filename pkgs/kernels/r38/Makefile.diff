@@ -1,0 +1,18 @@
+diff --git a/source/Makefile b/source/Makefile
+index 24ee6c5..0780577 100644
+--- a/source/Makefile
++++ b/source/Makefile
+@@ -124,12 +124,7 @@ define display-cmd
+ 		KERNELRELEASE="" \
+ 		SYSSRCNVOOT=$(MAKEFILE_DIR)/nvidia-oot \
+ 		SYSSRC=$(KERNEL_HEADERS) \
+-		SYSOUT=$(KERNEL_OUTPUT) \
+-		CC=$(CROSS_COMPILE)gcc \
+-		LD=$(CROSS_COMPILE)ld.bfd \
+-		AR=$(CROSS_COMPILE)ar \
+-		CXX=$(CROSS_COMPILE)g++ \
+-		OBJCOPY=$(CROSS_COMPILE)objcopy
++		SYSOUT=$(KERNEL_OUTPUT)
+ endef
+ 
+ 
