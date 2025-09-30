@@ -18,6 +18,9 @@
   additionalDtbOverlays ? [ ]
 , flash-tools
 }:
+let
+  uefi_image = if socType == "t264" then "uefi_t26x_general.bin" else "uefi_jetson.bin";
+in
 (''
   set -euo pipefail
 
@@ -45,7 +48,7 @@
   ${lib.optionalString (partitionTemplate != null) "cp ${partitionTemplate} flash.xml"}
   ${lib.optionalString (dtbsDir != null) "cp -r ${dtbsDir}/. kernel/dtb/"}
   ${lib.optionalString (uefi-firmware != null) ''
-  cp ${uefi-firmware}/uefi_jetson.bin bootloader/uefi_jetson.bin
+  cp ${uefi-firmware}/uefi_jetson.bin bootloader/${uefi_image}
   if [ -e "${uefi-firmware}/uefi_jetson_minimal.bin" ] ; then
     cp ${uefi-firmware}/uefi_jetson_minimal.bin bootloader/uefi_jetson_minimal.bin
   fi
@@ -55,7 +58,9 @@
   cp ${uefi-firmware}/L4TLauncher.efi bootloader/BOOTAA64.efi
 
   # Replace additional dtbos
-  cp ${uefi-firmware}/dtbs/*.dtbo kernel/dtb/
+  if [ -e ${uefi-firmware}/dtbs ]; then
+    cp ${uefi-firmware}/dtbs/*.dtbo kernel/dtb/
+  fi
   ''}
   ${lib.optionalString (tosImage != null) ''
   cp ${tosImage}/tos.img bootloader/tos-optee_${socType}.img
