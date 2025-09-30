@@ -137,17 +137,17 @@ makeScope final.newScope (self: {
 
   kernelPackagesOverlay = final: _:
     if self.l4tAtLeast "36" then {
-      devicetree = self.callPackage ./pkgs/kernels/r${l4tMajorVersion}/devicetree.nix { };
+      devicetree = final.callPackage ./pkgs/kernels/r${l4tMajorVersion}/devicetree.nix { inherit (self) bspSrc gitRepos l4tMajorMinorPatchVersion; };
       nvidia-oot-modules = final.callPackage ./pkgs/kernels/r${l4tMajorVersion}/oot-modules.nix { inherit (self) bspSrc gitRepos l4tMajorMinorPatchVersion; };
     } else {
       nvidia-display-driver = final.callPackage ./pkgs/kernels/r${l4tMajorVersion}/display-driver.nix { inherit (self) gitRepos l4tMajorMinorPatchVersion; };
     };
 
   kernel = self.callPackage ./pkgs/kernels/r${l4tMajorVersion} { kernelPatches = [ ]; };
-  kernelPackages = (final.linuxPackagesFor self.kernel).extend self.kernelPackagesOverlay;
+  kernelPackages = final.linuxPackagesFor self.kernel;
 
   rtkernel = self.callPackage ./pkgs/kernels/r${l4tMajorVersion} { kernelPatches = [ ]; realtime = true; };
-  rtkernelPackages = (final.linuxPackagesFor self.rtkernel).extend self.kernelPackagesOverlay;
+  rtkernelPackages = final.linuxPackagesFor self.rtkernel;
 
   nxJetsonBenchmarks = self.callPackage ./pkgs/jetson-benchmarks {
     targetSom = "nx";
