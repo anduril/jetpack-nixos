@@ -27,13 +27,16 @@
 , cudaDriverMajorMinorVersion
 }:
 let
+  # Nicely, for JetPack 5 and 6, the t194 and t234 packages are currently
+  # identical, so we just use t194. No guarantee that will stay the same in
+  # the future, so we should consider choosing the right package set based
+  # on the SoC.
+  defaultSomRepo = if l4tAtLeast "38" then "som" else "t234";
+
   # Wrapper around mkDerivation that has some sensible defaults to extract a .deb file from the L4T BSP pacckage
   buildFromDeb =
-    # Nicely, the t194 and t234 packages are currently identical, so we just
-    # use t194. No guarantee that will stay the same in the future, so we
-    # should consider choosing the right package set based on the SoC.
     { name
-    , repo ? "t234"
+    , repo ? defaultSomRepo
     , deb ? debs.${repo}.${name}
     , src ? deb.src
     , version ? deb.version
@@ -213,7 +216,7 @@ let
         # well as libnvidia-ptxjitcompiler in the same package. meta-tegra does a
         # similar thing where they pull libnvidia-ptxjitcompiler out of
         # l4t-3d-core and place it in the same package as libcuda.
-        dpkg --fsys-tarfile ${debs.t234.nvidia-l4t-3d-core.src} | tar -xO ./usr/lib/aarch64-linux-gnu/${folder}/libnvidia-ptxjitcompiler.so.${version} > lib/libnvidia-ptxjitcompiler.so.${version}
+        dpkg --fsys-tarfile ${debs.${defaultSomRepo}.nvidia-l4t-3d-core.src} | tar -xO ./usr/lib/aarch64-linux-gnu/${folder}/libnvidia-ptxjitcompiler.so.${version} > lib/libnvidia-ptxjitcompiler.so.${version}
         ln -sf libnvidia-ptxjitcompiler.so.${version} lib/libnvidia-ptxjitcompiler.so.1
         ln -sf libnvidia-ptxjitcompiler.so.${version} lib/libnvidia-ptxjitcompiler.so
       '';
@@ -308,7 +311,7 @@ let
     name = "nvidia-l4t-multimedia";
     # TODO: Replace the below with the builder from cuda-packages that works with multiple debs
     postUnpack = ''
-      dpkg-deb -x ${debs.t234.nvidia-l4t-multimedia-utils.src} source
+      dpkg-deb -x ${debs.${defaultSomRepo}.nvidia-l4t-multimedia-utils.src} source
       dpkg-deb -x ${debs.common.nvidia-l4t-jetson-multimedia-api.src} source
     '';
     buildInputs = [ l4t-core l4t-cuda l4t-nvsci pango alsa-lib ] ++ (with gst_all_1; [ gstreamer gst-plugins-base ]);
@@ -433,8 +436,8 @@ let
 
   nvidia-smi = buildFromDeb {
     name = "nvidia-smi";
-    src = debs.t234.nvidia-l4t-nvml.src;
-    version = debs.t234.nvidia-l4t-nvml.version;
+    src = debs.${defaultSomRepo}.nvidia-l4t-nvml.src;
+    version = debs.${defaultSomRepo}.nvidia-l4t-nvml.version;
     buildInputs = [ l4t-core ];
     # nvidia-smi will dlopen libnvidia-ml.so.1
     appendRunpaths = [ "${placeholder "out"}/lib" ];
@@ -458,10 +461,12 @@ in
     l4t-nvsci
     l4t-pva
     l4t-tools
-    l4t-wayland
-    l4t-xusb-firmware;
+    l4t-wayland;
 } // lib.optionalAttrs (l4tAtLeast "36") {
   inherit
     l4t-dla-compiler
-    nvidia-smi;
+    nvidia-smi
+    ;
+} // lib.optionalAttrs (l4tOlder "38") {
+  inherit l4t-xusb-firmware; # L4T 38+ uses upstream firmware
 }
