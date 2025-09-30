@@ -16,7 +16,7 @@ let
 
   cfg = config.hardware.nvidia-jetpack;
 
-  jetpackVersions = [ "5" "6" ];
+  jetpackVersions = [ "5" "6" "7" ];
 
   teeApplications = pkgs.symlinkJoin {
     name = "tee-applications";
@@ -57,7 +57,7 @@ in
       enable = mkEnableOption "NVIDIA Jetson device support";
 
       majorVersion = mkOption {
-        default = if cfg.som == "generic" || lib.hasPrefix "orin" cfg.som then "6" else "5";
+        default = if lib.hasPrefix "thor" cfg.som then "7" else if cfg.som == "generic" || lib.hasPrefix "orin" cfg.som then "6" else "5";
         type = types.enum jetpackVersions;
         description = "Jetpack major version to use";
       };
@@ -100,6 +100,7 @@ in
           "orin-agx-industrial"
           "orin-nx"
           "orin-nano"
+          "thor-agx"
           "xavier-agx"
           "xavier-agx-industrial"
           "xavier-nx"
@@ -196,6 +197,7 @@ in
           }
           (validSomsAssertion "5" [ "xavier" "orin" ])
           (validSomsAssertion "6" [ "orin" ])
+          (validSomsAssertion "7" [ "thor" ])
         ]
         (
           let
@@ -298,6 +300,25 @@ in
         # Ethernet for AGX
         "nvpps"
         "nvethernet"
+      ] ++ lib.optionals (pkgs.nvidia-jetpack.l4tAtLeast "38") [
+        "pwm-fan"
+        "uas"
+        "r8152"
+        "phy-tegra194-p2u"
+        "nvme-core"
+        "tegra-bpmp-thermal"
+        "pwm-tegra"
+        "tegra_vblk"
+        "tegra_hv_vblk_oops"
+        "ufs-tegra"
+        "nvpps"
+        "pcie-tegra264"
+        "nvethernet"
+        "r8126"
+        "r8168"
+        "tegra_vnet"
+        "rtl8852ce"
+        "oak_pci"
       ];
 
       # See upstream default for this option, removes any modules that aren't enabled in JetPack kernel
