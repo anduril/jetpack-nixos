@@ -236,10 +236,10 @@ in
       });
 
       boot.kernelPackages =
-        if cfg.kernel.realtime then
+        (if cfg.kernel.realtime then
           pkgs.nvidia-jetpack.rtkernelPackages
         else
-          pkgs.nvidia-jetpack.kernelPackages;
+          pkgs.nvidia-jetpack.kernelPackages).extend pkgs.nvidia-jetpack.kernelPackagesOverlay;
 
       boot.kernelParams = [
         # Needed on Orin at least, but upstream has it for both
@@ -285,9 +285,7 @@ in
           [ config.boot.kernelPackages.nvidia-display-driver ]
         ++
         lib.optionals (jetpackAtLeast "6") [
-          (pkgs.nvidia-jetpack.kernelPackages.nvidia-oot-modules.overrideAttrs {
-            inherit (config.boot.kernelPackages) kernel;
-          })
+          config.boot.kernelPackages.nvidia-oot-modules
         ];
 
       hardware.firmware = with pkgs.nvidia-jetpack; [
@@ -486,7 +484,7 @@ in
     }
     (lib.mkIf (jetpackAtLeast "6")
       {
-        hardware.deviceTree.dtbSource = pkgs.nvidia-jetpack.kernelPackages.devicetree;
+        hardware.deviceTree.dtbSource = config.boot.kernelPackages.devicetree;
 
         # Nvidia's jammy kernel has downstream apparmor patches which require "apparmor"
         # to appear sufficiently early in the `lsm=<list of security modules>` kernel argument
