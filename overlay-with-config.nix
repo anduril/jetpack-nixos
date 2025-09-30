@@ -11,6 +11,8 @@ final: prev: (
 
     inherit (final) lib;
 
+    jetpackAtLeast = lib.versionAtLeast cfg.majorVersion;
+
     tosArgs = {
       inherit (final.nvidia-jetpack) socType;
       inherit (cfg.firmware.optee) taPublicKeyFile extraMakeFlags coreLogLevel taLogLevel;
@@ -216,7 +218,7 @@ final: prev: (
                 "./flash.sh"
                 (lib.optionalString (cfg.flashScriptOverrides.partitionTemplate != null) "-c flash.xml")
                 "--no-flash"
-                (lib.optionalString (cfg.majorVersion == "6") "--sign")
+                (lib.optionalString (jetpackAtLeast "6") "--sign")
                 "--bup"
                 "--multi-spec"
                 (builtins.toString cfg.flashScriptOverrides.flashArgs)
