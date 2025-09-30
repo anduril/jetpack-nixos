@@ -7,6 +7,7 @@
 , cudaMajorMinorPatchVersion
 , cudaDriverMajorMinorVersion
 , bspHash
+, bspPatches ? [ ]
 }:
 final: _:
 let
@@ -48,22 +49,25 @@ makeScope final.newScope (self: {
 
   callPackages = callPackagesWith (final // self);
 
-  bspSrc = final.runCommand "l4t-unpacked"
-    {
-      # https://developer.nvidia.com/embedded/jetson-linux-archive
-      # https://repo.download.nvidia.com/jetson/
-      src = final.fetchurl {
-        url = "https://developer.download.nvidia.com/embedded/L4T/r${versions.major l4tMajorMinorPatchVersion}_Release_v${versions.minor l4tMajorMinorPatchVersion}.${versions.patch l4tMajorMinorPatchVersion}/release/Jetson_Linux_R${l4tMajorMinorPatchVersion}_aarch64.tbz2";
-        hash = bspHash;
-      };
-      # We use a more recent version of bzip2 here because we hit this bug
-      # extracting nvidia's archives:
-      # https://bugs.launchpad.net/ubuntu/+source/bzip2/+bug/1834494
-      nativeBuildInputs = [ final.buildPackages.bzip2_1_1 ];
-    } ''
-    bzip2 -d -c $src | tar xf -
-    mv Linux_for_Tegra $out
-  '';
+  bspSrc = final.applyPatches {
+    src = final.runCommand "l4t-unpacked"
+      {
+        # https://developer.nvidia.com/embedded/jetson-linux-archive
+        # https://repo.download.nvidia.com/jetson/
+        src = final.fetchurl {
+          url = "https://developer.download.nvidia.com/embedded/L4T/r${versions.major l4tMajorMinorPatchVersion}_Release_v${versions.minor l4tMajorMinorPatchVersion}.${versions.patch l4tMajorMinorPatchVersion}/release/Jetson_Linux_R${l4tMajorMinorPatchVersion}_aarch64.tbz2";
+          hash = bspHash;
+        };
+        # We use a more recent version of bzip2 here because we hit this bug
+        # extracting nvidia's archives:
+        # https://bugs.launchpad.net/ubuntu/+source/bzip2/+bug/1834494
+        nativeBuildInputs = [ final.buildPackages.bzip2_1_1 ];
+      } ''
+      bzip2 -d -c $src | tar xf -
+      mv Linux_for_Tegra $out
+    '';
+    patches = bspPatches;
+  };
 
   # Here for convenience, to see what is in upstream Jetpack
   unpackedDebs = final.runCommand "unpackedDebs-${l4tMajorMinorPatchVersion}" { nativeBuildInputs = [ final.buildPackages.dpkg ]; } ''
