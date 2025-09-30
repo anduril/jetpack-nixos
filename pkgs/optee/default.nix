@@ -108,6 +108,7 @@ let
       nvCccPrebuilt = {
         t194 = "";
         t234 = "${nvopteeSrc}/optee/optee_os/prebuilt/t234/libcommon_crypto.a";
+        t264 = "${nvopteeSrc}/optee/optee_os/prebuilt/t264/libcommon_crypto.a";
       }.${socType};
 
       makeFlags = [
@@ -115,13 +116,15 @@ let
         "CROSS_COMPILE64=${stdenv.cc.targetPrefix}"
         "PLATFORM=tegra"
         "PLATFORM_FLAVOR=${socType}"
-        "CFG_WITH_STMM_SP=y"
         "NV_CCC_PREBUILT=${nvCccPrebuilt}"
         "O=$(out)"
         "CFG_TEE_CORE_LOG_LEVEL=${toString coreLogLevel}"
         "CFG_TEE_TA_LOG_LEVEL=${toString taLogLevel}"
       ]
-      ++ (lib.optional (uefi-firmware != null) "CFG_STMM_PATH=${uefi-firmware}/standalonemm_optee.bin")
+      ++ (lib.optionals ((socType == "t194" || socType == "t234") && uefi-firmware != null) [
+        "CFG_WITH_STMM_SP=y"
+        "CFG_STMM_PATH=${uefi-firmware}/standalonemm_optee.bin"
+      ])
       ++ (lib.optional (taPublicKeyFile != null) "TA_PUBLIC_KEY=${taPublicKeyFile}")
       ++ extraMakeFlags;
     in
@@ -240,28 +243,43 @@ let
     '');
 
   buildArmTrustedFirmware = lib.makeOverridable ({ socType, ... }:
+    let
+      socSpecialization = gitRepos ? "tegra/optee-src/atf_${socType}";
+      src = if socSpecialization then gitRepos."tegra/optee-src/atf_${socType}" else gitRepos."tegra/optee-src/atf";
+      srcDir = if socSpecialization then "arm-trusted-firmware.${socType}" else "arm-trusted-firmware";
+    in
     stdenv.mkDerivation {
       pname = "arm-trusted-firmware";
       version = l4tMajorMinorPatchVersion;
-      src = atfSrc;
+      inherit src;
       makeFlags = [
-        "-C arm-trusted-firmware"
+        "-C ${srcDir}"
         "BUILD_BASE=$(PWD)/build"
         "CROSS_COMPILE=${stdenv.cc.targetPrefix}"
         "DEBUG=0"
         "LOG_LEVEL=20"
         "PLAT=tegra"
-        "SPD=opteed"
         "TARGET_SOC=${socType}"
         "V=0"
         # binutils 2.39 regression
         # `warning: /build/source/build/rk3399/release/bl31/bl31.elf has a LOAD segment with RWX permissions`
         # See also: https://developer.trustedfirmware.org/T996
         "LDFLAGS=-no-warn-rwx-segments"
-      ] ++ lib.optionals (l4tAtLeast "36" && socType == "t234") [
+      ] ++ lib.optionals (socType == "t194" || socType == "t234") [
+        "SPD=opteed"
+      ] ++ lib.optionals (socType == "t264") [
+        "ARM_ARCH_MINOR=6"
+        "CTX_INCLUDE_EL2_REGS=1"
+        "SPD=spmd"
+        "SP_LAYOUT_FILE=${src}/${srcDir}/secure_partition/sp_layout.json"
+      ] ++ lib.optionals ((lib.versions.major l4tMajorMinorPatchVersion) == "36" && socType != "t194") [
         "BRANCH_PROTECTION=3"
         "ARM_ARCH_MINOR=3"
       ];
+
+      buildFlags = [ "all" ] ++ lib.optional (l4tAtLeast "38") "fiptool";
+
+      nativeBuildInputs = lib.optionals (l4tAtLeast "38") [ dtc openssl buildPackages.stdenv.cc ];
 
       enableParallelBuilding = true;
 
@@ -270,6 +288,13 @@ let
 
         mkdir -p $out
         cp ./build/tegra/${socType}/release/bl31.bin $out/bl31.bin
+
+        ${lib.optionalString socSpecialization ''
+          # From public sources, see instructions in nvidia-jetson-optee-source.tbz2
+          dtc -I dts -O dtb -o nvidia-${socType}.dtb ${srcDir}/fdts/nvidia-${socType}.dts
+          ${srcDir}/tools/fiptool/fiptool create --soc-fw $out/bl31.bin --soc-fw-config nvidia-${socType}.dtb $out/bl31.fip
+        ''}
+
 
         runHook postInstall
       '';
@@ -288,12 +313,15 @@ let
       hwKeyAgent = buildHwKeyAgent args;
 
       opteeOS = buildOptee ({
-        earlyTaPaths = [
+        earlyTaPaths = lib.optionals (socType == "t194" || socType == "t234") [
           "${nvLuksSrv}/b83d14a8-7128-49df-9624-35f14f65ca6c.stripped.elf"
           "${cpuBlPayloadDec}/0e35e2c9-b329-4ad9-a2f5-8ca9bbbd7713.stripped.elf"
           "${hwKeyAgent}/82154947-c1bc-4bdf-b89d-04f93c0ea97c.stripped.elf"
         ];
       } // args);
+
+      teeRaw = "${opteeOS}/core/tee-raw.bin";
+      dtb = "${opteeDTB}/tegra${lib.removePrefix "t" socType}-optee.dtb";
 
       image = buildPackages.runCommand "tos.img"
         {
@@ -303,16 +331,36 @@ let
         mkdir -p $out
         ${buildPackages.python3}/bin/python3 ${bspSrc}/nv_tegra/tos-scripts/gen_tos_part_img.py \
           --monitor ${armTrustedFirmware}/bl31.bin \
-          --os ${opteeOS}/core/tee-raw.bin \
-          --dtb ${opteeDTB}/*.dtb \
+          --os ${teeRaw} \
+          --dtb ${dtb} \
           --tostype optee \
           $out/tos.img
 
         # Get rid of any string references to source(s)
         nuke-refs $out/*
       '';
+
+      imageSpTool = buildPackages.runCommand "tos.img"
+        {
+          nativeBuildInputs = [ nukeReferences ];
+          passthru = { inherit nvLuksSrv hwKeyAgent; };
+        } ''
+        # From public sources, see instructions in nvidia-jetson-optee-source.tbz2
+        mkdir -p $out
+        ${lib.getExe buildPackages.python3} ${armTrustedFirmware.src}/arm-trusted-firmware.${socType}/tools/sptool/sptool.py \
+          -i ${teeRaw}:${dtb} \
+          -o $out/tos.img
+
+        cp ${armTrustedFirmware}/bl31.fip $out/
+
+        nuke-refs $out/*
+      '';
     in
-    image;
+    {
+      t194 = image;
+      t234 = image;
+      t264 = imageSpTool;
+    }.${socType};
 in
 {
   inherit buildTOS buildOpteeTaDevKit opteeClient buildPkcs11Ta buildOpteeXtest;
