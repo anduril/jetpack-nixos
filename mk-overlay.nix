@@ -251,10 +251,10 @@ makeScope final.newScope (self: {
     };
 
   kernel = self.callPackage ./pkgs/kernels/r${l4tMajorVersion} { kernelPatches = [ ]; };
-  kernelPackages = (final.linuxPackagesFor self.kernel).extend self.kernelPackagesOverlay;
+  kernelPackages = final.linuxPackagesFor self.kernel;
 
   rtkernel = self.callPackage ./pkgs/kernels/r${l4tMajorVersion} { kernelPatches = [ ]; realtime = true; };
-  rtkernelPackages = (final.linuxPackagesFor self.rtkernel).extend self.kernelPackagesOverlay;
+  rtkernelPackages = final.linuxPackagesFor self.rtkernel;
 
   nxJetsonBenchmarks = self.callPackage ./pkgs/jetson-benchmarks {
     targetSom = "nx";
