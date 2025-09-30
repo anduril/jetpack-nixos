@@ -69,6 +69,14 @@ generate_compat_spec() {
     chiprev=""
     ;;
 
+  # Thor AGX
+  3834)
+    fab=""
+    boardsku=""
+    boardrev=""
+    chiprev=""
+    ;;
+
   *)
     echo "Unknown boardid: ${boardid}"
     exit 1
