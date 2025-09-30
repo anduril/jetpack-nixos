@@ -3,14 +3,18 @@
 , dpkg
 , debs
 , l4tMajorMinorPatchVersion
+, l4tAtLeast
 }:
 
 runCommand "container-deps" { nativeBuildInputs = [ dpkg ]; }
   (lib.concatStringsSep "\n"
     (lib.mapAttrsToList
       (deb: debFiles:
-      (if builtins.hasAttr deb debs.t234 then ''
-        echo Unpacking ${deb}; dpkg -x ${debs.t234.${deb}.src} debs
+      let
+        repo = if l4tAtLeast "38" then "som" else "t234";
+      in
+      (if builtins.hasAttr deb debs.${repo} then ''
+        echo Unpacking ${deb}; dpkg -x ${debs.${repo}.${deb}.src} debs
       '' else ''
         echo Unpacking ${deb}; dpkg -x ${debs.common.${deb}.src} debs
       '') + (lib.concatStringsSep "\n" (map
