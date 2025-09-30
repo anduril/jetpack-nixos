@@ -64,6 +64,9 @@ in
   ''}
   ${lib.optionalString (tosImage != null) ''
   cp ${tosImage}/tos.img bootloader/tos-optee_${socType}.img
+  if [ -e ${tosImage}/bl31.fip ]; then
+    cp ${tosImage}/bl31.fip bootloader/bl31_${socType}.fip
+  fi
   ''}
   ${lib.optionalString (eksFile != null) ''
   cp ${eksFile} bootloader/eks_${socType}.img
