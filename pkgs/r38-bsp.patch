@@ -1,0 +1,27 @@
+diff --git a/bootloader/LICENSE.bl31_t264.fip.rst b/bootloader/LICENSE.bl31_t264.fip.rst
+index 9ba773d..3a1f4e8 120000
+--- a/bootloader/LICENSE.bl31_t264.fip.rst
++++ b/bootloader/LICENSE.bl31_t264.fip.rst
+@@ -1 +1 @@
+-Linux_for_Tegra/bootloader/LICENSE.bl31_t264.bin.rst
+\ No newline at end of file
++LICENSE.bl31_t264.bin.rst
+\ No newline at end of file
+diff --git a/bootloader/LICENSE.hafnium_t264.fip.rst b/bootloader/LICENSE.hafnium_t264.fip.rst
+index 00bf565..a49abfe 120000
+--- a/bootloader/LICENSE.hafnium_t264.fip.rst
++++ b/bootloader/LICENSE.hafnium_t264.fip.rst
+@@ -1 +1 @@
+-Linux_for_Tegra/bootloader/LICENSE.hafnium_t264.bin.rst
+\ No newline at end of file
++LICENSE.hafnium_t264.bin.rst
+\ No newline at end of file
+diff --git a/bootloader/LICENSE.t264_spmc.dtb.rst b/bootloader/LICENSE.t264_spmc.dtb.rst
+index 00bf565..a49abfe 120000
+--- a/bootloader/LICENSE.t264_spmc.dtb.rst
++++ b/bootloader/LICENSE.t264_spmc.dtb.rst
+@@ -1 +1 @@
+-Linux_for_Tegra/bootloader/LICENSE.hafnium_t264.bin.rst
+\ No newline at end of file
++LICENSE.hafnium_t264.bin.rst
+\ No newline at end of file
