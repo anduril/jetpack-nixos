@@ -31,6 +31,7 @@
 , bspSrc
 , l4tMajorMinorPatchVersion
 , symlinkJoin
+, xmlstarlet
 }:
 
 let
@@ -76,6 +77,7 @@ let
     '' + (lib.optionalString (!stdenv.hostPlatform.isx86) ''
       # Wrap x86 binaries in qemu
       pushd bootloader/ >/dev/null
+      # Wrap i386 binaries in qemu
       for filename in chkbdinfo mkbctpart mkbootimg mksparse tegrabct_v2 tegradevflash_v2 tegrahost_v2 tegrakeyhash tegraopenssl tegraparser_v2 tegrarcm_v2 tegrasign_v2; do
         if [[ -e $filename ]]; then
           mv "$filename" ."$filename"-wrapped
@@ -83,6 +85,18 @@ let
           cat >"$filename" <<EOF
       #!${runtimeShell}
       exec -a "\$0" ${qemu-user}/bin/qemu-i386 "$out/bootloader/.$filename-wrapped" "\$@"
+      EOF
+          chmod +x "$filename"
+        fi
+      done
+      # Wrap x86_64 binaries in qemu
+      for filename in fiptool; do
+        if [[ -e $filename ]]; then
+          mv "$filename" ."$filename"-wrapped
+          # DO NOT CHANGE THE WHITESPACE BELOW!
+          cat >"$filename" <<EOF
+      #!${runtimeShell}
+      exec -a "\$0" ${qemu-user}/bin/qemu-x86_64 "$out/bootloader/.$filename-wrapped" "\$@"
       EOF
           chmod +x "$filename"
         fi
@@ -128,6 +142,7 @@ let
       bc
       openssl
       sbsigntool # In l4t_uefi_sign_image.sh, which is needed by RCM flashing
+      xmlstarlet # Needed in JetPack 7
 
       # Needed by bootloader/tegraflash_impl_t234.py
       gcc
