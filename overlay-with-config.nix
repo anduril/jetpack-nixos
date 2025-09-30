@@ -46,6 +46,12 @@ final: prev: (
         errorLevelInfo = cfg.firmware.uefi.errorLevelInfo;
         edk2NvidiaPatches = cfg.firmware.uefi.edk2NvidiaPatches;
         edk2UefiPatches = cfg.firmware.uefi.edk2UefiPatches;
+        socFamily =
+          if cfg.som == null then null
+          else if lib.hasPrefix "thor-" cfg.som then "t26x"
+          else if lib.hasPrefix "orin-" cfg.som then "t23x"
+          else if lib.hasPrefix "xavier-" cfg.som then "t19x"
+          else throw "Unknown SoC type";
 
         # A hash of something that represents everything that goes into the
         # platform firmware so that we can include it in the firmware version.

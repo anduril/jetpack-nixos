@@ -24,6 +24,7 @@
   edk2UefiPatches ? [ ]
 , debugMode ? false
 , errorLevelInfo ? debugMode
+, socFamily ? null # used in r38+, not needed here.
 , # Enables a bunch more info messages
 
   # The root certificate (in PEM format) for authenticating capsule updates. By
