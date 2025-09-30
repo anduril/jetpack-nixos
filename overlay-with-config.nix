@@ -25,12 +25,14 @@ final: prev: (
     nvidia-jetpack = prev.nvidia-jetpack.overrideScope (finalJetpack: prevJetpack: {
       socType =
         if cfg.som == null then null
+        else if lib.hasPrefix "thor-" cfg.som then "t264"
         else if lib.hasPrefix "orin-" cfg.som then "t234"
         else if lib.hasPrefix "xavier-" cfg.som then "t194"
         else throw "Unknown SoC type";
 
       chipId =
         if cfg.som == null then null
+        else if lib.hasPrefix "thor-" cfg.som then "0x26"
         else if lib.hasPrefix "orin-" cfg.som then "0x23"
         else if lib.hasPrefix "xavier-" cfg.som then "0x19"
         else throw "Unknown SoC type";
