@@ -88,6 +88,7 @@ stdenv.mkDerivation (finalAttrs: {
     "KERNEL_HEADERS=${finalAttrs.kernel.dev}/lib/modules/${finalAttrs.kernel.modDirVersion}/source"
     "KERNEL_OUTPUT=${finalAttrs.kernel.dev}/lib/modules/${finalAttrs.kernel.modDirVersion}/build"
     "INSTALL_MOD_PATH=$(out)"
+    "IGNORE_PREEMPT_RT_PRESENCE=1"
   ];
 
   postInstall = ''
