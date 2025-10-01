@@ -245,32 +245,6 @@ format. By default, there will be a single device setup of the kind
 
 If you are using Podman, it is recommended to add a dependency to any systemd services that run podman to specify `After=nvidia-container-toolkit-cdi-generator.service`. Due to Podman's daemonless nature, this ensures that the CDI configuration files are generated prior to container start.
 
-### Using the kernel package sets
-
-There are two predefined kernel package sets in the overlay. They use sources
-from Jetson Linux.
-
-- `pkgs.nvidia-jetpack.kernelPackages`
-- `pkgs.nvidia-jetpack.rtkernelPackages`
-
-The NixOS module uses these sets by default.
-
-On JetPack 6+, however, you may use a mainline package set instead.
-Consult the [Bring Your Own Kernel](https://docs.nvidia.com/jetson/archives/r36.4.4/DeveloperGuide/SD/Kernel/BringYourOwnKernel.html) documentation for more details.
-
-When using a custom package set in the NixOS configuration, the out-of-tree
-modules must be added using the provided overlay.
-
-e.g. (using the `pkgs.nvidia-jetpack.kernelPackages` set)
-
-```nix
-{ pkgs, ... }:
-
-{
-  config.boot.kernelPackages = pkgs.nvidia-jetpack.kernelPackages.extend pkgs.nvidia-jetpack.kernelPackagesOverlay
-}
-```
-
 ## Configuring CUDA for Nixpkgs
 
 > [!NOTE]
