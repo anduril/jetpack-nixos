@@ -36,7 +36,7 @@ let
         exit 1
       fi
 
-      if ! ota-check-firmware; then
+      if ! ota-check-firmware -b; then
         # Set efi vars here as well as in systemd service, in case we're
         # upgrading from an older nixos generation that doesn't have the
         # systemd service. Plus, this ota-setup-efivars will be from the
