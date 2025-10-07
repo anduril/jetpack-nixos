@@ -122,10 +122,14 @@
         };
       };
 
-      checks = forAllSystems ({ pkgs, ... }: {
+      checks = forAllSystems ({ pkgs, system, ... }: {
         formatting = pkgs.runCommand "repo-formatting" { nativeBuildInputs = with pkgs; [ nixpkgs-fmt ]; } ''
           nixpkgs-fmt --check ${self} && touch $out
         '';
+        jetpackSelectionDependsOnCudaVersion = import ./check-jetpack-selection.nix {
+          inherit lib nixpkgs pkgs system;
+          overlay = self.overlays.default;
+        };
       });
 
       formatter = forAllSystems ({ pkgs, ... }: import ./treefmt.nix pkgs);
