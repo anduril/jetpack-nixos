@@ -30,6 +30,7 @@ let
     ;
 
   jetpackAtLeast = lib.versionAtLeast cfg.majorVersion;
+  jetpackOlder = lib.versionOlder cfg.majorVersion;
 
   # This produces a script where we have already called the ./flash.sh script
   # with `--no-flash` and produced a file under bootloader/flashcmd.txt.
@@ -146,4 +147,4 @@ let
     meta.platforms = [ "x86_64-linux" ];
   };
 in
-{ inherit flashScript initrdFlashScript fuseScript rcmBoot; }
+{ inherit initrdFlashScript fuseScript rcmBoot; flashScript = initrdFlashScript; } // lib.optionalAttrs (jetpackOlder "7") { inherit flashScript; }
