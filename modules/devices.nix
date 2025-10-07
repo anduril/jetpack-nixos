@@ -210,5 +210,21 @@ in
           "rtw88/rtw8822c_wow_fw.bin"
         ])
       ];
+    })
+    (lib.mkIf (cfg.som == "thor-agx") {
+      hardware.firmware = [
+        (extractLinuxFirmware "xusb-firmware" ([ "nvidia/tegra186/xusb.bin" ] ++ lib.optionals
+          (config.hardware.bluetooth.enable
+            || config.networking.wireless.enable
+            || config.networking.wireless.iwd.enable) [
+          "rtl_nic/rtl8153a-2.fw"
+          "rtl_nic/rtl8153a-3.fw"
+          "rtl_nic/rtl8153a-4.fw"
+          "rtl_nic/rtl8153b-2.fw"
+          "rtl_nic/rtl8153c-1.fw"
+          "rtl_nic/rtl8156a-2.fw"
+          "rtl_nic/rtl8156b-2.fw"
+        ]))
+      ];
     })]);
 }
