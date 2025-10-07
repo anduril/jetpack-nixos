@@ -175,26 +175,53 @@ in
 
   config = mkIf cfg.enable (lib.mkMerge [
     {
-      assertions = [
-        {
-          # NixOS provides two main ways to feed a package set into a config:
-          # 1. The options nixpkgs.hostPlatform/nixpkgs.buildPlatform, which are
-          #    used to construct an import of nixpkgs.
-          # 2. The option nixpkgs.pkgs (set by default if you use the pkgs.nixos
-          #    function), which is a pre-configured import of nixpkgs.
-          #
-          # Regardless of how the package set is setup, it _must_ have its
-          # hostPlatform compatible with aarch64 in order to run on the Jetson
-          # platform.
-          assertion = pkgs.stdenv.hostPlatform.isAarch64;
-          message = ''
-            NixOS config has an invalid package set for the Jetson platform. Try
-            setting nixpkgs.hostPlatform to "aarch64-linux" or otherwise using an
-            aarch64-linux compatible package set.
-          '';
-        }
-        (validSomsAssertion "5" [ "xavier" "orin" ])
-        (validSomsAssertion "6" [ "orin" ])
+      assertions = lib.mkMerge [
+        [
+          {
+            # NixOS provides two main ways to feed a package set into a config:
+            # 1. The options nixpkgs.hostPlatform/nixpkgs.buildPlatform, which are
+            #    used to construct an import of nixpkgs.
+            # 2. The option nixpkgs.pkgs (set by default if you use the pkgs.nixos
+            #    function), which is a pre-configured import of nixpkgs.
+            #
+            # Regardless of how the package set is setup, it _must_ have its
+            # hostPlatform compatible with aarch64 in order to run on the Jetson
+            # platform.
+            assertion = pkgs.stdenv.hostPlatform.isAarch64;
+            message = ''
+              NixOS config has an invalid package set for the Jetson platform. Try
+              setting nixpkgs.hostPlatform to "aarch64-linux" or otherwise using an
+              aarch64-linux compatible package set.
+            '';
+          }
+          (validSomsAssertion "5" [ "xavier" "orin" ])
+          (validSomsAssertion "6" [ "orin" ])
+        ]
+        (
+          let
+            inherit (pkgs.cudaPackages) cudaMajorMinorVersion cudaAtLeast cudaOlder;
+          in
+          # If NixOS has been configured with CUDA support, add additional assertions to make sure CUDA packages
+            # being built have a chance of working.
+          lib.mkIf pkgs.config.cudaSupport [
+            {
+              assertion = !cudaOlder "11.4";
+              message = "JetPack NixOS does not support CUDA 11.3 or earlier: `pkgs.cudaPackages` has version ${cudaMajorMinorVersion}.";
+            }
+            {
+              assertion = cfg.majorVersion == "5" -> (cudaAtLeast "11.4" && cudaOlder "12.3");
+              message = "JetPack NixOS 5 supports CUDA 11.4 (natively) - 12.2 (with `cuda_compat`): `pkgs.cudaPackages` has version ${cudaMajorMinorVersion}.";
+            }
+            {
+              assertion = cfg.majorVersion == "6" -> (cudaAtLeast "12.4" && cudaOlder "13.0");
+              message = "JetPack NixOS 6 supports CUDA 12.4 (natively) - 12.9 (with `cuda_compat`): `pkgs.cudaPackages` has version ${cudaMajorMinorVersion}.";
+            }
+            {
+              assertion = !cudaAtLeast "13.0";
+              message = "JetPack NixOS does not support CUDA 13.0 or later: `pkgs.cudaPackages` has version ${cudaMajorMinorVersion}.";
+            }
+          ]
+        )
       ];
 
       # Use mkOptionDefault so that we prevent conflicting with the priority that
@@ -210,14 +237,20 @@ in
         (
           let
             otherJetpacks = builtins.filter (v: v != cfg.majorVersion) jetpackVersions;
-            mkWarnValue = v: lib.warn "nvidia-jetpack${v} is unsupported when nixos is configured to use Jetpack ${cfg.majorVersion}" { };
           in
           final: prev:
-            # set default nvidia-jetpack to our jetpack version
-            { nvidia-jetpack = final."nvidia-jetpack${cfg.majorVersion}"; }
-            # and warn/fail if anyone tries to evaluate something else
+            let
+              mkWarnJetpack = v: lib.warn "nvidia-jetpack${v} is unsupported when nixos is configured to use Jetpack ${cfg.majorVersion}" prev."nvidia-jetpack${v}";
+            in
+            # NOTE: While the version of `cudaPackages` drives the version of `nvidia-jetpack`, we need to set them both here since
+              # overlay-with-config needs to reference `prev.nvidia-jetpack`, so we can't wait for it to resolve via `final`.
+            {
+              nvidia-jetpack = final."nvidia-jetpack${cfg.majorVersion}";
+              cudaPackages = final."cudaPackages_${lib.versions.major final."nvidia-jetpack${cfg.majorVersion}".cudaMajorMinorVersion}";
+            }
+            # warn if anyone tries to evaluate non-default nvidia-jetpack package sets, but keep them around to avoid missing attribute errors.
             // builtins.listToAttrs (builtins.map
-              (v: { name = "nvidia-jetpack${v}"; value = mkWarnValue v; })
+              (v: { name = "nvidia-jetpack${v}"; value = mkWarnJetpack v; })
               otherJetpacks)
         )
         (import ../overlay-with-config.nix config)
@@ -236,10 +269,10 @@ in
       });
 
       boot.kernelPackages =
-        if cfg.kernel.realtime then
+        (if cfg.kernel.realtime then
           pkgs.nvidia-jetpack.rtkernelPackages
         else
-          pkgs.nvidia-jetpack.kernelPackages;
+          pkgs.nvidia-jetpack.kernelPackages).extend pkgs.nvidia-jetpack.kernelPackagesOverlay;
 
       boot.kernelParams = [
         # Needed on Orin at least, but upstream has it for both
@@ -285,9 +318,7 @@ in
           [ config.boot.kernelPackages.nvidia-display-driver ]
         ++
         lib.optionals (jetpackAtLeast "6") [
-          (pkgs.nvidia-jetpack.kernelPackages.nvidia-oot-modules.overrideAttrs {
-            inherit (config.boot.kernelPackages) kernel;
-          })
+          config.boot.kernelPackages.nvidia-oot-modules
         ];
 
       hardware.firmware = with pkgs.nvidia-jetpack; [
@@ -297,6 +328,36 @@ in
       ];
 
       hardware.deviceTree.enable = true;
+      hardware.deviceTree.dtboBuildExtraIncludePaths = {
+        "5" = let dtsTree = "${config.hardware.deviceTree.kernelPackage.src}/nvidia"; in lib.mkMerge [
+          [
+            "${dtsTree}/soc/tegra/kernel-include"
+            "${dtsTree}/platform/tegra/common/kernel-dts"
+          ]
+          (lib.optionals (checkValidSoms [ "xavier" ]) [
+            "${dtsTree}/soc/t18x/kernel-include"
+            "${dtsTree}/soc/t18x/kernel-dts"
+            "${dtsTree}/platform/t18x/common/kernel-dts"
+          ])
+          (lib.optionals (checkValidSoms [ "orin" ]) [
+            "${dtsTree}/soc/t23x/kernel-include"
+            "${dtsTree}/soc/t23x/kernel-dts"
+            "${dtsTree}/platform/t23x/common/kernel-dts"
+            "${dtsTree}/platform/t23x/automotive/kernel-dts/common/linux/"
+          ])
+        ];
+        # See DTC_INCLUDE inside ${gitRepos."kernel-devicetree"}/generic-dts/Makefile
+        "6" = let dtsTree = "${config.hardware.deviceTree.dtbSource.src}/hardware/nvidia"; in [
+          # SOC independent common include
+          "${dtsTree}/tegra/nv-public"
+
+          # SOC T23X specific common include
+          "${dtsTree}/t23x/nv-public/include/kernel"
+          "${dtsTree}/t23x/nv-public/include/nvidia-oot"
+          "${dtsTree}/t23x/nv-public/include/platforms"
+          "${dtsTree}/t23x/nv-public"
+        ];
+      }.${cfg.majorVersion};
 
       hardware.graphics.package = pkgs.nvidia-jetpack.l4t-3d-core;
       hardware.graphics.extraPackages =
@@ -478,7 +539,9 @@ in
       environment.systemPackages = with pkgs.nvidia-jetpack; [
         l4t-tools
         otaUtils # Tools for UEFI capsule updates
-      ] ++ lib.optional cfg.firmware.optee.xtest pkgs.nvidia-jetpack.opteeXtest;
+      ] ++ lib.optional cfg.firmware.optee.xtest pkgs.nvidia-jetpack.opteeXtest
+      # Tool to view GPU utilization.
+      ++ lib.optional (l4tAtLeast "36") nvidia-smi;
 
       # Used by libEGL_nvidia.so.0
       environment.etc."egl/egl_external_platform.d".source =
@@ -486,7 +549,7 @@ in
     }
     (lib.mkIf (jetpackAtLeast "6")
       {
-        hardware.deviceTree.dtbSource = pkgs.nvidia-jetpack.kernelPackages.devicetree;
+        hardware.deviceTree.dtbSource = config.boot.kernelPackages.devicetree;
 
         # Nvidia's jammy kernel has downstream apparmor patches which require "apparmor"
         # to appear sufficiently early in the `lsm=<list of security modules>` kernel argument
