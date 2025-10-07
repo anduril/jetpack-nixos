@@ -9,7 +9,7 @@ stdenvNoCC.mkDerivation {
   dontConfigure = true;
   dontBuild = true;
 
-  env = { inherit efiSysMountPoint; };
+  env = { inherit efiSysMountPoint expectedBiosVersion; };
 
   buildInputs = [ bash ];
 
@@ -24,18 +24,16 @@ stdenvNoCC.mkDerivation {
     cp ${./ota_helpers.sh} $out/share/ota_helpers.sh
     chmod +x $out/bin/ota-setup-efivars $out/bin/ota-apply-capsule-update $out/bin/ota-check-firmware $out/bin/ota-abort-capsule-update
 
-    for path in $out/bin/ota-apply-capsule-update $out/share/ota_helpers.sh $out/bin/ota-abort-capsule-update; do
-      substituteInPlace "$path" --subst-var efiSysMountPoint
-    done
+    substituteInPlace "$out/share/ota_helpers.sh" \
+      --subst-var efiSysMountPoint
 
-    for fname in ota-setup-efivars ota-apply-capsule-update ota-abort-capsule-update; do
+    for fname in ota-setup-efivars ota-apply-capsule-update ota-abort-capsule-update ota-check-firmware; do
       substituteInPlace $out/bin/$fname \
+        --subst-var expectedBiosVersion \
+        --subst-var efiSysMountPoint \
         --replace "@ota_helpers@" "$out/share/ota_helpers.sh"
       sed -i '2a export PATH=${lib.makeBinPath [ util-linux e2fsprogs tegra-eeprom-tool ]}:$PATH' $out/bin/$fname
     done
-
-    substituteInPlace $out/bin/ota-check-firmware \
-      --replace "@expectedBiosVersion@" "${expectedBiosVersion}"
 
     patchShebangs --host $out/bin
 

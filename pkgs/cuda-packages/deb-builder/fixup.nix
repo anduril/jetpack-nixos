@@ -3,8 +3,8 @@
 # https://github.com/ConnorBaker/cuda-packages/blob/3fdad92cf320274cf24c87a30e3498a5d9fad18e/pkgs/development/cuda-modules/packages/common/redist-builder.nix
 { autoAddDriverRunpath
 , autoPatchelfHook
+, backendStdenv
 , config
-, cudaConfig
 , cudaMajorMinorVersion
 , dpkg
 , flags
@@ -13,7 +13,6 @@
 , stdenv
 }:
 let
-  inherit (cudaConfig) hostRedistSystem;
   inherit (lib) licenses sourceTypes;
   inherit (lib.attrsets) attrValues;
   inherit (lib.lists)
@@ -433,7 +432,7 @@ in
     # a required package missing.
     # NOTE: Use this when a broken condition means evaluation can fail!
     badPlatformsConditions = {
-      "Platform is not supported" = hostRedistSystem == "unsupported";
+      "Platform is not supported" = backendStdenv.hostRedistSystem == "unsupported";
     };
   };
 

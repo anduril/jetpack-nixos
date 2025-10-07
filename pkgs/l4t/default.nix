@@ -430,6 +430,15 @@ let
     autoPatchelf = false;
     meta.platforms = [ "aarch64-linux" "x86_64-linux" ];
   };
+
+  nvidia-smi = buildFromDeb {
+    name = "nvidia-smi";
+    src = debs.t234.nvidia-l4t-nvml.src;
+    version = debs.t234.nvidia-l4t-nvml.version;
+    buildInputs = [ l4t-core ];
+    # nvidia-smi will dlopen libnvidia-ml.so.1
+    appendRunpaths = [ "${placeholder "out"}/lib" ];
+  };
 in
 {
   inherit
@@ -453,5 +462,6 @@ in
     l4t-xusb-firmware;
 } // lib.optionalAttrs (l4tAtLeast "36") {
   inherit
-    l4t-dla-compiler;
+    l4t-dla-compiler
+    nvidia-smi;
 }

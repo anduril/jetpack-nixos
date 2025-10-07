@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Check for the EFI Variable BootChainFwStatus. It must be cleared before a
+# a capsule update can be applied.
+fwstat=/sys/firmware/efi/efivars/BootChainFwStatus-781e084c-a330-417c-b678-38e696380cb9
+if [ -f $fwstat ]; then
+  echo "Detected previous capsule update failure. Please run ota-check-firmware"
+  exit
+fi
+
 source "@ota_helpers@"
 
 capsuleFile=$1
