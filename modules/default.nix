@@ -171,6 +171,11 @@ in
         type = types.bool;
         description = "Enable boot.kernelParams default console configuration";
       };
+
+      console.args = mkOption {
+        internal = true;
+        type = types.listOf types.str;
+      };
     };
   };
 
@@ -270,6 +275,18 @@ in
           lib.optionals (isXavier || isGeneric) [ "7.2" ] ++ lib.optionals (isOrin || isGeneric) [ "8.7" ];
       });
 
+      hardware.nvidia-jetpack.console.args = lib.mkMerge [
+        (lib.optionals (checkValidSoms [ "xavier" "orin" ]) [
+          "console=tty0" # Output to HDMI/DP. May need fbcon=map:0 as well
+          "console=ttyTCU0,115200" # Provides console on "Tegra Combined UART" (TCU)
+        ])
+        (lib.optionals (checkValidSoms [ "thor" ]) [
+          "console=tty0"
+          "console=ttyUTC0,115200"
+          "earlycon=tegra_utc,mmio32,0xc5a0000"
+        ])
+      ];
+
       boot.kernelPackages =
         (if cfg.kernel.realtime then
           pkgs.nvidia-jetpack.rtkernelPackages
@@ -280,11 +297,11 @@ in
         # Needed on Orin at least, but upstream has it for both
         "nvidia.rm_firmware_active=all"
       ]
-      ++ lib.optionals cfg.console.enable [
-        "console=tty0" # Output to HDMI/DP. May need fbcon=map:0 as well
-        "console=ttyTCU0,115200" # Provides console on "Tegra Combined UART" (TCU)
-      ]
-      ++ lib.optional (lib.hasPrefix "xavier-" cfg.som || cfg.som == "generic") "video=efifb:off"; # Disable efifb driver, which crashes Xavier NX and possibly AGX
+      ++ lib.optionals cfg.console.enable cfg.console.args
+      ++ lib.optional (lib.hasPrefix "xavier-" cfg.som || cfg.som == "generic") "video=efifb:off" # Disable efifb driver, which crashes Xavier NX and possibly AGX
+      ++ lib.optionals (pkgs.nvidia-jetpack.l4tAtLeast "38") [
+        "clk_ignore_unused"
+      ];
 
       boot.initrd.includeDefaultModules = false; # Avoid a bunch of modules we may not get from tegra_defconfig
       boot.initrd.availableKernelModules = [ "xhci-tegra" "ucsi_ccg" "typec_ucsi" "typec" ] # Make sure USB firmware makes it into initrd
