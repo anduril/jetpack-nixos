@@ -13,19 +13,20 @@ generate_compat_spec() {
   case "${boardid}" in
   # Xavier AGX
   2888)
-    if [[ "${fab}" == "400" ]]; then
-      if [[ "${boardsku}" == "0004" ]]; then
-        boardrev=""
-      else
-        if [[ "${boardrev}" == "D.0" ]] || [[ "${boardrev}" < "D.0" ]]; then
-          boardrev="D.0"
-        else
-          boardrev="E.0"
-        fi
-        boardsku="0001"
-      fi
-    elif [[ "${fab}" == "600" ]] && [[ "${boardsku}" == "0008" ]]; then
+    if [[ "${boardsku}" == "0004" ]]; then
       boardrev=""
+      fab="400"
+    elif [[ "${fab}" == "400" ]]; then
+      if [[ "${boardrev}" == "D.0" || "${boardrev}" < "D.0" ]]; then
+        boardrev="D.0"
+      else
+        boardrev="E.0"
+      fi
+      boardsku="0001"
+    elif [[ "${fab}" == "600" ]]; then
+      if [[ "${boardsku}" == "0008" ]]; then
+        boardrev=""
+      fi
     fi
     ;;
 
