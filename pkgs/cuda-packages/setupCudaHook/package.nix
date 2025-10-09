@@ -1,13 +1,11 @@
 # Currently propagated by cuda_nvcc or cudatoolkit, rather than used directly
 { backendStdenv
 , config
-, cudaConfig
 , lib
 , makeSetupHook
 }:
 let
-  inherit (backendStdenv) cc hostPlatform;
-  inherit (cudaConfig) hostRedistSystem;
+  inherit (backendStdenv) cc hostPlatform hostRedistSystem;
   inherit (lib.attrsets) attrValues;
   inherit (lib.lists) any optionals;
   inherit (lib.trivial) id;
