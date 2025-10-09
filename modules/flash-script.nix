@@ -503,7 +503,6 @@ in
             xavier-agx = [
               { boardid = "2888"; boardsku = "0001"; fab = "400"; boardrev = "D.0"; fuselevel = "fuselevel_production"; chiprev = "2"; }
               { boardid = "2888"; boardsku = "0001"; fab = "400"; boardrev = "E.0"; fuselevel = "fuselevel_production"; chiprev = "2"; } # 16GB
-              { boardid = "2888"; boardsku = "0004"; fab = "401"; boardrev = "F.0"; fuselevel = "fuselevel_production"; chiprev = "2"; } # 32GB
               { boardid = "2888"; boardsku = "0004"; fab = "400"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = "2"; } # 32GB
               { boardid = "2888"; boardsku = "0005"; fab = "402"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = "2"; } # 64GB
             ];
