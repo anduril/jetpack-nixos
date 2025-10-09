@@ -511,7 +511,9 @@ in
       environment.systemPackages = with pkgs.nvidia-jetpack; [
         l4t-tools
         otaUtils # Tools for UEFI capsule updates
-      ] ++ lib.optional cfg.firmware.optee.xtest pkgs.nvidia-jetpack.opteeXtest;
+      ] ++ lib.optional cfg.firmware.optee.xtest pkgs.nvidia-jetpack.opteeXtest
+      # Tool to view GPU utilization.
+      ++ lib.optional (l4tAtLeast "36") nvidia-smi;
 
       # Used by libEGL_nvidia.so.0
       environment.etc."egl/egl_external_platform.d".source =
