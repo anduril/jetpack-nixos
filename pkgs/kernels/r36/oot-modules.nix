@@ -70,7 +70,7 @@ let
       ''
     );
 in
-stdenv.mkDerivation (finalAttrs: {
+stdenv.mkDerivation {
   __structuredAttrs = true;
   strictDeps = true;
 
@@ -78,15 +78,14 @@ stdenv.mkDerivation (finalAttrs: {
   version = "${l4tMajorMinorPatchVersion}";
   src = l4t-oot-modules-sources;
 
-  inherit kernel;
-
-  nativeBuildInputs = finalAttrs.kernel.moduleBuildDependencies;
+  nativeBuildInputs = kernel.moduleBuildDependencies;
   depsBuildBuild = [ buildPackages.stdenv.cc ];
 
   # See bspSrc/source/Makefile
-  makeFlags = finalAttrs.kernel.makeFlags ++ [
-    "KERNEL_HEADERS=${finalAttrs.kernel.dev}/lib/modules/${finalAttrs.kernel.modDirVersion}/source"
-    "KERNEL_OUTPUT=${finalAttrs.kernel.dev}/lib/modules/${finalAttrs.kernel.modDirVersion}/build"
+  # We can't use kernelModuleMakeFlags because it sets KBUILD_OUTPUT, which nvdisplay won't like. DON'T DO IT!
+  makeFlags = kernel.commonMakeFlags ++ [
+    "KERNEL_HEADERS=${kernel.dev}/lib/modules/${kernel.modDirVersion}/source"
+    "KERNEL_OUTPUT=${kernel.dev}/lib/modules/${kernel.modDirVersion}/build"
     "INSTALL_MOD_PATH=$(out)"
     "IGNORE_PREEMPT_RT_PRESENCE=1"
   ];
@@ -106,4 +105,4 @@ stdenv.mkDerivation (finalAttrs: {
 
   buildFlags = [ "modules" ];
   installTargets = [ "modules_install" ];
-})
+}
