@@ -10,6 +10,18 @@ compatspec=$(generate_compat_spec "$boardspec")
 
 detect_can_write_runtime_uefi_vars "$boardspec"
 
+# Cache BootChainFwStatus so we can report status to user in ota-check-firmware
+# the cache is invalidated upon reboot: /var/run is a tmpfs
+if [[ ! -f /var/run/tegra-bootchainfwstatus && -e /sys/firmware/efi/efivars/BootChainFwStatus-781e084c-a330-417c-b678-38e696380cb9 ]]; then
+  get_efi_int BootChainFwStatus-781e084c-a330-417c-b678-38e696380cb9 >/var/run/tegra-bootchainfwstatus
+fi
+
+# We have to remove the BootChainFwStatus so we can apply future capsule updates
+if [[ -f /sys/firmware/efi/efivars/BootChainFwStatus-781e084c-a330-417c-b678-38e696380cb9 ]]; then
+  echo "Detected capsule update failure."
+  rm_efi_var BootChainFwStatus-781e084c-a330-417c-b678-38e696380cb9
+fi
+
 if [[ ! -e /sys/firmware/efi/efivars/TegraPlatformSpec-781e084c-a330-417c-b678-38e696380cb9 ]]; then
   set_efi_var TegraPlatformSpec-781e084c-a330-417c-b678-38e696380cb9 "\x07\x00\x00\x00${boardspec}-${targetBoard}-"
 fi
