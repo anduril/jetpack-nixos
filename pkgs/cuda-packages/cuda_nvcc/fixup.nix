@@ -148,7 +148,7 @@ finalAttrs: prevAttrs: {
   # NOTE: mkDerivation's setup.sh clobbers all dependency files in fixupPhase, so we must register the paths in postFixup.
   postFixup =
     prevAttrs.postFixup or ""
-    + lib.optionalString (cudaOlder "12") (''
+    + ''
       echo "adding setupCudaHook to propagatedBuildInputs of ''${!outputBin:?}"
       printWords "${setupCudaHook}" >> "''${!outputBin:?}/nix-support/propagated-build-inputs"
     ''
@@ -157,7 +157,7 @@ finalAttrs: prevAttrs: {
     + ''
       echo "adding backendStdenv.cc to propagatedNativeBuildInputs of ''${!outputBin:?}"
       printWords "${backendStdenv.cc}" >> "''${!outputBin:?}/nix-support/propagated-native-build-inputs"
-    '');
+    '';
 
   meta = prevAttrs.meta or { } // {
     mainProgram = "nvcc";
