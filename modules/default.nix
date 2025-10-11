@@ -375,6 +375,7 @@ in
 
       hardware.firmware = with pkgs.nvidia-jetpack; [
         l4t-firmware
+      ] ++ lib.optionals pkgs.config.cudaSupport [
         cudaPackages.vpi-firmware # Optional, but needed for pva_auth_allowlist firmware file used by VPI2
       ] ++ lib.optionals (l4tOlder "36") [
         l4t-xusb-firmware # usb firmware also present in linux-firmware package, but that package is huge and has much more than needed
@@ -546,7 +547,7 @@ in
           '';
         in
         {
-          enable = true;
+          enable = cfg.configureCuda;
           description = "Create a symlink for libEGL_nvidia.so.0 at /usr/lib/aarch64-linux-gnu/tegra-egl/";
           unitConfig = {
             ConditionPathExists = "!/usr/lib/aarch64-linux-gnu/tegra-egl/libEGL_nvidia.so.0";

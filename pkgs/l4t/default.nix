@@ -1,6 +1,7 @@
 { stdenv
 , stdenvNoCC
 , buildPackages
+, config
 , lib
 , fetchurl
 , fetchpatch
@@ -54,7 +55,8 @@ let
       # CMake, we need to add the hook (`markForCudatoolkitRootHook`) which allows them to be discovered by our
       # tooling.
       nativeBuildInputs =
-        [ cudaPackages.markForCudatoolkitRootHook dpkg ]
+        [ dpkg ]
+          ++ lib.optional config.cudaSupport cudaPackages.markForCudatoolkitRootHook
           ++ lib.optional autoPatchelf autoPatchelfHook
           ++ nativeBuildInputs;
 
