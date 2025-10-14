@@ -422,6 +422,18 @@ let
     '';
   };
 
+  l4t-bootloader-utils = buildFromDeb {
+    name = "nvidia-l4t-bootloader-utils";
+    buildInputs = [ stdenv.cc.cc.lib l4t-core ];
+    postPatch = ''
+      # Remove NVIDIA utilities for which we have a NixOS specific implementation
+      rm -f bin/nv_bootloader_capsule_updater.sh bin/nv_bootloader_payload_updater
+
+      # Remove fwupd and systemd stuff
+      rm -rf etc
+    '';
+  };
+
   l4t-wayland = buildFromDeb {
     name = "nvidia-l4t-wayland";
     buildInputs = [ wayland ];
@@ -471,4 +483,6 @@ in
     ;
 } // lib.optionalAttrs (l4tOlder "38") {
   inherit l4t-xusb-firmware; # L4T 38+ uses upstream firmware
+} // lib.optionalAttrs (l4tAtLeast "38") {
+  inherit l4t-bootloader-utils;
 }

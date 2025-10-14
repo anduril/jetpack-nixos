@@ -600,7 +600,8 @@ in
         otaUtils # Tools for UEFI capsule updates
       ] ++ lib.optional cfg.firmware.optee.xtest pkgs.nvidia-jetpack.opteeXtest
       # Tool to view GPU utilization.
-      ++ lib.optional (l4tAtLeast "36") nvidia-smi;
+      ++ lib.optionals (l4tAtLeast "36") [ nvidia-smi ]
+      ++ lib.optionals (l4tAtLeast "38") [ l4t-bootloader-utils ];
 
       # Used by libEGL_nvidia.so.0
       environment.etc."egl/egl_external_platform.d".source =
