@@ -115,6 +115,12 @@ let
         sha256 = "sha256-M+9y5lmUoUrc985MDuZzHIa2EySqoPWzRu2QSTc0Q1A=";
       })
 
+      # feat: Add Aquantia AQR113 PHY ID
+      (fetchpatch {
+        url = "https://github.com/NVIDIA/edk2-nvidia/commit/772fecc942cd9e75260875d8cffa74367b7349ef.patch";
+        sha256 = "sha256-LxwLx6SW9XUJOm/DpdyfenWG/4Oec6/Dgu/ZLviFNvk=";
+      })
+
       ./add-extra-oui-for-mgbe-phy.diff
     ] ++ edk2NvidiaPatches;
     postPatch = lib.optionalString errorLevelInfo ''

@@ -172,6 +172,12 @@ let
         hash = "sha256-cc+eGLFHZ6JQQix1VWe/UOkGunAzPb8jM9SXa9ScIn8=";
       })
 
+      # feat: Add Aquantia AQR113 PHY ID
+      (fetchpatch {
+        url = "https://github.com/NVIDIA/edk2-nvidia/commit/772fecc942cd9e75260875d8cffa74367b7349ef.patch";
+        sha256 = "sha256-LxwLx6SW9XUJOm/DpdyfenWG/4Oec6/Dgu/ZLviFNvk=";
+      })
+
       ./stuart-passthru-compiler-prefix.diff
       ./repeatability.diff
       ./add-extra-oui-for-mgbe-phy.diff
