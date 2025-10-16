@@ -141,7 +141,7 @@ let
       rev = "r${l4tMajorMinorPatchVersion}";
       sha256 = "sha256-eTX+/B6TtpYyeoeQxJcoN2eS+Mh4DtLthabW7p7jzYQ=";
     };
-    patches = edk2NvidiaPatches ++ [
+    patches = [
       ###### git log r36.4.3-updates ^r36.4.3 (kept these even in 36.4.4) ######
       (fetchpatch {
         # fix: Leave DisplayHandoff enabled on ACPI boot
@@ -177,7 +177,7 @@ let
       ./add-extra-oui-for-mgbe-phy.diff
     ] ++ lib.optionals (trustedPublicCertPemFile != null) [
       ./capsule-authentication.diff
-    ];
+    ] ++ edk2NvidiaPatches;
     postPatch = lib.optionalString errorLevelInfo ''
       sed -i 's#PcdDebugPrintErrorLevel|.*#PcdDebugPrintErrorLevel|0x8000004F#' Platform/NVIDIA/NVIDIA.common.dsc.inc
     '' + lib.optionalString (bootLogo != null) ''

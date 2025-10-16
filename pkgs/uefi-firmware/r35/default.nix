@@ -85,7 +85,7 @@ let
       rev = "r${l4tMajorMinorPatchVersion}";
       sha256 = "sha256-q0SxS6mRJpD0t+TPvf4Sp+n+VBx/5PeqWXC2mgUJQ98=";
     };
-    patches = edk2NvidiaPatches ++ [
+    patches = [
       # Fix Eqos driver to use correct TX clock name
       # PR: https://github.com/NVIDIA/edk2-nvidia/pull/76
       (fetchpatch {
@@ -116,7 +116,7 @@ let
       })
 
       ./add-extra-oui-for-mgbe-phy.diff
-    ];
+    ] ++ edk2NvidiaPatches;
     postPatch = lib.optionalString errorLevelInfo ''
       sed -i 's#PcdDebugPrintErrorLevel|.*#PcdDebugPrintErrorLevel|0x8000004F#' Platform/NVIDIA/NVIDIA.common.dsc.inc
     '' + lib.optionalString (bootLogo != null) ''
