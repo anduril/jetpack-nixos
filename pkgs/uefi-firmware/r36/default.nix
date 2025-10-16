@@ -174,6 +174,7 @@ let
 
       ./stuart-passthru-compiler-prefix.diff
       ./repeatability.diff
+      ./add-extra-oui-for-mgbe-phy.diff
     ] ++ lib.optionals (trustedPublicCertPemFile != null) [
       ./capsule-authentication.diff
     ];

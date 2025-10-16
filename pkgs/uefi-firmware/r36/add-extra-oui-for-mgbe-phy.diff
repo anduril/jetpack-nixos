@@ -1,0 +1,24 @@
+diff --git a/Silicon/NVIDIA/Drivers/EqosDeviceDxe/PhyDxeUtil.c b/Silicon/NVIDIA/Drivers/EqosDeviceDxe/PhyDxeUtil.c
+index 7a5850f8..86fb6cb7 100644
+--- a/Silicon/NVIDIA/Drivers/EqosDeviceDxe/PhyDxeUtil.c
++++ b/Silicon/NVIDIA/Drivers/EqosDeviceDxe/PhyDxeUtil.c
+@@ -243,6 +243,7 @@ PhyConfig (
+       break;
+ 
+     case PHY_MGBE_OUI:
++    case PHY_MGBE_OUI2:
+       PhyDriver->Config       = PhyMGBEConfig;
+       PhyDriver->StartAutoNeg = PhyMGBEStartAutoNeg;
+       PhyDriver->CheckAutoNeg = PhyMGBECheckAutoNeg;
+diff --git a/Silicon/NVIDIA/Drivers/EqosDeviceDxe/PhyMgbe.h b/Silicon/NVIDIA/Drivers/EqosDeviceDxe/PhyMgbe.h
+index e90cf9a4..4f92631a 100644
+--- a/Silicon/NVIDIA/Drivers/EqosDeviceDxe/PhyMgbe.h
++++ b/Silicon/NVIDIA/Drivers/EqosDeviceDxe/PhyMgbe.h
+@@ -10,6 +10,7 @@
+ #define _PHY_MGBE_H__
+ 
+ #define PHY_MGBE_OUI  0x31C31C12
++#define PHY_MGBE_OUI2  0x31C31C13
+ 
+ /*
+  * @brief Configure MGBE PHY
