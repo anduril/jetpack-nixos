@@ -1,24 +1,45 @@
+From f9a1482e0620c294b39f6fd0e7f6b00975ee91aa Mon Sep 17 00:00:00 2001
+From: Elliot Berman <eberman@anduril.com>
+Date: Thu, 16 Oct 2025 13:39:09 -0700
+Subject: [PATCH] Add Aquantia AQR113C_B1 OUI
+
+- Add support for the Aquantia AQR113 PHY which is functionally identical
+to the AQR113C used on the Nvidia AGX Orin Devkit.
+---
+ Silicon/NVIDIA/Drivers/EqosDeviceDxe/PhyDxeUtil.c | 3 ++-
+ Silicon/NVIDIA/Drivers/EqosDeviceDxe/PhyMgbe.h    | 5 +++--
+ 2 files changed, 5 insertions(+), 3 deletions(-)
+
 diff --git a/Silicon/NVIDIA/Drivers/EqosDeviceDxe/PhyDxeUtil.c b/Silicon/NVIDIA/Drivers/EqosDeviceDxe/PhyDxeUtil.c
-index 7a5850f8..86fb6cb7 100644
+index dcd49f50..1f56f4e0 100644
 --- a/Silicon/NVIDIA/Drivers/EqosDeviceDxe/PhyDxeUtil.c
 +++ b/Silicon/NVIDIA/Drivers/EqosDeviceDxe/PhyDxeUtil.c
-@@ -243,6 +243,7 @@ PhyConfig (
+@@ -242,7 +242,8 @@ PhyConfig (
+       PhyDriver->DetectLink   = PhyMicrelDetectLink;
        break;
  
-     case PHY_MGBE_OUI:
-+    case PHY_MGBE_OUI2:
+-    case PHY_AQR113C_OUI:
++    case PHY_AQR113C_B0_OUI:
++    case PHY_AQR113C_B1_OUI:
+     case PHY_AQR113_OUI:
        PhyDriver->Config       = PhyMGBEConfig;
        PhyDriver->StartAutoNeg = PhyMGBEStartAutoNeg;
-       PhyDriver->CheckAutoNeg = PhyMGBECheckAutoNeg;
 diff --git a/Silicon/NVIDIA/Drivers/EqosDeviceDxe/PhyMgbe.h b/Silicon/NVIDIA/Drivers/EqosDeviceDxe/PhyMgbe.h
-index e90cf9a4..4f92631a 100644
+index 04f0705f..f05e5fea 100644
 --- a/Silicon/NVIDIA/Drivers/EqosDeviceDxe/PhyMgbe.h
 +++ b/Silicon/NVIDIA/Drivers/EqosDeviceDxe/PhyMgbe.h
-@@ -10,6 +10,7 @@
+@@ -9,8 +9,9 @@
+ #ifndef _PHY_MGBE_H__
  #define _PHY_MGBE_H__
  
- #define PHY_MGBE_OUI  0x31C31C12
-+#define PHY_MGBE_OUI2  0x31C31C13
+-#define PHY_AQR113C_OUI  0x31C31C12
+-#define PHY_AQR113_OUI   0x31C31C42
++#define PHY_AQR113C_B0_OUI  0x31C31C12
++#define PHY_AQR113C_B1_OUI  0x31C31C13
++#define PHY_AQR113_OUI      0x31C31C42
  
  /*
   * @brief Configure MGBE PHY
+-- 
+2.50.1
+
