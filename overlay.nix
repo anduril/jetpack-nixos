@@ -89,7 +89,7 @@ in
   cudaPackages_11_4 =
     if redistSystem == "linux-aarch64" then
       assert final.nvidia-jetpack5.cudaPackages.cudaMajorMinorVersion == "11.4";
-      final.nvidia-jetpack5.cudaPackages
+      prev.cudaPackages_11_4.overrideScope (_: _: final.nvidia-jetpack5.cudaPackages)
     else
       prev.cudaPackages_11_4;
   cudaPackages_11 =
@@ -101,7 +101,7 @@ in
   cudaPackages_12_6 =
     if redistSystem == "linux-aarch64" then
       assert final.nvidia-jetpack6.cudaPackages.cudaMajorMinorVersion == "12.6";
-      final.nvidia-jetpack6.cudaPackages
+      prev.cudaPackages_12_6.overrideScope (_: _: final.nvidia-jetpack6.cudaPackages)
     else
       prev.cudaPackages_12_6;
   cudaPackages_12 =
