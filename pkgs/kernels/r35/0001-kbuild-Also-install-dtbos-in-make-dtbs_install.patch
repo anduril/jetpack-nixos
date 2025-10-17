@@ -1,0 +1,38 @@
+From b6d98a485a1fa2d98e4a921e02ee41a5640f0104 Mon Sep 17 00:00:00 2001
+From: Elliot Berman <eberman@anduril.com>
+Date: Fri, 17 Oct 2025 11:12:13 -0700
+Subject: [PATCH] kbuild: Also install dtbos in "make dtbs_install"
+
+Ensure dtbos are also installed during "make dtbs_install"
+
+Signed-off-by: Elliot Berman <eberman@anduril.com>
+---
+ scripts/Makefile.dtbinst | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/scripts/Makefile.dtbinst b/scripts/Makefile.dtbinst
+index f69eb7bb63fbc..185552b8e4342 100644
+--- a/scripts/Makefile.dtbinst
++++ b/scripts/Makefile.dtbinst
+@@ -17,7 +17,7 @@ include include/config/auto.conf
+ include scripts/Kbuild.include
+ include $(src)/Makefile
+ 
+-dtbs    := $(addprefix $(dst)/, $(notdir $(dtb-y)) $(if $(CONFIG_OF_ALL_DTBS),$(dtb-)))
++dtbs    := $(addprefix $(dst)/, $(notdir $(dtb-y) $(dtbo-y)) $(if $(CONFIG_OF_ALL_DTBS),$(dtb- dtbo-)))
+ subdirs := $(addprefix $(obj)/, $(subdir-y) $(subdir-m))
+ 
+ __dtbs_install: $(dtbs) $(subdirs)
+@@ -29,6 +29,9 @@ quiet_cmd_dtb_install = INSTALL $@
+ $(dst)/%.dtb: $(obj)/%.dtb
+ 	$(call cmd,dtb_install)
+ 
++$(dst)/%.dtbo: $(obj)/%.dtbo
++	$(call cmd,dtb_install)
++
+ PHONY += $(subdirs)
+ $(subdirs):
+ 	$(Q)$(MAKE) $(dtbinst)=$@ dst=$(patsubst $(obj)/%,$(dst)/%,$@)
+-- 
+2.50.1
+
