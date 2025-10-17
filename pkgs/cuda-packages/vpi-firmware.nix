@@ -10,6 +10,7 @@ let
   majorVersion = {
     "35" = "2";
     "36" = "3";
+    "38" = "4";
   }.${lib.versions.major l4tMajorMinorPatchVersion};
 in
 runCommand "vpi${majorVersion}-firmware" { nativeBuildInputs = [ dpkg ]; } ''

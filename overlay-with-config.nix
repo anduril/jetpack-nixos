@@ -11,6 +11,8 @@ final: prev: (
 
     inherit (final) lib;
 
+    jetpackAtLeast = lib.versionAtLeast cfg.majorVersion;
+
     tosArgs = {
       inherit (final.nvidia-jetpack) socType;
       inherit (cfg.firmware.optee) taPublicKeyFile extraMakeFlags coreLogLevel taLogLevel;
@@ -23,12 +25,14 @@ final: prev: (
     nvidia-jetpack = prev.nvidia-jetpack.overrideScope (finalJetpack: prevJetpack: {
       socType =
         if cfg.som == null then null
+        else if lib.hasPrefix "thor-" cfg.som then "t264"
         else if lib.hasPrefix "orin-" cfg.som then "t234"
         else if lib.hasPrefix "xavier-" cfg.som then "t194"
         else throw "Unknown SoC type";
 
       chipId =
         if cfg.som == null then null
+        else if lib.hasPrefix "thor-" cfg.som then "0x26"
         else if lib.hasPrefix "orin-" cfg.som then "0x23"
         else if lib.hasPrefix "xavier-" cfg.som then "0x19"
         else throw "Unknown SoC type";
@@ -46,6 +50,12 @@ final: prev: (
         errorLevelInfo = cfg.firmware.uefi.errorLevelInfo;
         edk2NvidiaPatches = cfg.firmware.uefi.edk2NvidiaPatches;
         edk2UefiPatches = cfg.firmware.uefi.edk2UefiPatches;
+        socFamily =
+          if cfg.som == null then null
+          else if lib.hasPrefix "thor-" cfg.som then "t26x"
+          else if lib.hasPrefix "orin-" cfg.som then "t23x"
+          else if lib.hasPrefix "xavier-" cfg.som then "t19x"
+          else throw "Unknown SoC type";
 
         # A hash of something that represents everything that goes into the
         # platform firmware so that we can include it in the firmware version.
@@ -79,13 +89,18 @@ final: prev: (
 
       flashInitrd =
         let
-          modules = if lib.versions.majorMinor config.system.build.kernel.version == "5.10" then [ "qspi_mtd" "spi_tegra210_qspi" "at24" "spi_nor" ] else [ "mtdblock" "spi_tegra210_quad" ];
+          spiModules = if lib.versions.majorMinor config.system.build.kernel.version == "5.10" then [ "qspi_mtd" "spi_tegra210_qspi" "at24" "spi_nor" ] else [ "mtdblock" "spi_tegra210_quad" ];
+          usbModules = if lib.versions.majorMinor config.system.build.kernel.version == "5.10" then [ ] else [ "libcomposite" "udc-core" "tegra-xudc" "xhci-tegra" "u_serial" "usb_f_acm" ];
+          modules = spiModules ++ usbModules ++ cfg.flashScriptOverrides.additionalInitrdFlashModules;
           modulesClosure = prev.makeModulesClosure {
             rootModules = modules;
             kernel = config.system.modulesTree;
             firmware = config.hardware.firmware;
-            allowMissing = false;
+            allowMissing = true;
           };
+          manufacturer = "NixOS";
+          product = "serial";
+          serialnumber = "0";
           jetpack-init = prev.writeScript "init" ''
             #!${prev.pkgsStatic.busybox}/bin/sh
             export PATH=${prev.pkgsStatic.busybox}/bin
@@ -93,10 +108,46 @@ final: prev: (
             mount -t proc proc -o nosuid,nodev,noexec /proc
             mount -t devtmpfs none -o nosuid /dev
             mount -t sysfs sysfs -o nosuid,nodev,noexec /sys
+            ln -s /proc/self/fd /dev/ # for >(...) support
 
             for mod in ${builtins.toString modules}; do
               modprobe -v $mod
             done
+
+            mount -t configfs none /sys/kernel/config
+            if [ -e /sys/kernel/config/usb_gadget ] ; then
+              # https://origin.kernel.org/doc/html/v5.10/usb/gadget_configfs.html
+              gadget=/sys/kernel/config/usb_gadget/g.1
+              mkdir $gadget
+
+              echo 0x1d6b >$gadget/idVendor # Linux Foundation
+              echo 0x104 >$gadget/idProduct # Multifunction Composite Gadget
+
+              mkdir $gadget/strings/0x409
+              echo ${manufacturer} >$gadget/strings/0x409/manufacturer
+              echo ${product} >$gadget/strings/0x409/product
+              echo ${serialnumber} >$gadget/strings/0x409/serialnumber
+
+              mkdir $gadget/configs/c.1
+              mkdir $gadget/functions/acm.usb0
+
+              ln -s $gadget/functions/acm.usb0 $gadget/configs/c.1/
+
+              echo "$(ls /sys/class/udc | head -n 1)" >$gadget/UDC
+
+              # force into device mode if OTG and something is up with automatic detection
+              if [ -w /sys/class/usb_role/usb2-0-role-switch/role ] ; then
+                echo device > /sys/class/usb_role/usb2-0-role-switch/role
+              fi
+
+              sleep 5  # The configuration doesn't happen synchronously and takes >1 sec. 5 seconds seems like a good buffer and also gives time for host to connect
+              mdev -s
+
+              ttyGS=/dev/ttyGS$(cat $gadget/functions/acm.usb0/port_num)
+              if [ -e $ttyGS ]; then
+                exec &> >(tee $ttyGS) <$ttyGS
+              fi
+            fi
 
             # `signedFirmware` must be built on x86_64, so we make a
             # concatenated initrd that places `signedFirmware` at a well
@@ -116,12 +167,16 @@ final: prev: (
             fi
           '';
         in
-        prev.makeInitrd {
+        (prev.makeInitrd {
           contents = [
             { object = jetpack-init; symlink = "/init"; }
             { object = "${modulesClosure}/lib"; symlink = "/lib"; }
           ];
-        };
+        }).overrideAttrs (prev: {
+          passthru = prev.passthru // {
+            inherit manufacturer product serialnumber;
+          };
+        });
 
       # mkFlashScript is declared here due to its dependence on values from
       # `config`, but it is not inherently tied to any one particular
@@ -165,7 +220,7 @@ final: prev: (
                 "./flash.sh"
                 (lib.optionalString (cfg.flashScriptOverrides.partitionTemplate != null) "-c flash.xml")
                 "--no-flash"
-                (lib.optionalString (cfg.majorVersion == "6") "--sign")
+                (lib.optionalString (jetpackAtLeast "6") "--sign")
                 "--bup"
                 "--multi-spec"
                 (builtins.toString cfg.flashScriptOverrides.flashArgs)

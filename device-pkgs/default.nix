@@ -11,6 +11,9 @@
 , nvidia-jetpack
 , writeShellApplication
 , buildPackages
+, picocom
+, writeText
+, deviceTree
 }:
 
 let
@@ -22,7 +25,11 @@ let
     chipId
     flashInitrd
     mkFlashScript
+    l4tMajorMinorPatchVersion
     ;
+
+  jetpackAtLeast = lib.versionAtLeast cfg.majorVersion;
+  jetpackOlder = lib.versionOlder cfg.majorVersion;
 
   # This produces a script where we have already called the ./flash.sh script
   # with `--no-flash` and produced a file under bootloader/flashcmd.txt.
@@ -79,6 +86,7 @@ let
 
       flashArgs =
         [ "--rcm-boot" ]
+        ++ lib.optional (jetpackAtLeast "7") "-r"
         # A little jank, but don't have the flash script itself actually flash, just produce the flashcmd.txt file
         # We need to sign the boot.img file afterwards in this script
         ++ lib.optional (cfg.firmware.secureBoot.pkcFile != null) "--no-flash"
@@ -118,31 +126,8 @@ let
   initrdFlashScript =
     writeShellApplication {
       name = "initrd-flash-${hostName}";
-      text = ''
-        ${mkRcmBootScript {
-          kernelPath = "${config.system.build.kernel}/${config.system.boot.loader.kernelFile}";
-          initrdPath = "${flashInitrd}/initrd";
-          kernelCmdline = lib.concatStringsSep " " [
-            "console=ttyTCU0,115200" "sdhci_tegra.en_boot_part_access=1"
-          ];
-          # During the initrd flash script, we upload two edk2 builds to the
-          # board, one that is only used temporarily to boot into our
-          # kernel/initrd to perform the flashing, and another one that is
-          # persisted to the firmware storage medium for future booting. We
-          # don't want to influence the boot order of the temporary edk2 since
-          # this may cause that edk2 to boot from something other than our
-          # intended flashing kernel/initrd combo (e.g. disk or network). Since
-          # the edk2 build that we actually persist to the board is embedded in
-          # the initrd used for flashing, we have the desired boot order (as
-          # configured in nix) in there and is not affected dynamically during
-          # the flashing procedure. NVIDIA ensures that when the device is
-          # using RCM boot, only the boot mode named "boot.img" is used (see https://gist.github.com/jmbaur/1ca79436e69eadc0a38ec0b43b16cb2f#file-flash-sh-L1675).
-          additionalDtbOverlays = lib.filter (path: (path.name or "") != "DefaultBootOrder.dtbo") cfg.flashScriptOverrides.additionalDtbOverlays;
-        }}
-        echo
-        echo "Jetson device should now be flashing and will reboot when complete."
-        echo "You may watch the progress of this on the device's serial port"
-      '';
+      runtimeInputs = [ picocom ];
+      text = import ./initrdflash-script.nix { inherit mkRcmBootScript config flashInitrd lib l4tMajorMinorPatchVersion writeText deviceTree; };
       meta.platforms = [ "x86_64-linux" ];
     };
 
@@ -162,4 +147,4 @@ let
     meta.platforms = [ "x86_64-linux" ];
   };
 in
-{ inherit flashScript initrdFlashScript fuseScript rcmBoot; }
+{ inherit initrdFlashScript fuseScript rcmBoot; flashScript = initrdFlashScript; } // lib.optionalAttrs (jetpackOlder "7") { inherit flashScript; }

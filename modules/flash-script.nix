@@ -407,7 +407,8 @@ in
         };
 
         partitionTemplate = mkOption {
-          type = types.path;
+          type = types.nullOr types.path;
+          default = null;
           description = ".xml file describing partition template to use when flashing";
         };
 
@@ -439,6 +440,13 @@ in
           type = types.lines;
           default = "";
           description = "Additional commands to be added to the flash script while it is being constructed.";
+        };
+
+        additionalInitrdFlashModules = mkOption {
+          type = types.listOf types.str;
+          default = config.boot.initrd.availableKernelModules;
+          defaultText = lib.literalExpression "config.boot.initrd.availableKernelModules";
+          description = "Additional kernel modules to be loaded during the initrd flashing method.";
         };
       };
 
@@ -518,6 +526,10 @@ in
               # Prod variant
               { boardid = "3668"; boardsku = "0001"; fab = "100"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = "2"; }
               { boardid = "3668"; boardsku = "0003"; fab = "301"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = "2"; }
+            ];
+
+            thor-agx = [
+              { boardid = "3834"; boardsku = "0008"; fab = "000"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; chipsku = "00:00:00:A0"; } # Thor AGX Devkit
             ];
 
             orin-agx = [

@@ -47,11 +47,25 @@ in
       l4tMajorMinorPatchVersion = "36.4.4";
       cudaMajorMinorPatchVersion = "12.6.10";
 
-      # nix build .#legacyPacakges.l4t-cuda.src; unpack the deb; find libnvidia-ptxjijtcompiler.so
+      # nix build .#legacyPacakges.nvidia-l4t-3d-core.src; unpack the deb; find libnvidia-ptxjitcompiler.so
       # and use that.
       cudaDriverMajorMinorVersion = "540.4.0";
 
       bspHash = "sha256-ps4RwiEAqwl25BmVkYJBfIPWL0JyUBvIcU8uB24BDzs=";
+    }
+    final
+    prev;
+
+  nvidia-jetpack7 = import ./mk-overlay.nix
+    {
+      jetpackMajorMinorPatchVersion = "7.0";
+      l4tMajorMinorPatchVersion = "38.2.1";
+      cudaMajorMinorPatchVersion = "12.6.10"; #TODO
+
+      cudaDriverMajorMinorVersion = "580.00";
+
+      bspHash = "sha256-raHtaLeODpgHxw24e+ViturGqpXVOL9jtun4owCDcEs=";
+      bspPatches = [ ./pkgs/r38-bsp.patch ];
     }
     final
     prev;
