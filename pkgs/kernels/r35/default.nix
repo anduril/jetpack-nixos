@@ -139,6 +139,8 @@ buildLinux (args // {
 
     # Lower priority of tegra-se crypto modules since they're slow and flaky
     { patch = ./0003-Lower-priority-of-tegra-se-crypto.patch; }
+
+    { patch = ./0001-kbuild-Also-install-dtbos-in-make-dtbs_install.patch; }
   ] ++ kernelPatches;
 
   structuredExtraConfig = with lib.kernel; {
