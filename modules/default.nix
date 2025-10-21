@@ -712,5 +712,14 @@ in
           );
       };
     })
+    (lib.mkIf (lib.hasPrefix "thor" cfg.som) {
+      assertions = [
+        {
+          assertion = !(config.hardware.nvidia-jetpack.configureCuda || pkgs.config.cudaSupport);
+          message = "CUDA 13 support is not available in NixOS 25.05. Please disable CUDA.";
+        }
+      ];
+      hardware.nvidia-jetpack.configureCuda = lib.mkForce false;
+    })
   ]);
 }
