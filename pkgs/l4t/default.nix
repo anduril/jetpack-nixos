@@ -26,6 +26,7 @@
 , l4tOlder
 , cudaPackages
 , cudaDriverMajorMinorVersion
+, runCommand
 }:
 let
   # Nicely, for JetPack 5 and 6, the t194 and t234 packages are currently
@@ -456,6 +457,17 @@ let
     # nvidia-smi will dlopen libnvidia-ml.so.1
     appendRunpaths = [ "${placeholder "out"}/lib" ];
   };
+
+  vpiMajorVersion = {
+    "35" = "2";
+    "36" = "3";
+    "38" = "4";
+  }.${lib.versions.major l4tMajorMinorPatchVersion};
+
+  vpi-firmware = runCommand "vpi${vpiMajorVersion}-firmware" { nativeBuildInputs = [ dpkg ]; } ''
+    dpkg-deb -x ${debs.common."libnvvpi${vpiMajorVersion}".src} source
+    install -D source/opt/nvidia/vpi${vpiMajorVersion}/lib64/priv/vpi${vpiMajorVersion}_pva_auth_allowlist $out/lib/firmware/pva_auth_allowlist
+  '';
 in
 {
   inherit
@@ -475,7 +487,9 @@ in
     l4t-nvsci
     l4t-pva
     l4t-tools
-    l4t-wayland;
+    l4t-wayland
+    vpi-firmware
+    ;
 } // lib.optionalAttrs (l4tAtLeast "36") {
   inherit
     l4t-dla-compiler
