@@ -1,9 +1,10 @@
 {
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.05";
+    nixpkgs.url = "github:nixos/nixpkgs";
+    cuda-legacy.url = "github:nixos-cuda/cuda-legacy/pull/1/merge";
   };
 
-  outputs = { self, nixpkgs, ... }:
+  outputs = { self, nixpkgs, cuda-legacy, ... }:
     let
       inherit (nixpkgs) lib;
 
@@ -64,9 +65,16 @@
         };
       };
 
-      nixosModules.default = import ./modules/default.nix;
+      nixosModules.default = import ./modules/default.nix cuda-legacy.overlays.default;
 
-      overlays.default = import ./overlay.nix;
+      overlays.default = nixpkgs.lib.composeManyExtensions [
+        # We apply cuda-legacy here ourselves instead of making users do this becauase
+        # it is unlikely that users directly care about cuda-legacy as it's something
+        # jetpack-nixos has traditionally supplied.
+        # We apply cuda-legacy first because Connor says so.
+        cuda-legacy.overlays.default
+        (import ./overlay.nix)
+      ];
 
       packages = {
         x86_64-linux =

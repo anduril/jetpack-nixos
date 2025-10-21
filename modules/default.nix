@@ -1,3 +1,4 @@
+cuda-legacy:
 { options
 , config
 , lib
@@ -241,6 +242,7 @@ in
       # user's overlay is merged before ours and that overlay depends on
       # something defined in our overlay.
       nixpkgs.overlays = lib.mkBefore [
+        cuda-legacy
         (import ../overlay.nix)
         (
           let

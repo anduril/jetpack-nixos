@@ -1,23 +1,47 @@
 {
   "nodes": {
+    "cuda-legacy": {
+      "inputs": {
+        "flake-parts": [
+          "cuda-legacy"
+        ],
+        "nixpkgs": [
+          "cuda-legacy"
+        ]
+      },
+      "locked": {
+        "lastModified": 1762418555,
+        "narHash": "sha256-vIQvmkhiMHEoLGeUFLo3qtbWS9Tdz04NYaZ5EmTRxPc=",
+        "owner": "nixos-cuda",
+        "repo": "cuda-legacy",
+        "rev": "a7a084d645928b5a36f9d8760312c65180caad1c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nixos-cuda",
+        "ref": "pull/1/merge",
+        "repo": "cuda-legacy",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1754292888,
-        "narHash": "sha256-1ziydHSiDuSnaiPzCQh1mRFBsM2d2yRX9I+5OPGEmIE=",
+        "lastModified": 1762464039,
+        "narHash": "sha256-u1XlmouL9TF32t0hsSOLKiayr9xJYclGsGIT0CDZaBc=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "ce01daebf8489ba97bd1609d185ea276efdeb121",
+        "rev": "570c6e62631495c515e585e50ce6ab05cee0f0e8",
         "type": "github"
       },
       "original": {
         "owner": "nixos",
-        "ref": "nixos-25.05",
         "repo": "nixpkgs",
         "type": "github"
       }
     },
     "root": {
       "inputs": {
+        "cuda-legacy": "cuda-legacy",
         "nixpkgs": "nixpkgs"
       }
     }

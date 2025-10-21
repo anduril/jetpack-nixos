@@ -1,8 +1,6 @@
 final: prev:
 let
   inherit (final.lib)
-    filter
-    intersectLists
     recursiveUpdate
     ;
 
@@ -11,17 +9,11 @@ let
 
   inherit (final) _cuda;
 
-  # Since Jetson capabilities are never built by default, we can check if any of them were requested
-  # through final.config.cudaCapabilities and use that to determine if we should change some manifest versions.
-  # Copied from backendStdenv.
-  jetsonCudaCapabilities = filter
-    (
-      cudaCapability: _cuda.db.cudaCapabilityToInfo.${cudaCapability}.isJetson
-    )
-    _cuda.db.allSortedCudaCapabilities;
-  hasJetsonCudaCapability =
-    intersectLists jetsonCudaCapabilities (final.config.cudaCapabilities or [ ]) != [ ];
-  redistSystem = _cuda.lib.getRedistSystem hasJetsonCudaCapability final.stdenv.hostPlatform.system;
+  redistSystem = cudaMajorMinorVersion: _cuda.lib.getRedistSystem {
+    cudaCapabilities = final.config.cudaCapabilities or [ ];
+    inherit cudaMajorMinorVersion;
+    inherit (final.stdenv.hostPlatform) system;
+  };
 in
 {
   nvidia-jetpack5 = import ./mk-overlay.nix
@@ -101,25 +93,25 @@ in
   # NOTE: We cannot lift the conditionals out further without causing infinite recursion, as the fixed-point would be
   # used to determine the presence/absence of attributes.
   cudaPackages_11_4 =
-    if redistSystem == "linux-aarch64" then
+    if (redistSystem final.nvidia-jetpack5.cudaMajorMinorVersion) == "linux-aarch64" then
       assert final.nvidia-jetpack5.cudaPackages.cudaMajorMinorVersion == "11.4";
       final.nvidia-jetpack5.cudaPackages
     else
       prev.cudaPackages_11_4;
   cudaPackages_11 =
-    if redistSystem == "linux-aarch64" then
+    if (redistSystem final.nvidia-jetpack5.cudaMajorMinorVersion) == "linux-aarch64" then
       final.cudaPackages_11_4
     else
       prev.cudaPackages_11;
 
   cudaPackages_12_6 =
-    if redistSystem == "linux-aarch64" then
+    if (redistSystem final.nvidia-jetpack6.cudaMajorMinorVersion) == "linux-aarch64" then
       assert final.nvidia-jetpack6.cudaPackages.cudaMajorMinorVersion == "12.6";
       final.nvidia-jetpack6.cudaPackages
     else
       prev.cudaPackages_12_6;
   cudaPackages_12 =
-    if redistSystem == "linux-aarch64" then
+    if (redistSystem final.nvidia-jetpack6.cudaMajorMinorVersion) == "linux-aarch64" then
       final.cudaPackages_12_6
     else
       prev.cudaPackages_12;
@@ -128,6 +120,20 @@ in
 
   # Update _cuda's database with an entry allowing Orin on CUDA 11.4.
   _cuda = prev._cuda.extend (final: prev: recursiveUpdate prev {
-    bootstrapData.cudaCapabilityToInfo."8.7".minCudaMajorMinorVersion = "11.4";
+    bootstrapData.cudaCapabilityToInfo = {
+      "7.2" = {
+        archName = "Volta";
+        minCudaMajorMinorVersion = "11.4";
+        maxCudaMajorMinorVersion = "12.2";
+        isJetson = true;
+
+        isArchitectureSpecific = false;
+        isFamilySpecific = false;
+        dontDefaultAfterCudaMajorMinorVersion = null;
+      };
+      "8.7" = {
+        minCudaMajorMinorVersion = "11.4";
+      };
+    };
   });
 }

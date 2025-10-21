@@ -1,6 +1,7 @@
 { buildPythonPackage
 , fetchFromGitHub
 , pyftdi
+, setuptools
 }:
 
 buildPythonPackage {
@@ -13,7 +14,10 @@ buildPythonPackage {
     sha256 = "sha256-APlDliwGqlhWChJESyCYyI2N9/yzlRdp1qwvfqlRjKM=";
   };
 
-  propagatedBuildInputs = [ pyftdi ];
+  pyproject = true;
+  build-system = [ setuptools ];
+
+  dependencies = [ pyftdi ];
 
   doCheck = false;
 }
