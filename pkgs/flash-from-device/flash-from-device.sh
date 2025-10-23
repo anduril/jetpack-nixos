@@ -10,6 +10,13 @@ source @ota_helpers_func@
 signed_images=$1
 
 matching_boardspec=
+current_step=1
+steps=
+
+report_step() {
+  echo "Step $current_step/$steps... $*"
+  current_step=$(expr "$current_step" + 1)
+}
 
 find_matching_spec() {
   local boardspec=$(tegra-boardspec)
@@ -65,8 +72,8 @@ program_spi_partition() {
       return 1
     fi
   fi
+  report_step "Writing $part_file (size=$file_size) to $partname (offset=$part_offset)"
   if [[ $file_size != 0 ]]; then
-    echo "Writing $part_file (size=$file_size) to $partname (offset=$part_offset)"
     if ! mtd_debug write /dev/mtd0 "$part_offset" "$file_size" "$part_file"; then
       return 1
     fi
@@ -118,8 +125,8 @@ program_mmcboot_partition() {
       return 1
     fi
   fi
+  report_step "Writing $part_file (size=$file_size) to $partname on $bootpart (offset=$part_offset)"
   if [[ $file_size -ne 0 ]]; then
-    echo "Writing $part_file (size=$file_size) to $partname on $bootpart (offset=$part_offset)"
     if ! dd if="$part_file" of="$bootpart" bs=4096 seek="$part_offset" oflag=seek_bytes >/dev/null; then
       return 1
     fi
@@ -177,7 +184,7 @@ erase_bootdev() {
       echo "ERR: SPI boot device, but mtd0 device does not exist" >&2
       return 1
     fi
-    echo "Erasing /dev/mtd0"
+    report_step "Erasing /dev/mtd0, this may take a while without any output..."
     flash_erase /dev/mtd0 0 0
   else
     echo "ERR: unknown boot device type: $BOOTDEV_TYPE" >&2
@@ -207,7 +214,7 @@ write_partitions() {
       fi
     elif [[ $devnum -eq 1 && $instnum -eq 3 ]] || [[ $devnum -eq 6 && $instnum -eq 0 ]]; then
       if [[ $partfile != "" ]]; then
-        echo "Writing $partfile (size=$partsize) to $partname on /dev/mmcblk0 (offset=$start_location)"
+        report_step "Writing $partfile (size=$partsize) to $partname on /dev/mmcblk0 (offset=$start_location)"
         file_size=$(stat -c "%s" "$partfile")
         if ! dd if="$partfile" of="/dev/mmcblk0" bs=4096 seek="$start_location" oflag=seek_bytes >/dev/null; then
           return 1
@@ -221,6 +228,8 @@ find_matching_spec
 
 # Enter directory containing firmware
 cd "$signed_images"/"$matching_boardspec"
+
+steps=$(expr "$(wc -l <flash.idx)" + "1")
 
 erase_bootdev
 write_partitions
