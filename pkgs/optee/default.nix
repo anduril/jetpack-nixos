@@ -17,7 +17,6 @@
 }:
 
 let
-  atfSrc = gitRepos."tegra/optee-src/atf";
   nvopteeSrc = gitRepos."tegra/optee-src/nv-optee";
 
   opteeClient = stdenv.mkDerivation {
@@ -280,6 +279,11 @@ let
       buildFlags = [ "all" ] ++ lib.optional (l4tAtLeast "38") "fiptool";
 
       nativeBuildInputs = lib.optionals (l4tAtLeast "38") [ dtc openssl buildPackages.stdenv.cc ];
+
+      # buildPackages.openssl needed to build `fiptool`
+      buildInputs = [ buildPackages.openssl ];
+
+      strictDeps = true;
 
       enableParallelBuilding = true;
 
