@@ -300,6 +300,20 @@ in
         "nvethernet"
       ];
 
+      # See upstream default for this option, removes any modules that aren't enabled in JetPack kernel
+      boot.initrd.luks.cryptoModules = lib.mkDefault [
+        "aes"
+        "aes_generic"
+        "twofish"
+        "cbc"
+        "xts"
+        "sha1"
+        "sha256"
+        "sha512"
+        "af_alg"
+        "algif_skcipher"
+      ];
+
       boot.kernelModules =
         [ "nvgpu" ]
         ++ lib.optionals (cfg.modesetting.enable && checkValidSoms [ "xavier" ]) [ "tegra-udrm" ]
