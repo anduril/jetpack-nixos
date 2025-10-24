@@ -33,7 +33,7 @@ let
   # the future, so we should consider choosing the right package set based
   # on the SoC.
   defaultSomRepo = if l4tAtLeast "38" then "som" else "t234";
-  
+
   # Wrapper around mkDerivation that has some sensible defaults to extract a .deb file from the L4T BSP pacckage
   buildFromDeb =
     { name
