@@ -117,25 +117,25 @@ show_help() {
 
 brief=
 
-while getopts ":hb" opt ; do
+while getopts ":hb" opt; do
   case $opt in
-    h)
-      show_help
-      exit 0
-      ;;
-    b)
-      brief=1
-      ;;
-    ?)
-      echo "Error: invalid option -$OPTARG" >&2
-      show_help "$@" >&2
-      exit 2\
-      ;;
-    *)
-      echo "Unknown error" >&2
-      show_help "$@" >&2
-      exit 2
-      ;;
+  h)
+    show_help
+    exit 0
+    ;;
+  b)
+    brief=1
+    ;;
+  ?)
+    echo "Error: invalid option -$OPTARG" >&2
+    show_help "$@" >&2
+    exit 2
+    ;;
+  *)
+    echo "Unknown error" >&2
+    show_help "$@" >&2
+    exit 2
+    ;;
   esac
 done
 
@@ -149,7 +149,7 @@ fi
 echo "Current firmware version is : ${CURRENT_FW_VER}"
 echo "Expected firmware version is: ${EXPECTED_FW_VER}"
 
-if [ -z "$brief" ] ; then
+if [ -z "$brief" ]; then
   # Capsule update is pending if TEGRA_BL.Cap exists and
   # OsIndications bit 4 is set (EFI_OS_INDICATIONS_FILE_CAPSULE_DELIVERY_SUPPORTED)
   if ! mountpoint -q @efiSysMountPoint@; then
@@ -171,7 +171,7 @@ if [ -z "$brief" ] ; then
   # Xavier AGX clears BootChainFwStatus upon reboot since it doesn't have runtime writable UEFI variables.
   # get_efi_int will give us the to-be-written value, which is functionally an empty string.
   # This isn't interesting or useful, so always grab the cached value in /var/run/tegra-bootchainfwstatus
-  if [[ ( ! -e /var/run/tegra-bootchainfwstatus ) || ( -e /sys/firmware/efi/efivars/BootChainFwStatus-781e084c-a330-417c-b678-38e696380cb9 && -z "$noRuntimeUefiWrites" ) ]]; then
+  if [[ (! -e /var/run/tegra-bootchainfwstatus) || (-e /sys/firmware/efi/efivars/BootChainFwStatus-781e084c-a330-417c-b678-38e696380cb9 && -z "$noRuntimeUefiWrites") ]]; then
     echo "BootChainFwStatus                : $(lookup "$(get_efi_int BootChainFwStatus-781e084c-a330-417c-b678-38e696380cb9)" bootchainstatus)"
   else
     echo "BootChainFwStatus                : $(lookup "$(cat /var/run/tegra-bootchainfwstatus)" bootchainstatus)"
