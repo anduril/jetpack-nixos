@@ -13,7 +13,6 @@ from debian.debian_support import Version
 
 
 BASE_URL = "https://repo.download.nvidia.com/jetson"
-REPOS = ["t234", "common"]
 
 
 def fetch_debs(url):
@@ -53,11 +52,18 @@ def fetch_debs(url):
 
 def main():
     version = ".".join(sys.argv[1].removeprefix("r").split(sep=".", maxsplit=2)[:2])
+    majorVersion = version.split(".")[0]
+    if majorVersion == "38":
+        repos = ["common", "som"]
+    elif majorVersion == "35" or majorVersion == "36":
+        repos = ["common", "t234"]
+    else:
+        raise Exception("Unsupported version")
     data = {
         repo: fetch_debs(
             f"{BASE_URL}/{repo}/dists/r{version}/main/binary-arm64/Packages.gz"
         )
-        for repo in REPOS
+        for repo in repos
     }
     print(json.dumps(data, sort_keys=True, indent=2, separators=(",", ": ")))
 

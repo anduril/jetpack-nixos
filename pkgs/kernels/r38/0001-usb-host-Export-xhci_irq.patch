@@ -1,0 +1,29 @@
+From 173bf15c5274580a344dae38a29edee51dd449ce Mon Sep 17 00:00:00 2001
+From: Elliot Berman <eberman@anduril.com>
+Date: Tue, 26 Aug 2025 10:31:32 -0700
+Subject: [PATCH] usb: host: Export xhci_irq
+
+This symbol is used by xhci-tegra, which can be built in a separate
+module from xhci.
+
+Fixes: fd7de45afba5 ("NVIDIA: SAUCE: xhci: tegra: enable firmware log")
+Signed-off-by: Elliot Berman <eberman@anduril.com>
+---
+ drivers/usb/host/xhci-ring.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/usb/host/xhci-ring.c b/drivers/usb/host/xhci-ring.c
+index 7badf91645909..04186add014e4 100644
+--- a/drivers/usb/host/xhci-ring.c
++++ b/drivers/usb/host/xhci-ring.c
+@@ -3254,6 +3254,7 @@ irqreturn_t xhci_irq(struct usb_hcd *hcd)
+ 
+ 	return ret;
+ }
++EXPORT_SYMBOL_GPL(xhci_irq);
+ 
+ irqreturn_t xhci_msi_irq(int irq, void *hcd)
+ {
+-- 
+2.50.1
+

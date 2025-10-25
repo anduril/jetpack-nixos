@@ -1,0 +1,13 @@
+diff --git a/bootloader/l4t_bup_gen.func b/bootloader/l4t_bup_gen.func
+index 7224069..e8116f2 100644
+--- a/bootloader/l4t_bup_gen.func
++++ b/bootloader/l4t_bup_gen.func
+@@ -25,8 +25,6 @@ BSP_VER=""
+ 
+ declare -A ENTRY_LIST
+ ENTRY_LIST[bl]=""
+-ENTRY_LIST[kernel]=""
+-ENTRY_LIST[safety_user]=""
+ 
+ PART_NAME=""
+ IMAGE_SIGNED=0
