@@ -155,9 +155,24 @@ let
 
   mkStuartDrv = callPackage ../stuart.nix (args // { srcs = patchedRepos; });
 
-  jetsonUefi = mkStuartDrv { platformBuild = "Jetson"; };
-  jetsonUefiMinimal = mkStuartDrv { platformBuild = "JetsonMinimal"; };
-  jetsonStandaloneMMOptee = mkStuartDrv { platformBuild = "StandaloneMmOptee"; };
+  jetsonUefi = mkStuartDrv {
+    platformBuild = "Jetson";
+    outputs = [
+      "FV/UEFI_NS.Fv"
+      "AARCH64/L4TLauncher.efi"
+      "AARCH64/Silicon/NVIDIA/Tegra/DeviceTree/DeviceTree/OUTPUT/*.dtb"
+    ];
+  };
+
+  jetsonUefiMinimal = mkStuartDrv {
+    platformBuild = "JetsonMinimal";
+    outputs = [ "FV/UEFI_NS.Fv" ];
+  };
+
+  jetsonStandaloneMMOptee = mkStuartDrv {
+    platformBuild = "StandaloneMmOptee";
+    outputs = [ "FV/UEFI_MM.Fv" ];
+  };
 
   uefi-firmware = runCommand "uefi-firmware-${l4tMajorMinorPatchVersion}"
     {
@@ -171,24 +186,24 @@ let
     ''
       mkdir -p $out
       python3 ${patchedRepos.edk2-nvidia}/Silicon/NVIDIA/edk2nv/FormatUefiBinary.py \
-        ${jetsonUefi}/FV/UEFI_NS.Fv \
+        ${jetsonUefi}/UEFI_NS.Fv \
         $out/uefi_jetson.bin
 
       python3 ${patchedRepos.edk2-nvidia}/Silicon/NVIDIA/edk2nv/FormatUefiBinary.py \
-        ${jetsonUefi}/AARCH64/L4TLauncher.efi \
+        ${jetsonUefi}/L4TLauncher.efi \
         $out/L4TLauncher.efi
 
       mkdir -p $out/dtbs
-      for filename in ${jetsonUefi}/AARCH64/Silicon/NVIDIA/Tegra/DeviceTree/DeviceTree/OUTPUT/*.dtb; do
+      for filename in ${jetsonUefi}/*.dtb; do
         cp $filename $out/dtbs/$(basename "$filename" ".dtb").dtbo
       done
 
       python3 ${patchedRepos.edk2-nvidia}/Silicon/NVIDIA/edk2nv/FormatUefiBinary.py \
-        ${jetsonUefiMinimal}/FV/UEFI_NS.Fv \
+        ${jetsonUefiMinimal}/UEFI_NS.Fv \
         $out/uefi_jetson_minimal.bin
 
       python3 ${patchedRepos.edk2-nvidia}/Silicon/NVIDIA/edk2nv/FormatUefiBinary.py \
-        ${jetsonStandaloneMMOptee}/FV/UEFI_MM.Fv \
+        ${jetsonStandaloneMMOptee}/UEFI_MM.Fv \
         $out/standalonemm_optee.bin
 
       # Get rid of any string references to source(s)

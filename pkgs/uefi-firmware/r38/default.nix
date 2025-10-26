@@ -77,10 +77,15 @@ let
   jetsonUefi = mkStuartDrv {
     platformBuild = "Tegra";
     stuartExtraArgs = "--init-defconfig edk2-nvidia/Platform/NVIDIA/Tegra/DefConfigs/${defconfig}.defconfig";
+    outputs = [
+      "FV/UEFI_NS.Fv"
+      "AARCH64/L4TLauncher.efi"
+    ];
   };
 
   jetsonStandaloneMMOptee = mkStuartDrv {
     platformBuild = "StandaloneMmOptee";
+    outputs = [ "FV/UEFI_MM.Fv" ];
   };
 
   uefi-firmware = runCommand "uefi-firmware-${l4tMajorMinorPatchVersion}"
@@ -95,18 +100,18 @@ let
     (''
       mkdir -p $out
       python3 ${patchedRepos.edk2-nvidia}/Silicon/NVIDIA/edk2nv/FormatUefiBinary.py \
-        ${jetsonUefi}/FV/UEFI_NS.Fv \
+        ${jetsonUefi}/UEFI_NS.Fv \
         $out/uefi_jetson.bin
 
       python3 ${patchedRepos.edk2-nvidia}/Silicon/NVIDIA/edk2nv/FormatUefiBinary.py \
-        ${jetsonUefi}/AARCH64/L4TLauncher.efi \
+        ${jetsonUefi}/L4TLauncher.efi \
         $out/L4TLauncher.efi
 
       # Get rid of any string references to source(s)
       nuke-refs $out/uefi_jetson.bin
     '' + lib.optionalString (socFamily == "t19x" || socFamily == "t23x") ''
       python3 ${patchedRepos.edk2-nvidia}/Silicon/NVIDIA/edk2nv/FormatUefiBinary.py \
-        ${jetsonStandaloneMMOptee}/FV/UEFI_MM.Fv \
+        ${jetsonStandaloneMMOptee}/UEFI_MM.Fv \
         $out/standalonemm_optee.bin
 
       nuke-refs $out/standalonemm_optee.bin

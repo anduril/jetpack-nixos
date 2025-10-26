@@ -65,10 +65,15 @@ let
       "LOONGARCH64"
     else
       throw "Unsupported architecture";
+
 in
 { platformBuild
+, outputs
 , stuartExtraArgs ? ""
 }:
+let
+  _outputs = builtins.map (s: "Build/*/*/" + s) outputs;
+in
 stdenv.mkDerivation (finalAttrs: {
   pname = "${platformBuild}-edk2-uefi-${buildTarget}";
   version = l4tMajorMinorPatchVersion;
@@ -155,8 +160,16 @@ stdenv.mkDerivation (finalAttrs: {
 
   installPhase = ''
     runHook preInstall
-    mv -v Build/*/* $out
-    mv -v reports/* $out
+    mkdir -p $out
+    # all-build-outputs and build log are helpful to have on hand when debugging issues
+    find ./Build ./Conf > $out/all-build-outputs
+
+    for file in Build/BUILDLOG_*.txt ${builtins.concatStringsSep " " _outputs} ; do
+      mv -v $file $out/
+    done
+
     runHook postInstall
   '';
+
+  meta.platforms = [ "aarch64-linux" ];
 })
