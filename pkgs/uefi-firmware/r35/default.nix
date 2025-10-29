@@ -25,6 +25,7 @@
   edk2UefiPatches ? [ ]
 , debugMode ? false
 , errorLevelInfo ? debugMode
+, socFamily ? null # used in r38+, not needed here.
 , # Enables a bunch more info messages
 
   # The root certificate (in PEM format) for authenticating capsule updates. By
@@ -177,11 +178,14 @@ let
   buildTarget = if debugMode then "DEBUG" else "RELEASE";
 
   mkJetsonUefi =
-    platform:
-    # TODO: edk2.mkDerivation doesn't have a way to override the edk version used!
-    # Make it not via passthru ?
+    { platformBuild
+    , outputs
+    }:
+    let
+      _outputs = builtins.map (s: "Build/*/*/" + s) outputs;
+    in
     stdenv.mkDerivation (finalAttrs: {
-      pname = "${platform}-edk2-uefi";
+      pname = "${platformBuild}-edk2-uefi";
       version = l4tMajorMinorPatchVersion;
 
       # Initialize the build dir with the build tools from edk2
@@ -244,7 +248,7 @@ let
 
         # The BUILDID_STRING and BUILD_DATE_TIME are used
         # just by nvidia, not generic edk2
-        build -a ${targetArch} -b ${buildTarget} -t ${buildType} -p Platform/NVIDIA/${platform}/${platform}.dsc -n $NIX_BUILD_CORES \
+        build -a ${targetArch} -b ${buildTarget} -t ${buildType} -p Platform/NVIDIA/${platformBuild}/${platformBuild}.dsc -n $NIX_BUILD_CORES \
           -D BUILDID_STRING="${l4tMajorMinorPatchVersion}-''${BUILD_HASH}" \
           -D BUILD_DATE_TIME="$(date --utc --iso-8601=seconds --date=@$SOURCE_DATE_EPOCH)" \
           ${lib.optionalString (trustedPublicCertPemFile != null) "-D CUSTOM_CAPSULE_CERT"} \
@@ -255,13 +259,32 @@ let
 
       installPhase = ''
         runHook preInstall
-        mv -v Build/*/* $out
+        mkdir -p $out
+        # all-build-outputs and build log are helpful to have on hand when debugging issues
+        find ./Build ./Conf > $out/all-build-outputs
+
+        for file in Build/BUILDLOG_*.txt ${builtins.concatStringsSep " " _outputs} ; do
+          mv -v $file $out/
+        done
+
         runHook postInstall
       '';
+
+      meta.platforms = [ "aarch64-linux" ];
     });
 
-  jetson-edk2-uefi = mkJetsonUefi "Jetson";
-  jetson-edk-uefi-stmm-optee = mkJetsonUefi "StandaloneMmOptee";
+  jetson-edk2-uefi = mkJetsonUefi {
+    platformBuild = "Jetson";
+    outputs = [
+      "FV/UEFI_NS.Fv"
+      "AARCH64/L4TLauncher.efi"
+      "AARCH64/Silicon/NVIDIA/Tegra/DeviceTree/DeviceTree/OUTPUT/*.dtb"
+    ];
+  };
+  jetson-edk-uefi-stmm-optee = mkJetsonUefi {
+    platformBuild = "StandaloneMmOptee";
+    outputs = [ "FV/UEFI_MM.Fv" ];
+  };
 
   uefi-firmware = runCommand "uefi-firmware-${l4tMajorMinorPatchVersion}"
     {
@@ -271,19 +294,19 @@ let
     } ''
     mkdir -p $out
     python3 ${edk2-nvidia}/Silicon/NVIDIA/Tools/FormatUefiBinary.py \
-      ${jetson-edk2-uefi}/FV/UEFI_NS.Fv \
+      ${jetson-edk2-uefi}/UEFI_NS.Fv \
       $out/uefi_jetson.bin
 
     python3 ${edk2-nvidia}/Silicon/NVIDIA/Tools/FormatUefiBinary.py \
-      ${jetson-edk2-uefi}/AARCH64/L4TLauncher.efi \
+      ${jetson-edk2-uefi}/L4TLauncher.efi \
       $out/L4TLauncher.efi
 
     python3 ${edk2-nvidia}/Silicon/NVIDIA/Tools/FormatUefiBinary.py \
-      ${jetson-edk-uefi-stmm-optee}/FV/UEFI_MM.Fv \
+      ${jetson-edk-uefi-stmm-optee}/UEFI_MM.Fv \
       $out/standalonemm_optee.bin
 
     mkdir -p $out/dtbs
-    for filename in ${jetson-edk2-uefi}/AARCH64/Silicon/NVIDIA/Tegra/DeviceTree/DeviceTree/OUTPUT/*.dtb; do
+    for filename in ${jetson-edk2-uefi}/*.dtb; do
       cp $filename $out/dtbs/$(basename "$filename" ".dtb").dtbo
     done
 

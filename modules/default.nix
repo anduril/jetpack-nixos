@@ -16,7 +16,7 @@ let
 
   cfg = config.hardware.nvidia-jetpack;
 
-  jetpackVersions = [ "5" "6" ];
+  jetpackVersions = [ "5" "6" "7" ];
 
   teeApplications = pkgs.symlinkJoin {
     name = "tee-applications";
@@ -57,7 +57,7 @@ in
       enable = mkEnableOption "NVIDIA Jetson device support";
 
       majorVersion = mkOption {
-        default = if cfg.som == "generic" || lib.hasPrefix "orin" cfg.som then "6" else "5";
+        default = if lib.hasPrefix "thor" cfg.som then "7" else if cfg.som == "generic" || lib.hasPrefix "orin" cfg.som then "6" else "5";
         type = types.enum jetpackVersions;
         description = "Jetpack major version to use";
       };
@@ -100,6 +100,7 @@ in
           "orin-agx-industrial"
           "orin-nx"
           "orin-nano"
+          "thor-agx"
           "xavier-agx"
           "xavier-agx-industrial"
           "xavier-nx"
@@ -170,6 +171,11 @@ in
         type = types.bool;
         description = "Enable boot.kernelParams default console configuration";
       };
+
+      console.args = mkOption {
+        internal = true;
+        type = types.listOf types.str;
+      };
     };
   };
 
@@ -196,6 +202,7 @@ in
           }
           (validSomsAssertion "5" [ "xavier" "orin" ])
           (validSomsAssertion "6" [ "orin" ])
+          (validSomsAssertion "7" [ "thor" ])
         ]
         (
           let
@@ -268,6 +275,18 @@ in
           lib.optionals (isXavier || isGeneric) [ "7.2" ] ++ lib.optionals (isOrin || isGeneric) [ "8.7" ];
       });
 
+      hardware.nvidia-jetpack.console.args = lib.mkMerge [
+        (lib.optionals (checkValidSoms [ "xavier" "orin" ]) [
+          "console=tty0" # Output to HDMI/DP. May need fbcon=map:0 as well
+          "console=ttyTCU0,115200" # Provides console on "Tegra Combined UART" (TCU)
+        ])
+        (lib.optionals (checkValidSoms [ "thor" ]) [
+          "console=tty0"
+          "console=ttyUTC0,115200"
+          "earlycon=tegra_utc,mmio32,0xc5a0000"
+        ])
+      ];
+
       boot.kernelPackages =
         (if cfg.kernel.realtime then
           pkgs.nvidia-jetpack.rtkernelPackages
@@ -278,11 +297,11 @@ in
         # Needed on Orin at least, but upstream has it for both
         "nvidia.rm_firmware_active=all"
       ]
-      ++ lib.optionals cfg.console.enable [
-        "console=tty0" # Output to HDMI/DP. May need fbcon=map:0 as well
-        "console=ttyTCU0,115200" # Provides console on "Tegra Combined UART" (TCU)
-      ]
-      ++ lib.optional (lib.hasPrefix "xavier-" cfg.som || cfg.som == "generic") "video=efifb:off"; # Disable efifb driver, which crashes Xavier NX and possibly AGX
+      ++ lib.optionals cfg.console.enable cfg.console.args
+      ++ lib.optional (lib.hasPrefix "xavier-" cfg.som || cfg.som == "generic") "video=efifb:off" # Disable efifb driver, which crashes Xavier NX and possibly AGX
+      ++ lib.optionals (pkgs.nvidia-jetpack.l4tAtLeast "38") [
+        "clk_ignore_unused"
+      ];
 
       boot.initrd.includeDefaultModules = false; # Avoid a bunch of modules we may not get from tegra_defconfig
       boot.initrd.availableKernelModules = [ "xhci-tegra" "ucsi_ccg" "typec_ucsi" "typec" ] # Make sure USB firmware makes it into initrd
@@ -298,6 +317,25 @@ in
         # Ethernet for AGX
         "nvpps"
         "nvethernet"
+      ] ++ lib.optionals (pkgs.nvidia-jetpack.l4tAtLeast "38") [
+        "pwm-fan"
+        "uas"
+        "r8152"
+        "phy-tegra194-p2u"
+        "nvme-core"
+        "tegra-bpmp-thermal"
+        "pwm-tegra"
+        "tegra_vblk"
+        "tegra_hv_vblk_oops"
+        "ufs-tegra"
+        "nvpps"
+        "pcie-tegra264"
+        "nvethernet"
+        "r8126"
+        "r8168"
+        "tegra_vnet"
+        "rtl8852ce"
+        "oak_pci"
       ];
 
       # See upstream default for this option, removes any modules that aren't enabled in JetPack kernel
@@ -337,8 +375,10 @@ in
 
       hardware.firmware = with pkgs.nvidia-jetpack; [
         l4t-firmware
-        l4t-xusb-firmware # usb firmware also present in linux-firmware package, but that package is huge and has much more than needed
+      ] ++ lib.optionals pkgs.config.cudaSupport [
         cudaPackages.vpi-firmware # Optional, but needed for pva_auth_allowlist firmware file used by VPI2
+      ] ++ lib.optionals (l4tOlder "36") [
+        l4t-xusb-firmware # usb firmware also present in linux-firmware package, but that package is huge and has much more than needed
       ];
 
       hardware.deviceTree.enable = true;
@@ -439,7 +479,12 @@ in
           install -D -t $out/etc/udev/rules.d ${pkgs.nvidia-jetpack.l4t-init}/etc/udev/rules.d/99-tegra-devices.rules
           sed -i \
             -e '/camera_device_detect/d' \
-            -e 's#/bin/mknod#${pkgs.coreutils}/bin/mknod#' \
+            -e 's#/bin/mknod#${lib.getExe' pkgs.coreutils "mknod"}#' \
+            -e 's#/bin/rm#${lib.getExe' pkgs.coreutils "rm"}#' \
+            -e 's#/bin/cut#${lib.getExe' pkgs.coreutils "cut"}#' \
+            -e 's#/bin/grep#${lib.getExe pkgs.gnugrep}#' \
+            -e 's#/bin/bash /etc/systemd/nvpower.sh#${pkgs.nvidia-jetpack.l4t-nvpmodel}/etc/systemd/nvpower.sh#' \
+            -e 's#/bin/bash#${lib.getExe pkgs.bash}#' \
             $out/etc/udev/rules.d/99-tegra-devices.rules
         '')
       ];
@@ -502,7 +547,7 @@ in
           '';
         in
         {
-          enable = true;
+          enable = cfg.configureCuda;
           description = "Create a symlink for libEGL_nvidia.so.0 at /usr/lib/aarch64-linux-gnu/tegra-egl/";
           unitConfig = {
             ConditionPathExists = "!/usr/lib/aarch64-linux-gnu/tegra-egl/libEGL_nvidia.so.0";
@@ -555,7 +600,8 @@ in
         otaUtils # Tools for UEFI capsule updates
       ] ++ lib.optional cfg.firmware.optee.xtest pkgs.nvidia-jetpack.opteeXtest
       # Tool to view GPU utilization.
-      ++ lib.optional (l4tAtLeast "36") nvidia-smi;
+      ++ lib.optionals (l4tAtLeast "36") [ nvidia-smi ]
+      ++ lib.optionals (l4tAtLeast "38") [ l4t-bootloader-utils ];
 
       # Used by libEGL_nvidia.so.0
       environment.etc."egl/egl_external_platform.d".source =
@@ -665,6 +711,15 @@ in
             ++ lib.map (drv: makePassthroughMount drv.outPath) driverLinkConstituents
           );
       };
+    })
+    (lib.mkIf (lib.hasPrefix "thor" cfg.som) {
+      assertions = [
+        {
+          assertion = !(config.hardware.nvidia-jetpack.configureCuda || pkgs.config.cudaSupport);
+          message = "CUDA 13 support is not available in NixOS 25.05. Please disable CUDA.";
+        }
+      ];
+      hardware.nvidia-jetpack.configureCuda = lib.mkForce false;
     })
   ]);
 }

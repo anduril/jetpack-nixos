@@ -7,8 +7,8 @@ stdenv.mkDerivation rec {
   src = fetchFromGitHub {
     owner = "OE4T";
     repo = pname;
-    rev = "283a701d25283a4e5584f5fe072bcb2d7d2ae1b1";
-    sha256 = "sha256-YMHIruwF9YKjYJY52DLJ8eovFZYyrUt1jb5GbTcrC+A=";
+    rev = "v2.1.0";
+    sha256 = "sha256-oPc1IUyje4m9KDmvkyJbrImf5o/g+4eEkD6+e5Cq6iA=";
   };
 
   nativeBuildInputs = [ cmake pkg-config ];

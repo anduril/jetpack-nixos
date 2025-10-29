@@ -2,7 +2,7 @@
 
 This repository packages components from NVIDIA's [JetPack SDK](https://developer.nvidia.com/embedded/jetpack) for use with NixOS, including:
  * Platform firmware flashing scripts
- * A 5.10 Linux kernel from NVIDIA, which includes some open-source drivers like nvgpu
+ * Linux kernel from NVIDIA for JetPack which includes some open-source drivers like nvgpu
  * An [EDK2-based UEFI firmware](https://github.com/NVIDIA/edk2-nvidia)
  * ARM Trusted Firmware / OP-TEE
  * Additional packages for:
@@ -11,17 +11,20 @@ This repository packages components from NVIDIA's [JetPack SDK](https://develope
    - Graphics: Wayland, GBM, EGL, Vulkan
    - Power/fan control: nvpmodel, nvfancontrol
 
-This package supports JetPack 5 and 6. It works with NVIDIA's developer kits supported by these versions only:
+This package supports JetPack 5, 6, and 7. It works with NVIDIA's developer kits supported by these versions only:
 
-|       Device       | JetPack 5 | JetPack 6 |
-| ------------------ | --------- | --------- |
-| Jetson Orin AGX    |     ✓     |     ✓     |
-| Jetson Orin NX     |     ✓     |     ✓     |
-| Jetson Orin Nano   |     ✓     |     ✓     |
-| Jetson Xavier AGX  |     ✓     |           |
-| Jetson Xavier NX   |     ✓     |           |
+|       Device       | JetPack 5 | JetPack 6 | JetPack 7 |
+| ------------------ | --------- | --------- | --------- |
+| Jetson Thor AGX    |           |           |     ✓     |
+| Jetson Orin AGX    |     ✓     |     ✓     |           |
+| Jetson Orin NX     |     ✓     |     ✓     |           |
+| Jetson Orin Nano   |     ✓     |     ✓     |           |
+| Jetson Xavier AGX  |     ✓     |           |           |
+| Jetson Xavier NX   |     ✓     |           |           |
 
 The Jetson Nano, TX2, and TX1 devices are _not_ supported, since support for them was dropped upstream in JetPack 5.
+
+__NOTE__: CUDA is not currently supported in JetPack 7 (Thor AGX) due to dependencies on upstream nixpkgs. CUDA 13 support will be added after the release of NixOS/nixpkgs 25.05.
 
 ## Getting started
 

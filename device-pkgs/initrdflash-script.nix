@@ -18,6 +18,12 @@ let
   forceXusbPeripheralDts =
     let
       overridePaths = {
+        "38" = {
+          thor = {
+            xudcPadctlPath = "bus@0/padctl@a808680000";
+            xudcPath = "bus@0/usb@a808670000";
+          };
+        };
         "36" = {
           orin = {
             xudcPadctlPath = "bus@0/padctl@3520000";
@@ -87,10 +93,9 @@ let
   rcmScript = mkRcmBootScript {
     kernelPath = "${config.system.build.kernel}/${config.system.boot.loader.kernelFile}";
     initrdPath = "${flashInitrd}/initrd";
-    kernelCmdline = lib.concatStringsSep " " [
-      "console=ttyTCU0,115200"
+    kernelCmdline = lib.concatStringsSep " " ([
       "sdhci_tegra.en_boot_part_access=1"
-    ];
+    ] ++ cfg.console.args);
     # During the initrd flash script, we upload two edk2 builds to the
     # board, one that is only used temporarily to boot into our
     # kernel/initrd to perform the flashing, and another one that is

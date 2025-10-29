@@ -11,6 +11,8 @@ final: prev: (
 
     inherit (final) lib;
 
+    jetpackAtLeast = lib.versionAtLeast cfg.majorVersion;
+
     tosArgs = {
       inherit (final.nvidia-jetpack) socType;
       inherit (cfg.firmware.optee) taPublicKeyFile extraMakeFlags coreLogLevel taLogLevel;
@@ -23,12 +25,14 @@ final: prev: (
     nvidia-jetpack = prev.nvidia-jetpack.overrideScope (finalJetpack: prevJetpack: {
       socType =
         if cfg.som == null then null
+        else if lib.hasPrefix "thor-" cfg.som then "t264"
         else if lib.hasPrefix "orin-" cfg.som then "t234"
         else if lib.hasPrefix "xavier-" cfg.som then "t194"
         else throw "Unknown SoC type";
 
       chipId =
         if cfg.som == null then null
+        else if lib.hasPrefix "thor-" cfg.som then "0x26"
         else if lib.hasPrefix "orin-" cfg.som then "0x23"
         else if lib.hasPrefix "xavier-" cfg.som then "0x19"
         else throw "Unknown SoC type";
@@ -46,6 +50,12 @@ final: prev: (
         errorLevelInfo = cfg.firmware.uefi.errorLevelInfo;
         edk2NvidiaPatches = cfg.firmware.uefi.edk2NvidiaPatches;
         edk2UefiPatches = cfg.firmware.uefi.edk2UefiPatches;
+        socFamily =
+          if cfg.som == null then null
+          else if lib.hasPrefix "thor-" cfg.som then "t26x"
+          else if lib.hasPrefix "orin-" cfg.som then "t23x"
+          else if lib.hasPrefix "xavier-" cfg.som then "t19x"
+          else throw "Unknown SoC type";
 
         # A hash of something that represents everything that goes into the
         # platform firmware so that we can include it in the firmware version.
@@ -210,7 +220,7 @@ final: prev: (
                 "./flash.sh"
                 (lib.optionalString (cfg.flashScriptOverrides.partitionTemplate != null) "-c flash.xml")
                 "--no-flash"
-                (lib.optionalString (cfg.majorVersion == "6") "--sign")
+                (lib.optionalString (jetpackAtLeast "6") "--sign")
                 "--bup"
                 "--multi-spec"
                 (builtins.toString cfg.flashScriptOverrides.flashArgs)

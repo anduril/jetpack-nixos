@@ -29,6 +29,9 @@ let
     l4tMajorMinorPatchVersion
     ;
 
+  jetpackAtLeast = lib.versionAtLeast cfg.majorVersion;
+  jetpackOlder = lib.versionOlder cfg.majorVersion;
+
   # This produces a script where we have already called the ./flash.sh script
   # with `--no-flash` and produced a file under bootloader/flashcmd.txt.
   # This requires setting various BOARD* environment variables to the exact
@@ -84,6 +87,8 @@ let
 
       flashArgs =
         [ "--rcm-boot" ]
+        # JetPack 7 wants to rebuild system.img with rootfs by default, we don't want that
+        ++ lib.optional (jetpackAtLeast "7") "-r"
         # A little jank, but don't have the flash script itself actually flash, just produce the flashcmd.txt file
         # We need to sign the boot.img file afterwards in this script
         ++ lib.optional (cfg.firmware.secureBoot.pkcFile != null) "--no-flash"
@@ -143,4 +148,4 @@ let
     meta.platforms = [ "x86_64-linux" ];
   };
 in
-{ inherit flashScript initrdFlashScript fuseScript rcmBoot; }
+{ inherit initrdFlashScript fuseScript rcmBoot; flashScript = initrdFlashScript; } // lib.optionalAttrs (jetpackOlder "7") { inherit flashScript; }

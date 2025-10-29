@@ -407,7 +407,8 @@ in
         };
 
         partitionTemplate = mkOption {
-          type = types.path;
+          type = types.nullOr types.path;
+          default = null;
           description = ".xml file describing partition template to use when flashing";
         };
 
@@ -525,6 +526,10 @@ in
               # Prod variant
               { boardid = "3668"; boardsku = "0001"; fab = "100"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = "2"; }
               { boardid = "3668"; boardsku = "0003"; fab = "301"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = "2"; }
+            ];
+
+            thor-agx = [
+              { boardid = "3834"; boardsku = "0008"; fab = "000"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; chipsku = "00:00:00:A0"; } # Thor AGX Devkit
             ];
 
             orin-agx = [

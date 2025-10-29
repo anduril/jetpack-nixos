@@ -38,6 +38,9 @@
       jetpack5_config = {
         hardware.nvidia-jetpack.majorVersion = "5";
       };
+      jetpack7_config = {
+        hardware.nvidia-jetpack.majorVersion = "7";
+      };
     in
     {
       nixosConfigurations = {
@@ -52,6 +55,12 @@
         };
         installer_minimal_cross_jp5 = nixpkgs.lib.nixosSystem {
           modules = [ aarch64_cross_config installer_minimal_config jetpack5_config ];
+        };
+        installer_minimal_jp7 = nixpkgs.lib.nixosSystem {
+          modules = [ aarch64_config installer_minimal_config jetpack7_config ];
+        };
+        installer_minimal_cross_jp7 = nixpkgs.lib.nixosSystem {
+          modules = [ aarch64_cross_config installer_minimal_config jetpack7_config ];
         };
       };
 
@@ -79,6 +88,7 @@
               { som = "orin-nano"; carrierBoard = "devkit"; majorVersion = "5"; }
               { som = "orin-nx"; carrierBoard = "devkit"; super = true; majorVersion = "5"; }
               { som = "orin-nano"; carrierBoard = "devkit"; super = true; majorVersion = "5"; }
+              { som = "thor-agx"; carrierBoard = "devkit"; }
               { som = "xavier-agx"; carrierBoard = "devkit"; }
               { som = "xavier-agx-industrial"; carrierBoard = "devkit"; } # TODO: Entirely untested
               { som = "xavier-nx"; carrierBoard = "devkit"; }
@@ -105,6 +115,7 @@
           {
             iso_minimal = self.nixosConfigurations.installer_minimal_cross.config.system.build.isoImage;
             iso_minimal_jp5 = self.nixosConfigurations.installer_minimal_cross_jp5.config.system.build.isoImage;
+            iso_minimal_jp7 = self.nixosConfigurations.installer_minimal_cross_jp7.config.system.build.isoImage;
 
             inherit (self.legacyPackages.x86_64-linux)
               board-automation python-jetson;
@@ -119,6 +130,7 @@
         aarch64-linux = {
           iso_minimal = self.nixosConfigurations.installer_minimal.config.system.build.isoImage;
           iso_minimal_jp5 = self.nixosConfigurations.installer_minimal_jp5.config.system.build.isoImage;
+          iso_minimal_jp7 = self.nixosConfigurations.installer_minimal_jp7.config.system.build.isoImage;
         };
       };
 
@@ -147,7 +159,7 @@
               overlays = [ self.overlays.default ];
             });
         in
-        pkgs.nvidia-jetpack // { inherit (pkgs) nvidia-jetpack5 nvidia-jetpack6; }
+        pkgs.nvidia-jetpack // { inherit (pkgs) nvidia-jetpack5 nvidia-jetpack6 nvidia-jetpack7; }
       );
     };
 }
