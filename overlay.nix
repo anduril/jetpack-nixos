@@ -52,7 +52,7 @@ in
     {
       jetpackMajorMinorPatchVersion = "7.0";
       l4tMajorMinorPatchVersion = "38.2.1";
-      cudaMajorMinorPatchVersion = "12.6.10"; #TODO
+      cudaMajorMinorPatchVersion = "13.0.2";
 
       cudaDriverMajorMinorVersion = "580.00";
 
@@ -102,7 +102,9 @@ in
     if (redistSystem final.nvidia-jetpack5.cudaMajorMinorVersion) == "linux-aarch64" then
       final.cudaPackages_11_4
     else
-      prev.cudaPackages_11;
+    # note: cudaPackages_11 removed upstream cuda-legacy re-introduces package sets with major and minor versions but does not change or create aliases for major versions
+    # default to cudaPackages_11 if it exists or 11.8 as that was the default
+      prev.cudaPackages_11 or prev.cudaPackages_11_8;
 
   cudaPackages_12_6 =
     if (redistSystem final.nvidia-jetpack6.cudaMajorMinorVersion) == "linux-aarch64" then

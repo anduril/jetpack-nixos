@@ -44,7 +44,7 @@ let
 in
 makeScope final.newScope (self: {
   inherit (sourceInfo) debs gitRepos;
-  inherit jetpackMajorMinorPatchVersion l4tMajorMinorPatchVersion cudaMajorMinorVersion;
+  inherit jetpackMajorMinorPatchVersion l4tMajorMinorPatchVersion cudaMajorMinorVersion cudaDriverMajorMinorVersion;
   inherit l4tAtLeast l4tOlder;
 
   callPackages = callPackagesWith (final // self);
@@ -230,10 +230,13 @@ makeScope final.newScope (self: {
       ]
       ++ _cuda.extensions);
     in
+    if final.lib.versionAtLeast cudaMajorMinorPatchVersion "13" then
+      final."cudaPackages_${cudaLib.dotsToUnderscores cudaMajorMinorVersion}"
+    else
     # NOTE: We must ensure the scope allows us to draw on the contents of nvidia-jetpack.
-    makeScope pkgs'.nvidia-jetpack.newScope (
-      extends composedExtensions passthruFunction
-    );
+      makeScope pkgs'.nvidia-jetpack.newScope (
+        extends composedExtensions passthruFunction
+      );
 
   samples = makeScope self.newScope (finalSamples: {
     callPackages = callPackagesWith (self // finalSamples);

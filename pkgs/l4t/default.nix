@@ -8,6 +8,7 @@
 , autoPatchelfHook
 , dpkg
 , expat
+, libgcc
 , libglvnd
 , egl-wayland
 , xorg
@@ -396,7 +397,12 @@ let
 
   l4t-nvsci = buildFromDeb {
     name = "nvidia-l4t-nvsci";
-    buildInputs = [ l4t-core ];
+    buildInputs = [ l4t-core ] ++ lib.optionals (l4tAtLeast "38") [ l4t-adaruntime ];
+  };
+
+  l4t-adaruntime = buildFromDeb {
+    name = "nvidia-l4t-adaruntime";
+    buildInputs = [ libgcc ];
   };
 
   # Programmable Vision Accelerator
@@ -437,7 +443,7 @@ let
 
   l4t-wayland = buildFromDeb {
     name = "nvidia-l4t-wayland";
-    buildInputs = [ wayland ];
+    buildInputs = [ wayland ] ++ lib.optionals (l4tAtLeast "38") [ l4t-core ];
     postPatch = ''
       sed -i -E "s#(libnvidia-egl-wayland)#$out/lib/\\1#" share/egl/egl_external_platform.d/nvidia_wayland.json
     '';
@@ -449,14 +455,40 @@ let
     meta.platforms = [ "aarch64-linux" "x86_64-linux" ];
   };
 
+  l4t-firmware-openrm = buildFromDeb {
+    name = "nvidia-l4t-firmware-openrm";
+    autoPatchelf = false;
+    meta.platforms = [ "aarch64-linux" "x86_64-linux" ];
+  };
+
+  l4t-nvml = buildFromDeb {
+    name = "nvidia-l4t-nvml";
+    buildInputs = [ l4t-core ];
+  };
+
   nvidia-smi = buildFromDeb {
     name = "nvidia-smi";
     src = debs.${defaultSomRepo}.nvidia-l4t-nvml.src;
     version = debs.${defaultSomRepo}.nvidia-l4t-nvml.version;
     buildInputs = [ l4t-core ];
     # nvidia-smi will dlopen libnvidia-ml.so.1
-    appendRunpaths = [ "${placeholder "out"}/lib" ];
+    appendRunpaths = [ "${placeholder "out"}/lib" "/run/opengl-driver/lib" ];
   };
+
+  findDriverDebNames = majorVersion: lib.filter (lib.hasSuffix "-${majorVersion}") (lib.attrNames debs.common);
+  driverDebNames = findDriverDebNames (lib.versions.major cudaDriverMajorMinorVersion);
+  driverDebs = lib.genAttrs driverDebNames (name: buildFromDeb {
+    inherit name;
+    repo = "common";
+
+    buildInputs = lib.attrByPath [ name ] [ ] {
+      libnvidia-compute-580 = [ driverDebs.libnvidia-decode-580 libgcc ];
+      libnvidia-decode-580 = [ xorg.libX11 xorg.libXext ];
+      libnvidia-encode-580 = [ driverDebs.libnvidia-decode-580 ];
+      libnvidia-fbc1-580 = [ xorg.libX11 xorg.libXext ];
+      libnvidia-gl-580 = [ xorg.libX11 xorg.libXext libgcc driverDebs.libnvidia-gpucomp-580 ];
+    };
+  });
 
   vpiMajorVersion = {
     "35" = "2";
@@ -494,9 +526,10 @@ in
   inherit
     l4t-dla-compiler
     nvidia-smi
+    l4t-nvml
     ;
 } // lib.optionalAttrs (l4tOlder "38") {
   inherit l4t-xusb-firmware; # L4T 38+ uses upstream firmware
 } // lib.optionalAttrs (l4tAtLeast "38") {
-  inherit l4t-bootloader-utils;
+  inherit l4t-bootloader-utils l4t-adaruntime driverDebs l4t-firmware-openrm;
 }
