@@ -77,6 +77,10 @@
                 value = c;
               }) [
               { som = "orin-agx"; carrierBoard = "devkit"; }
+              { som = "orin-agx"; carrierBoard = "devkit-as-nano-4gb"; }
+              { som = "orin-agx"; carrierBoard = "devkit-as-nano-8gb"; }
+              { som = "orin-agx"; carrierBoard = "devkit-as-nx-8gb"; }
+              { som = "orin-agx"; carrierBoard = "devkit-as-nx-16gb"; }
               { som = "orin-agx-industrial"; carrierBoard = "devkit"; }
               { som = "orin-nx"; carrierBoard = "devkit"; }
               { som = "orin-nano"; carrierBoard = "devkit"; }
