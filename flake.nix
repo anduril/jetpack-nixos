@@ -135,9 +135,13 @@
       };
 
       checks = forAllSystems ({ pkgs, system, ... }: {
-        formatting = pkgs.runCommand "repo-formatting" { nativeBuildInputs = with pkgs; [ nixpkgs-fmt ]; } ''
-          nixpkgs-fmt --check ${self} && touch $out
-        '';
+        formatting = pkgs.stdenv.mkDerivation {
+          name = "repo-formatting";
+          src = self;
+          buildPhase = ''
+            ${lib.getExe self.formatter.${system}} --fail-on-change --no-cache && touch $out
+          '';
+        };
         jetpackSelectionDependsOnCudaVersion = import ./check-jetpack-selection.nix {
           inherit lib nixpkgs pkgs system;
           overlay = self.overlays.default;
