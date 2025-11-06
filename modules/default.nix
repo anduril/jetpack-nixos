@@ -63,7 +63,8 @@ in
       };
 
       configureCuda = mkOption {
-        default = true;
+        default = config.hardware.graphics.enable;
+        defaultText = "config.hardware.graphics.enable";
         type = types.bool;
         description = ''
           Configures the instance of Nixpkgs used for the system closure for Jetson devices.
