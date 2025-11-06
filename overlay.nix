@@ -36,6 +36,16 @@ in
       cudaDriverMajorMinorVersion = null;
 
       bspHash = "sha256-u+dRtBHhN+bxwiuGlZwEhSXrpSfSb+kuC50+FjobSTg=";
+      bspPostPatch =
+        let
+          overlay_mb1bct = final.fetchzip {
+            url = "https://developer.nvidia.com/downloads/embedded/L4T/r35_Release_v6.2/overlay_mb1bct_35.6.2.tbz2";
+            sha256 = "sha256-4+oCK2rV6X5QEHJKAIXh3XC2Nc59LVQp5Ecgp8ZlWrM=";
+          };
+        in
+        ''
+          cp -r ${overlay_mb1bct}/* .
+        '';
     }
     final
     prev;
@@ -52,6 +62,16 @@ in
       cudaDriverMajorMinorVersion = "540.4.0";
 
       bspHash = "sha256-ps4RwiEAqwl25BmVkYJBfIPWL0JyUBvIcU8uB24BDzs=";
+      bspPostPatch =
+        let
+          overlay_mb1bct = final.fetchzip {
+            url = "https://developer.nvidia.com/downloads/embedded/L4T/r36_Release_v4.4/overlay_mb1bct_36.4.4.tbz2";
+            sha256 = "sha256-QWktb8/cZg9ch7IZ3GRnsLuhU9dD1rYrogBeQvWCg2E=";
+          };
+        in
+        ''
+          cp -r ${overlay_mb1bct}/* .
+        '';
     }
     final
     prev;
