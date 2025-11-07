@@ -121,10 +121,7 @@ in
       };
 
       carrierBoard = mkOption {
-        type = types.enum [
-          "generic"
-          "devkit"
-        ];
+        type = types.enum [ "generic" "devkit" "devkit-as-nx-8gb" "devkit-as-nx-16gb" "devkit-as-nano-8gb" "devkit-as-nano-4gb" ];
         default = "generic";
         description = ''
           Jetson carrier board to target. Can be set to "generic" to target a generic jetson carrier board, but some things may not work.
