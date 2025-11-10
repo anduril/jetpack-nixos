@@ -220,11 +220,11 @@ let
 
   l4t-multimedia = buildFromDebs {
     pname = "nvidia-l4t-multimedia";
-    # TODO: Replace the below with the builder from cuda-packages that works with multiple debs
-    postUnpack = ''
-      dpkg-deb -x ${debs.${defaultSomDebRepo}.nvidia-l4t-multimedia-utils.src} source
-      dpkg-deb -x ${debs.common.nvidia-l4t-jetson-multimedia-api.src} source
-    '';
+    srcs = [
+      debs.${defaultSomDebRepo}.nvidia-l4t-multimedia.src
+      debs.${defaultSomDebRepo}.nvidia-l4t-multimedia-utils.src
+      debs.common.nvidia-l4t-jetson-multimedia-api.src
+    ];
     buildInputs = [ l4t-core l4t-cuda l4t-nvsci pango alsa-lib ] ++ (with gst_all_1; [ gstreamer gst-plugins-base ]);
 
     patches = lib.optionals (l4tOlder "36") [
