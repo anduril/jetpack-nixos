@@ -119,7 +119,23 @@ in
   cudaPackages = final.cudaPackages_11;
 
   # Update _cuda's database with an entry allowing Orin on CUDA 11.4.
+  # NOTE: This can be removed when the minimum supported Nixpkgs version is 25.11,
+  # since the CUDA db will contain these fixes.
   _cuda = prev._cuda.extend (final: prev: recursiveUpdate prev {
-    bootstrapData.cudaCapabilityToInfo."8.7".minCudaMajorMinorVersion = "11.4";
+    bootstrapData.cudaCapabilityToInfo = {
+      "7.2" = {
+        archName = "Volta";
+        minCudaMajorMinorVersion = "11.4";
+        maxCudaMajorMinorVersion = "12.2";
+        isJetson = true;
+
+        isArchitectureSpecific = false;
+        isFamilySpecific = false;
+        dontDefaultAfterCudaMajorMinorVersion = null;
+      };
+      "8.7" = {
+        minCudaMajorMinorVersion = "11.4";
+      };
+    };
   });
 }

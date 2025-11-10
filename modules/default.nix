@@ -1,3 +1,4 @@
+overlay:
 { options
 , config
 , lib
@@ -251,7 +252,7 @@ in
       # user's overlay is merged before ours and that overlay depends on
       # something defined in our overlay.
       nixpkgs.overlays = lib.mkBefore [
-        (import ../overlay.nix)
+        overlay
         (
           let
             otherJetpacks = builtins.filter (v: v != cfg.majorVersion) jetpackVersions;
