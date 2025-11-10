@@ -13,7 +13,6 @@ final: _:
 let
   inherit (final.lib)
     attrValues
-    callPackageWith
     callPackagesWith
     composeManyExtensions
     concatMapAttrsStringSep
@@ -44,7 +43,7 @@ let
 in
 makeScope final.newScope (self: {
   inherit (sourceInfo) debs gitRepos;
-  inherit jetpackMajorMinorPatchVersion l4tMajorMinorPatchVersion cudaMajorMinorVersion;
+  inherit jetpackMajorMinorPatchVersion l4tMajorMinorPatchVersion cudaMajorMinorVersion cudaDriverMajorMinorVersion;
   inherit l4tAtLeast l4tOlder;
 
   callPackages = callPackagesWith (final // self);
@@ -295,6 +294,5 @@ makeScope final.newScope (self: {
   # attribute set, we cannot use self.callPackages because we would end up with infinite recursion.
   # Instead, we must either use final.callPackages or packagesFromDirectoryRecursive.
   // final.callPackages ./pkgs/l4t {
-  inherit (self) debs defaultSomDebRepo buildFromDebs;
-  inherit l4tMajorMinorPatchVersion cudaDriverMajorMinorVersion l4tAtLeast l4tOlder;
+  inherit self l4tAtLeast l4tOlder;
 })
