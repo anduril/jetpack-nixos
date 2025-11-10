@@ -52,24 +52,5 @@ buildFromDebs {
     done
   '';
 
-  # We append a postFixupHook since we need to have this happen after
-  # autoPatchelfHook, which itself also runs as a postFixupHook
-  # TODO: Replace this with appendRunpaths which is available in 23.11
-  preFixup = ''
-    postFixupHooks+=('
-      # ls to filter out libnvidia-vulkan-producer.so, which is only present in r35
-      patchelf --add-rpath ${lib.makeLibraryPath [ libglvnd ]} \
-        $out/lib/libEGL_nvidia.so.0 \
-        $out/lib/libGLX_nvidia.so.0 \
-        $(ls $out/lib/libnvidia-vulkan-producer.so)
-
-      patchelf --add-rpath ${lib.makeLibraryPath (with xorg; [ libX11 libXext libxcb ])} \
-        $out/lib/libGLX_nvidia.so.0 \
-        $out/lib/libnvidia-glsi.so.*
-
-      for lib in $(find "$out/lib" -name "*.so*"); do
-        patchelf $lib --add-rpath $out/lib
-      done
-    ')
-  '';
+  appendRunpaths = [ "${placeholder "out"}/lib" libglvnd xorg.libX11 xorg.libXext xorg.libxcb ];
 }
