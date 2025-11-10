@@ -104,7 +104,7 @@ makeScope final.newScope (self: {
   board-automation = self.callPackage ./pkgs/board-automation { };
 
   # Allows automation of Xavier AGX devkit
-  python-jetson = final.python3.pkgs.callPackage ./pkgs/python-jetson { };
+  python-jetson = final.python3Packages.callPackage ./pkgs/python-jetson { };
 
   tegra-eeprom-tool = final.callPackage ./pkgs/tegra-eeprom-tool { };
   tegra-eeprom-tool-static = final.pkgsStatic.callPackage ./pkgs/tegra-eeprom-tool { };
