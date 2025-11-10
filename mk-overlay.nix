@@ -90,6 +90,14 @@ makeScope final.newScope (self: {
       self.gitRepos
   );
 
+  # Nicely, for JetPack 5 and 6, the t194 and t234 packages are currently
+  # identical, so we just use t194. No guarantee that will stay the same in
+  # the future, so we should consider choosing the right package set based
+  # on the SoC.
+  defaultSomDebRepo = if l4tAtLeast "38" then "som" else "t234";
+
+  buildFromDebs = final.callPackage ./pkgs/buildFromDebs.nix { inherit (self) debs cudaMajorMinorVersion defaultSomDebRepo; };
+
   inherit (final.callPackages ./pkgs/uefi-firmware/r${l4tMajorVersion} { inherit (self) l4tMajorMinorPatchVersion; })
     uefi-firmware;
 
@@ -164,7 +172,7 @@ makeScope final.newScope (self: {
         callPackages = callPackagesWith (pkgs' // pkgs'.nvidia-jetpack // finalCudaPackages);
         cudaAtLeast = versionAtLeast finalCudaPackages.cudaMajorMinorPatchVersion;
         cudaOlder = versionOlder finalCudaPackages.cudaMajorMinorPatchVersion;
-        inherit (self) debs; # NOTE: The presence of debs is used as a condition in construciton of pkgs'.
+        inherit (self) debs buildFromDebs; # NOTE: The presence of debs is used as a condition in construciton of pkgs'.
         debsForSourcePackage = srcPackageName: filter (pkg: (pkg.source or "") == srcPackageName) (attrValues finalCudaPackages.debs.common);
 
         pkgs = pkgs';
@@ -287,6 +295,6 @@ makeScope final.newScope (self: {
   # attribute set, we cannot use self.callPackages because we would end up with infinite recursion.
   # Instead, we must either use final.callPackages or packagesFromDirectoryRecursive.
   // final.callPackages ./pkgs/l4t {
-  inherit (self) debs;
+  inherit (self) debs defaultSomDebRepo buildFromDebs;
   inherit l4tMajorMinorPatchVersion cudaDriverMajorMinorVersion l4tAtLeast l4tOlder;
 })

@@ -1,11 +1,8 @@
 { stdenv
-, stdenvNoCC
 , buildPackages
-, config
 , lib
 , fetchurl
 , fetchpatch
-, autoPatchelfHook
 , dpkg
 , expat
 , libglvnd
@@ -24,98 +21,13 @@
 , l4tMajorMinorPatchVersion
 , l4tAtLeast
 , l4tOlder
-, cudaPackages
+, buildFromDebs
+, defaultSomDebRepo
 , cudaDriverMajorMinorVersion
 }:
 let
-  # Nicely, for JetPack 5 and 6, the t194 and t234 packages are currently
-  # identical, so we just use t194. No guarantee that will stay the same in
-  # the future, so we should consider choosing the right package set based
-  # on the SoC.
-  defaultSomRepo = if l4tAtLeast "38" then "som" else "t234";
-
-  # Wrapper around mkDerivation that has some sensible defaults to extract a .deb file from the L4T BSP pacckage
-  buildFromDeb =
-    { name
-    , repo ? defaultSomRepo
-    , deb ? debs.${repo}.${name}
-    , src ? deb.src
-    , version ? deb.version
-    , sourceRoot ? "source"
-    , nativeBuildInputs ? [ ]
-    , autoPatchelf ? true
-    , postPatch ? ""
-    , ...
-    }@args:
-    stdenvNoCC.mkDerivation ((lib.filterAttrs (n: v: !(builtins.elem n [ "name" "autoPatchelf" ])) args) // {
-      pname = name;
-      inherit version src;
-
-      # These packages are created outside the CUDA package set and since we want to be able to discover them with
-      # CMake, we need to add the hook (`markForCudatoolkitRootHook`) which allows them to be discovered by our
-      # tooling.
-      nativeBuildInputs =
-        [ dpkg ]
-          ++ lib.optional config.cudaSupport cudaPackages.markForCudatoolkitRootHook
-          ++ lib.optional autoPatchelf autoPatchelfHook
-          ++ nativeBuildInputs;
-
-      unpackCmd = "dpkg-deb -x $src source";
-      inherit sourceRoot;
-
-      dontConfigure = true;
-      dontBuild = true;
-      noDumpEnvVars = true;
-
-      extraAutoPatchelfLibs = lib.optionals (autoPatchelf && (stdenv.buildPlatform != stdenv.hostPlatform)) [ "${stdenv.cc.cc.lib}/${stdenv.targetPlatform.config}/lib" ];
-
-      postPatch = ''
-        if [[ -d usr ]]; then
-          mv usr/* .
-          rmdir usr
-        fi
-
-        if [[ -d lib/aarch64-linux-gnu ]]; then
-          if [[ -n "$(ls lib/aarch64-linux-gnu)" ]] ; then
-            mv -v -t lib lib/aarch64-linux-gnu/*
-          fi
-          rm -rf lib/aarch64-linux-gnu
-        fi
-
-        if [[ -d lib/tegra ]]; then
-          if [[ -n "$(ls lib/tegra)" ]] ; then
-            mv -v -t lib lib/tegra/*
-          fi
-          rm -rf lib/tegra
-        fi
-
-        if [[ -d lib/nvidia ]]; then
-          if [[ -n "$(ls lib/nvidia)" ]] ; then
-            mv -v -t lib lib/nvidia/*
-          fi
-          rm -rf lib/nvidia
-        fi
-
-        ${postPatch}
-
-        rm -f lib/ld.so.conf
-      '';
-
-      installPhase = ''
-        runHook preInstall
-
-        cp -r . $out
-
-        runHook postInstall
-      '';
-
-      meta = {
-        platforms = [ "aarch64-linux" ];
-      } // (args.meta or { });
-    });
-
-  l4t-camera = buildFromDeb {
-    name = "nvidia-l4t-camera";
+  l4t-camera = buildFromDebs {
+    pname = "nvidia-l4t-camera";
     buildInputs = [ stdenv.cc.cc.lib l4t-core l4t-multimedia gtk3 ];
 
     postPatch = ''
@@ -123,14 +35,14 @@ let
     '';
   };
 
-  l4t-core = buildFromDeb {
-    name = "nvidia-l4t-core";
+  l4t-core = buildFromDebs {
+    pname = "nvidia-l4t-core";
     buildInputs = [ stdenv.cc.cc.lib expat libglvnd ];
   };
 
   # TODO: Split this package up into subpackages similar to what is done in meta-tegra: vulkan, glx, egl, etc
-  l4t-3d-core = buildFromDeb {
-    name = "nvidia-l4t-3d-core";
+  l4t-3d-core = buildFromDebs {
+    pname = "nvidia-l4t-3d-core";
     buildInputs = [ l4t-core libglvnd egl-wayland ];
     postPatch = ''
       # Replace incorrect ICD symlinks
@@ -196,8 +108,8 @@ let
   };
 
   # CUDA driver
-  l4t-cuda = buildFromDeb {
-    name = "nvidia-l4t-cuda";
+  l4t-cuda = buildFromDebs {
+    pname = "nvidia-l4t-cuda";
     buildInputs = [ l4t-core ];
 
     postPatch =
@@ -218,7 +130,7 @@ let
         # well as libnvidia-ptxjitcompiler in the same package. meta-tegra does a
         # similar thing where they pull libnvidia-ptxjitcompiler out of
         # l4t-3d-core and place it in the same package as libcuda.
-        dpkg --fsys-tarfile ${debs.${defaultSomRepo}.nvidia-l4t-3d-core.src} | tar -xO ./usr/lib/aarch64-linux-gnu/${folder}/libnvidia-ptxjitcompiler.so.${version} > lib/libnvidia-ptxjitcompiler.so.${version}
+        dpkg --fsys-tarfile ${debs.${defaultSomDebRepo}.nvidia-l4t-3d-core.src} | tar -xO ./usr/lib/aarch64-linux-gnu/${folder}/libnvidia-ptxjitcompiler.so.${version} > lib/libnvidia-ptxjitcompiler.so.${version}
         ln -sf libnvidia-ptxjitcompiler.so.${version} lib/libnvidia-ptxjitcompiler.so.1
         ln -sf libnvidia-ptxjitcompiler.so.${version} lib/libnvidia-ptxjitcompiler.so
       '';
@@ -230,7 +142,7 @@ let
     '';
   };
 
-  l4t-cupva = buildFromDeb
+  l4t-cupva = buildFromDebs
     (
       let
         cupvaMajorMinorVersion = {
@@ -239,9 +151,7 @@ let
         }.${lib.versions.major l4tMajorMinorPatchVersion};
       in
       {
-        name = "cupva";
-        src = debs.common."cupva-${cupvaMajorMinorVersion}-l4t".src;
-        version = debs.common."cupva-${cupvaMajorMinorVersion}-l4t".version;
+        pname = "cupva-${cupvaMajorMinorVersion}-l4t";
         buildInputs = [ stdenv.cc.cc.lib l4t-cuda l4t-nvsci l4t-pva ];
         postPatch = ''
           mkdir -p lib
@@ -252,21 +162,20 @@ let
     );
 
   # Only for L4T r36+
-  l4t-dla-compiler = buildFromDeb {
-    name = "nvidia-l4t-dla-compiler";
-    src = debs.common."nvidia-l4t-dla-compiler".src;
-    version = debs.common."nvidia-l4t-dla-compiler".version;
+  l4t-dla-compiler = buildFromDebs {
+    pname = "nvidia-l4t-dla-compiler";
+    repo = "common";
     buildInputs = [ l4t-cuda ];
   };
 
   # TODO: Make nvwifibt systemd scripts work
-  l4t-firmware = buildFromDeb {
-    name = "nvidia-l4t-firmware";
+  l4t-firmware = buildFromDebs {
+    pname = "nvidia-l4t-firmware";
     meta.platforms = [ "aarch64-linux" "x86_64-linux" ];
   };
 
-  l4t-gbm = buildFromDeb {
-    name = "nvidia-l4t-gbm";
+  l4t-gbm = buildFromDebs {
+    pname = "nvidia-l4t-gbm";
     buildInputs = [ l4t-core l4t-3d-core mesa ];
     postPatch = ''
       sed -i -E "s#(libnvidia-egl-gbm)#$out/lib/\\1#" share/egl/egl_external_platform.d/nvidia_gbm.json
@@ -278,8 +187,8 @@ let
     '';
   };
 
-  l4t-gstreamer = buildFromDeb {
-    name = "nvidia-l4t-gstreamer";
+  l4t-gstreamer = buildFromDebs {
+    pname = "nvidia-l4t-gstreamer";
     repo = if l4tAtLeast "36" then "common" else "t234";
     buildInputs = [ l4t-camera l4t-cuda l4t-multimedia wayland ];
   };
@@ -287,8 +196,8 @@ let
   # Most of the stuff in this package doesn't work in NixOS without
   # modification, so don't just include blindly. (for example, in
   # services.udev.packages)
-  l4t-init = buildFromDeb {
-    name = "nvidia-l4t-init";
+  l4t-init = buildFromDebs {
+    pname = "nvidia-l4t-init";
     autoPatchelf = false;
   };
 
@@ -309,11 +218,11 @@ let
     '';
   });
 
-  l4t-multimedia = buildFromDeb {
-    name = "nvidia-l4t-multimedia";
+  l4t-multimedia = buildFromDebs {
+    pname = "nvidia-l4t-multimedia";
     # TODO: Replace the below with the builder from cuda-packages that works with multiple debs
     postUnpack = ''
-      dpkg-deb -x ${debs.${defaultSomRepo}.nvidia-l4t-multimedia-utils.src} source
+      dpkg-deb -x ${debs.${defaultSomDebRepo}.nvidia-l4t-multimedia-utils.src} source
       dpkg-deb -x ${debs.common.nvidia-l4t-jetson-multimedia-api.src} source
     '';
     buildInputs = [ l4t-core l4t-cuda l4t-nvsci pango alsa-lib ] ++ (with gst_all_1; [ gstreamer gst-plugins-base ]);
@@ -383,30 +292,30 @@ let
     '';
   };
 
-  l4t-nvfancontrol = buildFromDeb {
-    name = "nvidia-l4t-nvfancontrol";
+  l4t-nvfancontrol = buildFromDebs {
+    pname = "nvidia-l4t-nvfancontrol";
     buildInputs = [ l4t-core ];
   };
 
-  l4t-nvpmodel = buildFromDeb {
-    name = "nvidia-l4t-nvpmodel";
+  l4t-nvpmodel = buildFromDebs {
+    pname = "nvidia-l4t-nvpmodel";
     buildInputs = [ l4t-core ];
   };
 
-  l4t-nvsci = buildFromDeb {
-    name = "nvidia-l4t-nvsci";
+  l4t-nvsci = buildFromDebs {
+    pname = "nvidia-l4t-nvsci";
     buildInputs = [ l4t-core ];
   };
 
   # Programmable Vision Accelerator
-  l4t-pva = buildFromDeb {
-    name = "nvidia-l4t-pva";
+  l4t-pva = buildFromDebs {
+    pname = "nvidia-l4t-pva";
     buildInputs = [ l4t-core l4t-cuda l4t-nvsci ];
   };
 
   # For tegrastats and jetson_clocks
-  l4t-tools = buildFromDeb {
-    name = "nvidia-l4t-tools";
+  l4t-tools = buildFromDebs {
+    pname = "nvidia-l4t-tools";
     nativeBuildInputs = [ makeWrapper ];
     buildInputs = [ stdenv.cc.cc.lib l4t-core ];
     postPatch = ''
@@ -422,8 +331,8 @@ let
     '';
   };
 
-  l4t-bootloader-utils = buildFromDeb {
-    name = "nvidia-l4t-bootloader-utils";
+  l4t-bootloader-utils = buildFromDebs {
+    pname = "nvidia-l4t-bootloader-utils";
     buildInputs = [ stdenv.cc.cc.lib l4t-core ];
     postPatch = ''
       # Remove NVIDIA utilities for which we have a NixOS specific implementation
@@ -434,24 +343,24 @@ let
     '';
   };
 
-  l4t-wayland = buildFromDeb {
-    name = "nvidia-l4t-wayland";
+  l4t-wayland = buildFromDebs {
+    pname = "nvidia-l4t-wayland";
     buildInputs = [ wayland ];
     postPatch = ''
       sed -i -E "s#(libnvidia-egl-wayland)#$out/lib/\\1#" share/egl/egl_external_platform.d/nvidia_wayland.json
     '';
   };
 
-  l4t-xusb-firmware = buildFromDeb {
-    name = "nvidia-l4t-xusb-firmware";
+  l4t-xusb-firmware = buildFromDebs {
+    pname = "nvidia-l4t-xusb-firmware";
     autoPatchelf = false;
     meta.platforms = [ "aarch64-linux" "x86_64-linux" ];
   };
 
-  nvidia-smi = buildFromDeb {
-    name = "nvidia-smi";
-    src = debs.${defaultSomRepo}.nvidia-l4t-nvml.src;
-    version = debs.${defaultSomRepo}.nvidia-l4t-nvml.version;
+  nvidia-smi = buildFromDebs {
+    pname = "nvidia-smi";
+    srcs = [ debs.${defaultSomDebRepo}.nvidia-l4t-nvml.src ];
+    version = debs.${defaultSomDebRepo}.nvidia-l4t-nvml.version;
     buildInputs = [ l4t-core ];
     # nvidia-smi will dlopen libnvidia-ml.so.1
     appendRunpaths = [ "${placeholder "out"}/lib" ];

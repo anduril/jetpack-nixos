@@ -1,20 +1,39 @@
-{ stdenv, debs, lib, dpkg, autoPatchelfHook, autoAddDriverRunpath, cudaMajorMinorVersion }:
+{ autoAddDriverRunpath
+, autoPatchelfHook
+, config
+, cudaMajorMinorVersion
+, cudaPackages
+, debs
+, dpkg
+, lib
+, stdenv
+, defaultSomDebRepo
+}:
+let
+in
 
 { pname
-, srcs
-, version ? debs.common.${pname}.version
+, repo ? defaultSomDebRepo
+, version ? debs.${repo}.${pname}.version
+, srcs ? [ debs.${repo}.${pname}.src ]
 , sourceRoot ? "source"
 , buildInputs ? [ ]
 , nativeBuildInputs ? [ ]
+, autoPatchelf ? true
 , postPatch ? ""
 , postFixup ? ""
 , ...
 }@args:
 # NOTE: Using @args with specified values and ... binds the values in ... to args.
-stdenv.mkDerivation (args // {
+stdenv.mkDerivation ((lib.filterAttrs (n: v: !(builtins.elem n [ "autoPatchelf" ])) args) // {
   inherit pname version srcs sourceRoot;
 
-  nativeBuildInputs = [ dpkg autoPatchelfHook autoAddDriverRunpath ] ++ nativeBuildInputs;
+  nativeBuildInputs =
+    [ dpkg ]
+      # autoPatchelfHook must run before autoAddDriverRunpath
+      ++ lib.optionals autoPatchelf [ autoPatchelfHook ]
+      ++ lib.optionals config.cudaSupport [ cudaPackages.markForCudatoolkitRootHook autoAddDriverRunpath ]
+      ++ nativeBuildInputs;
   buildInputs = [ stdenv.cc.cc.lib ] ++ buildInputs;
 
   unpackCmd = "for src in $srcs; do dpkg-deb -x $src source; done";
@@ -68,6 +87,20 @@ stdenv.mkDerivation (args // {
     if [[ -d lib/aarch64-linux-gnu ]]; then
       cp -r lib/aarch64-linux-gnu/. lib/
       rm -rf lib/aarch64-linux-gnu
+    fi
+
+    if [[ -d lib/tegra ]]; then
+      if [[ -n "$(ls lib/tegra)" ]] ; then
+        mv -v -t lib lib/tegra/*
+      fi
+      rm -rf lib/tegra
+    fi
+
+    if [[ -d lib/nvidia ]]; then
+      if [[ -n "$(ls lib/nvidia)" ]] ; then
+        mv -v -t lib lib/nvidia/*
+      fi
+      rm -rf lib/nvidia
     fi
 
     if [[ -e "$PWD/lib64" ]]; then
