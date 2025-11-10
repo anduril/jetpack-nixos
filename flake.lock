@@ -1,5 +1,28 @@
 {
   "nodes": {
+    "cuda-legacy": {
+      "inputs": {
+        "flake-parts": [
+          "cuda-legacy"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1762806692,
+        "narHash": "sha256-JhgQIwJe0U2vxj+pu+Sgm+VLgNqucpXtZYGKZOgkQdc=",
+        "owner": "nixos-cuda",
+        "repo": "cuda-legacy",
+        "rev": "9856d70acc3e2ae9081930b33d946326e07f1482",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nixos-cuda",
+        "repo": "cuda-legacy",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1754292888,
@@ -18,6 +41,7 @@
     },
     "root": {
       "inputs": {
+        "cuda-legacy": "cuda-legacy",
         "nixpkgs": "nixpkgs"
       }
     }

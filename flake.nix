@@ -1,6 +1,11 @@
 {
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-25.05";
+
+    cuda-legacy = {
+      url = "github:nixos-cuda/cuda-legacy";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = { self, nixpkgs, ... }:
