@@ -1,27 +1,19 @@
 final: prev:
 let
   inherit (final.lib)
-    filter
-    intersectLists
+    any
     recursiveUpdate
     ;
 
-  # Taken largely from:
-  # https://github.com/NixOS/nixpkgs/blob/b0401fdfb86201ed2e351665387ad6505b88f452/pkgs/top-level/cuda-packages.nix
-
-  inherit (final) _cuda;
-
   # Since Jetson capabilities are never built by default, we can check if any of them were requested
   # through final.config.cudaCapabilities and use that to determine if we should change some manifest versions.
-  # Copied from backendStdenv.
-  jetsonCudaCapabilities = filter
-    (
-      cudaCapability: _cuda.db.cudaCapabilityToInfo.${cudaCapability}.isJetson
-    )
-    _cuda.db.allSortedCudaCapabilities;
-  hasJetsonCudaCapability =
-    intersectLists jetsonCudaCapabilities (final.config.cudaCapabilities or [ ]) != [ ];
-  redistSystem = _cuda.lib.getRedistSystem hasJetsonCudaCapability final.stdenv.hostPlatform.system;
+  useJetPackCudaPackageSet = final.stdenv.hostPlatform.system == "aarch64-linux" && (
+    let
+      isXavier = computeCapability: computeCapability == "7.2";
+      isOrin = computeCapability: computeCapability == "8.7";
+    in
+    any (computeCapability: isXavier computeCapability || isOrin computeCapability) (final.config.cudaCapabilities or [ ])
+  );
 in
 {
   nvidia-jetpack5 = import ./mk-overlay.nix
@@ -101,25 +93,25 @@ in
   # NOTE: We cannot lift the conditionals out further without causing infinite recursion, as the fixed-point would be
   # used to determine the presence/absence of attributes.
   cudaPackages_11_4 =
-    if redistSystem == "linux-aarch64" then
+    if useJetPackCudaPackageSet then
       assert final.nvidia-jetpack5.cudaPackages.cudaMajorMinorVersion == "11.4";
       final.nvidia-jetpack5.cudaPackages
     else
       prev.cudaPackages_11_4;
   cudaPackages_11 =
-    if redistSystem == "linux-aarch64" then
+    if useJetPackCudaPackageSet then
       final.cudaPackages_11_4
     else
       prev.cudaPackages_11;
 
   cudaPackages_12_6 =
-    if redistSystem == "linux-aarch64" then
+    if useJetPackCudaPackageSet then
       assert final.nvidia-jetpack6.cudaPackages.cudaMajorMinorVersion == "12.6";
       final.nvidia-jetpack6.cudaPackages
     else
       prev.cudaPackages_12_6;
   cudaPackages_12 =
-    if redistSystem == "linux-aarch64" then
+    if useJetPackCudaPackageSet then
       final.cudaPackages_12_6
     else
       prev.cudaPackages_12;
