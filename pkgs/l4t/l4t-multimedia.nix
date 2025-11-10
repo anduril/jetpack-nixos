@@ -96,15 +96,6 @@ buildFromDebs {
     done
   '';
 
-  # We append a postFixupHook since we need to have this happen after
-  # autoPatchelfHook, which itself also runs as a postFixupHook.
-  # TODO: Use runtimeDependencies instead
-  preFixup = ''
-    postFixupHooks+=('
-      patchelf --add-rpath ${lib.getLib l4t-nvsci}/lib $out/lib/libnvmedia*.so
-
-      # dlopen in NvOsLibraryLoad from libnvos.so needs to be able to access these libraries
-      patchelf --add-rpath $out/lib $out/lib/libnvos_multimedia.so
-    ')
-  '';
+  runtimeDependencies = [ l4t-nvsci ];
+  appendRunpaths = [ "${placeholder "out"}/lib" ];
 }
