@@ -138,6 +138,13 @@ in
 
   cudaPackages = final.cudaPackages_11;
 
+  # TODO: Remove this once there's an official OpenCV release supporting CUDA 13
+  opencv =
+    if final.cudaPackages.cudaAtLeast "13" then
+      final.nvidia-jetpack.l4t-opencv
+    else
+      prev.opencv;
+
   _cuda = prev._cuda.extend (_: prev: recursiveUpdate prev {
     extensions = prev.extensions ++ [ (final.callPackage ./pkgs/cuda-extensions { }) ];
 
