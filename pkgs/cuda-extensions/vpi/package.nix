@@ -1,20 +1,24 @@
-{ buildFromDebs
-, debs
-, l4t-3d-core
-, l4t-core
-, l4t-cupva
-, l4t-multimedia
-, libcufft
+{ libcufft
 , libnpp
-, l4tMajorMinorPatchVersion
 , lib
+, nvidia-jetpack
 ,
 }:
 let
-  majorVersion = {
+  inherit (nvidia-jetpack)
+    buildFromDebs
+    debs
+    l4t-3d-core
+    l4t-core
+    l4t-cupva
+    l4t-multimedia
+    l4tMajorMinorPatchVersion
+    ;
+
+  majorVersion = lib.getAttr (lib.versions.major l4tMajorMinorPatchVersion) {
     "35" = "2";
     "36" = "3";
-  }.${lib.versions.major l4tMajorMinorPatchVersion};
+  };
 in
 buildFromDebs {
   pname = "vpi${majorVersion}";
