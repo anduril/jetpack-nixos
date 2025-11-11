@@ -36,6 +36,9 @@ let
   };
 
   jetpackAtLeast = lib.versionAtLeast cfg.majorVersion;
+
+  getDriverDebs = prefix: (lib.filter (drv: lib.hasPrefix prefix (drv.pname or "")) (lib.attrValues pkgs.nvidia-jetpack.driverDebs));
+  nvidiaDriverFirmwareDebs = getDriverDebs "nvidia-firmware-";
 in
 {
   imports = [
@@ -365,7 +368,7 @@ in
       ];
 
       boot.kernelModules =
-        [ "nvgpu" ]
+        (if (jetpackAtLeast "7") then [ "nvidia-uvm" ] else [ "nvgpu" ])
         ++ lib.optionals (cfg.modesetting.enable && checkValidSoms [ "xavier" ]) [ "tegra-udrm" ]
         ++ lib.optionals (cfg.modesetting.enable && checkValidSoms [ "orin" ]) [ "nvidia-drm" ];
 
@@ -374,6 +377,10 @@ in
       '' + lib.optionalString cfg.modesetting.enable ''
         options tegra-udrm modeset=1
         options nvidia-drm modeset=1 ${lib.optionalString (cfg.majorVersion == "6") "fbdev=1"}
+      '' + lib.optionalString (jetpackAtLeast "7") ''
+        # from L4T-Ubuntu /etc/modprobe.d/nvidia-unifiedgpudisp.conf
+        options nvidia NVreg_RegistryDwords="RMExecuteDevinitOnPmu=0;RMEnableAcr=1;RmCePceMap=0xffffff20;RmCePceMap1=0xffffffff;RmCePceMap2=0xffffffff;RmCePceMap3=0xffffffff;" NVreg_TegraGpuPgMask=512
+        softdep nvidia pre: governor_pod_scaling post: nvidia-uvm
       '';
 
       boot.extraModulePackages =
@@ -391,7 +398,9 @@ in
         cudaPackages.vpi-firmware # Optional, but needed for pva_auth_allowlist firmware file used by VPI2
       ] ++ lib.optionals (l4tOlder "38") [
         l4t-xusb-firmware # usb firmware also present in linux-firmware package, but that package is huge and has much more than needed
-      ];
+      ] ++ lib.optionals (l4tAtLeast "38") (nvidiaDriverFirmwareDebs ++ [ l4t-firmware-openrm ]);
+
+      boot.blacklistedKernelModules = [ "nouveau" ];
 
       hardware.deviceTree.enable = true;
       hardware.deviceTree.dtboBuildExtraIncludePaths = {
