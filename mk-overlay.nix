@@ -8,6 +8,7 @@
 , cudaDriverMajorMinorVersion
 , bspHash
 , bspPatches ? [ ]
+, bspPostPatch ? [ ]
 }:
 final: _:
 let
@@ -67,6 +68,7 @@ makeScope final.newScope (self: {
       mv Linux_for_Tegra $out
     '';
     patches = bspPatches;
+    postPatch = bspPostPatch;
   };
 
   # Here for convenience, to see what is in upstream Jetpack
