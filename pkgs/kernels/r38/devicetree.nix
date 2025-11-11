@@ -26,6 +26,8 @@ stdenv.mkDerivation (finalAttrs: {
   pname = "l4t-devicetree";
   version = "${l4tMajorMinorPatchVersion}";
   src = l4t-devicetree-sources;
+  __structuredAttrs = true;
+  strictDeps = true;
 
   inherit kernel;
 
