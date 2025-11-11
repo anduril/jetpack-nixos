@@ -12,12 +12,15 @@ let
     l4t-core
     l4t-cupva
     l4t-multimedia
+    l4t-video-codec-openrm
     l4tMajorMinorPatchVersion
+    l4tOlder
     ;
 
   majorVersion = lib.getAttr (lib.versions.major l4tMajorMinorPatchVersion) {
     "35" = "2";
     "36" = "3";
+    "38" = "4";
   };
 in
 buildFromDebs {
@@ -32,10 +35,9 @@ buildFromDebs {
     l4t-core
     l4t-3d-core
     l4t-multimedia
-    l4t-cupva
     libcufft
     libnpp
-  ];
+  ] ++ (if (l4tOlder "38") then [ l4t-cupva ] else [ l4t-video-codec-openrm ]);
   patches = [ ./vpi2.patch ];
   postPatch = ''
     rm -rf etc

@@ -37,5 +37,11 @@ in
 } // lib.optionalAttrs (l4tOlder "38") {
   inherit (packages) l4t-xusb-firmware; # L4T 38+ uses upstream firmware
 } // lib.optionalAttrs (l4tAtLeast "38") {
-  inherit (packages) l4t-bootloader-utils;
+  inherit (packages)
+    driverDebs
+    l4t-adaruntime
+    l4t-bootloader-utils
+    l4t-firmware-openrm
+    l4t-video-codec-openrm
+    ;
 }
