@@ -72,7 +72,7 @@ in
     {
       jetpackMajorMinorPatchVersion = "7.0";
       l4tMajorMinorPatchVersion = "38.2.1";
-      cudaMajorMinorPatchVersion = "12.6.10"; #TODO
+      cudaMajorMinorPatchVersion = "13.0.2";
 
       cudaDriverMajorMinorVersion = "580.00";
 

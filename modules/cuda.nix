@@ -49,8 +49,8 @@ in
           message = "JetPack NixOS 6 supports CUDA 12.4 (natively) - 12.9 (with `cuda_compat`): `pkgs.cudaPackages` has version ${cudaMajorMinorVersion}.";
         }
         {
-          assertion = !cudaAtLeast "13.0";
-          message = "JetPack NixOS does not support CUDA 13.0 or later: `pkgs.cudaPackages` has version ${cudaMajorMinorVersion}.";
+          assertion = cfg.majorVersion == "7" -> cudaAtLeast "13.0";
+          message = "JetPack NixOS 7 supports CUDA 13.0 (natively): `pkgs.cudaPackages` has version ${cudaMajorMinorVersion}.";
         }
         {
           assertion = !((lib.hasPrefix "thor" cfg.som) && (config.hardware.nvidia-jetpack.configureCuda || pkgs.config.cudaSupport));
@@ -68,8 +68,11 @@ in
           isGeneric = cfg.som == "generic";
           isXavier = lib.hasPrefix "xavier-" cfg.som;
           isOrin = lib.hasPrefix "orin-" cfg.som;
+          isThor = lib.hasPrefix "thor-" cfg.som;
         in
-        lib.optionals (isXavier || isGeneric) [ "7.2" ] ++ lib.optionals (isOrin || isGeneric) [ "8.7" ];
+        lib.optionals (isXavier || isGeneric) [ "7.2" ] ++
+        lib.optionals (isOrin || isGeneric) [ "8.7" ] ++
+        lib.optionals isThor [ "11.0" ];
     });
   };
 }
