@@ -12,9 +12,10 @@ let
     cudatoolkit
     cudaAtLeast
     cudaMajorMinorVersion
-    cudaVersionDashes
     flags
     ;
+
+  cudaVersionDashes = lib.replaceStrings [ "." ] [ "-" ] cudaMajorMinorVersion;
 in
 stdenv.mkDerivation {
   __structuredAttrs = true;
@@ -50,6 +51,8 @@ stdenv.mkDerivation {
   ignoredSampleDirs = {
     common = 1;
     extensions = 1;
+    # Present in CUDA 13: requires nvc++??
+    openacc_trace = 1;
   };
 
   # In the case the sample directory doesn't match the name of the executable,
@@ -63,6 +66,9 @@ stdenv.mkDerivation {
   # https://github.com/NixOS/nixpkgs/blob/96998d6c5cd4d47671d09cd5e4c6dccd00256648/pkgs/stdenv/generic/setup.sh#L1509-L1520
   buildPhase = ''
     runHook preBuild
+
+    # sourceRoot puts us inside CUPTI/samples
+    export CUPTI_INSTALL_PATH=$(realpath $(pwd)/..)
 
     local flagsArray=(
       ''${enableParallelBuilding:+-j''${NIX_BUILD_CORES}}
