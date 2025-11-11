@@ -765,7 +765,7 @@ in
           );
       };
     })
-    (lib.mkIf (lib.hasPrefix "thor" cfg.som) {
+    (lib.mkIf ((lib.hasPrefix "thor" cfg.som) && (lib.versionOlder lib.trivial.version "25.11")) {
       assertions = [
         {
           assertion = !(config.hardware.nvidia-jetpack.configureCuda || pkgs.config.cudaSupport);
