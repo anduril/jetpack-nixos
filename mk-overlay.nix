@@ -233,13 +233,16 @@ makeScope final.newScope (self: {
     # NOTE: We must ensure the scope allows us to draw on the contents of nvidia-jetpack.
     makeScope pkgs'.nvidia-jetpack.newScope (
       extends
-        # Add the packages built from debians
-        # NOTE: We do not extend with _cuda.extensions because the JetPack CUDA package sets have a different set of
-        # attributes compared to upstream; we should not expect the overlays provided to work with our package set.
-        (finalCudaPackages: _: packagesFromDirectoryRecursive {
-          directory = ./pkgs/cuda-packages;
-          inherit (finalCudaPackages) callPackage;
-        })
+        (composeManyExtensions [
+          # Add the packages built from debians
+          # NOTE: We do not extend with _cuda.extensions because the JetPack CUDA package sets have a different set of
+          # attributes compared to upstream; we should not expect the overlays provided to work with our package set.
+          (finalCudaPackages: _: packagesFromDirectoryRecursive {
+            directory = ./pkgs/cuda-packages;
+            inherit (finalCudaPackages) callPackage;
+          })
+          (final.callPackage ./pkgs/cuda-extensions { })
+        ])
         passthruFunction
     );
 
