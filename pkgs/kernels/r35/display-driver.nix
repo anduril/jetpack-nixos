@@ -9,6 +9,8 @@
 stdenv.mkDerivation {
   pname = "nvidia-display-driver";
   version = "jetson_${l4tMajorMinorPatchVersion}";
+  __structuredAttrs = true;
+  strictDeps = true;
 
   src = gitRepos."tegra/kernel-src/nv-kernel-display-driver";
 

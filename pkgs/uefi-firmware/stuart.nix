@@ -96,6 +96,13 @@ stdenv.mkDerivation (finalAttrs: {
   strictDeps = true;
 
   env = {
+    # NVIDIA's PrePI performs C function calls before stack has been set up.
+    # https://github.com/NVIDIA/edk2-nvidia/blob/r38.2/Silicon/NVIDIA/Library/TegraPlatformInfoLib/AArch64/TegraPlatformInfo.S#L61
+    # https://github.com/NVIDIA/edk2-nvidia/blob/r38.2/Silicon/NVIDIA/Library/TegraPlatformInfoLib/TegraPlatformInfoLib.c#L24
+    # nixos/nixpkgs#399014 enables `-fno-omit-frame-pointer` by default which
+    # causes PrePI to try to derefence uninitalized stack pointer.
+    NIX_CFLAGS_COMPILE = "-fomit-frame-pointer";
+
     # stuart (nvidia extensions) really wants CROSS_COMPILER_PREFIX to look like this
     CROSS_COMPILER_PREFIX = "${stdenv.cc}/bin/${stdenv.cc.targetPrefix}";
     # Version is ${FIRMWARE_VERSION_BASE}-${GIT_SYNC_REVISION}

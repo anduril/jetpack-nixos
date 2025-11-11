@@ -1,3 +1,4 @@
+overlay:
 { options
 , config
 , lib
@@ -63,7 +64,8 @@ in
       };
 
       configureCuda = mkOption {
-        default = true;
+        default = config.hardware.graphics.enable;
+        defaultText = "config.hardware.graphics.enable";
         type = types.bool;
         description = ''
           Configures the instance of Nixpkgs used for the system closure for Jetson devices.
@@ -250,7 +252,7 @@ in
       # user's overlay is merged before ours and that overlay depends on
       # something defined in our overlay.
       nixpkgs.overlays = lib.mkBefore [
-        (import ../overlay.nix)
+        overlay
         (
           let
             otherJetpacks = builtins.filter (v: v != cfg.majorVersion) jetpackVersions;

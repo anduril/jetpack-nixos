@@ -27,6 +27,9 @@ stdenv.mkDerivation (finalAttrs: {
   version = "${l4tMajorMinorPatchVersion}";
   src = l4t-devicetree-sources;
 
+  __structuredAttrs = true;
+  strictDeps = true;
+
   inherit kernel;
 
   nativeBuildInputs = finalAttrs.kernel.moduleBuildDependencies;

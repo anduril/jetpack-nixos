@@ -23,7 +23,7 @@ let
         pyasn1-modules
         cryptography
         joblib
-        GitPython
+        gitpython
         sqlalchemy
         pygount
       ];
@@ -46,9 +46,9 @@ let
         pyyaml
         pefile
         semantic-version
-        GitPython
+        gitpython
         openpyxl
-        XlsxWriter
+        xlsxwriter
       ];
     };
   edk2-basetools = buildPythonPackage
