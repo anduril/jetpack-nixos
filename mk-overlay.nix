@@ -220,19 +220,18 @@ makeScope final.newScope (self: {
         # https://github.com/NixOS/nixpkgs/blob/9cb344e96d5b6918e94e1bca2d9f3ea1e9615545/pkgs/development/python-modules/torch/source/default.nix#L543-L545
         cuda_nvprof = finalCudaPackages.cuda_profiler_api;
       };
-
-      composedExtensions = composeManyExtensions ([
+    in
+    # NOTE: We must ensure the scope allows us to draw on the contents of nvidia-jetpack.
+    makeScope pkgs'.nvidia-jetpack.newScope (
+      extends
         # Add the packages built from debians
+        # NOTE: We do not extend with _cuda.extensions because the JetPack CUDA package sets have a different set of
+        # attributes compared to upstream; we should not expect the overlays provided to work with our package set.
         (finalCudaPackages: _: packagesFromDirectoryRecursive {
           directory = ./pkgs/cuda-packages;
           inherit (finalCudaPackages) callPackage;
         })
-      ]
-      ++ _cuda.extensions);
-    in
-    # NOTE: We must ensure the scope allows us to draw on the contents of nvidia-jetpack.
-    makeScope pkgs'.nvidia-jetpack.newScope (
-      extends composedExtensions passthruFunction
+        passthruFunction
     );
 
   samples = makeScope self.newScope (finalSamples: {
