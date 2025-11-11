@@ -1,7 +1,10 @@
-{ cmake
+{ autoPatchelfHook
+, cmake
 , cudaPackages
 , debs
 , dpkg
+, l4tAtLeast
+, l4t-pva
 , lib
 , opencv
 , stdenv
@@ -25,8 +28,9 @@ stdenv.mkDerivation {
   unpackCmd = "dpkg -x $src source";
   sourceRoot = "source/opt/nvidia/vpi${vpiMajor}/samples";
 
-  nativeBuildInputs = [ cmake cuda_nvcc dpkg ];
-  buildInputs = [ cuda_cudart opencv vpi ];
+  nativeBuildInputs = [ autoPatchelfHook cmake cuda_nvcc dpkg ];
+  buildInputs = [ cuda_cudart opencv vpi ]
+    ++ lib.optionals (l4tAtLeast "38") [ l4t-pva ];
 
   configurePhase = ''
     runHook preBuild
@@ -64,6 +68,15 @@ stdenv.mkDerivation {
     runHook preInstall
 
     install -Dm 755 -t $out/bin $(find . -type f -maxdepth 2 -perm 755)
+  '' + lib.optionalString (l4tAtLeast "38") ''
+    # patchelf dlopen'd libraries so autoPatchelfHook can find them
+    for exe in $out/bin/*; do
+      patchelf \
+        --add-needed libnvpvaumd_core.so \
+        "$exe"
+    done
+    unset -v exe
+  '' + ''
 
     runHook postInstall
   '';
