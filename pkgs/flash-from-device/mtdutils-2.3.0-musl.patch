@@ -1,0 +1,331 @@
+From 8a83b306db64d6f60186d4396b0b770163b85b6e Mon Sep 17 00:00:00 2001
+From: Ross Burton <ross.burton@arm.com>
+Date: Wed, 26 Feb 2025 18:24:00 +0000
+Subject: [PATCH 1/7] ubifs-utils: link libmissing.a in case execinfo.h isn't
+ present
+
+On musl execinfo.h doesn't exist, but ubifs-utils uses backtrace() when
+reporting errors.  This results in build failures under musl.
+
+Handily, libmissing.a already exists with a stub implementation of
+backtrace().
+
+Guard the execinfo.h include and if it isn't available instead include
+libmissing.h, and link to libmissing.a to provide backtrace() if needed.
+
+Signed-off-by: Ross Burton <ross.burton@arm.com>
+Reviewed-by: Zhihao Cheng <chengzhihao1@huawei.com>
+Signed-off-by: David Oberhollenzer <david.oberhollenzer@sigma-star.at>
+---
+ ubifs-utils/Makemodule.am | 4 ++--
+ ubifs-utils/common/defs.h | 5 ++++-
+ 2 files changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/ubifs-utils/Makemodule.am b/ubifs-utils/Makemodule.am
+index 21ba059..f84569a 100644
+--- a/ubifs-utils/Makemodule.am
++++ b/ubifs-utils/Makemodule.am
+@@ -72,7 +72,7 @@ mkfs_ubifs_SOURCES = \
+ 	ubifs-utils/mkfs.ubifs/mkfs.ubifs.c
+ 
+ mkfs_ubifs_LDADD = libmtd.a libubi.a $(ZLIB_LIBS) $(LZO_LIBS) $(ZSTD_LIBS) $(UUID_LIBS) $(LIBSELINUX_LIBS) $(OPENSSL_LIBS) \
+-		   $(DUMP_STACK_LD) $(ASAN_LIBS) -lm -lpthread
++		   $(DUMP_STACK_LD) $(ASAN_LIBS) -lm -lpthread libmissing.a
+ mkfs_ubifs_CPPFLAGS = $(AM_CPPFLAGS) $(ZLIB_CFLAGS) $(LZO_CFLAGS) $(ZSTD_CFLAGS) $(UUID_CFLAGS) $(LIBSELINUX_CFLAGS) \
+ 	-I$(top_srcdir)/ubi-utils/include -I$(top_srcdir)/ubifs-utils/common -I $(top_srcdir)/ubifs-utils/libubifs
+ 
+@@ -90,7 +90,7 @@ fsck_ubifs_SOURCES = \
+ 	ubifs-utils/fsck.ubifs/handle_disconnected.c
+ 
+ fsck_ubifs_LDADD = libmtd.a libubi.a $(ZLIB_LIBS) $(LZO_LIBS) $(ZSTD_LIBS) $(UUID_LIBS) $(LIBSELINUX_LIBS) $(OPENSSL_LIBS) \
+-		   $(DUMP_STACK_LD) $(ASAN_LIBS) -lm -lpthread
++		   $(DUMP_STACK_LD) $(ASAN_LIBS) -lm -lpthread libmissing.a
+ fsck_ubifs_CPPFLAGS = $(AM_CPPFLAGS) $(ZLIB_CFLAGS) $(LZO_CFLAGS) $(ZSTD_CFLAGS) $(UUID_CFLAGS) $(LIBSELINUX_CFLAGS) \
+ 	-I$(top_srcdir)/ubi-utils/include -I$(top_srcdir)/ubifs-utils/common -I $(top_srcdir)/ubifs-utils/libubifs \
+ 	-I$(top_srcdir)/ubifs-utils/fsck.ubifs
+diff --git a/ubifs-utils/common/defs.h b/ubifs-utils/common/defs.h
+index 7ff1771..d5edbf6 100644
+--- a/ubifs-utils/common/defs.h
++++ b/ubifs-utils/common/defs.h
+@@ -13,8 +13,11 @@
+ #include <errno.h>
+ #include <time.h>
+ #include <assert.h>
++#if HAVE_EXECINFO_H
+ #include <execinfo.h>
+-
++#else
++#include "libmissing.h"
++#endif
+ #include "ubifs.h"
+ 
+ /* common.h requires the PROGRAM_NAME macro */
+-- 
+2.50.0
+
+
+From 2669111e3c60b8e146c174db5d2e7e9991f3dd87 Mon Sep 17 00:00:00 2001
+From: AntonMoryakov <ant.v.moryakov@gmail.com>
+Date: Thu, 24 Apr 2025 21:19:22 +0300
+Subject: [PATCH 2/7] ubifs-utils: common: fix memory leak in devtable.c
+
+Report of the static analyzer:
+Dynamic memory, referenced by 'line', is allocated at devtable.c:356
+by calling function 'getline' and lost at devtable.c:388.
+(line: while (getline(&line, &len, f) != -1) {)
+
+Correct explained:
+Now line is freed in any exit scenario via out_close which eliminates this error.
+
+Triggers found by static analyzer Svace.
+
+Signed-off-by: Anton Moryakov <ant.v.moryakov@gmail.co
+Reviewed-by: Zhihao Cheng <chengzhihao1@huawei.com>
+Signed-off-by: David Oberhollenzer <david.oberhollenzer@sigma-star.at>
+---
+ ubifs-utils/common/devtable.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/ubifs-utils/common/devtable.c b/ubifs-utils/common/devtable.c
+index 7347f09..2e581ff 100644
+--- a/ubifs-utils/common/devtable.c
++++ b/ubifs-utils/common/devtable.c
+@@ -392,6 +392,7 @@ int parse_devtable(const char *tbl_file)
+ 
+ out_close:
+ 	fclose(f);
++	free(line);
+ 	free_devtable_info();
+ 	return -1;
+ }
+-- 
+2.50.0
+
+
+From 2ff8105b3bb2d8eff682bbbfdca1a7843c7bd524 Mon Sep 17 00:00:00 2001
+From: Konstantin Menyaev <KAMenyaev@salutedevices.com>
+Date: Sat, 24 May 2025 20:26:39 +0300
+Subject: [PATCH 3/7] ubi-utils: ubirsvol: resize volume using all available
+ free space
+
+useful in resizing last ubi volume,
+some kind of auto-resize ubinize option.
+
+Signed-off-by: Konstantin Menyaev <KAMenyaev@salutedevices.com>
+Reviewed-by: Zhihao Cheng <chengzhihao1@huawei.com>
+Signed-off-by: David Oberhollenzer <david.oberhollenzer@sigma-star.at>
+---
+ ubi-utils/ubirsvol.c | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/ubi-utils/ubirsvol.c b/ubi-utils/ubirsvol.c
+index 73d2f68..55f6794 100644
+--- a/ubi-utils/ubirsvol.c
++++ b/ubi-utils/ubirsvol.c
+@@ -57,8 +57,10 @@ static const char optionsstr[] =
+ "-N, --name=<volume name>   volume name to resize\n"
+ "-s, --size=<bytes>         volume size volume size in bytes, kilobytes (KiB)\n"
+ "                           or megabytes (MiB)\n"
++"                           zero size means use all available free bytes\n"
+ "-S, --lebs=<LEBs count>    alternative way to give volume size in logical\n"
+ "                           eraseblocks\n"
++"                           zero size means use all available free LEBs\n"
+ "-h, -?, --help             print help message\n"
+ "-V, --version              print program version";
+ 
+@@ -114,13 +116,13 @@ static int parse_opt(int argc, char * const argv[])
+ 		switch (key) {
+ 		case 's':
+ 			args.bytes = util_get_bytes(optarg);
+-			if (args.bytes <= 0)
++			if (args.bytes < 0)
+ 				return errmsg("bad volume size: \"%s\"", optarg);
+ 			break;
+ 
+ 		case 'S':
+ 			args.lebs = simple_strtoull(optarg, &error);
+-			if (error || args.lebs <= 0)
++			if (error || args.lebs < 0)
+ 				return errmsg("bad LEB count: \"%s\"", optarg);
+ 			break;
+ 
+@@ -233,6 +235,9 @@ int main(int argc, char * const argv[])
+ 	if (args.lebs != -1)
+ 		args.bytes = (long long)vol_info.leb_size * args.lebs;
+ 
++	if (args.lebs == 0 || args.bytes == 0)
++		args.bytes = vol_info.rsvd_bytes + dev_info.avail_bytes;
++
+ 	err = ubi_rsvol(libubi, args.node, args.vol_id, args.bytes);
+ 	if (err) {
+ 		sys_errmsg("cannot UBI resize volume");
+-- 
+2.50.0
+
+
+From ac0ab65ebcd7b11739986b81343457469fbb43b0 Mon Sep 17 00:00:00 2001
+From: Khem Raj <raj.khem@gmail.com>
+Date: Sat, 22 Mar 2025 21:01:32 -0700
+Subject: [PATCH 4/7] Improve check for GCC compiler version
+
+When using unreleased compiler has version like
+15.0.1 and that test fails because __GNUC_MINOR__ < 1
+becomes true, therefore check for full version string
+which is more rubust.
+
+Signed-off-by: Khem Raj <raj.khem@gmail.com>
+Signed-off-by: David Oberhollenzer <david.oberhollenzer@sigma-star.at>
+---
+ ubifs-utils/common/atomic.h | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/ubifs-utils/common/atomic.h b/ubifs-utils/common/atomic.h
+index f287d43..95754b2 100644
+--- a/ubifs-utils/common/atomic.h
++++ b/ubifs-utils/common/atomic.h
+@@ -2,8 +2,12 @@
+ #ifndef __ATOMIC_H__
+ #define __ATOMIC_H__
+ 
++#define GCC_VERSION (__GNUC__ * 10000 \
++                     + __GNUC_MINOR__ * 100 \
++                     + __GNUC_PATCHLEVEL__)
++
+ /* Check GCC version, just to be safe */
+-#if !defined(__GNUC__) || (__GNUC__ < 4) || (__GNUC_MINOR__ < 1)
++#if GCC_VERSION < 40100
+ # error atomic.h works only with GCC newer than version 4.1
+ #endif /* GNUC >= 4.1 */
+ 
+-- 
+2.50.0
+
+
+From 12bc9ad824bd8f18a5ec9c7154ad2374cf8c7ae3 Mon Sep 17 00:00:00 2001
+From: Fabio Estevam <festevam@gmail.com>
+Date: Wed, 19 Feb 2025 10:02:41 -0300
+Subject: [PATCH 5/7] ubifs-utils: ubifs.h: Include <fcntl.h>
+
+Include the <fcntl.h> header file to fix the following error
+when building with musl:
+
+| In file included from ../git/ubifs-utils/common/compr.c:42:
+| ../git/ubifs-utils/libubifs/ubifs.h:313:9: error: unknown type name 'loff_t'; did you mean 'off_t'?
+|   313 |         loff_t ui_size;
+|       |         ^~~~~~
+|       |         off_t
+| ../git/ubifs-utils/libubifs/ubifs.h:1341:9: error: unknown type name 'loff_t'; did you mean 'off_t'?
+|  1341 |         loff_t i_size;
+|       |         ^~~~~~
+|       |         off_t
+| ../git/ubifs-utils/libubifs/ubifs.h:1342:9: error: unknown type name 'loff_t'; did you mean 'off_t'?
+|  1342 |         loff_t d_size;
+|       |         ^~~~~~
+|       |         off_t
+| ../git/ubifs-utils/libubifs/ubifs.h:1899:44: error: unknown type name 'loff_t'; did you mean 'off_t'?
+|  1899 |                              int deletion, loff_t new_size);
+|       |                                            ^~~~~~
+|       |                                            off_t
+| make: *** [Makefile:4878: ubifs-utils/common/mkfs_ubifs-compr.o] Error 1
+
+Signed-off-by: Fabio Estevam <festevam@gmail.com>
+Reviewed-by: Zhihao Cheng <chengzhihao1@huawei.com>
+Reviewed-by: Khem Raj <raj.khem@gmail.com>
+Signed-off-by: David Oberhollenzer <david.oberhollenzer@sigma-star.at>
+---
+ ubifs-utils/libubifs/ubifs.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/ubifs-utils/libubifs/ubifs.h b/ubifs-utils/libubifs/ubifs.h
+index 0908a22..1c7bc7b 100644
+--- a/ubifs-utils/libubifs/ubifs.h
++++ b/ubifs-utils/libubifs/ubifs.h
+@@ -11,6 +11,7 @@
+ #ifndef __UBIFS_H__
+ #define __UBIFS_H__
+ 
++#include <fcntl.h>
+ #include <string.h>
+ 
+ #include "linux_types.h"
+-- 
+2.50.0
+
+
+From 173f9714c8da1d685bfa951d43b9310d16bbab3c Mon Sep 17 00:00:00 2001
+From: Fabio Estevam <festevam@gmail.com>
+Date: Wed, 19 Feb 2025 10:02:42 -0300
+Subject: [PATCH 6/7] ubifs-utils: journal: Include <sys/stat.h>
+
+Include the <sys/stat.h> header file to fix the following error
+when building with musl:
+
+| ../git/ubifs-utils/libubifs/journal.c: In function 'ubifs_get_dent_type':
+| ../git/ubifs-utils/libubifs/journal.c:414:24: error: 'S_IFMT' undeclared (first use in this function)
+|   414 |         switch (mode & S_IFMT) {
+|       |                        ^~~~~~
+| ../git/ubifs-utils/libubifs/journal.c:414:24: note: each undeclared identifier is reported only once for each function it appears in
+| ../git/ubifs-utils/libubifs/journal.c:415:14: error: 'S_IFREG' undeclared (first use in this function)
+|   415 |         case S_IFREG:
+
+Signed-off-by: Fabio Estevam <festevam@gmail.com>
+Reviewed-by: Zhihao Cheng <chengzhihao1@huawei.com>
+Signed-off-by: David Oberhollenzer <david.oberhollenzer@sigma-star.at>
+---
+ ubifs-utils/libubifs/journal.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/ubifs-utils/libubifs/journal.c b/ubifs-utils/libubifs/journal.c
+index e78ea14..45d82fd 100644
+--- a/ubifs-utils/libubifs/journal.c
++++ b/ubifs-utils/libubifs/journal.c
+@@ -46,6 +46,7 @@
+  * all the nodes.
+  */
+ 
++#include <sys/stat.h>
+ #include "bitops.h"
+ #include "kmem.h"
+ #include "ubifs.h"
+-- 
+2.50.0
+
+
+From 77981a2888c711268b0e7f32af6af159c2288e23 Mon Sep 17 00:00:00 2001
+From: Fabio Estevam <festevam@gmail.com>
+Date: Wed, 19 Feb 2025 10:02:44 -0300
+Subject: [PATCH 7/7] ubifs-utils: extract_files: Include <linux/limits.h>
+
+Include <linux/limits.h> to fix the following build error when building
+with musl:
+
+| ../git/ubifs-utils/fsck.ubifs/extract_files.c: In function 'parse_ino_node':
+| ../git/ubifs-utils/fsck.ubifs/extract_files.c:144:47: error: 'XATTR_LIST_MAX' undeclared (first use in this function)
+|   144 |         if (ino_node->xnms + ino_node->xcnt > XATTR_LIST_MAX) {
+|       |                                               ^~~~~~~~~~~~~~
+| ../git/ubifs-utils/fsck.ubifs/extract_files.c:144:47: note: each undeclared identifier is reported only once for each function it appears in
+| make: *** [Makefile:4374: ubifs-utils/fsck.ubifs/fsck_ubifs-extract_files.o] Error 1
+
+Signed-off-by: Fabio Estevam <festevam@gmail.com>
+Reviewed-by: Zhihao Cheng <chengzhihao1@huawei.com>
+Signed-off-by: David Oberhollenzer <david.oberhollenzer@sigma-star.at>
+---
+ ubifs-utils/fsck.ubifs/extract_files.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/ubifs-utils/fsck.ubifs/extract_files.c b/ubifs-utils/fsck.ubifs/extract_files.c
+index c83d377..000ef5d 100644
+--- a/ubifs-utils/fsck.ubifs/extract_files.c
++++ b/ubifs-utils/fsck.ubifs/extract_files.c
+@@ -10,6 +10,8 @@
+ #include <getopt.h>
+ #include <sys/stat.h>
+ 
++#include <linux/limits.h>
++
+ #include "linux_err.h"
+ #include "bitops.h"
+ #include "kmem.h"
+-- 
+2.50.0
+
