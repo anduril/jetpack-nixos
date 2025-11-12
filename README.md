@@ -1,6 +1,7 @@
 # NixOS module for NVIDIA Jetson devices
 
 This repository packages components from NVIDIA's [JetPack SDK](https://developer.nvidia.com/embedded/jetpack) for use with NixOS, including:
+
  * Platform firmware flashing scripts
  * Linux kernel from NVIDIA for JetPack which includes some open-source drivers like nvgpu
  * An [EDK2-based UEFI firmware](https://github.com/NVIDIA/edk2-nvidia)
