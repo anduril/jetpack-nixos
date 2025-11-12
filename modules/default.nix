@@ -389,7 +389,7 @@ in
         l4t-firmware
       ] ++ lib.optionals pkgs.config.cudaSupport [
         cudaPackages.vpi-firmware # Optional, but needed for pva_auth_allowlist firmware file used by VPI2
-      ] ++ lib.optionals (l4tOlder "36") [
+      ] ++ lib.optionals (l4tOlder "38") [
         l4t-xusb-firmware # usb firmware also present in linux-firmware package, but that package is huge and has much more than needed
       ];
 
