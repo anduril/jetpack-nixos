@@ -1,4 +1,5 @@
 { l4tMajorMinorPatchVersion
+, cmake
 , dockerTools
 , writeShellScriptBin
 , lib
@@ -55,6 +56,43 @@ let
         ];
 
         config.Cmd = [ "bash" "-c" "make -C ${extraPrefix}/Samples/1_Utilities/deviceQuery && ${extraPrefix}/Samples/1_Utilities/deviceQuery/deviceQuery" ];
+      };
+    "38" =
+      let
+        cuda-samples = fetchFromGitHub {
+          owner = "NVIDIA";
+          repo = "cuda-samples";
+          tag = "v13.0";
+          hash = "sha256-bOcAE/OzOI6MWTh+bFZfq1en6Yawu+HI8W+xK+XaCqg=";
+        };
+
+        extraPrefix = "/share";
+      in
+      dockerTools.buildImage {
+        name = "l4t-jetpack-with-samples";
+
+        fromImage = dockerTools.pullImage {
+          imageName = "nvcr.io/nvidia/l4t-jetpack";
+          os = "linux";
+          arch = "arm64";
+          imageDigest = "sha256:34ccf0f3b63c6da9eee45f2e79de9bf7fdf3beda9abfd72bbf285ae9d40bb673";
+          finalImageTag = "r36.4.0";
+          sha256 = "sha256-+5+GRmyCl2ZcdYIJHU5snuFzEx1QkZic9bhtx9ZjXeo=";
+        };
+
+        copyToRoot = [
+          (buildEnv {
+            name = "cuda-samples-fhs";
+            paths = [ cuda-samples ];
+            inherit extraPrefix;
+          })
+          (buildEnv {
+            name = "cmake-fhs";
+            paths = [ cmake ];
+          })
+        ];
+
+        config.Cmd = [ "bash" "-c" "cd ${extraPrefix}/Samples/1_Utilities/deviceQuery && cmake . && make && ./deviceQuery" ];
       };
   }.${lib.versions.major l4tMajorMinorPatchVersion};
 in
