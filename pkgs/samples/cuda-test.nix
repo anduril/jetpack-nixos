@@ -1,5 +1,4 @@
-{ cuda-samples
-, cudaPackages
+{ cudaPackages
 , lib
 , writeShellApplication
 }:
@@ -12,7 +11,7 @@ writeShellApplication {
       ${lib.optionalString (cudaPackages.cudaOlder "13") "bandwidthTest"}
     )
     for binary in "''${BINARIES[@]}"; do
-      real="$(find ${cuda-samples} -type f -name "$binary")"
+      real="$(find ${cudaPackages.cuda-samples} -type f -name "$binary")"
       echo " * Running $real"
       # clock_nvrtc expects .cu files under $PWD/data
       pushd "$(dirname "$real")" && "$real" && popd
