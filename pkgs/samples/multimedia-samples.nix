@@ -52,7 +52,6 @@ stdenv.mkDerivation {
     l4t-multimedia
     libdrm
     libglvnd
-    libnvjpeg
     libX11
     opencv
     pango
@@ -60,6 +59,7 @@ stdenv.mkDerivation {
     vulkan-headers
     vulkan-loader
   ] ++ lib.optionals (l4tAtLeast "38") [
+    libnvjpeg
     l4t-video-codec-openrm
     l4t-pva
   ];
