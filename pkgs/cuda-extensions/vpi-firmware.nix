@@ -1,17 +1,18 @@
 # Needed for vpi${majorVersion}-samples benchmark w/ pva to work
-{ debs
-, dpkg
+{ dpkg
 , runCommand
-, l4tMajorMinorPatchVersion
+, nvidia-jetpack
 , lib
 ,
 }:
 let
-  majorVersion = {
+  inherit (nvidia-jetpack) l4tMajorMinorPatchVersion debs;
+
+  majorVersion = lib.getAttr (lib.versions.major l4tMajorMinorPatchVersion) {
     "35" = "2";
     "36" = "3";
     "38" = "4";
-  }.${lib.versions.major l4tMajorMinorPatchVersion};
+  };
 in
 runCommand "vpi${majorVersion}-firmware" { nativeBuildInputs = [ dpkg ]; } ''
   dpkg-deb -x ${debs.common."libnvvpi${majorVersion}".src} source

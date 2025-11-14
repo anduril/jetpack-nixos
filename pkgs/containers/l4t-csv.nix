@@ -28,6 +28,11 @@ stdenvNoCC.mkDerivation {
         "devices.csv"
         "drivers.csv"
       ]
+    else if l4tMajorVersion == "38" then
+      [
+        "devices.csv"
+        "drivers.csv"
+      ]
     else
       builtins.throw "unhandled L4T version ${l4tMajorMinorPatchVersion}";
 

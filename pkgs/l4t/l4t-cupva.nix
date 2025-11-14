@@ -8,10 +8,11 @@
 ,
 }:
 let
-  cupvaMajorMinorVersion = {
+  cupvaMajorMinorVersion = lib.getAttr (lib.versions.major l4tMajorMinorPatchVersion) {
     "35" = "2.3";
     "36" = "2.5";
-  }.${lib.versions.major l4tMajorMinorPatchVersion};
+    "38" = "2.6";
+  };
 in
 buildFromDebs {
   pname = "cupva-${cupvaMajorMinorVersion}-l4t";

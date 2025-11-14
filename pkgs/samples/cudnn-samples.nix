@@ -14,10 +14,11 @@ let
     flags
     ;
 
-  cudnnMajorVersion = {
+  cudnnMajorVersion = lib.getAttr cudaMajorVersion {
     "11" = "8";
     "12" = "9";
-  }.${cudaMajorVersion};
+    "13" = "9";
+  };
 in
 stdenv.mkDerivation {
   __structuredAttrs = true;
