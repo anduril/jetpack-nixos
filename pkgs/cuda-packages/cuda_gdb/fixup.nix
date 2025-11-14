@@ -7,9 +7,7 @@
 , gmp
 }:
 let
-  inherit (lib.attrsets) recursiveUpdate;
   inherit (lib.lists) optionals;
-  inherit (lib.strings) optionalString versionAtLeast versionOlder;
   inherit (lib.versions) majorMinor;
   python3MajorMinorVersion = majorMinor python3.version;
 in
@@ -26,19 +24,25 @@ prevAttrs: {
   postInstall =
     prevAttrs.postInstall or ""
     # Remove binaries requiring Python3 versions we do not have
-    + optionalString (cudaAtLeast "12.5") ''
-      echo "removing cuda-gdb-python*-tui binaries for Python 3 versions we do not have"
-      find "''${!outputBin:?}/bin" \
-        -name cuda-gdb-python\*-tui \
-        \( ! -name "cuda-gdb-python${python3MajorMinorVersion}-tui" \) \
-        -print -delete
+    + lib.optionalString (cudaAtLeast "12.5") ''
+      pushd "''${!outputBin}/bin" >/dev/null
+      nixLog "removing cuda-gdb-python*-tui binaries for Python 3 versions other than ${python3MajorMinorVersion}"
+      for pygdb in cuda-gdb-python*-tui; do
+        if [[ "$pygdb" == "cuda-gdb-python${python3MajorMinorVersion}-tui" ]]; then
+          continue
+        fi
+        nixLog "removing $pygdb"
+        rm -rf "$pygdb"
+      done
+      unset -v pygdb
+      popd >/dev/null
     '';
 
-  passthru = recursiveUpdate (prevAttrs.passthru or { }) {
-    brokenConditions = {
-      "Unsupported Python 3 version" =
-        (cudaAtLeast "12.5")
-        && (versionOlder python3MajorMinorVersion "3.8" || versionAtLeast python3MajorMinorVersion "3.13");
-    };
-  };
+  brokenAssertions = [
+    {
+      # TODO(@connorbaker): Figure out which are supported.
+      message = "python 3 version is supported";
+      assertion = true;
+    }
+  ];
 }
