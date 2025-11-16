@@ -20,7 +20,7 @@ in
     (mkIf cfg.enable {
       hardware.nvidia-container-toolkit.enable = mkDefault (
         with config.virtualisation; docker.enable && docker.enableNvidia || podman.enable && podman.enableNvidia
-        );
+      );
     })
     (mkIf config.hardware.nvidia-container-toolkit.enable {
       systemd.services.nvidia-container-toolkit-cdi-generator = {

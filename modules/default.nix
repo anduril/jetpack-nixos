@@ -29,14 +29,14 @@ let
 in
 {
   imports = [
-    # https://developer.ridgerun.com/wiki/index.php/Xavier/JetPack_5.0.2/Performance_Tuning
-    ./nvpmodel.nix
-    ./nvfancontrol.nix
-    ./nvargus-daemon.nix
-    ./flash-script.nix
+    ./cuda.nix
     ./devices.nix
-    ./optee.nix
+    ./flash-script.nix
+    ./nvargus-daemon.nix
+    ./nvfancontrol.nix
     ./nvidia-container-toolkit.nix
+    ./nvpmodel.nix
+    ./optee.nix
   ];
 
   options = {
@@ -52,19 +52,6 @@ in
         default = if lib.hasPrefix "thor" cfg.som then "7" else if cfg.som == "generic" || lib.hasPrefix "orin" cfg.som then "6" else "5";
         type = types.enum jetpackVersions;
         description = "Jetpack major version to use";
-      };
-
-      configureCuda = mkOption {
-        default = config.hardware.graphics.enable;
-        defaultText = "config.hardware.graphics.enable";
-        type = types.bool;
-        description = ''
-          Configures the instance of Nixpkgs used for the system closure for Jetson devices.
-
-          When enabled, Nixpkgs is instantiated with `config.cudaSupport` set to `true`, so all packages
-          are built with CUDA support enabled. Additionally, `config.cudaCapabilities` is set based on the
-          value of `hardware.nvidia-jetpack.som`, producing binaries targeting the specific Jetson SOM.
-        '';
       };
 
       # I get this error when enabling modesetting
@@ -184,54 +171,27 @@ in
 
   config = mkIf cfg.enable (lib.mkMerge [
     {
-      assertions = lib.mkMerge [
-        [
-          {
-            # NixOS provides two main ways to feed a package set into a config:
-            # 1. The options nixpkgs.hostPlatform/nixpkgs.buildPlatform, which are
-            #    used to construct an import of nixpkgs.
-            # 2. The option nixpkgs.pkgs (set by default if you use the pkgs.nixos
-            #    function), which is a pre-configured import of nixpkgs.
-            #
-            # Regardless of how the package set is setup, it _must_ have its
-            # hostPlatform compatible with aarch64 in order to run on the Jetson
-            # platform.
-            assertion = pkgs.stdenv.hostPlatform.isAarch64;
-            message = ''
-              NixOS config has an invalid package set for the Jetson platform. Try
-              setting nixpkgs.hostPlatform to "aarch64-linux" or otherwise using an
-              aarch64-linux compatible package set.
-            '';
-          }
-          (validSomsAssertion "5" [ "xavier" "orin" ])
-          (validSomsAssertion "6" [ "orin" ])
-          (validSomsAssertion "7" [ "thor" ])
-        ]
-        (
-          let
-            inherit (pkgs.cudaPackages) cudaMajorMinorVersion cudaAtLeast cudaOlder;
-          in
-          # If NixOS has been configured with CUDA support, add additional assertions to make sure CUDA packages
-            # being built have a chance of working.
-          lib.mkIf pkgs.config.cudaSupport [
-            {
-              assertion = !cudaOlder "11.4";
-              message = "JetPack NixOS does not support CUDA 11.3 or earlier: `pkgs.cudaPackages` has version ${cudaMajorMinorVersion}.";
-            }
-            {
-              assertion = cfg.majorVersion == "5" -> (cudaAtLeast "11.4" && cudaOlder "12.3");
-              message = "JetPack NixOS 5 supports CUDA 11.4 (natively) - 12.2 (with `cuda_compat`): `pkgs.cudaPackages` has version ${cudaMajorMinorVersion}.";
-            }
-            {
-              assertion = cfg.majorVersion == "6" -> (cudaAtLeast "12.4" && cudaOlder "13.0");
-              message = "JetPack NixOS 6 supports CUDA 12.4 (natively) - 12.9 (with `cuda_compat`): `pkgs.cudaPackages` has version ${cudaMajorMinorVersion}.";
-            }
-            {
-              assertion = !cudaAtLeast "13.0";
-              message = "JetPack NixOS does not support CUDA 13.0 or later: `pkgs.cudaPackages` has version ${cudaMajorMinorVersion}.";
-            }
-          ]
-        )
+      assertions = [
+        {
+          # NixOS provides two main ways to feed a package set into a config:
+          # 1. The options nixpkgs.hostPlatform/nixpkgs.buildPlatform, which are
+          #    used to construct an import of nixpkgs.
+          # 2. The option nixpkgs.pkgs (set by default if you use the pkgs.nixos
+          #    function), which is a pre-configured import of nixpkgs.
+          #
+          # Regardless of how the package set is setup, it _must_ have its
+          # hostPlatform compatible with aarch64 in order to run on the Jetson
+          # platform.
+          assertion = pkgs.stdenv.hostPlatform.isAarch64;
+          message = ''
+            NixOS config has an invalid package set for the Jetson platform. Try
+            setting nixpkgs.hostPlatform to "aarch64-linux" or otherwise using an
+            aarch64-linux compatible package set.
+          '';
+        }
+        (validSomsAssertion "5" [ "xavier" "orin" ])
+        (validSomsAssertion "6" [ "orin" ])
+        (validSomsAssertion "7" [ "thor" ])
       ];
 
       # Use mkOptionDefault so that we prevent conflicting with the priority that
@@ -265,18 +225,6 @@ in
         )
         (import ../overlay-with-config.nix config)
       ];
-
-      # Advertise support for CUDA.
-      nixpkgs.config = mkIf cfg.configureCuda (mkBefore {
-        cudaSupport = true;
-        cudaCapabilities =
-          let
-            isGeneric = cfg.som == "generic";
-            isXavier = lib.hasPrefix "xavier-" cfg.som;
-            isOrin = lib.hasPrefix "orin-" cfg.som;
-          in
-          lib.optionals (isXavier || isGeneric) [ "7.2" ] ++ lib.optionals (isOrin || isGeneric) [ "8.7" ];
-      });
 
       hardware.nvidia-jetpack.console.args = lib.mkMerge [
         (lib.optionals (checkValidSoms [ "xavier" "orin" ]) [
@@ -525,38 +473,6 @@ in
       # Include nv_tegra_release, just so we can tell what version our NixOS machine was built from.
       environment.etc."nv_tegra_release".source = "${pkgs.nvidia-jetpack.l4t-core}/etc/nv_tegra_release";
 
-      # For some unknown reason, the libnvscf.so library has a dlopen call to a hard path:
-      # `/usr/lib/aarch64-linux-gnu/tegra-egl/libEGL_nvidia.so.0`
-      # This causes loading errors for libargus applications and the nvargus-daemon.
-      # Errors will look like this:
-      # SCF: Error NotSupported: Failed to load EGL library
-      # To fix this, create a symlink to the correct EGL library in the above directory.
-      #
-      # An alternative approach would be to wrap the library with an LD_PRELOAD to a dlopen call
-      # that replaces the hardcoded path with the correct path.
-      # However, since dynamic library symbol lookups start with the calling binary,
-      # this override would have to happen at the binary level, which means every binary
-      # would need to be wrapped. This is less desirable than simply adding the following symlink.
-      systemd.services.create-libegl-symlink =
-        let
-          linkEglLib = pkgs.writeShellScriptBin "link-egl-lib" ''
-            ${lib.getExe' pkgs.coreutils "mkdir"} -p /usr/lib/aarch64-linux-gnu/tegra-egl
-            ${lib.getExe' pkgs.coreutils "ln"} -s /run/opengl-driver/lib/libEGL_nvidia.so.0 /usr/lib/aarch64-linux-gnu/tegra-egl/libEGL_nvidia.so.0
-          '';
-        in
-        {
-          enable = cfg.configureCuda;
-          description = "Create a symlink for libEGL_nvidia.so.0 at /usr/lib/aarch64-linux-gnu/tegra-egl/";
-          unitConfig = {
-            ConditionPathExists = "!/usr/lib/aarch64-linux-gnu/tegra-egl/libEGL_nvidia.so.0";
-          };
-          serviceConfig = {
-            type = "oneshot";
-            ExecStart = lib.getExe linkEglLib;
-          };
-          wantedBy = [ "multi-user.target" ];
-        };
-
 
       # https://developer.ridgerun.com/wiki/index.php/Xavier/JetPack_5.0.2/Performance_Tuning
       systemd.services.jetson_clocks = mkIf cfg.maxClock {
@@ -612,20 +528,11 @@ in
         "${pkgs.addDriverRunpath.driverLink}/share/egl/egl_external_platform.d/";
     }
     (lib.mkIf (jetpackAtLeast "6") {
-        hardware.deviceTree.dtbSource = config.boot.kernelPackages.devicetree;
+      hardware.deviceTree.dtbSource = config.boot.kernelPackages.devicetree;
 
-        # Nvidia's jammy kernel has downstream apparmor patches which require "apparmor"
-        # to appear sufficiently early in the `lsm=<list of security modules>` kernel argument
-        security.lsm = lib.mkIf config.security.apparmor.enable (lib.mkBefore [ "apparmor" ]);
-    })
-    (lib.mkIf (lib.hasPrefix "thor" cfg.som) {
-      assertions = [
-        {
-          assertion = !(config.hardware.nvidia-jetpack.configureCuda || pkgs.config.cudaSupport);
-          message = "CUDA 13 support is not available in NixOS 25.05. Please disable CUDA.";
-        }
-      ];
-      hardware.nvidia-jetpack.configureCuda = lib.mkForce false;
+      # Nvidia's jammy kernel has downstream apparmor patches which require "apparmor"
+      # to appear sufficiently early in the `lsm=<list of security modules>` kernel argument
+      security.lsm = lib.mkIf config.security.apparmor.enable (lib.mkBefore [ "apparmor" ]);
     })
   ]);
 }
