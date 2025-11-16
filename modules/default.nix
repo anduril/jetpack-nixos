@@ -32,6 +32,7 @@ in
     ./cuda.nix
     ./devices.nix
     ./flash-script.nix
+    ./graphics.nix
     ./nvargus-daemon.nix
     ./nvfancontrol.nix
     ./nvidia-container-toolkit.nix
@@ -40,11 +41,6 @@ in
   ];
 
   options = {
-    # Allow disabling upstream's NVIDIA modules, which conflict with JetPack NixOS' driver handling.
-    hardware.nvidia.enabled = lib.mkOption {
-      readOnly = false;
-    };
-
     hardware.nvidia-jetpack = {
       enable = mkEnableOption "NVIDIA Jetson device support";
 
@@ -52,15 +48,6 @@ in
         default = if lib.hasPrefix "thor" cfg.som then "7" else if cfg.som == "generic" || lib.hasPrefix "orin" cfg.som then "6" else "5";
         type = types.enum jetpackVersions;
         description = "Jetpack major version to use";
-      };
-
-      # I get this error when enabling modesetting
-      # [   14.243184] NVRM gpumgrGetSomeGpu: Failed to retrieve pGpu - Too early call!.
-      # [   14.243188] NVRM nvAssertFailedNoLog: Assertion failed: NV_FALSE @ gpu_mgr.c:
-      modesetting.enable = mkOption {
-        default = false;
-        type = types.bool;
-        description = "Enable kernel modesetting";
       };
 
       maxClock = mkOption {
@@ -202,7 +189,7 @@ in
       # downstream jetpack-nixos users. This should prevent a situation where a
       # user's overlay is merged before ours and that overlay depends on
       # something defined in our overlay.
-      nixpkgs.overlays = lib.mkBefore [
+      nixpkgs.overlays = mkBefore [
         overlay
         (
           let
@@ -249,7 +236,6 @@ in
         "nvidia.rm_firmware_active=all"
       ]
       ++ lib.optionals cfg.console.enable cfg.console.args
-      ++ lib.optional (lib.hasPrefix "xavier-" cfg.som || cfg.som == "generic") "video=efifb:off" # Disable efifb driver, which crashes Xavier NX and possibly AGX
       ++ lib.optionals (pkgs.nvidia-jetpack.l4tAtLeast "38") [
         "clk_ignore_unused"
       ];
@@ -303,26 +289,13 @@ in
         "algif_skcipher"
       ];
 
-      boot.kernelModules =
-        [ "nvgpu" ]
-        ++ lib.optionals (cfg.modesetting.enable && checkValidSoms [ "xavier" ]) [ "tegra-udrm" ]
-        ++ lib.optionals (cfg.modesetting.enable && checkValidSoms [ "orin" ]) [ "nvidia-drm" ];
+      boot.kernelModules = [ "nvgpu" ];
 
       boot.extraModprobeConfig = lib.optionalString (jetpackAtLeast "6") ''
         options nvgpu devfreq_timer="delayed"
-      '' + lib.optionalString cfg.modesetting.enable ''
-        options tegra-udrm modeset=1
-        options nvidia-drm modeset=1 ${lib.optionalString (cfg.majorVersion == "6") "fbdev=1"}
       '';
 
-      boot.extraModulePackages =
-        # For Orin. Unsupported with PREEMPT_RT.
-        lib.optionals (cfg.majorVersion == "5" && !cfg.kernel.realtime)
-          [ config.boot.kernelPackages.nvidia-display-driver ]
-        ++
-        lib.optionals (jetpackAtLeast "6") [
-          config.boot.kernelPackages.nvidia-oot-modules
-        ];
+      boot.extraModulePackages = lib.optional (jetpackAtLeast "6") config.boot.kernelPackages.nvidia-oot-modules;
 
       hardware.firmware = with pkgs.nvidia-jetpack; [
         l4t-firmware
@@ -364,62 +337,6 @@ in
         ];
       }.${cfg.majorVersion};
 
-      hardware.graphics.package = pkgs.nvidia-jetpack.l4t-3d-core;
-      hardware.graphics.extraPackages =
-        with pkgs.nvidia-jetpack;
-        # l4t-core provides - among others - libnvrm_gpu.so and libnvrm_mem.so.
-        # The l4t-core/lib directory is directly set in the DT_RUNPATH of
-        # l4t-cuda's libcuda.so, thus the standard driver doesn't need them to be
-        # added in ${driverLink}.
-        #
-        # However, this isn't the case for cuda_compat's driver currently, which
-        # is why we're including this derivation in extraPackages.
-        #
-        # To avoid exposing a bunch of other unrelated libraries from l4t-core,
-        # we're wrapping l4t-core in a derivation that only exposes the two
-        # required libraries.
-        #
-        # Those libraries should ideally be directly accessible from the
-        # DT_RUNPATH of cuda_compat's libcuda.so in the same way, but this
-        # requires more integration between upstream Nixpkgs and jetpack-nixos.
-        # When that happens, please remove l4tCoreWrapper below.
-        let
-          l4tCoreWrapper = pkgs.stdenv.mkDerivation {
-            name = "l4t-core-wrapper";
-            phases = [ "installPhase" ];
-            installPhase = ''
-              runHook preInstall
-
-              mkdir -p $out/lib
-              ln -s ${l4t-core}/lib/libnvrm_gpu.so $out/lib/libnvrm_gpu.so
-              ln -s ${l4t-core}/lib/libnvrm_mem.so $out/lib/libnvrm_mem.so
-
-              runHook postInstall
-            '';
-          };
-        in
-        [
-          l4tCoreWrapper
-          l4t-cuda
-          l4t-nvsci # cuda may use nvsci
-          l4t-gbm
-          l4t-wayland
-        ];
-
-      hardware.nvidia = {
-        # The JetPack stack isn't compatible with the upstream NVIDIA modules, which are meant for desktop and
-        # datacenter GPUs. We need to disable them so they do not break our Jetson closures.
-        # NOTE: Yes, they use "enabled" instead of "enable":
-        # https://github.com/NixOS/nixpkgs/blob/ce01daebf8489ba97bd1609d185ea276efdeb121/nixos/modules/hardware/video/nvidia.nix#L27
-        enabled = lib.mkForce false;
-
-        # Since some modules use `hardware.nvidia.package` directly, we must ensure it is set to a reasonable package
-        # to avoid bloating the Jetson closure with drivers for desktop or datacenter GPUs.
-        # As an example, see:
-        # https://github.com/NixOS/nixpkgs/blob/ce01daebf8489ba97bd1609d185ea276efdeb121/nixos/modules/services/hardware/nvidia-container-toolkit/default.nix#L173
-        package = lib.mkForce config.hardware.graphics.package;
-      };
-
       services.udev.packages = [
         (pkgs.runCommand "jetson-udev-rules" { } ''
           install -D -t $out/etc/udev/rules.d ${pkgs.nvidia-jetpack.l4t-init}/etc/udev/rules.d/99-tegra-devices.rules
@@ -435,44 +352,11 @@ in
         '')
       ];
 
-      # Force the driver, since otherwise the fbdev or modesetting X11 drivers
-      # may be used, which don't work and can interfere with the correct
-      # selection of GLX drivers.
-      services.xserver.drivers = lib.mkForce (
-        lib.singleton {
-          name = "nvidia";
-          modules = [ pkgs.nvidia-jetpack.l4t-3d-core ];
-          display = true;
-          screenSection = ''
-            Option "AllowEmptyInitialConfiguration" "true"
-          '';
-        }
-      );
-
-      # `videoDrivers` is normally used to populate `drivers`. Since we don't do that, make sure we have `videoDrivers`
-      # contain the string "nvidia", as other modules scan the list to see what functionality to enable.
-      # NOTE: Adding "nvidia" to `videoDrivers` is enough to automatically enable upstream NixOS' NVIDIA modules, since
-      # there is a default driver package (the SBSA driver on aarch64-linux):
-      # https://github.com/NixOS/nixpkgs/blob/ce01daebf8489ba97bd1609d185ea276efdeb121/nixos/modules/hardware/video/nvidia.nix#L8
-      # Those modules would configure the device incorrectly, so we must disable `config.hardware.nvidia` separately.
-      services.xserver.videoDrivers = [ "nvidia" ];
-
-      # If we aren't using modesetting, we won't have a DRM device with the
-      # "master-of-seat" tag, so "loginctl show-seat seat0" reports
-      # "CanGraphical=false" and consequently lightdm doesn't start. We override
-      # that here.
-      services.xserver.displayManager.lightdm.extraConfig =
-        lib.optionalString (!cfg.modesetting.enable)
-          ''
-            logind-check-graphical = false
-          '';
-
       # Used by libjetsonpower.so, which is used by nvfancontrol at least.
       environment.etc."nvpower/libjetsonpower".source = "${pkgs.nvidia-jetpack.l4t-tools}/etc/nvpower/libjetsonpower";
 
       # Include nv_tegra_release, just so we can tell what version our NixOS machine was built from.
       environment.etc."nv_tegra_release".source = "${pkgs.nvidia-jetpack.l4t-core}/etc/nv_tegra_release";
-
 
       # https://developer.ridgerun.com/wiki/index.php/Xavier/JetPack_5.0.2/Performance_Tuning
       systemd.services.jetson_clocks = mkIf cfg.maxClock {
@@ -522,17 +406,13 @@ in
       # Tool to view GPU utilization.
       ++ lib.optionals (l4tAtLeast "36") [ nvidia-smi ]
       ++ lib.optionals (l4tAtLeast "38") [ l4t-bootloader-utils ];
-
-      # Used by libEGL_nvidia.so.0
-      environment.etc."egl/egl_external_platform.d".source =
-        "${pkgs.addDriverRunpath.driverLink}/share/egl/egl_external_platform.d/";
     }
     (lib.mkIf (jetpackAtLeast "6") {
       hardware.deviceTree.dtbSource = config.boot.kernelPackages.devicetree;
 
       # Nvidia's jammy kernel has downstream apparmor patches which require "apparmor"
       # to appear sufficiently early in the `lsm=<list of security modules>` kernel argument
-      security.lsm = lib.mkIf config.security.apparmor.enable (lib.mkBefore [ "apparmor" ]);
+      security.lsm = lib.mkIf config.security.apparmor.enable (mkBefore [ "apparmor" ]);
     })
   ]);
 }
