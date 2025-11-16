@@ -162,8 +162,7 @@
               nsight_systems_host nsight_compute_host;
           }
           # Flashing and board automation scripts _only_ work on x86_64-linux
-          // flashScripts
-          // initrdFlashScripts;
+          // flashScripts;
 
         aarch64-linux = {
           iso_minimal = self.nixosConfigurations.installer_minimal.config.system.build.isoImage;
