@@ -19,16 +19,6 @@ let
 
   jetpackVersions = [ "5" "6" "7" ];
 
-  teeApplications = pkgs.symlinkJoin {
-    name = "tee-applications";
-    paths = cfg.firmware.optee.supplicant.trustedApplications;
-  };
-
-  supplicantPlugins = pkgs.symlinkJoin {
-    name = "tee-supplicant-plugins";
-    paths = cfg.firmware.optee.supplicant.plugins;
-  };
-
   checkValidSoms = soms: cfg.som == "generic" || lib.lists.any (s: lib.hasPrefix s cfg.som) soms;
   validSomsAssertion = majorVersion: soms: {
     assertion = cfg.majorVersion == majorVersion -> checkValidSoms soms;
@@ -45,6 +35,7 @@ in
     ./nvargus-daemon.nix
     ./flash-script.nix
     ./devices.nix
+    ./optee.nix
     (lib.modules.mkRenamedOptionModule [ "hardware" "nvidia-jetpack" "container-toolkit" "enable" ] [ "hardware" "nvidia-container-toolkit" "enable" ])
   ];
 
@@ -613,33 +604,10 @@ in
           wantedBy = [ "multi-user.target" ];
         };
 
-      hardware.nvidia-jetpack.firmware.optee.supplicant.trustedApplications = [ ]
-        ++ lib.optional cfg.firmware.optee.pkcs11Support pkgs.nvidia-jetpack.pkcs11Ta
-        ++ lib.optional cfg.firmware.optee.xtest pkgs.nvidia-jetpack.opteeXtest;
-
-      systemd.services.tee-supplicant =
-        let
-          args = lib.escapeShellArgs (
-            [
-              "--ta-path=${teeApplications}"
-              "--plugin-path=${supplicantPlugins}"
-            ]
-            ++ cfg.firmware.optee.supplicant.extraArgs
-          );
-        in
-        lib.mkIf cfg.firmware.optee.supplicant.enable {
-          description = "Userspace supplicant for OPTEE-OS";
-          serviceConfig = {
-            ExecStart = "${pkgs.nvidia-jetpack.opteeClient}/bin/tee-supplicant ${args}";
-            Restart = "always";
-          };
-          wantedBy = [ "multi-user.target" ];
-        };
-
       environment.systemPackages = with pkgs.nvidia-jetpack; [
         l4t-tools
         otaUtils # Tools for UEFI capsule updates
-      ] ++ lib.optional cfg.firmware.optee.xtest pkgs.nvidia-jetpack.opteeXtest
+      ]
       # Tool to view GPU utilization.
       ++ lib.optionals (l4tAtLeast "36") [ nvidia-smi ]
       ++ lib.optionals (l4tAtLeast "38") [ l4t-bootloader-utils ];

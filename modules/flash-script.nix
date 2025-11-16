@@ -58,9 +58,6 @@ in
     (mkRenamedOptionModule [ "hardware" "nvidia-jetpack" "bootloader" "debugMode" ] [ "hardware" "nvidia-jetpack" "firmware" "uefi" "debugMode" ])
     (mkRenamedOptionModule [ "hardware" "nvidia-jetpack" "bootloader" "errorLevelInfo" ] [ "hardware" "nvidia-jetpack" "firmware" "uefi" "errorLevelInfo" ])
     (mkRenamedOptionModule [ "hardware" "nvidia-jetpack" "bootloader" "edk2NvidiaPatches" ] [ "hardware" "nvidia-jetpack" "firmware" "uefi" "edk2NvidiaPatches" ])
-    (mkRenamedOptionModule [ "hardware" "nvidia-jetpack" "firmware" "optee" "supplicantExtraArgs" ] [ "hardware" "nvidia-jetpack" "firmware" "optee" "supplicant" "extraArgs" ])
-    (mkRenamedOptionModule [ "hardware" "nvidia-jetpack" "firmware" "optee" "trustedApplications" ] [ "hardware" "nvidia-jetpack" "firmware" "optee" "supplicant" "trustedApplications" ])
-    (mkRenamedOptionModule [ "hardware" "nvidia-jetpack" "firmware" "optee" "supplicantPlugins" ] [ "hardware" "nvidia-jetpack" "firmware" "optee" "supplicant" "plugins" ])
   ];
 
   options = {
@@ -209,93 +206,6 @@ in
                 package-set if you need to access something from it.
               '';
             };
-          };
-        };
-
-        optee = {
-          supplicant = {
-            enable = mkEnableOption "tee-supplicant daemon" // { default = true; };
-
-            extraArgs = mkOption {
-              type = types.listOf types.str;
-              default = [ ];
-              description = ''
-                Extra arguments to pass to tee-supplicant.
-              '';
-            };
-
-            trustedApplications = mkOption {
-              type = types.listOf types.package;
-              default = [ ];
-              description = ''
-                Trusted applications that will be loaded into the TEE on
-                supplicant startup.
-              '';
-            };
-
-            plugins = mkOption {
-              type = types.listOf types.package;
-              default = [ ];
-              description = ''
-                A list of packages containing TEE supplicant plugins. TEE
-                supplicant will load each plugin file in the top level of each
-                package on startup.
-              '';
-            };
-          };
-
-          pkcs11Support = mkOption {
-            type = types.bool;
-            default = false;
-            description = ''
-              Adds OP-TEE's PKCS#11 TA.
-            '';
-          };
-
-          xtest = mkOption {
-            type = types.bool;
-            default = false;
-            description = ''
-              Adds OP-TEE's xtest and related TA/Plugins
-            '';
-          };
-
-          patches = mkOption {
-            type = types.listOf types.path;
-            default = [ ];
-          };
-
-          extraMakeFlags = mkOption {
-            type = types.listOf types.str;
-            default = [ ];
-          };
-
-          taPublicKeyFile = mkOption {
-            type = types.nullOr types.path;
-            default = null;
-            description = ''
-              The public key to build into optee OS that will be used for
-              verifying loaded runtime TAs. If not provided, TAs are verified
-              with the public key derived from the private key in optee's
-              source tree.
-            '';
-          };
-
-          coreLogLevel = mkOption {
-            type = types.int;
-            default = 2;
-            description = ''
-              OP-TEE core log level, corresponds to CFG_TEE_CORE_LOG_LEVEL
-            '';
-          };
-
-          taLogLevel = mkOption {
-            type = types.int;
-            default = cfg.firmware.optee.coreLogLevel;
-            defaultText = "hardware.nvidia-jetpack.firmware.optee.coreLogLevel";
-            description = ''
-              OP-TEE trusted application log level, corresponds to CFG_TEE_TA_LOG_LEVEL
-            '';
           };
         };
 
