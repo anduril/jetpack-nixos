@@ -15,4 +15,4 @@ jobs:
         uses: actions/checkout@v3
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
-      - run: nix flake check --print-build-logs --override-input nixpkgs github:nixos/nixpkgs
+      - run: nix flake check --print-build-logs --override-input nixpkgs github:nixos/nixpkgs --no-build
