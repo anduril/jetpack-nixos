@@ -71,20 +71,41 @@
         { som = "xavier-nx-emmc"; carrierBoard = "devkit"; }
       ]);
 
-      supportedNixOSConfigurations = lib.mapAttrs
-        (n: c: (nixpkgs.lib.nixosSystem {
-          modules = [
-            aarch64_cross_config
-            self.nixosModules.default
-            {
-              hardware.nvidia-jetpack = { enable = true; } // c;
-              networking.hostName = "${c.som}-${c.carrierBoard}"; # Just so it sets the flash binary name.
-              hardware.graphics.enable = true;
+      commonModules = [
+        self.nixosModules.default
+        {
+          nixpkgs.config.allowUnfree = true;
+          hardware.graphics.enable = true;
+          # Just set these options to make the toplevel system evaluate without assertion errors
+          fileSystems."/".fsType = "tmpfs";
+          boot.loader.grub.enable = false;
+          boot.loader.systemd-boot.enable = false;
+        }
+      ];
 
-              # Just set these options to make the toplevel system evaluate without assertion errors
-              fileSystems."/".fsType = "tmpfs";
-              boot.loader.grub.enable = false;
-              boot.loader.systemd-boot.enable = false;
+      supportedNixOSConfigurations = lib.mapAttrs
+        (name: cfg: (nixpkgs.lib.nixosSystem {
+          modules = commonModules ++ [
+            aarch64_config
+            {
+              hardware.nvidia-jetpack = { enable = true; } // cfg;
+              networking.hostName = name;
+            }
+          ];
+        }))
+        supportedConfigurations;
+
+      supportedNixOSCrossConfigurations = lib.mapAttrs
+        (name: cfg: (nixpkgs.lib.nixosSystem {
+          modules = commonModules ++ [
+            aarch64_cross_config
+            {
+              hardware.nvidia-jetpack = {
+                enable = true;
+                # Cross-compilation isn't currently supported for cuda packages upstream, and causes an huge evluation slowdown.
+                configureCuda = false;
+              } // cfg;
+              networking.hostName = "${name}-cross";
             }
           ];
         }))
@@ -110,7 +131,8 @@
         installer_minimal_cross_jp7 = nixpkgs.lib.nixosSystem {
           modules = [ aarch64_cross_config installer_minimal_config jetpack7_config ];
         };
-      } // supportedNixOSConfigurations;
+      }
+      // supportedNixOSConfigurations;
 
       nixosModules.default = import ./modules/default.nix self.overlays.default;
 
@@ -126,9 +148,8 @@
       packages = {
         x86_64-linux =
           let
-            flashScripts = lib.mapAttrs' (n: c: lib.nameValuePair "flash-${n}" c.config.system.build.flashScript) supportedNixOSConfigurations;
-            initrdFlashScripts = lib.mapAttrs' (n: c: lib.nameValuePair "initrd-flash-${n}" c.config.system.build.initrdFlashScript) supportedNixOSConfigurations;
-            uefiCapsuleUpdates = lib.mapAttrs' (n: c: lib.nameValuePair "uefi-capsule-update-${n}" c.config.system.build.uefiCapsuleUpdate) supportedNixOSConfigurations;
+            flashScripts = lib.mapAttrs' (n: c: lib.nameValuePair "flash-${n}" c.config.system.build.flashScript) supportedNixOSCrossConfigurations;
+            initrdFlashScripts = lib.mapAttrs' (n: c: lib.nameValuePair "initrd-flash-${n}" c.config.system.build.initrdFlashScript) supportedNixOSCrossConfigurations;
           in
           {
             iso_minimal = self.nixosConfigurations.installer_minimal_cross.config.system.build.isoImage;
@@ -142,8 +163,7 @@
           }
           # Flashing and board automation scripts _only_ work on x86_64-linux
           // flashScripts
-          // initrdFlashScripts
-          // uefiCapsuleUpdates;
+          // initrdFlashScripts;
 
         aarch64-linux = {
           iso_minimal = self.nixosConfigurations.installer_minimal.config.system.build.isoImage;
