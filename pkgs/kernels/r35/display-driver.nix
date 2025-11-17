@@ -16,7 +16,7 @@ stdenv.mkDerivation {
 
   setSourceRoot = "sourceRoot=$(echo */nvdisplay)";
 
-  patches = [ ./display-driver-reproducibility-fix.patch ];
+  patches = [ ./display-driver-reproducibility-fix.patch ./0001-conftest-Add-Wno-implicit-function-declaration-and-W.patch ];
 
   nativeBuildInputs = kernel.moduleBuildDependencies;
 
@@ -27,9 +27,6 @@ stdenv.mkDerivation {
   ] ++ lib.optionals ((stdenv.buildPlatform != stdenv.hostPlatform) && stdenv.hostPlatform.isAarch64) [
     "TARGET_ARCH=aarch64"
   ];
-
-  # Avoid an error in modpost: "__stack_chk_guard" [.../nvidia.ko] undefined
-  NIX_CFLAGS_COMPILE = "-fno-stack-protector -Wno-implicit-function-declaration";
 
   installTargets = [ "modules_install" ];
   enableParallelBuilding = true;
