@@ -1,0 +1,30 @@
+From 003b49cbb9dca585137b6f5547c9e597dd38cacd Mon Sep 17 00:00:00 2001
+From: Elliot Berman <eberman@anduril.com>
+Date: Mon, 17 Nov 2025 10:23:20 -0800
+Subject: [PATCH] conftest: Add -Wno-implicit-function-declaration and
+ -Wno-strict-prototypes
+
+The function presence tests should fail.
+
+Signed-off-by: Elliot Berman <eberman@anduril.com>
+---
+ kernel-open/conftest.sh | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/kernel-open/conftest.sh b/kernel-open/conftest.sh
+index 5c00771..5ba2226 100755
+--- a/kernel-open/conftest.sh
++++ b/kernel-open/conftest.sh
+@@ -190,7 +190,8 @@ test_headers() {
+ build_cflags() {
+     BASE_CFLAGS="-O2 -D__KERNEL__ \
+ -DKBUILD_BASENAME=\"#conftest$$\" -DKBUILD_MODNAME=\"#conftest$$\" \
+--nostdinc -isystem $ISYSTEM"
++-nostdinc -isystem $ISYSTEM \
++-Wno-error=implicit-function-declaration -Wno-strict-prototypes"
+ 
+     if [ "$OUTPUT" != "$SOURCES" ]; then
+         OUTPUT_CFLAGS="-I$OUTPUT/include2 -I$OUTPUT/include"
+-- 
+2.50.1
+
