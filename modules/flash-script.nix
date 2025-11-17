@@ -1,4 +1,4 @@
-{ config, pkgs, lib, utils, ... }:
+{ config, pkgs, lib, ... }:
 
 # Convenience package that allows you to set options for the flash script using the NixOS module system.
 # You could do the overrides yourself if you'd prefer.
@@ -9,65 +9,18 @@ let
     types;
 
   cfg = config.hardware.nvidia-jetpack;
-
-  canUpdateFirmware = cfg.firmware.autoUpdate && cfg.som != "generic" && cfg.flashScriptOverrides.targetBoard != null;
-
-  updateFirmware = pkgs.writeShellApplication {
-    name = "update-jetson-firmware";
-    runtimeInputs = [ pkgs.coreutils config.systemd.package pkgs.nvidia-jetpack.otaUtils ];
-    text = ''
-      # If this script is not run on real hardware, don't attempt to perform an
-      # update. This script could potentially run in a few places, for example
-      # in <nixpkgs/nixos/lib/make-disk-image.nix>.
-      if systemd-detect-virt --quiet; then
-        echo "Skipping Jetson firmware update because we've detected we are in a virtualized environment."
-        exit 0
-      fi
-
-      if [[ -v JETPACK_NIXOS_SKIP_CAPSULE_UPDATE ]]; then
-        echo "Skipping Jetson firmware update because JETPACK_NIXOS_SKIP_CAPSULE_UPDATE is set"
-        exit 0
-      fi
-
-      # Jetpack 5.0 didn't expose this DMI variable,
-      if [[ ! -f /sys/devices/virtual/dmi/id/bios_version ]]; then
-        echo "Unable to determine current Jetson firmware version."
-        echo "You should reflash the firmware with the new version to ensure compatibility"
-        exit 1
-      fi
-
-      if ! ota-check-firmware -b; then
-        # Set efi vars here as well as in systemd service, in case we're
-        # upgrading from an older nixos generation that doesn't have the
-        # systemd service. Plus, this ota-setup-efivars will be from the
-        # generation we're switching to, which can contain additional
-        # fixes/improvements.
-        ota-setup-efivars ${cfg.flashScriptOverrides.targetBoard}
-
-        ota-apply-capsule-update ${pkgs.nvidia-jetpack.uefiCapsuleUpdate}
-      else
-        ota-abort-capsule-update
-      fi
-    '';
-  };
 in
 {
   imports = with lib; [
-    (mkRenamedOptionModule [ "hardware" "nvidia-jetpack" "bootloader" "autoUpdate" ] [ "hardware" "nvidia-jetpack" "firmware" "autoUpdate" ])
     (mkRenamedOptionModule [ "hardware" "nvidia-jetpack" "bootloader" "logo" ] [ "hardware" "nvidia-jetpack" "firmware" "uefi" "logo" ])
     (mkRenamedOptionModule [ "hardware" "nvidia-jetpack" "bootloader" "debugMode" ] [ "hardware" "nvidia-jetpack" "firmware" "uefi" "debugMode" ])
     (mkRenamedOptionModule [ "hardware" "nvidia-jetpack" "bootloader" "errorLevelInfo" ] [ "hardware" "nvidia-jetpack" "firmware" "uefi" "errorLevelInfo" ])
     (mkRenamedOptionModule [ "hardware" "nvidia-jetpack" "bootloader" "edk2NvidiaPatches" ] [ "hardware" "nvidia-jetpack" "firmware" "uefi" "edk2NvidiaPatches" ])
-    (mkRenamedOptionModule [ "hardware" "nvidia-jetpack" "firmware" "optee" "supplicantExtraArgs" ] [ "hardware" "nvidia-jetpack" "firmware" "optee" "supplicant" "extraArgs" ])
-    (mkRenamedOptionModule [ "hardware" "nvidia-jetpack" "firmware" "optee" "trustedApplications" ] [ "hardware" "nvidia-jetpack" "firmware" "optee" "supplicant" "trustedApplications" ])
-    (mkRenamedOptionModule [ "hardware" "nvidia-jetpack" "firmware" "optee" "supplicantPlugins" ] [ "hardware" "nvidia-jetpack" "firmware" "optee" "supplicant" "plugins" ])
   ];
 
   options = {
     hardware.nvidia-jetpack = {
       firmware = {
-        autoUpdate = lib.mkEnableOption "automatic updates for Jetson firmware";
-
         bootOrder = mkOption {
           # https://github.com/NVIDIA/edk2-nvidia/blob/71fc2f6de48f3e9f01214b4e9464dd03620b876b/Silicon/NVIDIA/Library/PlatformBootOrderLib/PlatformBootOrderLib.c#L26
           type = types.nullOr (types.listOf (types.enum [ "scsi" "usb" "sata" "pxev4" "httpv4" "pxev6" "httpv6" "nvme" "ufs" "sd" "emmc" "cdrom" "boot.img" "virtual" "shell" ]));
@@ -209,93 +162,6 @@ in
                 package-set if you need to access something from it.
               '';
             };
-          };
-        };
-
-        optee = {
-          supplicant = {
-            enable = mkEnableOption "tee-supplicant daemon" // { default = true; };
-
-            extraArgs = mkOption {
-              type = types.listOf types.str;
-              default = [ ];
-              description = ''
-                Extra arguments to pass to tee-supplicant.
-              '';
-            };
-
-            trustedApplications = mkOption {
-              type = types.listOf types.package;
-              default = [ ];
-              description = ''
-                Trusted applications that will be loaded into the TEE on
-                supplicant startup.
-              '';
-            };
-
-            plugins = mkOption {
-              type = types.listOf types.package;
-              default = [ ];
-              description = ''
-                A list of packages containing TEE supplicant plugins. TEE
-                supplicant will load each plugin file in the top level of each
-                package on startup.
-              '';
-            };
-          };
-
-          pkcs11Support = mkOption {
-            type = types.bool;
-            default = false;
-            description = ''
-              Adds OP-TEE's PKCS#11 TA.
-            '';
-          };
-
-          xtest = mkOption {
-            type = types.bool;
-            default = false;
-            description = ''
-              Adds OP-TEE's xtest and related TA/Plugins
-            '';
-          };
-
-          patches = mkOption {
-            type = types.listOf types.path;
-            default = [ ];
-          };
-
-          extraMakeFlags = mkOption {
-            type = types.listOf types.str;
-            default = [ ];
-          };
-
-          taPublicKeyFile = mkOption {
-            type = types.nullOr types.path;
-            default = null;
-            description = ''
-              The public key to build into optee OS that will be used for
-              verifying loaded runtime TAs. If not provided, TAs are verified
-              with the public key derived from the private key in optee's
-              source tree.
-            '';
-          };
-
-          coreLogLevel = mkOption {
-            type = types.int;
-            default = 2;
-            description = ''
-              OP-TEE core log level, corresponds to CFG_TEE_CORE_LOG_LEVEL
-            '';
-          };
-
-          taLogLevel = mkOption {
-            type = types.int;
-            default = cfg.firmware.optee.coreLogLevel;
-            defaultText = "hardware.nvidia-jetpack.firmware.optee.coreLogLevel";
-            description = ''
-              OP-TEE trusted application log level, corresponds to CFG_TEE_TA_LOG_LEVEL
-            '';
           };
         };
 
@@ -558,57 +424,5 @@ in
             ];
           }.${cfg.som}
         )) else lib.mkOptionDefault [ ];
-
-    systemd.services.setup-jetson-efi-variables = lib.mkIf (cfg.flashScriptOverrides.targetBoard != null) {
-      description = "Setup Jetson OTA UEFI variables";
-      wantedBy = [ "multi-user.target" ];
-      after = [ "opt-nvidia-esp.mount" ];
-      serviceConfig.Type = "oneshot";
-      serviceConfig.ExecStart = "${pkgs.nvidia-jetpack.otaUtils}/bin/ota-setup-efivars ${cfg.flashScriptOverrides.targetBoard}";
-    };
-
-    # Include the capsule-on-disk firmware update method with the bootloader
-    # installation process so that firmware updates work with "nixos-rebuild boot".
-    boot.loader = lib.mkIf canUpdateFirmware {
-      systemd-boot.extraInstallCommands = lib.getExe updateFirmware;
-      grub.extraInstallCommands = lib.getExe updateFirmware;
-    };
-
-    systemd.services.firmware-update = lib.mkIf canUpdateFirmware {
-      wantedBy = [ "multi-user.target" ];
-      after = [
-        "${utils.escapeSystemdPath config.boot.loader.efi.efiSysMountPoint}.mount"
-        "opt-nvidia-esp.mount"
-      ];
-      script =
-        # NOTE: Our intention is to not apply any capsule update if the
-        # user's intention is to "test" a new nixos config without having it
-        # persist across reboots. "nixos-rebuild test" does not append a new
-        # generation to /nix/var/nix/profiles for the system profile, so we
-        # can compare that symlink to /run/current-system to see if our
-        # current active config has been persisted as a generation. Note that
-        # this check _may_ break down if not using nixos-rebuild and using
-        # switch-to-configuration directly, however it is well-documented
-        # that a user would need to self-manage their system profile's
-        # generations if switching a system in that manner.
-        lib.optionalString config.system.switch.enable ''
-          if [[ -L /nix/var/nix/profiles/system ]]; then
-            latest_generation=$(readlink -f /nix/var/nix/profiles/system)
-            current_system=$(readlink -f /run/current-system)
-            if [[ $latest_generation == /nix/store* ]] && [[ $latest_generation != "$current_system" ]]; then
-              echo "Skipping capsule update, current active system not persisted to /nix/var/nix/profiles/system"
-              exit 0
-            fi
-          fi
-        '' + ''
-          ${lib.getExe updateFirmware}
-        '';
-    };
-
-    environment.systemPackages = lib.mkIf canUpdateFirmware [
-      (pkgs.writeShellScriptBin "ota-apply-capsule-update-included" ''
-        ${pkgs.nvidia-jetpack.otaUtils}/bin/ota-apply-capsule-update ${pkgs.nvidia-jetpack.uefiCapsuleUpdate}
-      '')
-    ];
   };
 }
