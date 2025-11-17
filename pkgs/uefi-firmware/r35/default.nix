@@ -158,7 +158,7 @@ let
     depsBuildBuild = prev.depsBuildBuild ++ [ libuuid ];
   });
 
-  pythonEnv = buildPackages.python3.withPackages (ps: [ ps.tkinter ]);
+  pythonEnv = buildPackages.python312.withPackages (ps: [ ps.tkinter ]);
   targetArch =
     if stdenv.isi686 then
       "IA32"
