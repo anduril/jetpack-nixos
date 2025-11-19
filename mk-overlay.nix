@@ -230,18 +230,24 @@ makeScope final.newScope (self: {
         cuda_nvprof = finalCudaPackages.cuda_profiler_api;
       };
     in
+    if final.lib.versionAtLeast cudaMajorMinorPatchVersion "13" then
+      final."cudaPackages_${cudaLib.dotsToUnderscores cudaMajorMinorVersion}"
+    else
     # NOTE: We must ensure the scope allows us to draw on the contents of nvidia-jetpack.
-    makeScope pkgs'.nvidia-jetpack.newScope (
-      extends
-        # Add the packages built from debians
-        # NOTE: We do not extend with _cuda.extensions because the JetPack CUDA package sets have a different set of
-        # attributes compared to upstream; we should not expect the overlays provided to work with our package set.
-        (finalCudaPackages: _: packagesFromDirectoryRecursive {
-          directory = ./pkgs/cuda-packages;
-          inherit (finalCudaPackages) callPackage;
-        })
-        passthruFunction
-    );
+      makeScope pkgs'.nvidia-jetpack.newScope (
+        extends
+          (composeManyExtensions [
+            # Add the packages built from debians
+            # NOTE: We do not extend with _cuda.extensions because the JetPack CUDA package sets have a different set of
+            # attributes compared to upstream; we should not expect the overlays provided to work with our package set.
+            (finalCudaPackages: _: packagesFromDirectoryRecursive {
+              directory = ./pkgs/cuda-packages;
+              inherit (finalCudaPackages) callPackage;
+            })
+            (final.callPackage ./pkgs/cuda-extensions { })
+          ])
+          passthruFunction
+      );
 
   samples = makeScope self.newScope (finalSamples: {
     callPackages = callPackagesWith (self // finalSamples);

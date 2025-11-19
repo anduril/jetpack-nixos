@@ -72,7 +72,7 @@ in
     {
       jetpackMajorMinorPatchVersion = "7.0";
       l4tMajorMinorPatchVersion = "38.2.1";
-      cudaMajorMinorPatchVersion = "12.6.10"; #TODO
+      cudaMajorMinorPatchVersion = "13.0.2";
 
       cudaDriverMajorMinorVersion = "580.00";
 
@@ -138,10 +138,19 @@ in
 
   cudaPackages = final.cudaPackages_11;
 
-  # Update _cuda's database with an entry allowing Orin on CUDA 11.4.
-  # NOTE: This can be removed when the minimum supported Nixpkgs version is 25.11,
-  # since the CUDA db will contain these fixes.
-  _cuda = prev._cuda.extend (final: prev: recursiveUpdate prev {
+  # TODO: Remove this once there's an official OpenCV release supporting CUDA 13
+  opencv =
+    if final.cudaPackages.cudaAtLeast "13" then
+      final.nvidia-jetpack.l4t-opencv
+    else
+      prev.opencv;
+
+  _cuda = prev._cuda.extend (_: prev: recursiveUpdate prev {
+    extensions = prev.extensions ++ [ (final.callPackage ./pkgs/cuda-extensions { }) ];
+
+    # Update _cuda's database with an entry allowing Orin on CUDA 11.4.
+    # NOTE: This can be removed when the minimum supported Nixpkgs version is 25.11,
+    # since the CUDA db will contain these fixes.
     bootstrapData.cudaCapabilityToInfo = {
       "7.2" = {
         archName = "Volta";

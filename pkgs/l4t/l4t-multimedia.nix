@@ -11,6 +11,7 @@
 , l4t-cuda
 , l4t-multimedia
 , l4t-nvsci
+, l4tAtLeast
 , l4tOlder
 , lib
 , libv4l
@@ -41,6 +42,9 @@ buildFromDebs {
     debs.${defaultSomDebRepo}.nvidia-l4t-multimedia.src
     debs.${defaultSomDebRepo}.nvidia-l4t-multimedia-utils.src
     debs.common.nvidia-l4t-jetson-multimedia-api.src
+  ] ++ lib.optionals (l4tAtLeast "38") [
+    debs.${defaultSomDebRepo}.nvidia-l4t-multimedia-openrm.src
+    debs.${defaultSomDebRepo}.nvidia-l4t-multimedia-nvgpu.src
   ];
   buildInputs = [ l4t-core l4t-cuda l4t-nvsci pango alsa-lib ] ++ (with gst_all_1; [ gstreamer gst-plugins-base ]);
 

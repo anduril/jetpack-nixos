@@ -274,10 +274,14 @@ in
         "algif_skcipher"
       ];
 
-      boot.kernelModules = [ "nvgpu" ];
+      boot.kernelModules = if (jetpackAtLeast "7") then [ "nvidia-uvm" ] else [ "nvgpu" ];
 
       boot.extraModprobeConfig = lib.optionalString (jetpackAtLeast "6") ''
         options nvgpu devfreq_timer="delayed"
+      '' + lib.optionalString (jetpackAtLeast "7") ''
+        # from L4T-Ubuntu /etc/modprobe.d/nvidia-unifiedgpudisp.conf
+        options nvidia NVreg_RegistryDwords="RMExecuteDevinitOnPmu=0;RMEnableAcr=1;RmCePceMap=0xffffff20;RmCePceMap1=0xffffffff;RmCePceMap2=0xffffffff;RmCePceMap3=0xffffffff;" NVreg_TegraGpuPgMask=512
+        softdep nvidia pre: governor_pod_scaling post: nvidia-uvm
       '';
 
       boot.extraModulePackages = lib.optional (jetpackAtLeast "6") config.boot.kernelPackages.nvidia-oot-modules;
@@ -288,7 +292,15 @@ in
         cudaPackages.vpi-firmware # Optional, but needed for pva_auth_allowlist firmware file used by VPI2
       ] ++ lib.optionals (l4tOlder "38") [
         l4t-xusb-firmware # usb firmware also present in linux-firmware package, but that package is huge and has much more than needed
-      ];
+      ] ++ lib.optionals (l4tAtLeast "38") (
+        let
+          getDriverDebs = prefix: (lib.filter (drv: lib.hasPrefix prefix (drv.pname or "")) (lib.attrValues pkgs.nvidia-jetpack.driverDebs));
+          nvidiaDriverFirmwareDebs = getDriverDebs "nvidia-firmware-";
+        in
+        nvidiaDriverFirmwareDebs ++ [ l4t-firmware-openrm ]
+      );
+
+      boot.blacklistedKernelModules = [ "nouveau" ];
 
       hardware.deviceTree.enable = true;
       hardware.deviceTree.dtboBuildExtraIncludePaths = {
