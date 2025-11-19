@@ -16,12 +16,12 @@ in
     (mkRenamedOptionModule [ "hardware" "nvidia-jetpack" "container-toolkit" "enable" ] [ "hardware" "nvidia-container-toolkit" "enable" ])
   ];
 
-  config = mkMerge [
-    (mkIf cfg.enable {
+  config = mkIf cfg.enable (mkMerge [
+    {
       hardware.nvidia-container-toolkit.enable = mkDefault (
         with config.virtualisation; docker.enable && docker.enableNvidia || podman.enable && podman.enableNvidia
       );
-    })
+    }
     (mkIf config.hardware.nvidia-container-toolkit.enable {
       systemd.services.nvidia-container-toolkit-cdi-generator = {
         # TODO: Upstream waits on `system-udev-settle.service`:
@@ -119,5 +119,5 @@ in
           );
       };
     })
-  ];
+  ]);
 }
