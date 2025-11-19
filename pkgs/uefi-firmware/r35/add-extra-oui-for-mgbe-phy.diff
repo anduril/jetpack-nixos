@@ -1,4 +1,4 @@
-From f9a1482e0620c294b39f6fd0e7f6b00975ee91aa Mon Sep 17 00:00:00 2001
+From dd0c5d21958a6ed5e20ad7f6616df19ea2808fa6 Mon Sep 17 00:00:00 2001
 From: Elliot Berman <eberman@anduril.com>
 Date: Thu, 16 Oct 2025 13:39:09 -0700
 Subject: [PATCH] Add Aquantia AQR113C_B1 OUI
@@ -6,15 +6,15 @@ Subject: [PATCH] Add Aquantia AQR113C_B1 OUI
 - Add support for the Aquantia AQR113 PHY which is functionally identical
 to the AQR113C used on the Nvidia AGX Orin Devkit.
 ---
- Silicon/NVIDIA/Drivers/EqosDeviceDxe/PhyDxeUtil.c | 3 ++-
- Silicon/NVIDIA/Drivers/EqosDeviceDxe/PhyMgbe.h    | 5 +++--
- 2 files changed, 5 insertions(+), 3 deletions(-)
+ Silicon/NVIDIA/Drivers/EqosDeviceDxe/PhyDxeUtil.c | 4 +++-
+ Silicon/NVIDIA/Drivers/EqosDeviceDxe/PhyMgbe.h    | 6 ++++--
+ 2 files changed, 7 insertions(+), 3 deletions(-)
 
 diff --git a/Silicon/NVIDIA/Drivers/EqosDeviceDxe/PhyDxeUtil.c b/Silicon/NVIDIA/Drivers/EqosDeviceDxe/PhyDxeUtil.c
-index dcd49f50..1f56f4e0 100644
+index dcd49f50..d95a078f 100644
 --- a/Silicon/NVIDIA/Drivers/EqosDeviceDxe/PhyDxeUtil.c
 +++ b/Silicon/NVIDIA/Drivers/EqosDeviceDxe/PhyDxeUtil.c
-@@ -242,7 +242,8 @@ PhyConfig (
+@@ -242,8 +242,10 @@ PhyConfig (
        PhyDriver->DetectLink   = PhyMicrelDetectLink;
        break;
  
@@ -22,13 +22,15 @@ index dcd49f50..1f56f4e0 100644
 +    case PHY_AQR113C_B0_OUI:
 +    case PHY_AQR113C_B1_OUI:
      case PHY_AQR113_OUI:
++    case PHY_AQR113_B1_OUI:
        PhyDriver->Config       = PhyMGBEConfig;
        PhyDriver->StartAutoNeg = PhyMGBEStartAutoNeg;
+       PhyDriver->CheckAutoNeg = PhyMGBECheckAutoNeg;
 diff --git a/Silicon/NVIDIA/Drivers/EqosDeviceDxe/PhyMgbe.h b/Silicon/NVIDIA/Drivers/EqosDeviceDxe/PhyMgbe.h
-index 04f0705f..f05e5fea 100644
+index 04f0705f..801ae606 100644
 --- a/Silicon/NVIDIA/Drivers/EqosDeviceDxe/PhyMgbe.h
 +++ b/Silicon/NVIDIA/Drivers/EqosDeviceDxe/PhyMgbe.h
-@@ -9,8 +9,9 @@
+@@ -9,8 +9,10 @@
  #ifndef _PHY_MGBE_H__
  #define _PHY_MGBE_H__
  
@@ -37,6 +39,7 @@ index 04f0705f..f05e5fea 100644
 +#define PHY_AQR113C_B0_OUI  0x31C31C12
 +#define PHY_AQR113C_B1_OUI  0x31C31C13
 +#define PHY_AQR113_OUI      0x31C31C42
++#define PHY_AQR113_B1_OUI   0x31C31C43
  
  /*
   * @brief Configure MGBE PHY
