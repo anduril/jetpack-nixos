@@ -5,6 +5,8 @@
 , l4tAtLeast
 , fetchFromGitHub
 , buildEnv
+, stdenv
+, dlopenOverride
 }:
 # https://docs.nvidia.com/jetson/archives/r36.4.4/DeveloperGuide/SD/TestPlanValidation.html#nvidia-containers
 let
@@ -57,6 +59,48 @@ let
         config.Cmd = [ "bash" "-c" "make -C ${extraPrefix}/Samples/1_Utilities/deviceQuery && ${extraPrefix}/Samples/1_Utilities/deviceQuery/deviceQuery" ];
       };
   }.${lib.versions.major l4tMajorMinorPatchVersion};
+
+  normal = stdenv.mkDerivation {
+    name = "test-app";
+
+    src = ./dlopen-libs;
+
+    buildPhase = ''
+      cc -shared -o lib1.so -fPIC test-lib1.c
+      cc -shared -o lib2.so -fPIC test-lib2.c
+      cc -o main test-app.c -ldl
+    '';
+
+    installPhase = ''
+      install -Dm755 lib1.so "$out"/lib/lib1.so
+      install -Dm755 lib2.so "$out"/lib/lib2.so
+      install -Dm755 main "$out"/bin/main
+    '';
+  };
+
+  override = stdenv.mkDerivation {
+    name = "test-app-override";
+
+    src = ./dlopen-libs;
+
+    buildPhase = ''
+      cc -shared -o lib1.so -fPIC test-lib1.c
+      cc -shared -o lib2.so -fPIC test-lib2.c
+      cc -o main test-app.c -ldl
+    '';
+
+    installPhase = ''
+      install -Dm755 lib1.so "$out"/lib/lib1.so
+      install -Dm755 lib2.so "$out"/lib/lib2.so
+      install -Dm755 main "$out"/bin/main
+    '';
+
+    preFixup = ''
+      postFixupHooks+=('
+        ${ dlopenOverride { "./lib1.so" = "./lib2.so"; } "$out/bin/main" }
+      ')
+    '';
+  };
 in
 {
   oci = writeShellScriptBin "oci-test" ''
@@ -94,5 +138,25 @@ in
 
       echo "finished testing $runtime"
     done
+  '';
+
+  dlopen-override = writeShellScriptBin "dlopen-override-test" ''
+    cd ${normal}/lib
+    output=$(${normal}/bin/main)
+    
+    if [[ $output != "Hello, I am lib1" ]]; then
+      echo "expected Hello, I am lib1 got $output" 
+      exit 1
+    fi
+
+    cd ${override}/lib
+    output=$(${override}/bin/main)
+    
+    if [[ $output != "Hello, I am lib2" ]]; then
+      echo "expected Hello, I am lib2 got $output" 
+      exit 1
+    fi
+
+    echo "dlopen-override is working as expected!"
   '';
 }
