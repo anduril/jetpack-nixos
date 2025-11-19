@@ -40,18 +40,18 @@ find_matching_spec() {
     cur_fuselevel=$(echo "$curspec" | cut -d- -f5)
     cur_chiprev=$(echo "$curspec" | cut -d- -f6)
 
-    if [[ $my_boardid != "" ]] && [[ $cur_boardid != "" ]] && [[ $cur_boardid != "$my_boardid" ]]; then continue; fi
-    if [[ $my_fab != "" ]] && [[ $cur_fab != "" ]] && [[ $cur_fab != "$my_fab" ]]; then continue; fi
-    if [[ $my_boardsku != "" ]] && [[ $cur_boardsku != "" ]] && [[ $cur_boardsku != "$my_boardsku" ]]; then continue; fi
-    if [[ $my_boardrev != "" ]] && [[ $cur_boardrev != "" ]] && [[ $cur_boardrev != "$my_boardrev" ]]; then continue; fi
-    if [[ $my_fuselevel != "" ]] && [[ $cur_fuselevel != "" ]] && [[ $cur_fuselevel != "$my_fuselevel" ]]; then continue; fi
-    if [[ $my_chiprev != "" ]] && [[ $cur_chiprev != "" ]] && [[ $cur_chiprev != "$my_chiprev" ]]; then continue; fi
+    if [[ "$my_boardid" != "" ]] && [[ "$cur_boardid" != "" ]] && [[ "$cur_boardid" != "$my_boardid" ]]; then continue; fi
+    if [[ "$my_fab" != "" ]] && [[ "$cur_fab" != "" ]] && [[ "$cur_fab" != "$my_fab" ]]; then continue; fi
+    if [[ "$my_boardsku" != "" ]] && [[ "$cur_boardsku" != "" ]] && [[ "$cur_boardsku" != "$my_boardsku" ]]; then continue; fi
+    if [[ "$my_boardrev" != "" ]] && [[ "$cur_boardrev" != "" ]] && [[ "$cur_boardrev" != "$my_boardrev" ]]; then continue; fi
+    if [[ "$my_fuselevel" != "" ]] && [[ "$cur_fuselevel" != "" ]] && [[ "$cur_fuselevel" != "$my_fuselevel" ]]; then continue; fi
+    if [[ "$my_chiprev" != "" ]] && [[ "$cur_chiprev" != "" ]] && [[ "$cur_chiprev" != "$my_chiprev" ]]; then continue; fi
 
     matching_boardspec=$curspec
     break
   done
 
-  if [[ -z $matching_boardspec ]]; then
+  if [[ -z "$matching_boardspec" ]]; then
     echo "Could not find a matching boardspec in signed firmware directory for: $boardspec"
     echo "Are you sure you created the right signed firmware for this type of device?"
     exit 1
@@ -65,15 +65,15 @@ program_spi_partition() {
   local part_file="$4"
   local file_size=0
 
-  if [[ -n $part_file ]]; then
+  if [[ -n "$part_file" ]]; then
     file_size=$(stat -c "%s" "$part_file")
-    if [[ -z $file_size ]]; then
+    if [[ -z "$file_size" ]]; then
       echo "ERR: could not retrieve file size of $part_file" >&2
       return 1
     fi
   fi
   report_step "Writing $part_file (size=$file_size) to $partname (offset=$part_offset)"
-  if [[ $file_size != 0 ]]; then
+  if [[ "$file_size" != 0 ]]; then
     if ! mtd_debug write /dev/mtd0 "$part_offset" "$file_size" "$part_file"; then
       return 1
     fi
@@ -90,7 +90,7 @@ program_spi_partition() {
     local curr_offset=$((part_offset + rounded_slot_size))
     local copycount=$((part_size / rounded_slot_size))
     local i=1
-    while [[ $i -lt $copycount ]]; do
+    while [[ "$i" -lt "$copycount" ]]; do
       echo "Writing $part_file to BCT+$i (offset=$curr_offset)"
       if ! mtd_debug write /dev/mtd0 "$curr_offset" "$file_size" "$part_file"; then
         return 1
@@ -110,15 +110,15 @@ program_mmcboot_partition() {
   local file_size=0
   local bootpart="/dev/mmcblk0boot0"
 
-  if [[ -z $BOOTPART_SIZE ]]; then
+  if [[ -z "$BOOTPART_SIZE" ]]; then
     echo "ERR: boot partition size not set" >&2
     return 1
   fi
-  if [[ $part_offset -ge $BOOTPART_SIZE ]]; then
+  if [[ "$part_offset" -ge "$BOOTPART_SIZE" ]]; then
     part_offset=$((part_offset - BOOTPART_SIZE))
     bootpart="/dev/mmcblk0boot1"
   fi
-  if [[ -n $part_file ]]; then
+  if [[ -n "$part_file" ]]; then
     file_size=$(stat -c "%s" "$part_file")
     if [ -z "$file_size" ]; then
       echo "ERR: could not retrieve file size of $part_file" >&2
@@ -126,7 +126,7 @@ program_mmcboot_partition() {
     fi
   fi
   report_step "Writing $part_file (size=$file_size) to $partname on $bootpart (offset=$part_offset)"
-  if [[ $file_size -ne 0 ]]; then
+  if [[ "$file_size" -ne 0 ]]; then
     if ! dd if="$part_file" of="$bootpart" bs=4096 seek="$part_offset" oflag=seek_bytes >/dev/null; then
       return 1
     fi
@@ -137,7 +137,7 @@ program_mmcboot_partition() {
       local curr_offset=$((part_offset + slotsize))
       local copycount=$((part_size / slotsize))
       local i=1
-      while [[ $i -lt $copycount ]]; do
+      while [[ "$i" -lt "$copycount" ]]; do
         echo "Writing $part_file (size=$file_size) to BCT+$i (offset=$curr_offset)"
         if ! dd if="$part_file" of="$bootpart" bs=4096 seek="$curr_offset" oflag=seek_bytes >/dev/null; then
           return 1
@@ -160,9 +160,9 @@ erase_bootdev() {
     partname=$(echo "$partloc" | cut -d':' -f 3)
     # SPI is 3:0
     # eMMC boot blocks (boot0/boot1) are 0:3
-    if [[ $devnum -eq 3 && $instnum -eq 0 ]]; then
+    if [[ "$devnum" -eq 3 && "$instnum" -eq 0 ]]; then
       BOOTDEV_TYPE=spi
-    elif [[ $devnum -eq 0 && $instnum -eq 3 ]]; then
+    elif [[ "$devnum" -eq 0 && "$instnum" -eq 3 ]]; then
       BOOTDEV_TYPE=mmcboot
     fi
   done <flash.idx
@@ -204,22 +204,30 @@ write_partitions() {
     # eMMC user is 1:3
     # SDCard on SoM is 6:0 (Like on Xavier NX dev module)
     # NVMe (any external device) is 9:0
-    if [[ $devnum -eq 3 && $instnum -eq 0 ]]; then
-      if [[ $partfile != "" ]]; then
+    if [[ "$devnum" -eq 3 && "$instnum" -eq 0 ]]; then
+      if [[ "$partfile" != "" ]]; then
         program_spi_partition "$partname" "$start_location" "$partsize" "$partfile"
+      else
+        report_step "Skipping flash.idx entry:$partname (devnum=$devnum, instnum=$instnum) (offset=$start_location)"
       fi
-    elif [[ $devnum -eq 0 && $instnum -eq 3 ]]; then
-      if [[ $partfile != "" ]]; then
+    elif [[ "$devnum" -eq 0 && "$instnum" -eq 3 ]]; then
+      if [[ "$partfile" != "" ]]; then
         program_mmcboot_partition "$partname" "$start_location" "$partsize" "$partfile"
+      else
+        report_step "Skipping flash.idx entry:$partname (devnum=$devnum, instnum=$instnum) (offset=$start_location)"
       fi
-    elif [[ $devnum -eq 1 && $instnum -eq 3 ]] || [[ $devnum -eq 6 && $instnum -eq 0 ]]; then
-      if [[ $partfile != "" ]]; then
+    elif [[ "$devnum" -eq 1 && "$instnum" -eq 3 ]] || [[ "$devnum" -eq 6 && "$instnum" -eq 0 ]]; then
+      if [[ "$partfile" != "" ]]; then
         report_step "Writing $partfile (size=$partsize) to $partname on /dev/mmcblk0 (offset=$start_location)"
         file_size=$(stat -c "%s" "$partfile")
         if ! dd if="$partfile" of="/dev/mmcblk0" bs=4096 seek="$start_location" oflag=seek_bytes >/dev/null; then
           return 1
         fi
+      else
+        report_step "Skipping flash.idx entry:$partname (devnum=$devnum, instnum=$instnum) (offset=$start_location)"
       fi
+    else
+      report_step "Skipping flash.idx entry:$partname (devnum=$devnum, instnum=$instnum) (offset=$start_location)"
     fi
   done <flash.idx
 }
