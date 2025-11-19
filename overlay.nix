@@ -146,7 +146,8 @@ in
       prev.opencv;
 
   _cuda = prev._cuda.extend (_: prev: recursiveUpdate prev {
-    extensions = prev.extensions ++ [ (final.callPackage ./pkgs/cuda-extensions { }) ];
+    extensions = prev.extensions
+      ++ final.lib.optional useJetPackCudaPackageSet (final.callPackage ./pkgs/cuda-extensions { });
 
     # Update _cuda's database with an entry allowing Orin on CUDA 11.4.
     # NOTE: This can be removed when the minimum supported Nixpkgs version is 25.11,
