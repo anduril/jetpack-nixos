@@ -183,6 +183,9 @@
           inherit lib nixpkgs pkgs system;
           overlay = self.overlays.default;
         };
+        dlopenOverride = pkgs.runCommand "dlopen-override-test" { } ''
+          ${lib.getExe self.legacyPackages.${system}.tests.dlopen-override} && touch $out
+        '';
       });
 
       formatter = forAllSystems ({ pkgs, ... }: import ./treefmt.nix pkgs);

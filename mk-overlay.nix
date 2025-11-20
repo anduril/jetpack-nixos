@@ -99,7 +99,7 @@ makeScope final.newScope (self: {
 
   buildFromDebs = final.callPackage ./pkgs/buildFromDebs.nix { inherit (self) debs cudaMajorMinorVersion defaultSomDebRepo; };
 
-  dlopenOverride = final.callPackage ./pkgs/dlopenOverride.nix { };
+  dlopenOverride = final.callPackage ./pkgs/dlopen-override { };
 
   inherit (final.callPackages ./pkgs/uefi-firmware/r${l4tMajorVersion} { inherit (self) l4tMajorMinorPatchVersion; })
     uefi-firmware;
