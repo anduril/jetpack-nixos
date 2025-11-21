@@ -99,6 +99,8 @@ makeScope final.newScope (self: {
 
   buildFromDebs = final.callPackage ./pkgs/buildFromDebs.nix { inherit (self) debs cudaMajorMinorVersion defaultSomDebRepo; };
 
+  dlopenOverride = final.callPackage ./pkgs/dlopen-override { };
+
   inherit (final.callPackages ./pkgs/uefi-firmware/r${l4tMajorVersion} { inherit (self) l4tMajorMinorPatchVersion; })
     uefi-firmware;
 
@@ -256,7 +258,7 @@ makeScope final.newScope (self: {
     inherit (finalSamples) callPackage;
   });
 
-  tests = final.callPackages ./pkgs/tests { inherit l4tMajorMinorPatchVersion l4tAtLeast; };
+  tests = self.callPackages ./pkgs/tests { };
 
   kernelPackagesOverlay = final: _:
     if self.l4tAtLeast "36" then {
