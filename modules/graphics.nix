@@ -35,8 +35,8 @@ in
     boot.kernelParams = lib.optional (checkValidSoms [ "xavier" ]) "video=efifb:off";
 
     boot.kernelModules =
-      lib.optional (cfg.modesetting.enable && checkValidSoms [ "xavier" ]) [ "tegra-udrm" ]
-      ++ lib.optional (cfg.modesetting.enable && checkValidSoms [ "orin" ]) [ "nvidia-drm" ];
+      (lib.optional (cfg.modesetting.enable && checkValidSoms [ "xavier" ]) "tegra-udrm")
+      ++ (lib.optional (cfg.modesetting.enable && checkValidSoms [ "orin" ]) "nvidia-drm");
 
     boot.extraModprobeConfig = lib.optionalString cfg.modesetting.enable ''
       options tegra-udrm modeset=1
