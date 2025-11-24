@@ -43,7 +43,7 @@ generate_compat_spec() {
   # Orin AGX
   3701)
     if [[ "${boardsku}" == "0000" ]]; then
-      if echo "$fab" | egrep -q "^([012][0-9][0-9]|TS|EB)"; then
+      if [[ "${fab}" == "0"* ]] || [[ "${fab}" == "1"* ]] || [[ "${fab}" == "2"* ]] || [[ "${fab}" == "TS"* ]] || [[ "${fab}" == "EB"* ]]; then
         fab="000"
       else
         fab="300"
