@@ -30,14 +30,14 @@
       };
       aarch64_config = {
         nixpkgs = {
-          buildPlatform = "aarch64-linux";
-          hostPlatform = "aarch64-linux";
+          buildPlatform.system = "aarch64-linux";
+          hostPlatform.system = "aarch64-linux";
         };
       };
       aarch64_cross_config = {
         nixpkgs = {
-          buildPlatform = "x86_64-linux";
-          hostPlatform = "aarch64-linux";
+          buildPlatform.system = "x86_64-linux";
+          hostPlatform.system = "aarch64-linux";
         };
       };
       jetpack5_config = {
