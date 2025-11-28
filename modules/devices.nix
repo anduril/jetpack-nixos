@@ -62,7 +62,7 @@ in
     # Set fan control service if we have a config for it
     services.nvfancontrol.configFile = mkIf (nvfancontrolConf ? "${cfg.som}") (mkDefault nvfancontrolConf.${cfg.som});
     # Enable the fan control service if it's a devkit
-    services.nvfancontrol.enable = mkIf (cfg.carrierBoard == "devkit") (mkDefault true);
+    services.nvfancontrol.enable = mkIf (cfg.carrierBoard == "devkit" || cfg.carrierBoard == "xavierNxDevkit") (mkDefault true);
 
     hardware.nvidia-jetpack.flashScriptOverrides =
       let
@@ -116,9 +116,23 @@ in
         })
 
         (mkIf (cfg.som == "orin-nx" || cfg.som == "orin-nano") {
-          targetBoard = mkDefault "jetson-orin-nano-devkit${lib.optionalString cfg.super "-super"}";
-          # Use this instead if you want to use the original Xavier NX Devkit module (p3509-a02)
-          #targetBoard = mkDefault "p3509-a02+p3767-0000";
+          targetBoard =
+            let
+              defaultConf = mkDefault "jetson-orin-nano-devkit${lib.optionalString cfg.super "-super"}";
+              xavierConf =
+                if cfg.majorVersion == "5" then
+                  mkDefault "p3509-a02+p3767-0000"
+                else if cfg.majorVersion == "6" then
+                  mkDefault "p3509-a02-p3767-0000"
+                else
+                  throw "Not supported majorVersion";
+            in
+            {
+              generic = defaultConf;
+              devkit = defaultConf;
+              xavierNxDevkit = xavierConf;
+            }.${cfg.carrierBoard};
+
           partitionTemplate = mkDefault "${pkgs.nvidia-jetpack.bspSrc}/bootloader/${partitionTemplateDirectory}/cfg/flash_t234_qspi.xml";
         })
 
