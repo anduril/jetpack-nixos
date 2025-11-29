@@ -1,9 +1,9 @@
-{ buildFromDebs, debs }:
+{ buildFromDebs, nvidia-jetpack }:
 let
   finalAttrs = {
     pname = "nsight-systems-target";
     version = "2024.5.4";
-    srcs = debs.common."nsight-systems-${finalAttrs.version}".src;
+    srcs = nvidia-jetpack.debs.common."nsight-systems-${finalAttrs.version}".src;
     postPatch = ''
       cp -r "opt/nvidia/nsight-systems/${finalAttrs.version}/target-linux-tegra-armv8" .
       rm -rf opt
