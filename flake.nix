@@ -1,6 +1,6 @@
 {
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.05";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.11";
 
     cuda-legacy = {
       url = "github:nixos-cuda/cuda-legacy";
@@ -201,7 +201,17 @@
               overlays = [ self.overlays.default ];
             });
         in
-        pkgs.nvidia-jetpack // { inherit (pkgs) nvidia-jetpack5 nvidia-jetpack6 nvidia-jetpack7; }
+        pkgs.nvidia-jetpack // {
+          # For JetPack 5, both Xavier and Orin are supported.
+          inherit (pkgs) nvidia-jetpack5;
+          # For JetPack 6, only Orin is supported.
+          inherit (pkgs.pkgsForCudaArch.sm_87) nvidia-jetpack6;
+          # For JetPack 7[^1], only Thor is supported.[^2]
+          # [^1] As of this writing
+          # [^2] Thor being sm_110, not sm_101, as it is referred to in CUDA 12.7[^3]-12.9.
+          # [^3] CUDA 12.7 was never released but is regularly referred to in NVIDIA's documentation.
+          inherit (pkgs.pkgsForCudaArch.sm_110) nvidia-jetpack7;
+        }
       );
     };
 }
