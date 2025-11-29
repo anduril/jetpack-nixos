@@ -2,7 +2,6 @@
 , buildFHSEnv
 , buildFromDebs
 , dbus
-, debs
 , expat
 , fontconfig
 , ncurses5
@@ -10,6 +9,7 @@
 , nsight_compute_target
 , nspr
 , nss
+, nvidia-jetpack
 , qt6
 , stdenv
 , xkeyboard_config
@@ -20,7 +20,7 @@ let
   finalAttrs = {
     pname = "nsight-compute-host";
     inherit (nsight_compute_target) version; # Host must match target.
-    srcs = debs.common."nsight-compute-${finalAttrs.version}".src;
+    srcs = nvidia-jetpack.debs.common."nsight-compute-${finalAttrs.version}".src;
     dontAutoPatchelf = true;
     postPatch =
       let

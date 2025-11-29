@@ -1,11 +1,11 @@
 { buildFromDebs
-, debs
+, nvidia-jetpack
 }:
 let
   finalAttrs = {
     pname = "nsight-compute-target";
     version = "2022.2.1";
-    srcs = debs.common."nsight-compute-${finalAttrs.version}".src;
+    srcs = nvidia-jetpack.debs.common."nsight-compute-${finalAttrs.version}".src;
     postPatch = ''
       # ncu relies on relative folder structure to find sections file so emulate that
       mkdir -p target

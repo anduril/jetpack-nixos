@@ -1,6 +1,6 @@
 {
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.05";
+    nixpkgs.url = "github:nixos/nixpkgs/master";
 
     cuda-legacy = {
       url = "github:nixos-cuda/cuda-legacy";
