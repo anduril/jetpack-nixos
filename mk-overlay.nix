@@ -181,7 +181,22 @@ makeScope final.newScope (self: {
         pkgs = pkgs';
 
         # Use backendStdenv from upstream
-        backendStdenv = finalCudaPackages.callPackage (final.path + "/pkgs/development/cuda-modules/packages/backendStdenv.nix") { };
+        backendStdenv =
+          if versionAtLeast final.lib.trivial.release "25.11" then
+            import (final.path + "/pkgs/development/cuda-modules/backendStdenv")
+              {
+                inherit cudaMajorMinorVersion;
+                inherit (final)
+                  _cuda
+                  config
+                  lib
+                  stdenv
+                  stdenvAdapters
+                  ;
+                pkgs = final;
+              }
+          else
+            finalCudaPackages.callPackage (final.path + "/pkgs/development/cuda-modules/packages/backendStdenv.nix") { };
 
         # Include saxpy as a way to check functionality
         saxpy = finalCudaPackages.callPackage (final.path + "/pkgs/development/cuda-modules/packages/saxpy/package.nix") { };
