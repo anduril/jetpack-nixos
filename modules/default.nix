@@ -288,8 +288,9 @@ in
 
       hardware.firmware = with pkgs.nvidia-jetpack; [
         l4t-firmware
-      ] ++ lib.optionals pkgs.config.cudaSupport [
-        cudaPackages.vpi-firmware # Optional, but needed for pva_auth_allowlist firmware file used by VPI2
+      ] ++ lib.optionals (lib.versionOlder "7" cfg.majorVersion) [
+        # Optional, but needed for pva_auth_allowlist firmware file used by VPI2
+        cudaPackages.vpi-firmware
       ] ++ lib.optionals (l4tOlder "38") [
         l4t-xusb-firmware # usb firmware also present in linux-firmware package, but that package is huge and has much more than needed
       ] ++ lib.optionals (l4tAtLeast "38") (
