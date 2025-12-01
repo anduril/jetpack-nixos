@@ -1,0 +1,15 @@
+name: ci-25.11
+on:
+  workflow_dispatch: # allows manual triggering
+  pull_request:
+    branches:
+      - master
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+      - run: nix flake check --print-build-logs --override-input nixpkgs github:nixos/nixpkgs/nixos-25.11 --no-build
