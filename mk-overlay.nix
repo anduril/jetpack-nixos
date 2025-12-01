@@ -178,6 +178,11 @@ makeScope final.newScope (self: {
         inherit (self) debs buildFromDebs; # NOTE: The presence of debs is used as a condition in construciton of pkgs'.
         debsForSourcePackage = srcPackageName: filter (pkg: (pkg.source or "") == srcPackageName) (attrValues finalCudaPackages.debs.common);
 
+        # The manifests attribute is required to avoid breakages caused by going from a JetPack-provided CUDA package
+        # set to one of upstream Nixpkgs' CUDA package sets, since upstream compares against the manifests attribute.
+        # See: https://github.com/NixOS/nixpkgs/pull/462761.
+        manifests.cuda.release_label = cudaMajorMinorPatchVersion;
+
         pkgs = pkgs';
 
         # Use backendStdenv from upstream
