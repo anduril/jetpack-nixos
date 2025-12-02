@@ -58,11 +58,13 @@ let
     '';
   };
 in
+# We have to clear the dlopen symbol version because when we rename the symbol it holds onto the dlopen's symbol version
 ''
   (
     remapFile=$(mktemp)
     echo dlopen ${dlopenUnique} > $remapFile
     ${lib.getExe buildPackages.patchelfUnstable} ${file} \
+      --clear-symbol-version dlopen \
       --rename-dynamic-symbols "$remapFile" \
       --add-needed ${dlopen}/lib/dlopen-override.so \
       --add-rpath ${dlopen}/lib
