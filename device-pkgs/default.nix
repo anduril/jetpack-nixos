@@ -60,7 +60,7 @@ let
   mkFlashScriptAuto = if useFlashCmd then mkFlashCmdScript else (mkFlashScript nvidia-jetpack.flash-tools);
 
   # Generate a flash script using the built configuration options set in a NixOS configuration
-  flashScript = writeShellApplication {
+  legacyFlashScript = writeShellApplication {
     name = "flash-${hostName}";
     text = (mkFlashScriptAuto { });
     meta.platforms = [ "x86_64-linux" ];
@@ -148,4 +148,4 @@ let
     meta.platforms = [ "x86_64-linux" ];
   };
 in
-{ inherit initrdFlashScript fuseScript rcmBoot; flashScript = initrdFlashScript; } // lib.optionalAttrs (jetpackOlder "7") { inherit flashScript; }
+{ inherit initrdFlashScript legacyFlashScript fuseScript rcmBoot; flashScript = initrdFlashScript; }
