@@ -2,7 +2,6 @@
 , buildFHSEnv
 , buildFromDebs
 , dbus
-, debs
 , expat
 , fontconfig
 , ncurses5
@@ -11,6 +10,7 @@
 , nsightSystemSrcs ? null
 , nspr
 , nss
+, nvidia-jetpack
 , qt6
 , requireFile
 , stdenv
@@ -39,7 +39,7 @@ let
                 '';
               }
           else if stdenv.hostPlatform.system == "aarch64-linux" then
-            debs.common."nsight-systems-${finalAttrs.version}".src
+            nvidia-jetpack.debs.common."nsight-systems-${finalAttrs.version}".src
           else
             throw "Unsupported architecture"
         )
