@@ -110,6 +110,15 @@ in
         '';
       };
 
+      kernel.version = mkOption {
+        type = types.enum [
+          "bsp-default"
+          "upstream-6-6"
+        ];
+        default = "bsp-default";
+        description = "Kernel version";
+      };
+
       kernel.realtime = mkOption {
         default = false;
         type = types.bool;

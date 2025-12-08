@@ -1,13 +1,14 @@
-{ applyPatches
-, bspSrc
-, buildPackages
-, gitRepos
-, kernel
-, l4tMajorMinorPatchVersion
-, lib
-, runCommand
-, stdenv
-, ...
+{
+  applyPatches,
+  bspSrc,
+  buildPackages,
+  gitRepos,
+  kernel,
+  l4tMajorMinorPatchVersion,
+  lib,
+  runCommand,
+  stdenv,
+  ...
 }:
 let
   patchedBsp = applyPatches {
@@ -29,6 +30,7 @@ let
         ./patches/nvidia-oot/0003-Fix-conftest-use-with-gcc15.patch
         ./patches/nvidia-oot/0004-rtl8852e-Fix-conflicting-types.patch
         ./patches/nvidia-oot/0005-Fix-header-guard-in-halfrf_ops_rtl8852c.h.patch
+        ./patches/nvidia-oot/0001-Fix-register_shrinker_has_fmt_arg-conftest.patch
       ];
     };
     nvgpu = gitRepos.nvgpu;
