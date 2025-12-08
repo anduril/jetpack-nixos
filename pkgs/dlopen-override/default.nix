@@ -15,6 +15,11 @@
 # To use this pass rewrites which is an attribute set of the form
 # { oldPath = newPath; }
 # And a file which is just a string to the exact path of the lib
+#
+# Also, we have to clear the dlopen symbol version because when we rename the
+# symbol it holds onto the original dlopen's symbol version (GLIBC_x.yy).
+# This version likely does not match the GLIBC version used to compile
+# dlopenoverride (stdenv.mkDerivation above)
 rewrites: file:
 let
   oldPaths = builtins.attrNames rewrites;
@@ -63,6 +68,7 @@ in
     remapFile=$(mktemp)
     echo dlopen ${dlopenUnique} > $remapFile
     ${lib.getExe buildPackages.patchelfUnstable} ${file} \
+      --clear-symbol-version dlopen \
       --rename-dynamic-symbols "$remapFile" \
       --add-needed ${dlopen}/lib/dlopen-override.so \
       --add-rpath ${dlopen}/lib
