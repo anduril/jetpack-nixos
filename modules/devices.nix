@@ -127,11 +127,10 @@ in
                 else
                   throw "Not supported majorVersion";
             in
-            {
-              generic = defaultConf;
-              devkit = defaultConf;
-              xavierNxDevkit = xavierConf;
-            }.${cfg.carrierBoard};
+            if cfg.carrierBoard == "xavierNxDevkit" then
+              xavierConf
+            else
+              defaultConf;
 
           partitionTemplate = mkDefault "${pkgs.nvidia-jetpack.bspSrc}/bootloader/${partitionTemplateDirectory}/cfg/flash_t234_qspi.xml";
         })
