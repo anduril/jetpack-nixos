@@ -297,7 +297,7 @@ in
 
       hardware.firmware = with pkgs.nvidia-jetpack; [
         l4t-firmware
-      ] ++ lib.optionals (lib.versionOlder "7" cfg.majorVersion) [
+      ] ++ lib.optionals (lib.versionOlder cfg.majorVersion "7") [
         # Optional, but needed for pva_auth_allowlist firmware file used by VPI2
         cudaPackages.vpi-firmware
       ] ++ lib.optionals (l4tOlder "38") [
