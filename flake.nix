@@ -181,10 +181,6 @@
             ${lib.getExe self.formatter.${system}} --fail-on-change --no-cache && touch $out
           '';
         };
-        jetpackSelectionDependsOnCudaVersion = import ./check-jetpack-selection.nix {
-          inherit lib nixpkgs pkgs system;
-          overlay = self.overlays.default;
-        };
         dlopenOverride = pkgs.runCommand "dlopen-override-test" { } ''
           ${lib.getExe self.legacyPackages.${system}.tests.dlopen-override} && touch $out
         '';
