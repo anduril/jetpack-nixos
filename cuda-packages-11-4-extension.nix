@@ -79,11 +79,9 @@ let
         extension = prevAttrs: {
           # There's no stubs available in the Debian installer.
           outputs = filter (output: output != "stubs") prevAttrs.outputs;
-          # Upstream thinks the latter two are only required for CUDA 11.8, which is incorrect.
-          # https://github.com/NixOS/nixpkgs/blob/c30f453905ff1812517361f4a4c793e7a5b04eb1/pkgs/development/cuda-modules/packages/libcudla.nix#L22-L25
-          autoPatchelfIgnoreMissingDeps = prevAttrs.autoPatchelfIgnoreMissingDeps or [ ] ++ [
-            "libcuda.so.1"
-            "libnvdla_runtime.so"
+          buildInputs = [
+            finalCudaPackages.pkgs.nvidia-jetpack.l4t-core # libnvdla_compiler.so and libnvdla_runtime.so
+            finalCudaPackages.pkgs.nvidia-jetpack.l4t-cuda # libcuda.so.1
           ];
         };
       };
