@@ -4,10 +4,10 @@
 , dpkg
 , lib
 , pkg-config
-, stdenv
 }:
 let
   inherit (cudaPackages)
+    backendStdenv
     cuda_nvcc
     cudatoolkit
     cudaAtLeast
@@ -17,7 +17,7 @@ let
 
   cudaVersionDashes = lib.replaceStrings [ "." ] [ "-" ] cudaMajorMinorVersion;
 in
-stdenv.mkDerivation {
+backendStdenv.mkDerivation {
   __structuredAttrs = true;
   strictDeps = true;
 

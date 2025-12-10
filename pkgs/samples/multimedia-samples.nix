@@ -18,7 +18,6 @@
 , opencv
 , pango
 , python3
-, stdenv
 , vulkan-headers
 , vulkan-loader
 , xorg
@@ -26,6 +25,7 @@
 # https://docs.nvidia.com/jetson/l4t-multimedia/group__l4t__mm__test__group.html
 let
   inherit (cudaPackages)
+    backendStdenv
     cuda_nvcc
     cudatoolkit
     libnvjpeg
@@ -33,7 +33,7 @@ let
     ;
   inherit (xorg) libX11;
 in
-stdenv.mkDerivation {
+backendStdenv.mkDerivation {
   __structuredAttrs = true;
   strictDeps = true;
 
