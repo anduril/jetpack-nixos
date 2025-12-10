@@ -138,14 +138,24 @@
 
       nixosModules.default = import ./modules/default.nix self.overlays.default;
 
-      overlays.default = nixpkgs.lib.composeManyExtensions [
-        # We apply cuda-legacy here ourselves instead of making users do this becauase
-        # it is unlikely that users directly care about cuda-legacy as it's something
-        # jetpack-nixos has traditionally supplied.
-        # We apply cuda-legacy first because Connor says so.
-        cuda-legacy.overlays.default
-        (import ./overlay.nix)
-      ];
+      overlays.default = final: prev:
+        # We've already applied our overlay and should not apply it again.
+        # TODO(@connorbaker): Create a general "named overlay" mechanism which provides visibility into which overlays
+        # were applied and the order in which they were applied.
+        if prev."jetpack-nixos-overlay-applied-${self.narHash}" or false then
+          { }
+        else
+          nixpkgs.lib.composeManyExtensions [
+            # We apply cuda-legacy here ourselves instead of making users do this becauase
+            # it is unlikely that users directly care about cuda-legacy as it's something
+            # jetpack-nixos has traditionally supplied.
+            # We apply cuda-legacy first because Connor says so.
+            cuda-legacy.overlays.default
+            (import ./overlay.nix)
+            (_: _: { "jetpack-nixos-overlay-applied-${self.narHash}" = true; })
+          ]
+            final
+            prev;
 
       packages = {
         x86_64-linux =
