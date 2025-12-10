@@ -3,12 +3,12 @@
 , debs
 , dpkg
 , lib
-, stdenv
 }:
 # Contains a bunch of tests for tensorrt, for example:
 # ./result/bin/sample_mnist --datadir=result/data/mnist
 let
   inherit (cudaPackages)
+    backendStdenv
     cuda_cudart
     cuda_nvcc
     cuda_profiler_api
@@ -20,7 +20,7 @@ let
     tensorrt
     ;
 in
-stdenv.mkDerivation {
+backendStdenv.mkDerivation {
   __structuredAttrs = true;
   strictDeps = true;
 
