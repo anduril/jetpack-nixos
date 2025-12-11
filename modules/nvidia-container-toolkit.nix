@@ -24,27 +24,12 @@ in
     }
     (mkIf config.hardware.nvidia-container-toolkit.enable {
       systemd.services.nvidia-container-toolkit-cdi-generator = {
-        # TODO: Upstream waits on `system-udev-settle.service`:
-        # https://github.com/NixOS/nixpkgs/blob/ce01daebf8489ba97bd1609d185ea276efdeb121/nixos/modules/services/hardware/nvidia-container-toolkit/default.nix#L240
-        # That's not recommended; instead we should have udev rules for the devices we care about so we can wait on them specifically.
-        wants = [ "modprobe@nvgpu.service" ];
-        after = [ "modprobe@nvgpu.service" ];
-
-        # TODO: A previous version of this service included the following note:
-        #
-        #  # Wait until all devices are present before generating CDI
-        #  # configuration. Also ensure that we aren't passing any directories
-        #  # or glob patterns to udevadm (Jetpack 6 CSVs seem to add these,
-        #  # though the Jetpack 5 CSVs do not have them).
-        #  udevadm wait --settle --timeout 10 $(find ${pkgs.nvidia-jetpack.l4tCsv}/ -type f -exec grep '/dev/' {} \; | grep -v -e '\*' -e 'by-path' | cut -d',' -f2 | tr -d '\n') || true
-        #
-        # Investigate if globs pose a problem for JetPack 5/6.
-
         # TODO: This should be upstreamed.
         before = mkMerge [
           (mkIf config.virtualisation.docker.enable [ "docker.service" ])
           (mkIf config.virtualisation.podman.enable [ "podman.service" ])
         ];
+        after = [ "nvpmodel.service" ];
       };
 
       hardware.nvidia-container-toolkit = {
