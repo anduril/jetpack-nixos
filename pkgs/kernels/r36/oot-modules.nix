@@ -95,7 +95,7 @@ stdenv.mkDerivation {
     cat **/Module.symvers > $dev/Module.symvers
 
     mkdir -p $dev/include/nvidia
-    install -m 0644 out/nvidia-conftest/nvidia/conftest.h $dev/include/nvidia/
+    cp -r out/nvidia-conftest/nvidia/* $dev/include/nvidia/
   '';
 
   outputs = [
