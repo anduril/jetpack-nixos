@@ -34,6 +34,26 @@ let
       (name: finalCudaPackages.debWrapBuildRedist { drv = prevCudaPackages.${name}; })
     # Some of our packages need a bit more help: typically this involves additional normalization or including more dependencies.
     // {
+      debWrapBuildRedist = import ./pkgs/cuda-packages-11-4/debWrapBuildRedist.nix {
+        inherit (finalCudaPackages) cudaMajorMinorVersion normalizeDebs;
+        inherit (finalCudaPackages.pkgs) lib nvidia-jetpack;
+      };
+
+      normalizeDebs = import ./pkgs/cuda-packages-11-4/normalizeDebs.nix {
+        inherit (finalCudaPackages) cudaMajorMinorVersion;
+        inherit (finalCudaPackages.pkgs) dpkg lib srcOnly stdenvNoCC;
+      };
+
+      cuda-samples = finalCudaPackages.callPackage ./pkgs/cuda-packages-11-4/cuda-samples.nix { };
+
+      nsight_compute_host = finalCudaPackages.callPackage ./pkgs/cuda-packages-11-4/nsight_compute_host.nix { };
+
+      nsight_compute_target = finalCudaPackages.callPackage ./pkgs/cuda-packages-11-4/nsight_compute_target.nix { };
+
+      nsight_systems_host = finalCudaPackages.callPackage ./pkgs/cuda-packages-11-4/nsight_systems_host.nix { };
+
+      nsight_systems_target = finalCudaPackages.callPackage ./pkgs/cuda-packages-11-4/nsight_systems_target.nix { };
+
       cuda_cupti = finalCudaPackages.debWrapBuildRedist {
         drv = prevCudaPackages.cuda_cupti;
         extraDebNormalization = ''
@@ -132,13 +152,7 @@ let
         sourceName = "cuda-thrust";
         drv = prevCudaPackages.cuda_cccl;
       };
-    }
-    # Misc.
-    // lib.packagesFromDirectoryRecursive {
-      inherit (finalCudaPackages) callPackage;
-      directory = ./pkgs/cuda-packages-11-4;
-    }
-    // {
+
       # cuda_nvprof is expected to exist for CUDA versions prior to 11.8.
       # However, JetPack NixOS provides cuda_profiler_api, so just include a reference to that.
       # https://github.com/NixOS/nixpkgs/blob/9cb344e96d5b6918e94e1bca2d9f3ea1e9615545/pkgs/development/python-modules/torch/source/default.nix#L543-L545
