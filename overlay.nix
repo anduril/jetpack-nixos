@@ -125,7 +125,7 @@ in
     if useJetPackCudaPackageSet then
       final.cudaPackages_11_4
     else
-      prev.cudaPackages_11;
+      final.cudaPackages_11_8;
 
   # Override upstream's manifest selection so the version of TensorRT used is consistent
   # NOTE: This needs to stay up to date with:
