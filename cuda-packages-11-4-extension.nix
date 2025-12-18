@@ -2,11 +2,13 @@
 finalCudaPackages: prevCudaPackages:
 let
   inherit (lib)
+    elem
     filter
     genAttrs
     getAttr
     hasAttr
     mapAttrs
+    optionalString
     versions
     ;
 
@@ -24,7 +26,6 @@ let
       "cuda_nvprune"
       "cuda_nvrtc"
       "cuda_nvtx"
-      "cuda_profiler_api"
       "cuda_sanitizer_api"
       "libcublas"
       "libcufft"
@@ -230,6 +231,57 @@ let
         drv = prevCudaPackages.cuda_cccl;
       };
 
+      # NOTE: CUDA 11.4 doesn't provide cuda-profiler-api for x86_64-linux, so we repackage the debian for it.
+      cuda_profiler_api = finalCudaPackages.debWrapBuildRedist {
+        drv = prevCudaPackages.cuda_profiler_api;
+        # Need additional normalization because the CUDA version is different from the one used in the package set.
+        extraDebNormalization = optionalString (system == "x86_64-linux") ''
+          pushd "$NIX_BUILD_TOP/$sourceRoot" >/dev/null
+          mv \
+            --verbose \
+            --no-clobber \
+            --target-directory "$PWD" \
+            "$PWD/local/cuda-11.8/targets/x86_64-linux/include"
+
+          nixLog "removing $PWD/local"
+          rm --recursive --dir "$PWD/local" || {
+            nixErrorLog "$PWD/local contains non-empty directories: $(ls -laR "$PWD/local")"
+            exit 1
+          }
+          popd >/dev/null
+        '';
+        extension = prevAttrs: {
+          src =
+            if system == "x86_64-linux" then
+              prevAttrs.src.override
+                {
+                  pname = "cuda-profiler-api-11-8-debs";
+                  version = "11.8.86";
+                  srcs = [
+                    (finalCudaPackages.pkgs.fetchurl {
+                      sha256 = "755ed6c2583cb70d96d57b84082621f87f9339573b973da91faeacba60ecfeeb";
+                      url = "https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-profiler-api-11-8_11.8.86-1_amd64.deb";
+                    })
+                  ];
+                }
+            else prevAttrs.src;
+
+          version =
+            if system == "x86_64-linux" then
+              "11.8.86"
+            else
+              prevAttrs.version;
+
+          passthru = prevAttrs.passthru // {
+            # Doesn't come from a release manifest.
+            release = null;
+            # Only Jetson devices (pre-Thor) and x86_64-linux are supported.
+            supportedNixSystems = [ "aarch64-linux" "x86_64-linux" ];
+            supportedRedistSystems = [ "linux-aarch64" "linux-x86_64" ];
+          };
+        };
+      };
+
       # cuda_nvprof is expected to exist for CUDA versions prior to 11.8.
       # However, JetPack NixOS provides cuda_profiler_api, so just include a reference to that.
       # https://github.com/NixOS/nixpkgs/blob/9cb344e96d5b6918e94e1bca2d9f3ea1e9615545/pkgs/development/python-modules/torch/source/default.nix#L543-L545
@@ -260,8 +312,8 @@ in
 mapAttrs
   (name: value:
   # To make the extension safe to use, we add new attributes, but pass through all the existing attributes if we are not on the correct system.
-  # The one exception to this is TensorRT, which we also provide, since we package it for both Jetson and x86_64-linux.
-  if !hasAttr name prevCudaPackages || (canUseOurPackageVersion && (name == "tensorrt" || canUseOurPackagePlatform)) then
+  # The two exceptions to this are cuda_profiler_api and TensorRT, which we also provide, since we package it for both Jetson and x86_64-linux.
+  if !hasAttr name prevCudaPackages || (canUseOurPackageVersion && (elem name [ "cuda_profiler_api" "tensorrt" ] || canUseOurPackagePlatform)) then
     value
   else
     getAttr name prevCudaPackages
