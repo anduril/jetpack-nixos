@@ -1,10 +1,12 @@
-{ lib }:
+{ lib, system }:
 finalCudaPackages: prevCudaPackages:
 let
   inherit (lib)
     filter
     genAttrs
-    optionalAttrs
+    getAttr
+    hasAttr
+    mapAttrs
     versions
     ;
 
@@ -106,47 +108,113 @@ let
         };
       };
 
-      tensorrt = finalCudaPackages.debWrapBuildRedist {
-        drv = prevCudaPackages.tensorrt;
-        extraDebNormalization = ''
-          pushd "$NIX_BUILD_TOP/$sourceRoot" >/dev/null
-          mv --verbose --no-clobber "$PWD/src/tensorrt" "$PWD/samples"
-          nixLog "removing $PWD/src"
-          rm --recursive --dir "$PWD/src" || {
-            nixErrorLog "$PWD/src contains non-empty directories: $(ls -laR "$PWD/extras")"
-            exit 1
-          }
+      tensorrt =
+        let
+          fetchTensorRTDeb =
+            { version, variant, baseURL }:
+            packageName: sha256:
+            let
+              suffix = (if packageName == "libnvinfer-samples" then "all" else "amd64") + ".deb";
+            in
+            finalCudaPackages.pkgs.fetchurl {
+              inherit sha256;
+              url = "${baseURL}/${packageName}_${version}-1+${variant}_${suffix}";
+            };
 
-          nixLog "moving trtexec to top-level bin directory"
-          mv --verbose --no-clobber "$PWD/samples/bin" "$PWD/bin"
+          # TODO: JetPack 5 uses TensorRT 8.5.2. Switch the x86_64-linux version to match.
+          x86_64-linux-release = {
+            version = "8.5.3";
 
-          nixLog "creating fake python wheel for buildRedist to remove"
-          mkdir -p "$PWD/python"
-          touch "$PWD/python/DELETE_ME.whl"
+            # Hashes are taken from:
+            # https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/Packages
+            debs = {
+              variant = "cuda11.8";
+              baseURL = "https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64";
+              hashes = {
+                libnvinfer-bin = "096e10ed0f1c942fbb1738a204c39094df2ad0b09e30513272b469b51f35adf2";
+                libnvinfer-dev = "10538b66701a3c376d1df0071b8e6ad65b3303d2391323c64aff952b450758c5";
+                libnvinfer-plugin-dev = "d75f3d1ef74fb79f9fe66d0ddf955c1fdb26422af5eb1d96b9eb0dd51ba20f30";
+                libnvinfer-plugin8 = "bed59dbeafa9beaac6f52b6ec757e2cde935b9c057fa9006a832516feea6d937";
+                libnvinfer-samples = "d69dc07e980387fc66056fcaa8627405586539b77424c00d6dc3331ebb5d6257";
+                libnvinfer8 = "6c9eee023d871613d6dcee07d671fb24a0e2a7e4d6b874fd3a27de0144158314";
+                libnvonnxparsers-dev = "444407ebfd2c3f92b9ce5e463a10cdc5b7a06a13ba9ecb91befb501d7f70e78f";
+                libnvonnxparsers8 = "11175938edd375dde52bca497916417070a642e95db3235ac7bbf646c2023213";
+                libnvparsers-dev = "162d887444c90f054f1c4c391ed1a3b8f78258a612d00515b6c77a3a03a44fd2";
+                libnvparsers8 = "2ecfd6ebfd5065e7871fca5ca9c1f50fb421003a56823a2f56107e104c5d2756";
+              };
+            };
+          };
+        in
+        finalCudaPackages.debWrapBuildRedist {
+          drv = prevCudaPackages.tensorrt;
+          extraDebNormalization = ''
+            pushd "$NIX_BUILD_TOP/$sourceRoot" >/dev/null
+            mv --verbose --no-clobber "$PWD/src/tensorrt" "$PWD/samples"
+            nixLog "removing $PWD/src"
+            rm --recursive --dir "$PWD/src" || {
+              nixErrorLog "$PWD/src contains non-empty directories: $(ls -laR "$PWD/extras")"
+              exit 1
+            }
 
-          nixLog "creating fake stubs directory for buildRedist to remove"
-          mkdir -p "$PWD/lib/stubs"
+            nixLog "moving trtexec to top-level bin directory"
+            mv --verbose --no-clobber "$PWD/samples/bin" "$PWD/bin"
 
-          popd >/dev/null
-        '';
-        extension = prevAttrs: {
-          buildInputs = prevAttrs.buildInputs ++ [
-            finalCudaPackages.cuda_nvrtc # libnvrtc.so and libnvrtc-builtins.so
-            finalCudaPackages.cudnn # libcublas.so.11 and libcublasLt.so.11
-            finalCudaPackages.libcublas # libcudnn.so.8
-          ];
+            nixLog "creating fake python wheel for buildRedist to remove"
+            mkdir -p "$PWD/python"
+            touch "$PWD/python/DELETE_ME.whl"
 
-          postFixup =
-            prevAttrs.prevAttrs or ""
-            + ''
-              nixLog "patchelf-ing ''${!outputLib:?}/lib/libnvinfer.so with runtime dependencies"
-              patchelf \
-                "''${!outputLib:?}/lib/libnvinfer.so" \
-                --add-needed libnvrtc.so \
-                --add-needed libnvrtc-builtins.so
-            '';
+            nixLog "creating fake stubs directory for buildRedist to remove"
+            mkdir -p "$PWD/lib/stubs"
+
+            popd >/dev/null
+          '';
+          extension = prevAttrs: {
+            src =
+              if system == "x86_64-linux" then
+                prevAttrs.src.override
+                  {
+                    pname = "tensorrt-debs";
+                    inherit (x86_64-linux-release) version;
+                    srcs = lib.mapAttrsToList
+                      (fetchTensorRTDeb {
+                        inherit (x86_64-linux-release) version;
+                        inherit (x86_64-linux-release.debs) baseURL variant;
+                      })
+                      x86_64-linux-release.debs.hashes;
+                  }
+              else prevAttrs.src;
+
+            version =
+              if system == "x86_64-linux" then
+                x86_64-linux-release.version
+              else
+                prevAttrs.version;
+
+            buildInputs = prevAttrs.buildInputs ++ [
+              finalCudaPackages.cuda_nvrtc # libnvrtc.so and libnvrtc-builtins.so
+              finalCudaPackages.cudnn # libcublas.so.11 and libcublasLt.so.11
+              finalCudaPackages.libcublas # libcudnn.so.8
+            ];
+
+            postFixup =
+              prevAttrs.prevAttrs or ""
+              + ''
+                nixLog "patchelf-ing ''${!outputLib:?}/lib/libnvinfer.so with runtime dependencies"
+                patchelf \
+                  "''${!outputLib:?}/lib/libnvinfer.so" \
+                  --add-needed libnvrtc.so \
+                  --add-needed libnvrtc-builtins.so
+              '';
+
+            passthru = prevAttrs.passthru // {
+              # Doesn't come from a release manifest.
+              release = null;
+              # Only Jetson devices (pre-Thor) and x86_64-linux are supported.
+              supportedNixSystems = [ "aarch64-linux" "x86_64-linux" ];
+              supportedRedistSystems = [ "linux-aarch64" "linux-x86_64" ];
+            };
+          };
         };
-      };
 
       cuda_cccl = finalCudaPackages.debWrapBuildRedist {
         sourceName = "cuda-thrust";
@@ -176,5 +244,17 @@ let
         };
       });
     };
+
+  canUseOurPackageVersion = finalCudaPackages.cudaMajorMinorVersion == "11.4";
+  canUseOurPackagePlatform = finalCudaPackages.backendStdenv.hostRedistSystem == "linux-aarch64";
 in
-optionalAttrs (prevCudaPackages.cudaMajorMinorVersion == "11.4") newCudaPackages
+mapAttrs
+  (name: value:
+  # To make the extension safe to use, we add new attributes, but pass through all the existing attributes if we are not on the correct system.
+  # The one exception to this is TensorRT, which we also provide, since we package it for both Jetson and x86_64-linux.
+  if !hasAttr name prevCudaPackages || (canUseOurPackageVersion && (name == "tensorrt" || canUseOurPackagePlatform)) then
+    value
+  else
+    getAttr name prevCudaPackages
+  )
+  newCudaPackages
