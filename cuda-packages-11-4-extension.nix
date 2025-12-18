@@ -109,6 +109,7 @@ let
         };
       };
 
+      # NOTE: TensorRT's 8.x series is only available as debian installers. Vendor them here for x86_64-linux.
       tensorrt =
         let
           fetchTensorRTDeb =
@@ -122,9 +123,8 @@ let
               url = "${baseURL}/${packageName}_${version}-1+${variant}_${suffix}";
             };
 
-          # TODO: JetPack 5 uses TensorRT 8.5.2. Switch the x86_64-linux version to match.
           x86_64-linux-release = {
-            version = "8.5.3";
+            version = "8.5.2";
 
             # Hashes are taken from:
             # https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/Packages
@@ -132,16 +132,16 @@ let
               variant = "cuda11.8";
               baseURL = "https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64";
               hashes = {
-                libnvinfer-bin = "096e10ed0f1c942fbb1738a204c39094df2ad0b09e30513272b469b51f35adf2";
-                libnvinfer-dev = "10538b66701a3c376d1df0071b8e6ad65b3303d2391323c64aff952b450758c5";
-                libnvinfer-plugin-dev = "d75f3d1ef74fb79f9fe66d0ddf955c1fdb26422af5eb1d96b9eb0dd51ba20f30";
-                libnvinfer-plugin8 = "bed59dbeafa9beaac6f52b6ec757e2cde935b9c057fa9006a832516feea6d937";
-                libnvinfer-samples = "d69dc07e980387fc66056fcaa8627405586539b77424c00d6dc3331ebb5d6257";
-                libnvinfer8 = "6c9eee023d871613d6dcee07d671fb24a0e2a7e4d6b874fd3a27de0144158314";
-                libnvonnxparsers-dev = "444407ebfd2c3f92b9ce5e463a10cdc5b7a06a13ba9ecb91befb501d7f70e78f";
-                libnvonnxparsers8 = "11175938edd375dde52bca497916417070a642e95db3235ac7bbf646c2023213";
-                libnvparsers-dev = "162d887444c90f054f1c4c391ed1a3b8f78258a612d00515b6c77a3a03a44fd2";
-                libnvparsers8 = "2ecfd6ebfd5065e7871fca5ca9c1f50fb421003a56823a2f56107e104c5d2756";
+                libnvinfer-bin = "73cd5543855ff75b6248f367db6d4b6da1375da106138f2da9bca947fa6b53dc";
+                libnvinfer-dev = "f773240884fd10ec9017d522e460b2c7544757b4509ad88467b37b0ff1a0aa3d";
+                libnvinfer-plugin-dev = "821db031ddd371a0c752b9e67f098c0e0328e0bbae73e27a2c87acdcb55ebfbf";
+                libnvinfer-plugin8 = "157913b7be8773d3357cd4cce19b182f4edcec039bdc0e9789044fa10b0557cc";
+                libnvinfer-samples = "51571904329ee412942b5c9a10f97040c2a98e026af8f3d22902472b11f0646e";
+                libnvinfer8 = "f6f9b2c4a0e525245f9fcb663d7ce278fbc68f139ffb229f33fe9f7639ba9ed0";
+                libnvonnxparsers-dev = "7e1397e200d01fc3dda62aae513e5a561da1bb8392fb7b3a083de6bd66b4a9aa";
+                libnvonnxparsers8 = "5f0bd8c523f2b880382446a73e66a5c3cf35270a6bfb97a10e00d49d03da5ccc";
+                libnvparsers-dev = "a193d525250c3b84c739a2bc9e764d23231e57b8672eda145f27f5805d05737b";
+                libnvparsers8 = "e25ed8290064ab79acdc2da5a71f83fc3f1ce8a76934e36f0186eb1c7e1ba2bb";
               };
             };
           };

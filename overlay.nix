@@ -116,7 +116,8 @@ in
       else
         {
           manifests = prevArgs.manifests // {
-            # Use cuDNN 8.6 and TensorRT 8.5.2 (above) to more closely align with the versions JetPack 5 provides.
+            # Use cuDNN 8.6 to more closely align with the versions JetPack 5 provides.
+            # NOTE: TensorRT is provided for x86_64-linux by our cuda-packages-11-4-extension.nix overlay.
             cudnn = final._cuda.manifests.cudnn."8.6.0";
           };
         });
