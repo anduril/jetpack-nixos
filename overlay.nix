@@ -1,11 +1,6 @@
 final: prev:
 let
-  inherit (final.lib) any optionals;
-
-  # Since Jetson capabilities are never built by default, we can check if any of them were requested
-  # through final.config.cudaCapabilities and use that to determine if we should change some manifest versions.
-  useJetPackCudaPackageSet = final.stdenv.hostPlatform.system == "aarch64-linux" &&
-    any (computeCapability: final._cuda.db.cudaCapabilityToInfo.${computeCapability}.isJetson) (final.config.cudaCapabilities or [ ]);
+  inherit (final.stdenv.hostPlatform) system;
 in
 {
   nvidia-jetpack5 = import ./mk-overlay.nix
@@ -104,28 +99,31 @@ in
     else
       final.nvidia-jetpack7;
 
-  # Set cudaPackage package sets to our JetPack-constructed package sets if we are targeting Jetson capabilities.
-  # NOTE: We cannot lift the conditionals out further without causing infinite recursion, as the fixed-point would be
-  # used to determine the presence/absence of attributes.
-  # NOTE: We only use the JetPack-constructed package sets for CUDA 11.4; Orin and Thor will use upstream's package
-  # sets.
+  # Set cudaPackage package sets to our JetPack-constructed package sets if we are on aarch64-linux. This is strictly
+  # worse than conditioning on Jetson capabilities, but allows us to avoid infinite recursion when depending on the
+  # version of the default CUDA package set. Since non-Jetson ARM platforms aren't supported by the CUDA 11.4 release,
+  # there's no risk of mixing up Jetson and ARM binaries.
   # NOTE: We must use 11.4 because of runtime version-checks in some CUDA libraries (like cuDNN or TensorRT) which fail if
   # we use newer versions of libraries like cuBLAS, even with cuda_compat.
   cudaPackages_11_4 =
-    if useJetPackCudaPackageSet then
-    # Replace manifests with a single entry containing just the release of CUDA.
-    # NOTE: This value must match the value used in construction of nvidia-jetpack5.
-      prev.cudaPackages_11_4.override
+    prev.cudaPackages_11_4.override (prevArgs:
+      if system == "aarch64-linux" then
         {
+          # Replace manifests with a single entry containing just the release of CUDA.
+          # NOTE: This value must match the value used in construction of nvidia-jetpack5.
           manifests.cuda.release_label = "11.4.298";
         }
-    else
-      prev.cudaPackages_11_4;
-  cudaPackages_11 =
-    if useJetPackCudaPackageSet then
-      final.cudaPackages_11_4
-    else
-      final.cudaPackages_11_8;
+      else
+        {
+          manifests = prevArgs.manifests // {
+            # Use cuDNN 8.6 to more closely align with the versions JetPack 5 provides.
+            # NOTE: TensorRT is provided for x86_64-linux by our cuda-packages-11-4-extension.nix overlay.
+            cudnn = final._cuda.manifests.cudnn."8.6.0";
+          };
+        });
+
+  # Use 11.4 as the default CUDA release (sorry ARM SBSA NVIDIA users).
+  cudaPackages_11 = final.cudaPackages_11_4;
 
   # Override upstream's manifest selection so the version of TensorRT used is consistent
   # NOTE: This needs to stay up to date with:
@@ -157,14 +155,13 @@ in
 
   # TODO: Remove this once there's an official OpenCV release supporting CUDA 13
   opencv =
-    if final.cudaPackages.cudaAtLeast "13" && useJetPackCudaPackageSet then
+    if final.cudaPackages.cudaAtLeast "13" && system == "aarch64-linux" then
       final.nvidia-jetpack.l4t-opencv
     else
       prev.opencv;
 
   _cuda = prev._cuda.extend (_: prevCuda: {
-    extensions = prevCuda.extensions
-      ++ optionals useJetPackCudaPackageSet [
+    extensions = prevCuda.extensions ++ [
       # General extensions
       (import ./pkgs/cuda-extensions { inherit (final) lib; })
 
@@ -177,7 +174,7 @@ in
       # For now, we just conditionally apply extensions.
       # Replace CUDA packages from manifests with our own, which are built from debian installers, if we're using
       # CUDA 11.4.
-      (import ./cuda-packages-11-4-extension.nix { inherit (final) lib; })
+      (import ./cuda-packages-11-4-extension.nix { inherit (final) lib; inherit system; })
     ];
   });
 }
