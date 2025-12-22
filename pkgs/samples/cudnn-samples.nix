@@ -3,10 +3,10 @@
 , debs
 , dpkg
 , lib
-, stdenv
 }:
 let
   inherit (cudaPackages)
+    backendStdenv
     cuda_nvcc
     cudatoolkit
     cudnn
@@ -20,7 +20,7 @@ let
     "13" = "9";
   };
 in
-stdenv.mkDerivation {
+backendStdenv.mkDerivation {
   __structuredAttrs = true;
   strictDeps = true;
 
