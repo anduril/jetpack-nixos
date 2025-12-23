@@ -5,7 +5,8 @@ import json
 import os.path
 import sys
 
-# Run like ./gen_l4t_json.py ./l4t.csv ./unpackedDebs
+# nix build .\#nvidia-jetpack.containers.l4t-csv .\#nvidia-jetpack.unpackedDebsFilenames
+# Run like ./gen_l4t_json.py ./l4t.csv ./unpackedDebsFilenames
 
 
 def main():
