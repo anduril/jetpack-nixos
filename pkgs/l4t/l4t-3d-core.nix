@@ -52,5 +52,5 @@ buildFromDebs {
     done
   '';
 
-  appendRunpaths = [ "${placeholder "out"}/lib" libglvnd xorg.libX11 xorg.libXext xorg.libxcb ];
+  appendRunpaths = [ "${placeholder "out"}/lib" ] ++ builtins.map (p: (lib.getLib p) + "/lib") [ libglvnd xorg.libX11 xorg.libXext xorg.libxcb ];
 }
