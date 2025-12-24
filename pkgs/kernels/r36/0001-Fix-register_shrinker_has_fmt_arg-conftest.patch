@@ -1,0 +1,30 @@
+From dccd00f3b73ab66d3090cf8279b1137f31059407 Mon Sep 17 00:00:00 2001
+From: Tanel Dettenborn <tanel.dettenborn@tii.ae>
+Date: Wed, 17 Dec 2025 11:54:27 +0200
+Subject: [PATCH] Fix "register_shrinker_has_fmt_arg"-conftest
+
+Aforesaid conftest error erroneously from kernel 6.0.x to 6.6.x. Error is
+caused by Nix added GCC compiler flag "-Werror=format-security". Commit
+fixes conftest, but other fix could be disabling "format-security"-flag.
+
+Signed-off-by: Tanel Dettenborn <tanel.dettenborn@tii.ae>
+---
+ scripts/conftest/conftest.sh | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/scripts/conftest/conftest.sh b/scripts/conftest/conftest.sh
+index 2346a86e..fa4cc077 100755
+--- a/scripts/conftest/conftest.sh
++++ b/scripts/conftest/conftest.sh
+@@ -7568,7 +7568,7 @@ compile_test() {
+             #include <linux/compiler_attributes.h>
+             #include <linux/shrinker.h>
+             int conftest_register_shrinker_has_fmt_arg(struct shrinker *s, const char *name) {
+-                    return register_shrinker(s, name);
++                    return register_shrinker(s, \"%s\", name);
+             }"
+ 
+             compile_check_conftest "$CODE" "NV_REGISTER_SHRINKER_HAS_FMT_ARG" "" "types"
+-- 
+2.50.1
+

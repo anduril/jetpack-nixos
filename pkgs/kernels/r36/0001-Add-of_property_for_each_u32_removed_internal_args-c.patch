@@ -1,0 +1,93 @@
+From ccea708ddb09b64c83a7b08452e0c81365a49db6 Mon Sep 17 00:00:00 2001
+From: Tanel Dettenborn <tanel.dettenborn@tii.ae>
+Date: Thu, 4 Dec 2025 16:06:45 +0200
+Subject: [PATCH] Add "of_property_for_each_u32_removed_internal_args"-conftest
+
+Compiling fails against 6.6.76 and onward kernels, because internal
+arguments are removed from "of_property_for_each_u32"-macro.
+
+Note: Conftest is ported from "nvidia-oot"-repository.
+
+Signed-off-by: Tanel Dettenborn <tanel.dettenborn@tii.ae>
+---
+ kernel-open/conftest.sh                       | 23 +++++++++++++++++++
+ kernel-open/nvidia/nv-dsi-parse-panel-props.c |  6 +++++
+ kernel-open/nvidia/nvidia.Kbuild              |  1 +
+ 3 files changed, 30 insertions(+)
+
+diff --git a/kernel-open/conftest.sh b/kernel-open/conftest.sh
+index 391374f..7bdd5cb 100644
+--- a/kernel-open/conftest.sh
++++ b/kernel-open/conftest.sh
+@@ -434,6 +434,29 @@ check_for_ib_peer_memory_symbols() {
+ 
+ compile_test() {
+     case "$1" in
++        of_property_for_each_u32_removed_internal_args)
++            #
++            # Determine if the internal arguments for the macro
++            # of_property_for_each_u32() have been removed.
++            #
++            # Commit 9722c3b66e21 ("of: remove internal arguments from
++            # of_property_for_each_u32()") removes two arguments from
++            # of_property_for_each_u32() which are used internally within
++            # the macro and so do not need to be passed. This change was
++            # made for Linux v6.11.
++            #
++            CODE="
++            #include <linux/of.h>
++            void conftest_of_property_for_each_u32(struct device_node *np,
++                                                   char *propname) {
++                u32 val;
++
++                of_property_for_each_u32(np, propname, val);
++            }"
++
++            compile_check_conftest "$CODE" "NV_OF_PROPERTY_FOR_EACH_REMOVED_INTERNAL_ARGS" "" "types"
++        ;;
++
+         set_memory_uc)
+             #
+             # Determine if the set_memory_uc() function is present.
+diff --git a/kernel-open/nvidia/nv-dsi-parse-panel-props.c b/kernel-open/nvidia/nv-dsi-parse-panel-props.c
+index 9ac5866..5ae1e1c 100644
+--- a/kernel-open/nvidia/nv-dsi-parse-panel-props.c
++++ b/kernel-open/nvidia/nv-dsi-parse-panel-props.c
+@@ -290,8 +290,10 @@ static int parse_dsi_properties(const struct device_node *np_dsi, DSI_PANEL_INFO
+ {
+     u32 temp;
+     int ret = 0;
++#if !defined(NV_OF_PROPERTY_FOR_EACH_REMOVED_INTERNAL_ARGS) /* Linux v6.11 */
+     const __be32 *p;
+     struct property *prop;
++#endif
+     struct device_node *np_dsi_panel;
+ 
+     // Get Panel Node from active-panel phandle
+@@ -493,7 +495,11 @@ static int parse_dsi_properties(const struct device_node *np_dsi, DSI_PANEL_INFO
+         "nvidia,dsi-lvds-bridge", &temp))
+         dsi->dsi2lvds_bridge_enable = (bool)temp;
+ 
++#if defined(NV_OF_PROPERTY_FOR_EACH_REMOVED_INTERNAL_ARGS) /* Linux v6.11 */
++    of_property_for_each_u32(np_dsi_panel, "nvidia,dsi-dpd-pads", temp)
++#else
+     of_property_for_each_u32(np_dsi_panel, "nvidia,dsi-dpd-pads", prop, p, temp)
++#endif
+         dsi->dpd_dsi_pads |= (u32)temp;
+ 
+     if (!of_property_read_u32(np_dsi_panel,
+diff --git a/kernel-open/nvidia/nvidia.Kbuild b/kernel-open/nvidia/nvidia.Kbuild
+index c87daf3..295ee86 100644
+--- a/kernel-open/nvidia/nvidia.Kbuild
++++ b/kernel-open/nvidia/nvidia.Kbuild
+@@ -112,6 +112,7 @@ $(obj)/$(NVIDIA_INTERFACE): $(addprefix $(obj)/,$(NVIDIA_OBJECTS))
+ 
+ NV_OBJECTS_DEPEND_ON_CONFTEST += $(NVIDIA_OBJECTS)
+ 
++NV_CONFTEST_FUNCTION_COMPILE_TESTS += of_property_for_each_u32_removed_internal_args
+ NV_CONFTEST_FUNCTION_COMPILE_TESTS += hash__remap_4k_pfn
+ NV_CONFTEST_FUNCTION_COMPILE_TESTS += set_pages_uc
+ NV_CONFTEST_FUNCTION_COMPILE_TESTS += list_is_first
+-- 
+2.50.1
+
