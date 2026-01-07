@@ -273,7 +273,6 @@ in
       boot.initrd.luks.cryptoModules = lib.mkDefault [
         "aes"
         "aes_generic"
-        "twofish"
         "cbc"
         "xts"
         "sha1"
