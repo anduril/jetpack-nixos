@@ -30,7 +30,7 @@ def main():
     filename = f"r{version}-gitrepos.json"
 
     script_contents = open(sys.argv[2]).read()
-    m = re.search(r'^SOURCE_INFO="(.*?)^"$', script_contents, re.MULTILINE | re.DOTALL)
+    m = re.search(r'^\s*SOURCE_INFO="(.*?)^"$', script_contents, re.MULTILINE | re.DOTALL)
 
     if m is None:
         raise Exception("SOURCE_INFO regex did not match")
@@ -47,7 +47,8 @@ def main():
     for line in source_info.split("\n"):
         k, relpath, giturl, _ = line.split(":")
 
-        giturl = "https://" + giturl
+        # We prepend "https://" regardless whether ${GIT_SERVER} is present in the URL
+        giturl = "https://" + giturl.replace("${GIT_SERVER}", "gitlab.com/nvidia/nv-tegra")
 
         if relpath not in data and relpath not in REPOS_TO_SKIP:
             print(f"Checking out {giturl}")
