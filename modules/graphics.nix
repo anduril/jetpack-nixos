@@ -49,44 +49,55 @@ in
 
     hardware.graphics.package = pkgs.nvidia-jetpack.l4t-3d-core;
     hardware.graphics.extraPackages =
-      with pkgs.nvidia-jetpack;
-      # l4t-core provides - among others - libnvrm_gpu.so and libnvrm_mem.so.
-      # The l4t-core/lib directory is directly set in the DT_RUNPATH of
-      # l4t-cuda's libcuda.so, thus the standard driver doesn't need them to be
-      # added in ${driverLink}.
-      #
-      # However, this isn't the case for cuda_compat's driver currently, which
-      # is why we're including this derivation in extraPackages.
-      #
-      # To avoid exposing a bunch of other unrelated libraries from l4t-core,
-      # we're wrapping l4t-core in a derivation that only exposes the two
-      # required libraries.
-      #
-      # Those libraries should ideally be directly accessible from the
-      # DT_RUNPATH of cuda_compat's libcuda.so in the same way, but this
-      # requires more integration between upstream Nixpkgs and jetpack-nixos.
-      # When that happens, please remove l4tCoreWrapper below.
       let
-        l4tCoreWrapper = pkgs.stdenv.mkDerivation {
-          name = "l4t-core-wrapper";
-          phases = [ "installPhase" ];
-          installPhase = ''
-            runHook preInstall
+        # Join and post-process all the other packages providing libs which could be considered part of the driver.
+        jetson-graphics-extra-packages = pkgs.symlinkJoin {
+          name = "jetson-graphics-extra-packages";
+          # Sorted lexicographically to ease insertion of new values.
+          paths =
+            lib.attrValues (lib.intersectAttrs
+              (lib.genAttrs [
+                "l4t-camera"
+                "l4t-core"
+                "l4t-cuda"
+                "l4t-cupva"
+                "l4t-dla-compiler" # JP6+
+                "l4t-gbm"
+                "l4t-multimedia"
+                "l4t-nvml" # JP6+
+                "l4t-nvsci"
+                "l4t-pva"
+                "l4t-wayland"
+              ]
+                (lib.const null))
+              pkgs.nvidia-jetpack);
+          # Exclude all the non-lib/bin stuff
+          postBuild = ''
+            nixLog "removing argus samples and includes"
+            rm -r "$out/argus"
 
-            mkdir -p $out/lib
-            ln -s ${l4t-core}/lib/libnvrm_gpu.so $out/lib/libnvrm_gpu.so
-            ln -s ${l4t-core}/lib/libnvrm_mem.so $out/lib/libnvrm_mem.so
+            nixLog "removing etc"
+            rm -r "$out/etc"
 
-            runHook postInstall
+            nixLog "removing include"
+            rm -r "$out/include"
+
+            nixLog "removing lib/python3"
+            rm -r "$out/lib/python3"
+
+            nixLog "removing samples"
+            rm -r "$out/samples"
+
+            nixLog "removing share/doc"
+            rm -r "$out/share/doc"
+
+            nixLog "removing var"
+            rm -r "$out/var"
           '';
         };
       in
       [
-        l4tCoreWrapper
-        l4t-cuda
-        l4t-nvsci # cuda may use nvsci
-        l4t-gbm
-        l4t-wayland
+        jetson-graphics-extra-packages
       ];
 
     # Used by libEGL_nvidia.so.0
