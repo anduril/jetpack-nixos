@@ -50,6 +50,9 @@ buildFromDebs {
           --replace-needed libnvos.so libnvos_3d.so
       fi
     done
+
+    rm -f lib/ld.so.conf
+    rm -r share/doc
   '';
 
   appendRunpaths = [ "${placeholder "out"}/lib" ] ++ builtins.map (p: (lib.getLib p) + "/lib") [ libglvnd xorg.libX11 xorg.libXext xorg.libxcb ];
