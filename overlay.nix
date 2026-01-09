@@ -1,19 +1,6 @@
 final: prev:
 let
-  inherit (final.lib)
-    any
-    recursiveUpdate
-    ;
-
-  # Since Jetson capabilities are never built by default, we can check if any of them were requested
-  # through final.config.cudaCapabilities and use that to determine if we should change some manifest versions.
-  useJetPackCudaPackageSet = final.stdenv.hostPlatform.system == "aarch64-linux" && (
-    let
-      isXavier = computeCapability: computeCapability == "7.2";
-      isOrin = computeCapability: computeCapability == "8.7";
-    in
-    any (computeCapability: isXavier computeCapability || isOrin computeCapability) (final.config.cudaCapabilities or [ ])
-  );
+  inherit (final.stdenv.hostPlatform) system;
 in
 {
   nvidia-jetpack5 = import ./mk-overlay.nix
@@ -104,68 +91,90 @@ in
       final.nvidia-jetpack5
 
     # CUDA 12.4 - 12.9 is supported either natively (12.4) or through cuda_compat (everything else).
-    # CUDA 13.0+ is supported by JetPack 7, which we don't yet package.
     # NOTE: CUDA 12.3 isn't supported by JetPack 5 or 6, but we lump it in with JetPack 6 to avoid throwing.
-    else
-      final.nvidia-jetpack6;
+    else if final.cudaPackages.cudaOlder "13.0" then
+      final.nvidia-jetpack6
 
-  # Set cudaPackage package sets to our JetPack-constructed package sets if we are targeting Jetson capabilities.
-  # NOTE: We cannot lift the conditionals out further without causing infinite recursion, as the fixed-point would be
-  # used to determine the presence/absence of attributes.
+    # CUDA 13.0+ is supported by JetPack 7, which we don't yet package.
+    else
+      final.nvidia-jetpack7;
+
+  # Set cudaPackage package sets to our JetPack-constructed package sets if we are on aarch64-linux. This is strictly
+  # worse than conditioning on Jetson capabilities, but allows us to avoid infinite recursion when depending on the
+  # version of the default CUDA package set. Since non-Jetson ARM platforms aren't supported by the CUDA 11.4 release,
+  # there's no risk of mixing up Jetson and ARM binaries.
+  # NOTE: We must use 11.4 because of runtime version-checks in some CUDA libraries (like cuDNN or TensorRT) which fail if
+  # we use newer versions of libraries like cuBLAS, even with cuda_compat.
   cudaPackages_11_4 =
-    if useJetPackCudaPackageSet then
-      assert final.nvidia-jetpack5.cudaPackages.cudaMajorMinorVersion == "11.4";
-      final.nvidia-jetpack5.cudaPackages
-    else
-      prev.cudaPackages_11_4;
-  cudaPackages_11 =
-    if useJetPackCudaPackageSet then
-      final.cudaPackages_11_4
-    else
-      prev.cudaPackages_11;
+    prev.cudaPackages_11_4.override (prevArgs:
+      if system == "aarch64-linux" then
+        {
+          # Replace manifests with a single entry containing just the release of CUDA.
+          # NOTE: This value must match the value used in construction of nvidia-jetpack5.
+          manifests.cuda.release_label = "11.4.298";
+        }
+      else
+        {
+          manifests = prevArgs.manifests // {
+            # Use cuDNN 8.6 to more closely align with the versions JetPack 5 provides.
+            # NOTE: TensorRT is provided for x86_64-linux by our cuda-packages-11-4-extension.nix overlay.
+            cudnn = final._cuda.manifests.cudnn."8.6.0";
+          };
+        });
 
-  cudaPackages_12_6 =
-    if useJetPackCudaPackageSet then
-      assert final.nvidia-jetpack6.cudaPackages.cudaMajorMinorVersion == "12.6";
-      final.nvidia-jetpack6.cudaPackages
-    else
-      prev.cudaPackages_12_6;
-  cudaPackages_12 =
-    if useJetPackCudaPackageSet then
-      final.cudaPackages_12_6
-    else
-      prev.cudaPackages_12;
+  # Use 11.4 as the default CUDA release (sorry ARM SBSA NVIDIA users).
+  cudaPackages_11 = final.cudaPackages_11_4;
+
+  # Override upstream's manifest selection so the version of TensorRT used is consistent
+  # NOTE: This needs to stay up to date with:
+  # https://github.com/NixOS/nixpkgs/blob/921f06852867d06373bb0fa7ec570d14275b436d/pkgs/top-level/cuda-packages.nix
+  # https://github.com/nixos-cuda/cuda-legacy/blob/3323fa062d19f7a0b15fd720a94bc05ad8c664cb/overlays/cudaPackagesVersions.nix
+  cudaPackages_12_6 = prev.cudaPackages_12_6.override (prevArgs: {
+    manifests = prevArgs.manifests // {
+      tensorrt = final._cuda.manifests.tensorrt."10.7.0";
+    };
+  });
+  cudaPackages_12_8 = prev.cudaPackages_12_8.override (prevArgs: {
+    manifests = prevArgs.manifests // {
+      tensorrt = final._cuda.manifests.tensorrt."10.7.0";
+    };
+  });
+  cudaPackages_12_9 = prev.cudaPackages_12_9.override (prevArgs: {
+    manifests = prevArgs.manifests // {
+      tensorrt = final._cuda.manifests.tensorrt."10.7.0";
+    };
+  });
+  cudaPackages_13_0 = prev.cudaPackages_13_0.override (prevArgs: {
+    manifests = prevArgs.manifests // {
+      # Orin isn't supported on JetPack 7 at the moment so use the newest version available.
+      tensorrt = final._cuda.manifests.tensorrt."10.14.1";
+    };
+  });
 
   cudaPackages = final.cudaPackages_11;
 
   # TODO: Remove this once there's an official OpenCV release supporting CUDA 13
   opencv =
-    if final.cudaPackages.cudaAtLeast "13" then
+    if final.cudaPackages.cudaAtLeast "13" && system == "aarch64-linux" then
       final.nvidia-jetpack.l4t-opencv
     else
       prev.opencv;
 
-  _cuda = prev._cuda.extend (_: prev: recursiveUpdate prev {
-    extensions = prev.extensions
-      ++ final.lib.optional useJetPackCudaPackageSet (final.callPackage ./pkgs/cuda-extensions { });
+  _cuda = prev._cuda.extend (_: prevCuda: {
+    extensions = prevCuda.extensions ++ [
+      # General extensions
+      (import ./pkgs/cuda-extensions { inherit (final) lib; })
 
-    # Update _cuda's database with an entry allowing Orin on CUDA 11.4.
-    # NOTE: This can be removed when the minimum supported Nixpkgs version is 25.11,
-    # since the CUDA db will contain these fixes.
-    bootstrapData.cudaCapabilityToInfo = {
-      "7.2" = {
-        archName = "Volta";
-        minCudaMajorMinorVersion = "11.4";
-        maxCudaMajorMinorVersion = "12.2";
-        isJetson = true;
-
-        isArchitectureSpecific = false;
-        isFamilySpecific = false;
-        dontDefaultAfterCudaMajorMinorVersion = null;
-      };
-      "8.7" = {
-        minCudaMajorMinorVersion = "11.4";
-      };
-    };
+      # Version-specific extensions.
+      # As a quirk of the way the CUDA package sets are instantiated, using `overrideScope` is only effective on the
+      # top-level attributes of the CUDA package set.
+      # As an example, if we add the `debs` attribute, `cudaPackages.debs` will exist as expected. However,
+      # `cudaPackages.pkgs.cudaPackages.debs` will not -- the extension provided to `overrideScope` is not threaded
+      # through!
+      # For now, we just conditionally apply extensions.
+      # Replace CUDA packages from manifests with our own, which are built from debian installers, if we're using
+      # CUDA 11.4.
+      (import ./cuda-packages-11-4-extension.nix { inherit (final) lib; inherit system; })
+    ];
   });
 }
