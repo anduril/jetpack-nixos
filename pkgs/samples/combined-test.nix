@@ -1,7 +1,8 @@
 { cuda-test
 , cudnn-test
 , cupti-test
-, libnvinfer-test
+, cudaPackages
+, lib
 , multimedia-test
 , vpi-test
 , writeShellApplication
@@ -27,7 +28,7 @@ writeShellApplication {
     echo "====="
     echo "Running TensorRT test"
     echo "====="
-    ${libnvinfer-test}/bin/libnvinfer-test
+    ${lib.getExe cudaPackages.tensorrt-samples.passthru.testers.sample_onnx_mnist.default}
 
     echo "====="
     echo "Running Multimedia test"

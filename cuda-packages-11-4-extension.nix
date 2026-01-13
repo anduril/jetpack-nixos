@@ -226,6 +226,122 @@ let
           };
         };
 
+      tensorrt-samples = prevCudaPackages.tensorrt-samples.overrideAttrs (finalAttrs: prevAttrs: {
+        src =
+          let
+            # We offer an x86_64-linux version so we can test TensorRT (which we also offer for x86_64-linux).
+            tensorrt-samples-source =
+              if system == "x86_64-linux" then
+                {
+                  src = finalCudaPackages.pkgs.fetchurl {
+                    sha256 = "sha256-UVcZBDKe5BKUK1yaEPlwQMKpjgJq+PPSKQJHKxHwZG4=";
+                    url = "https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/libnvinfer-samples_8.5.2-1+cuda11.8_all.deb";
+                  };
+                  version = "8.5.2-1+cuda11.8";
+                }
+              else
+                finalCudaPackages.pkgs.nvidia-jetpack.debs.common.libnvinfer-samples;
+          in
+          finalCudaPackages.pkgs.stdenvNoCC.mkDerivation {
+            __structuredAttrs = true;
+            strictDeps = true;
+            inherit (tensorrt-samples-source) version;
+            pname = "tensorrt-samples-source-debs";
+            srcs = [ tensorrt-samples-source.src ];
+            nativeBuildInputs = [ finalCudaPackages.pkgs.dpkg ];
+            outputs = [ "out" "data" ];
+            phases = [
+              "unpackPhase"
+              "patchPhase"
+              "installPhase"
+            ];
+            sourceRoot = "source";
+            unpackPhase = ''
+              runHook preUnpack
+
+              for src in "''${srcs[@]}"; do
+                nixLog "unpacking debian archive $src to $sourceRoot"
+                dpkg-deb -x "$src" "$sourceRoot"
+              done
+              unset -v src
+
+              runHook postUnpack
+            '';
+            installPhase = ''
+              runHook preInstall
+
+              mkdir -p "$data"
+              mv --verbose usr/src/tensorrt/data/* "$data"
+              mkdir -p "$out"
+              mv --verbose usr/src/tensorrt/samples/* "$out"
+
+              runHook postInstall
+            '';
+          };
+
+        # Wipe the cmakeFlags
+        cmakeFlags = [ ];
+
+        # Wipe the postPatch phase for upstream which was created for CMake.
+        postPatch = ''
+          substituteInPlace Makefile.config \
+            --replace-fail \
+              '-I"$(CUDNN_INSTALL_DIR)/include"' \
+              '-I"${lib.getOutput "include" finalCudaPackages.cudnn}/include"'
+        '';
+
+        enableParallelBuilding = true;
+
+        env = prevAttrs.env or { } // {
+          LDFLAGS = toString [
+            # Fake libcuda.so (the real one is deployed impurely)
+            "-L${lib.getOutput "stubs" finalCudaPackages.cuda_cudart}/lib/stubs"
+          ];
+        };
+
+        # Wipe the existing dependencies, which include cmake
+        nativeBuildInputs = [ finalCudaPackages.cuda_nvcc ];
+
+        # Add more packages we require
+        buildInputs = prevAttrs.buildInputs or [ ] ++ [
+          finalCudaPackages.libcublas
+          finalCudaPackages.cudnn
+        ] ++ lib.optionals finalCudaPackages.libcudla.meta.available [
+          finalCudaPackages.libcudla
+        ];
+
+        buildFlags = [
+          "SMS=${lib.replaceStrings [ ";" ] [" "] finalCudaPackages.flags.cmakeCudaArchitecturesString}"
+          "CUDA_INSTALL_DIR=${finalCudaPackages.cudatoolkit}"
+          "CUDNN_INSTALL_DIR=${finalCudaPackages.cudnn}"
+          "CUDNN_LIBDIR=${lib.getLib finalCudaPackages.cudnn}/lib"
+          "TRT_LIB_DIR=${lib.getLib finalCudaPackages.tensorrt}/lib"
+        ] ++ lib.optionals (system == "aarch64-linux") [
+          "L4T_BUILD=1"
+          "ENABLE_DLA=1"
+        ];
+
+        installPhase = ''
+          runHook preInstall
+
+          mkdir -p "$out"
+          rm -rf ../bin/chobj ../bin/dchobj ../bin/*_debug
+          mv --verbose ../bin "$out"/
+
+          runHook postInstall
+        '';
+
+        passthru = prevAttrs.passthru // {
+          sample-data = finalAttrs.src.data;
+
+          # Introduce testers unique to our source.
+          testers = prevAttrs.passthru.testers // lib.optionalAttrs finalCudaPackages.libcudla.meta.available {
+            # Not present upstream, no risk of clobbering.
+            sample_cudla.default = finalAttrs.passthru.mkTester "sample_cudla" [ "sample_cudla" ];
+          };
+        };
+      });
+
       cuda_cccl = finalCudaPackages.debWrapBuildRedist {
         sourceName = "cuda-thrust";
         drv = prevCudaPackages.cuda_cccl;
@@ -312,8 +428,8 @@ in
 mapAttrs
   (name: value:
   # To make the extension safe to use, we add new attributes, but pass through all the existing attributes if we are not on the correct system.
-  # The two exceptions to this are cuda_profiler_api and TensorRT, which we also provide, since we package it for both Jetson and x86_64-linux.
-  if !hasAttr name prevCudaPackages || (canUseOurPackageVersion && (elem name [ "cuda_profiler_api" "tensorrt" ] || canUseOurPackagePlatform)) then
+  # The exceptions to this are cuda_profiler_api, TensorRT, and tensorrt-samples, which we also provide, since we package it for both Jetson and x86_64-linux.
+  if !hasAttr name prevCudaPackages || (canUseOurPackageVersion && (elem name [ "cuda_profiler_api" "tensorrt" "tensorrt-samples" ] || canUseOurPackagePlatform)) then
     value
   else
     getAttr name prevCudaPackages
