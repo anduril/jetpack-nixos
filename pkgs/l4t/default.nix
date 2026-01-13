@@ -16,7 +16,6 @@ in
     l4t-camera
     l4t-core
     l4t-cuda
-    l4t-cupva
     l4t-firmware
     l4t-gbm
     l4t-gstreamer
@@ -29,14 +28,16 @@ in
     l4t-pva
     l4t-tools
     l4t-wayland;
+} // lib.optionalAttrs (l4tAtLeast "36" && l4tOlder "37") {
+  inherit (packages) l4t-dla-compiler; # Only available on JP6
 } // lib.optionalAttrs (l4tAtLeast "36") {
-  inherit (packages)
-    l4t-dla-compiler
-    l4t-nvml
-    ;
+  inherit (packages) l4t-nvml;
   nvidia-smi = packages.l4t-nvml;
 } // lib.optionalAttrs (l4tOlder "38") {
-  inherit (packages) l4t-xusb-firmware; # L4T 38+ uses upstream firmware
+  inherit (packages)
+    l4t-cupva# Not available on JP7+
+    l4t-xusb-firmware# L4T 38+ uses upstream firmware
+    ;
 } // lib.optionalAttrs (l4tAtLeast "38") {
   inherit (packages)
     driverDebs
