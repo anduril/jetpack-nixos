@@ -205,7 +205,7 @@
               inherit system;
               config = {
                 allowUnfree = true;
-                cudaCapabilities = [ "7.2" "8.7" ];
+                cudaCapabilities = if system == "aarch64-linux" then [ "7.2" "8.7" ] else [ ];
                 cudaSupport = true;
               };
               overlays = [ self.overlays.default ];
