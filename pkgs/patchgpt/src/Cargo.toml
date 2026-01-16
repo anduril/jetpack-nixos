@@ -1,0 +1,12 @@
+[package]
+name = "patchgpt"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bytemuck = "1.24.0"
+gpt_disk_types = { version = "0.16.1", features = ["bytemuck"] }
+
+[profile.release]
+opt-level = "z"
+lto = true
