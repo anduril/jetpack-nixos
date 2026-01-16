@@ -199,35 +199,27 @@ write_partitions() {
     devnum=$(echo "$partloc" | cut -d':' -f 1)
     instnum=$(echo "$partloc" | cut -d':' -f 2)
     partname=$(echo "$partloc" | cut -d':' -f 3)
+
+    if [[ "$partfile" == "" ]]; then
+      report_step "Skipping flash.idx entry:$partname (devnum=$devnum, instnum=$instnum) (offset=$start_location)"
+      continue
+    fi
+
     # SPI is 3:0
     # eMMC boot blocks (boot0/boot1) are 0:3
     # eMMC user is 1:3
     # SDCard on SoM is 6:0 (Like on Xavier NX dev module)
     # NVMe (any external device) is 9:0
     if [[ "$devnum" -eq 3 && "$instnum" -eq 0 ]]; then
-      if [[ "$partfile" != "" ]]; then
-        program_spi_partition "$partname" "$start_location" "$partsize" "$partfile"
-      else
-        report_step "Skipping flash.idx entry:$partname (devnum=$devnum, instnum=$instnum) (offset=$start_location)"
-      fi
+      program_spi_partition "$partname" "$start_location" "$partsize" "$partfile"
     elif [[ "$devnum" -eq 0 && "$instnum" -eq 3 ]]; then
-      if [[ "$partfile" != "" ]]; then
-        program_mmcboot_partition "$partname" "$start_location" "$partsize" "$partfile"
-      else
-        report_step "Skipping flash.idx entry:$partname (devnum=$devnum, instnum=$instnum) (offset=$start_location)"
-      fi
+      program_mmcboot_partition "$partname" "$start_location" "$partsize" "$partfile"
     elif [[ "$devnum" -eq 1 && "$instnum" -eq 3 ]] || [[ "$devnum" -eq 6 && "$instnum" -eq 0 ]]; then
-      if [[ "$partfile" != "" ]]; then
-        report_step "Writing $partfile (size=$partsize) to $partname on /dev/mmcblk0 (offset=$start_location)"
-        file_size=$(stat -c "%s" "$partfile")
-        if ! dd if="$partfile" of="/dev/mmcblk0" bs=4096 seek="$start_location" oflag=seek_bytes >/dev/null; then
-          return 1
-        fi
-      else
-        report_step "Skipping flash.idx entry:$partname (devnum=$devnum, instnum=$instnum) (offset=$start_location)"
+      report_step "Writing $partfile (size=$partsize) to $partname on /dev/mmcblk0 (offset=$start_location)"
+      file_size=$(stat -c "%s" "$partfile")
+      if ! dd if="$partfile" of="/dev/mmcblk0" bs=4096 seek="$start_location" oflag=seek_bytes >/dev/null; then
+        return 1
       fi
-    else
-      report_step "Skipping flash.idx entry:$partname (devnum=$devnum, instnum=$instnum) (offset=$start_location)"
     fi
   done <flash.idx
 }
