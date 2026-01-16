@@ -20,6 +20,7 @@ let
     cp ${mtdutils}/bin/mtd_debug $out/bin
     cp ${mtdutils}/bin/flash_erase $out/bin
     cp ${tegra-eeprom-tool-static}/bin/tegra-boardspec $out/bin
+    cp ${lib.getExe pkgsStatic.nvidia-jetpack.patchgpt} $out/bin
   '';
   name = "flash-from-device";
 in
