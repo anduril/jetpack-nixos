@@ -150,6 +150,23 @@ program_mmcboot_partition() {
   return 0
 }
 
+disk_size() {
+  devnum="$1"
+  instnum="$2"
+
+  if [[ "$devnum" -eq 3 && "$instnum" -eq 0 ]]; then
+    cat /sys/class/mtd/mtd0/size
+  elif [[ "$devnum" -eq 0 && "$instnum" -eq 3 ]]; then
+    # sdmmc_boot is combination of mmcblk0boot0 and mmcblk0boot1
+    BOOT1PART_SIZE=$(($(cat /sys/block/mmcblk0boot1/size) * $(cat /sys/block/mmcblk0boot1/queue/hw_sector_size)))
+    echo "$((BOOTPART_SIZE + BOOT1PART_SIZE))"
+  elif [[ "$devnum" -eq 1 && "$instnum" -eq 3 ]] || [[ "$devnum" -eq 6 && "$instnum" -eq 0 ]]; then
+    echo "$(($(cat /sys/block/mmcblk0/size) * $(cat /sys/block/mmcblk0/queue/hw_sector_size)))"
+  else
+    echo ""
+  fi
+}
+
 erase_bootdev() {
   BOOTDEV_TYPE=
 
@@ -203,6 +220,18 @@ write_partitions() {
     if [[ "$partfile" == "" ]]; then
       report_step "Skipping flash.idx entry:$partname (devnum=$devnum, instnum=$instnum) (offset=$start_location)"
       continue
+    fi
+
+    # secondary_gpt must be placed at end of disk and flash.idx wasn't generated
+    # with enough info to place it at the end
+    if [[ "$partname" == "secondary_gpt" ]]; then
+      disk_size=$(disk_size "$devnum" "$instnum")
+      file_size=$(stat -c "%s" "$partfile")
+      if [[ -n "$disk_size" ]]; then
+        start_location=$((disk_size - file_size))
+      else
+        echo "WARNING: could not ensure secondary GPT is at end of disk"
+      fi
     fi
 
     # SPI is 3:0
