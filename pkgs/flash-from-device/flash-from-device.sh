@@ -234,6 +234,8 @@ write_partitions() {
 
 find_matching_spec
 
+echo "boardspec: $matching_boardspec"
+
 # Enter directory containing firmware
 cd "$signed_images"/"$matching_boardspec"
 
