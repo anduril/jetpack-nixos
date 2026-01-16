@@ -172,7 +172,7 @@ erase_bootdev() {
       echo "ERR: eMMC boot device, but mmcblk0bootX devices do not exist" >&2
       return 1
     fi
-    BOOTPART_SIZE=$(($(cat /sys/block/mmcblk0boot0/size) * 512))
+    BOOTPART_SIZE=$(($(cat /sys/block/mmcblk0boot0/size) * $(cat /sys/block/mmcblk0boot0/queue/hw_sector_size)))
     echo "0" >/sys/block/mmcblk0boot0/force_ro
     echo "0" >/sys/block/mmcblk0boot1/force_ro
     echo "Erasing /dev/mmcblk0boot0"
