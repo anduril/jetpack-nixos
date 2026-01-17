@@ -150,6 +150,23 @@ program_mmcboot_partition() {
   return 0
 }
 
+disk_size() {
+  devnum="$1"
+  instnum="$2"
+
+  if [[ "$devnum" -eq 3 && "$instnum" -eq 0 ]]; then
+    cat /sys/class/mtd/mtd0/size
+  elif [[ "$devnum" -eq 0 && "$instnum" -eq 3 ]]; then
+    # sdmmc_boot is combination of mmcblk0boot0 and mmcblk0boot1
+    BOOT1PART_SIZE=$(($(cat /sys/block/mmcblk0boot1/size) * $(cat /sys/block/mmcblk0boot1/queue/hw_sector_size)))
+    echo "$((BOOTPART_SIZE + BOOT1PART_SIZE))"
+  elif [[ "$devnum" -eq 1 && "$instnum" -eq 3 ]] || [[ "$devnum" -eq 6 && "$instnum" -eq 0 ]]; then
+    echo "$(($(cat /sys/block/mmcblk0/size) * $(cat /sys/block/mmcblk0/queue/hw_sector_size)))"
+  else
+    echo ""
+  fi
+}
+
 erase_bootdev() {
   BOOTDEV_TYPE=
 
@@ -172,7 +189,7 @@ erase_bootdev() {
       echo "ERR: eMMC boot device, but mmcblk0bootX devices do not exist" >&2
       return 1
     fi
-    BOOTPART_SIZE=$(($(cat /sys/block/mmcblk0boot0/size) * 512))
+    BOOTPART_SIZE=$(($(cat /sys/block/mmcblk0boot0/size) * $(cat /sys/block/mmcblk0boot0/queue/hw_sector_size)))
     echo "0" >/sys/block/mmcblk0boot0/force_ro
     echo "0" >/sys/block/mmcblk0boot1/force_ro
     echo "Erasing /dev/mmcblk0boot0"
@@ -199,40 +216,52 @@ write_partitions() {
     devnum=$(echo "$partloc" | cut -d':' -f 1)
     instnum=$(echo "$partloc" | cut -d':' -f 2)
     partname=$(echo "$partloc" | cut -d':' -f 3)
+
+    if [[ "$partfile" == "" ]]; then
+      report_step "Skipping flash.idx entry:$partname (devnum=$devnum, instnum=$instnum) (offset=$start_location)"
+      continue
+    fi
+
+    # secondary_gpt must be placed at end of disk and flash.idx wasn't generated
+    # with enough info to place it at the end
+    if [[ "$partname" == "secondary_gpt" ]]; then
+      disk_size=$(disk_size "$devnum" "$instnum")
+      file_size=$(stat -c "%s" "$partfile")
+      if [[ -n "$disk_size" ]]; then
+        start_location=$((disk_size - file_size))
+
+        # From edk2-nvidia/Silicon/NVIDIA/Include/Library/GptLib.h
+        # #define NVIDIA_GPT_BLOCK_SIZE   512
+        patchgpt "$partfile" "$start_location" 512 >"patched"
+        partfile="patched"
+        echo "Moving secondary_gpt to end: $disk_size - $file_size = $start_location"
+      else
+        echo "WARNING: could not ensure secondary GPT is at end of disk"
+      fi
+    fi
+
     # SPI is 3:0
     # eMMC boot blocks (boot0/boot1) are 0:3
     # eMMC user is 1:3
     # SDCard on SoM is 6:0 (Like on Xavier NX dev module)
     # NVMe (any external device) is 9:0
     if [[ "$devnum" -eq 3 && "$instnum" -eq 0 ]]; then
-      if [[ "$partfile" != "" ]]; then
-        program_spi_partition "$partname" "$start_location" "$partsize" "$partfile"
-      else
-        report_step "Skipping flash.idx entry:$partname (devnum=$devnum, instnum=$instnum) (offset=$start_location)"
-      fi
+      program_spi_partition "$partname" "$start_location" "$partsize" "$partfile"
     elif [[ "$devnum" -eq 0 && "$instnum" -eq 3 ]]; then
-      if [[ "$partfile" != "" ]]; then
-        program_mmcboot_partition "$partname" "$start_location" "$partsize" "$partfile"
-      else
-        report_step "Skipping flash.idx entry:$partname (devnum=$devnum, instnum=$instnum) (offset=$start_location)"
-      fi
+      program_mmcboot_partition "$partname" "$start_location" "$partsize" "$partfile"
     elif [[ "$devnum" -eq 1 && "$instnum" -eq 3 ]] || [[ "$devnum" -eq 6 && "$instnum" -eq 0 ]]; then
-      if [[ "$partfile" != "" ]]; then
-        report_step "Writing $partfile (size=$partsize) to $partname on /dev/mmcblk0 (offset=$start_location)"
-        file_size=$(stat -c "%s" "$partfile")
-        if ! dd if="$partfile" of="/dev/mmcblk0" bs=4096 seek="$start_location" oflag=seek_bytes >/dev/null; then
-          return 1
-        fi
-      else
-        report_step "Skipping flash.idx entry:$partname (devnum=$devnum, instnum=$instnum) (offset=$start_location)"
+      report_step "Writing $partfile (size=$partsize) to $partname on /dev/mmcblk0 (offset=$start_location)"
+      file_size=$(stat -c "%s" "$partfile")
+      if ! dd if="$partfile" of="/dev/mmcblk0" bs=4096 seek="$start_location" oflag=seek_bytes >/dev/null; then
+        return 1
       fi
-    else
-      report_step "Skipping flash.idx entry:$partname (devnum=$devnum, instnum=$instnum) (offset=$start_location)"
     fi
   done <flash.idx
 }
 
 find_matching_spec
+
+echo "boardspec: $matching_boardspec"
 
 # Enter directory containing firmware
 cd "$signed_images"/"$matching_boardspec"

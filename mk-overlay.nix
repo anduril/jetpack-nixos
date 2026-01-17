@@ -120,6 +120,8 @@ makeScope final.newScope (self: {
   tegra-eeprom-tool = final.callPackage ./pkgs/tegra-eeprom-tool { };
   tegra-eeprom-tool-static = final.pkgsStatic.callPackage ./pkgs/tegra-eeprom-tool { };
 
+  patchgpt = self.callPackage ./pkgs/patchgpt { };
+
   # Taken largely from:
   # https://github.com/NixOS/nixpkgs/blob/b0401fdfb86201ed2e351665387ad6505b88f452/pkgs/top-level/cuda-packages.nix
   cudaPackages =
