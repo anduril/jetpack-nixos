@@ -22,7 +22,7 @@ let
   # Nvidia's included libv4l has very minimal changes against the upstream
   # version. We need to rebuild it from source to ensure it can find nvidia's
   # v4l plugins in the right location. Nvidia's version has the path hardcoded.
-  # See https://nv-tegra.nvidia.com/tegra/v4l2-src/v4l2_libs.git
+  # See https://gitlab.com/nvidia/nv-tegra/tegra/v4l2-src/v4l2_libs.git
   _l4t-multimedia-v4l = libv4l.overrideAttrs ({ nativeBuildInputs ? [ ], patches ? [ ], postPatch ? "", ... }: {
     nativeBuildInputs = nativeBuildInputs ++ [ dpkg ];
     patches = patches ++ lib.singleton (fetchurl {

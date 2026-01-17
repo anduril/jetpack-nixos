@@ -9,7 +9,7 @@
     "path": "/nix/store/djry5289lvz2gp1s0kav7vmyia14bp3m-3.5.0",
     "rev": "d33bb80cc249fcb5591b93f390a87e4f92274ce8",
     "sha256": "02xj519xxpmfdyw3ymaj93605gm646w1ra77531xh4b5ld359ckx",
-    "url": "https://nv-tegra.nvidia.com/3rdparty/libnl/3.5.0.git"
+    "url": "https://gitlab.com/nvidia/nv-tegra/3rdparty/libnl/3.5.0.git"
   },
   "hardware/nvidia/platform/t19x/common": {
     "date": "2023-05-28T22:52:08-07:00",
@@ -21,7 +21,7 @@
     "path": "/nix/store/9509cfg3sbzzmm766qj59m9qzhj1m4k9-common",
     "rev": "cab72a3f1109d333c5e164079e92e20e32f7ceb1",
     "sha256": "18zivxawny9lzja2w818rvml9vqpmv4awda1h9h1lm0xz6fbmiyg",
-    "url": "https://nv-tegra.nvidia.com/device/hardware/nvidia/platform/t19x/common.git"
+    "url": "https://gitlab.com/nvidia/nv-tegra/device/hardware/nvidia/platform/t19x/common.git"
   },
   "hardware/nvidia/platform/t19x/galen-industrial/kernel-dts": {
     "date": "2023-01-04T23:36:30-08:00",
@@ -33,7 +33,7 @@
     "path": "/nix/store/ndm7hwxi99zw3nairawlzr0h2k55rb8n-galen-industrial-dts",
     "rev": "67826e84bc0f78b2b47f4142233370c1c2919236",
     "sha256": "12xmmdjx85c9mpa23b46kp896hikrjl2m9bl2n4bcjq5gl8cppjm",
-    "url": "https://nv-tegra.nvidia.com/device/hardware/nvidia/platform/t19x/galen-industrial-dts.git"
+    "url": "https://gitlab.com/nvidia/nv-tegra/device/hardware/nvidia/platform/t19x/galen-industrial-dts.git"
   },
   "hardware/nvidia/platform/t19x/galen/kernel-dts": {
     "date": "2023-08-29T23:52:30-07:00",
@@ -45,7 +45,7 @@
     "path": "/nix/store/wsahdgfqxpb8540b80466lvkv7x5gmp9-stardust-dts",
     "rev": "7df2f4ff0149dab335145088b1027b404b4b3df3",
     "sha256": "1r82h5yym5nbr94l8w97bvrwlpvlamjcvq7vj7xz8yvn07sx6gba",
-    "url": "https://nv-tegra.nvidia.com/device/hardware/nvidia/platform/t19x/stardust-dts.git"
+    "url": "https://gitlab.com/nvidia/nv-tegra/device/hardware/nvidia/platform/t19x/stardust-dts.git"
   },
   "hardware/nvidia/platform/t19x/jakku/kernel-dts": {
     "date": "2023-11-24T02:04:24-08:00",
@@ -57,7 +57,7 @@
     "path": "/nix/store/ryidr4vh2f4fwsdbcxizrw0h23b2f8p3-jakku-dts",
     "rev": "3d08e2b53acd7a87f1760489c15e0575bf1009c9",
     "sha256": "15i0219kv0ndf0k825ks6394pnvcgz4l10wn29v6sqx8djqbqs1h",
-    "url": "https://nv-tegra.nvidia.com/device/hardware/nvidia/platform/t19x/jakku-dts.git"
+    "url": "https://gitlab.com/nvidia/nv-tegra/device/hardware/nvidia/platform/t19x/jakku-dts.git"
   },
   "hardware/nvidia/platform/t19x/mccoy/kernel-dts": {
     "date": "2022-12-16T03:36:34-08:00",
@@ -69,7 +69,7 @@
     "path": "/nix/store/ylcif39m1ycrcvi25d4k57kk3nafg8r3-mccoy-dts",
     "rev": "ef34f875294270e94d713abd456ad39efffb9f30",
     "sha256": "0d9irsz2phq5wbqnqcnnp5v5piq742ibh0fbb712wa1pw7xfr4y8",
-    "url": "https://nv-tegra.nvidia.com/device/hardware/nvidia/platform/t19x/mccoy-dts.git"
+    "url": "https://gitlab.com/nvidia/nv-tegra/device/hardware/nvidia/platform/t19x/mccoy-dts.git"
   },
   "hardware/nvidia/platform/t23x/common/kernel-dts": {
     "date": "2023-09-12T03:49:19-07:00",
@@ -81,7 +81,7 @@
     "path": "/nix/store/wpbqm52dc4y5bqkkqrx1lyr6bk9h43wx-common-dts",
     "rev": "62b3069d6529865fc0229692c1dd28525fc0f650",
     "sha256": "1sn87dplx8gv772lj53h9071xsrplr7b7pyx55322cckjl3xhgsq",
-    "url": "https://nv-tegra.nvidia.com/device/hardware/nvidia/platform/t23x/common-dts.git"
+    "url": "https://gitlab.com/nvidia/nv-tegra/device/hardware/nvidia/platform/t23x/common-dts.git"
   },
   "hardware/nvidia/platform/t23x/concord/kernel-dts": {
     "date": "2024-06-10T22:49:06-07:00",
@@ -93,7 +93,7 @@
     "path": "/nix/store/nrg23xmhrrc9ippj62ph3xlvgz5fgz25-concord-dts",
     "rev": "0ae413c18b67c50a18ea1c23c99f377dfa0e6c3b",
     "sha256": "0ph204g1r23s1g559bpca50d7fznb339ndanjdszpnzx5ab5ll44",
-    "url": "https://nv-tegra.nvidia.com/device/hardware/nvidia/platform/t23x/concord-dts.git"
+    "url": "https://gitlab.com/nvidia/nv-tegra/device/hardware/nvidia/platform/t23x/concord-dts.git"
   },
   "hardware/nvidia/platform/t23x/p3768/kernel-dts": {
     "date": "2025-02-07T10:27:50-08:00",
@@ -105,7 +105,7 @@
     "path": "/nix/store/a8ql6wnwl19i342p11zdp01w44x7dbal-p3768-dts",
     "rev": "9c243042e7feca16d6c1bf8d2492f79e4aa4bb04",
     "sha256": "1apj1i08spaijmf8qwvlkx6r7wxavg5167f84s7iziqssinm5snq",
-    "url": "https://nv-tegra.nvidia.com/device/hardware/nvidia/platform/t23x/p3768-dts.git"
+    "url": "https://gitlab.com/nvidia/nv-tegra/device/hardware/nvidia/platform/t23x/p3768-dts.git"
   },
   "hardware/nvidia/platform/t23x/prometheus/kernel-dts": {
     "date": "2023-06-21T02:07:27-07:00",
@@ -117,7 +117,7 @@
     "path": "/nix/store/yamwx5p3yapgrp50c8njk3h0wf88gzjv-prometheus-dts",
     "rev": "d8885a822406d36abd36b0d959ef5b721a15e63c",
     "sha256": "1xa8haiv5wnpbs18z0nqrq2lpyvrz9ni166pw4ay21gmkl763vxr",
-    "url": "https://nv-tegra.nvidia.com/device/hardware/nvidia/platform/t23x/prometheus-dts.git"
+    "url": "https://gitlab.com/nvidia/nv-tegra/device/hardware/nvidia/platform/t23x/prometheus-dts.git"
   },
   "hardware/nvidia/platform/tegra/common": {
     "date": "2023-01-31T12:22:24-08:00",
@@ -129,7 +129,7 @@
     "path": "/nix/store/cf04fr825189dvx51wp1a4y4cmsbf2wf-common",
     "rev": "bd5a8c9a96e77b071c4aba5ee4c1562bfd631d58",
     "sha256": "1p2z0rycmcgl3n182xccjafb23qkgmr7sjkcw3wijzzqjqsm1vs4",
-    "url": "https://nv-tegra.nvidia.com/device/hardware/nvidia/platform/tegra/common.git"
+    "url": "https://gitlab.com/nvidia/nv-tegra/device/hardware/nvidia/platform/tegra/common.git"
   },
   "hardware/nvidia/soc/t19x": {
     "date": "2023-08-06T20:51:42-07:00",
@@ -141,7 +141,7 @@
     "path": "/nix/store/amd5mzjbprblvv490irflysbd5a5syyj-t19x",
     "rev": "45b205ae566c3ce45a184f1ff4ed69477dddb7ad",
     "sha256": "1kib4fwf2m49fg7cymaf5xnwkjicphh7mwl0z0vsg9n6dqi8c779",
-    "url": "https://nv-tegra.nvidia.com/device/hardware/nvidia/soc/t19x.git"
+    "url": "https://gitlab.com/nvidia/nv-tegra/device/hardware/nvidia/soc/t19x.git"
   },
   "hardware/nvidia/soc/t23x": {
     "date": "2024-05-15T07:05:27-07:00",
@@ -153,7 +153,7 @@
     "path": "/nix/store/fv9j56j317db0dzv0xpg29b0qlgjg2fg-t23x",
     "rev": "4946e3cf631a8f92d7ac01940c227f9cd2647af2",
     "sha256": "1j2hk0gbjjfycmwjx4jybvbrhv5d3vwvlxhq5yr1civwyyr7x8pk",
-    "url": "https://nv-tegra.nvidia.com/device/hardware/nvidia/soc/t23x.git"
+    "url": "https://gitlab.com/nvidia/nv-tegra/device/hardware/nvidia/soc/t23x.git"
   },
   "hardware/nvidia/soc/tegra": {
     "date": "2025-02-12T10:56:16-08:00",
@@ -165,7 +165,7 @@
     "path": "/nix/store/ya5kx02gl1ljmxs7igssdgl1pamd79lc-tegra",
     "rev": "8cd785702998e37aa1a815509e5da28e7dbeb10f",
     "sha256": "1mmlm5i1ailx5flykxzx81grlsswblfw1n5ppbl7x0wa6wrjqgjz",
-    "url": "https://nv-tegra.nvidia.com/device/hardware/nvidia/soc/tegra.git"
+    "url": "https://gitlab.com/nvidia/nv-tegra/device/hardware/nvidia/soc/tegra.git"
   },
   "kernel/kernel-5.10": {
     "date": "2025-02-24T20:21:55-08:00",
@@ -177,7 +177,7 @@
     "path": "/nix/store/w05sz1lbspqpm1p7mdg76kh067m291x8-linux-5.10",
     "rev": "8133aa889de64069251195ad151a876cd0482896",
     "sha256": "0lq8xlmhs33fhp86c24bd7xcxgdlb5xfpbaqm4y810hcf780lfzy",
-    "url": "https://nv-tegra.nvidia.com/linux-5.10.git"
+    "url": "https://gitlab.com/nvidia/nv-tegra/linux-5.10.git"
   },
   "kernel/nvgpu": {
     "date": "2024-08-14T10:04:10-07:00",
@@ -189,7 +189,7 @@
     "path": "/nix/store/bbz9zwzxmvz664z79ifpl6ydv2lhl7fy-linux-nvgpu",
     "rev": "3de579438edaaf8fa62510ea0d20ff25bf9f56d4",
     "sha256": "1m3wc3l633g9j935wxfcmyz568v1jlc3ii21ij5119k8n6cs5h6q",
-    "url": "https://nv-tegra.nvidia.com/linux-nvgpu.git"
+    "url": "https://gitlab.com/nvidia/nv-tegra/linux-nvgpu.git"
   },
   "kernel/nvidia": {
     "date": "2025-02-12T10:51:04-08:00",
@@ -201,7 +201,7 @@
     "path": "/nix/store/vwnmxqdzsvq9jix2d02k6c047jj53dix-linux-nvidia",
     "rev": "ab7f1b97939d308d70276c228ec893cca62e02f6",
     "sha256": "1nh13rwhsa10x3b87n1j89wixr7b7lpxrmys5jyfhlf3w04hh5di",
-    "url": "https://nv-tegra.nvidia.com/linux-nvidia.git"
+    "url": "https://gitlab.com/nvidia/nv-tegra/linux-nvidia.git"
   },
   "kernel/nvidia/drivers/net/ethernet/nvidia/nvethernet/nvethernetrm": {
     "date": "2024-02-26T12:34:40-08:00",
@@ -213,7 +213,7 @@
     "path": "/nix/store/y8bv507r2m989ly6fcdbrjpj8gqsx4kx-nvethernetrm",
     "rev": "606235ffb27196a6cb71e33d0dca263e7273b2a0",
     "sha256": "1x34nd0f940gd84w3qysc9d7h9cwhavqcyrmpll4mdn1h1p77wcd",
-    "url": "https://nv-tegra.nvidia.com/kernel/nvethernetrm.git"
+    "url": "https://gitlab.com/nvidia/nv-tegra/kernel/nvethernetrm.git"
   },
   "tegra/argus-cam-libav/argus_cam_libavencoder": {
     "date": "2025-07-01T06:51:16-07:00",
@@ -225,7 +225,7 @@
     "path": "/nix/store/4d3iz4lhp68i3s72qx9wpcfga8z7w2g0-argus_cam_libavencoder",
     "rev": "3770b1f3687939a0053384ddad85ec03c4e26edb",
     "sha256": "09k727hmn2i86d1sfjyc5h709v05w1cdwi23iay2dad13hyxa287",
-    "url": "https://nv-tegra.nvidia.com/tegra/argus-cam-libav/argus_cam_libavencoder.git"
+    "url": "https://gitlab.com/nvidia/nv-tegra/tegra/argus-cam-libav/argus_cam_libavencoder.git"
   },
   "tegra/cuda-src/nvsample_cudaprocess": {
     "date": "2025-07-01T06:51:30-07:00",
@@ -237,7 +237,7 @@
     "path": "/nix/store/lrnzy3xwdhqyp8n5fhmy847q77s3xyn9-nvsample_cudaprocess",
     "rev": "358ab9b14c91b74cf965c4847cd232fed9aeb5d5",
     "sha256": "0xcgck5k8ax1jv8xl6mpjwcyd8q30283lvs55ncrmmvz3k9qx0cl",
-    "url": "https://nv-tegra.nvidia.com/tegra/cuda-src/nvsample_cudaprocess.git"
+    "url": "https://gitlab.com/nvidia/nv-tegra/tegra/cuda-src/nvsample_cudaprocess.git"
   },
   "tegra/gfx-src/nv-xconfig": {
     "date": "2025-07-01T06:51:17-07:00",
@@ -249,7 +249,7 @@
     "path": "/nix/store/iwssxqmwjrly31zpy9x25qbpnmdxdwqh-nv-xconfig",
     "rev": "4ece7a7e4876a21264c9f4a313fa4285af71a6ba",
     "sha256": "17lhzznfdh9zhc54cg7yj6zv0n1mmsq4zvfvv2qy1m1rkv9qg35z",
-    "url": "https://nv-tegra.nvidia.com/tegra/gfx-src/nv-xconfig.git"
+    "url": "https://gitlab.com/nvidia/nv-tegra/tegra/gfx-src/nv-xconfig.git"
   },
   "tegra/gst-src/gst-egl": {
     "date": "2025-07-01T06:51:20-07:00",
@@ -261,7 +261,7 @@
     "path": "/nix/store/g4fsqn2firhbqcly2j9wkqsjy5g7zk0m-gst-egl",
     "rev": "a68fa1c01985daee67514721eb1c23d1c110b9c6",
     "sha256": "0gq3igf3bf400s42q0i7dzxy00cv7nl01fj1za4cq0kah5hl3940",
-    "url": "https://nv-tegra.nvidia.com/tegra/gst-src/gst-egl.git"
+    "url": "https://gitlab.com/nvidia/nv-tegra/tegra/gst-src/gst-egl.git"
   },
   "tegra/gst-src/gst-jpeg": {
     "date": "2025-07-01T06:51:18-07:00",
@@ -273,7 +273,7 @@
     "path": "/nix/store/y9nlx9q3plphzmnd21dv7igk900kbchd-gst-jpeg",
     "rev": "d76c50967ee0362149484eec31c82ca7e9aa0ae1",
     "sha256": "07gnr36dvjlkw7ky070h7rnlb2yridkafzd1356bj9hc87y78xld",
-    "url": "https://nv-tegra.nvidia.com/tegra/gst-src/gst-jpeg.git"
+    "url": "https://gitlab.com/nvidia/nv-tegra/tegra/gst-src/gst-jpeg.git"
   },
   "tegra/gst-src/gst-nvarguscamera": {
     "date": "2025-07-01T06:51:30-07:00",
@@ -285,7 +285,7 @@
     "path": "/nix/store/nxww374wwr79w8hsqx50gawrji37gpv4-gst-nvarguscamera",
     "rev": "2c1ab817dbe8368ab88319e40dc171653fb488aa",
     "sha256": "0rqsxl20kfrnnc7848jlj03hcdxspcfaz0cr63s3r6gi2py4k3pf",
-    "url": "https://nv-tegra.nvidia.com/tegra/gst-src/gst-nvarguscamera.git"
+    "url": "https://gitlab.com/nvidia/nv-tegra/tegra/gst-src/gst-nvarguscamera.git"
   },
   "tegra/gst-src/gst-nvcompositor": {
     "date": "2025-07-01T06:51:38-07:00",
@@ -297,7 +297,7 @@
     "path": "/nix/store/f92fzasin2vf0zrphq87p8g7gzq9ngvl-gst-nvcompositor",
     "rev": "fce947f948d8edfab7b112c07135fe66281a0f77",
     "sha256": "1l95aga2rqqkzamkqivw0bgd8y1mbaykgnm6b7csq1mbb8bw9mj4",
-    "url": "https://nv-tegra.nvidia.com/tegra/gst-src/gst-nvcompositor.git"
+    "url": "https://gitlab.com/nvidia/nv-tegra/tegra/gst-src/gst-nvcompositor.git"
   },
   "tegra/gst-src/gst-nvtee": {
     "date": "2025-07-01T06:51:12-07:00",
@@ -309,7 +309,7 @@
     "path": "/nix/store/s594li28ac6s5y5mddqisn08ak3ir0q1-gst-nvtee",
     "rev": "1a80822e9573f2b6190a153709481814d95b92ed",
     "sha256": "0czsfwh6hl1vwb0bc9pr0sg5fyy262rzl9af95mh0162xr61j4qh",
-    "url": "https://nv-tegra.nvidia.com/tegra/gst-src/gst-nvtee.git"
+    "url": "https://gitlab.com/nvidia/nv-tegra/tegra/gst-src/gst-nvtee.git"
   },
   "tegra/gst-src/gst-nvv4l2camera": {
     "date": "2025-07-01T06:51:31-07:00",
@@ -321,7 +321,7 @@
     "path": "/nix/store/3ibj06mjniafds9yiv9sqda19wj0gs6q-gst-nvv4l2camera",
     "rev": "4757f10ace8d1711fee4ff18cade6d473d250268",
     "sha256": "0g33g580qi8blhqg4mla2fyz9jhc1q6062x9kls5cr4j13qdr35r",
-    "url": "https://nv-tegra.nvidia.com/tegra/gst-src/gst-nvv4l2camera.git"
+    "url": "https://gitlab.com/nvidia/nv-tegra/tegra/gst-src/gst-nvv4l2camera.git"
   },
   "tegra/gst-src/gst-nvvidconv": {
     "date": "2025-07-01T06:51:40-07:00",
@@ -333,7 +333,7 @@
     "path": "/nix/store/jx4w9rpfss3vfrzn71a1xqh58vi56i8v-gst-nvvidconv",
     "rev": "61c21f10836a2604c6c609060233dcdb1f496362",
     "sha256": "0fwd8bl6nzx481xlkkia5pp511pdkk5vinvsdivwrman0x1psk4f",
-    "url": "https://nv-tegra.nvidia.com/tegra/gst-src/gst-nvvidconv.git"
+    "url": "https://gitlab.com/nvidia/nv-tegra/tegra/gst-src/gst-nvvidconv.git"
   },
   "tegra/gst-src/gst-nvvideo4linux2": {
     "date": "2025-07-01T06:51:14-07:00",
@@ -345,7 +345,7 @@
     "path": "/nix/store/y4sbxb654x1as52lq7isqy74cx0kaazg-gst-nvvideo4linux2",
     "rev": "b119b2b41b6973efe2119faf2f2085858409619f",
     "sha256": "1ara86wdpl53pgqkgbhqnla1bfl6c0qlzincw19ks7m56w59fvz9",
-    "url": "https://nv-tegra.nvidia.com/tegra/gst-src/gst-nvvideo4linux2.git"
+    "url": "https://gitlab.com/nvidia/nv-tegra/tegra/gst-src/gst-nvvideo4linux2.git"
   },
   "tegra/gst-src/libgstnvcustomhelper": {
     "date": "2025-07-01T06:51:15-07:00",
@@ -357,7 +357,7 @@
     "path": "/nix/store/ghg7r91slwwznhclygj82iihc55sxz3r-libgstnvcustomhelper",
     "rev": "798df2cd1d7b14979d97c9db4a9ff76c9af4c173",
     "sha256": "00fgdqc2nd21px9pkb9d8vcrqdlzn7akz51pag01j8zz600wm3d3",
-    "url": "https://nv-tegra.nvidia.com/tegra/gst-src/libgstnvcustomhelper.git"
+    "url": "https://gitlab.com/nvidia/nv-tegra/tegra/gst-src/libgstnvcustomhelper.git"
   },
   "tegra/gst-src/libgstnvdrmvideosink": {
     "date": "2025-07-01T06:51:15-07:00",
@@ -369,7 +369,7 @@
     "path": "/nix/store/mzjhhqilmasagqysidwg502dljbqwg2g-libgstnvdrmvideosink",
     "rev": "9c3eba7e2c4de7ce200eb3f5e30e369acebee036",
     "sha256": "1s3b54daxs8hn8kbrldma50q1afg082zifl376l633mm7v1dnckp",
-    "url": "https://nv-tegra.nvidia.com/tegra/gst-src/libgstnvdrmvideosink.git"
+    "url": "https://gitlab.com/nvidia/nv-tegra/tegra/gst-src/libgstnvdrmvideosink.git"
   },
   "tegra/gst-src/libgstnvvideosinks": {
     "date": "2025-07-01T06:51:44-07:00",
@@ -381,7 +381,7 @@
     "path": "/nix/store/lhbyrkgb21pdlsa6jn53yvazdqfv3m3q-libgstnvvideosinks",
     "rev": "e9563c482b9083c2718cf59cc1967e16ac4b59d3",
     "sha256": "1y0lfsi9l9h2d1ki6qjivl8d8qss1hgwgz3k8g6kgb6k9fkx9674",
-    "url": "https://nv-tegra.nvidia.com/tegra/gst-src/libgstnvvideosinks.git"
+    "url": "https://gitlab.com/nvidia/nv-tegra/tegra/gst-src/libgstnvvideosinks.git"
   },
   "tegra/gst-src/nvgstapps": {
     "date": "2025-07-01T06:51:44-07:00",
@@ -393,7 +393,7 @@
     "path": "/nix/store/4ckn0jqan2ld1jg0ky2wxhc54jvxkcaj-nvgstapps",
     "rev": "0e2a7f1eadd98f4a38a26e0ab4f746ea87431b32",
     "sha256": "00abrjw90zjcssqi8wgg03rwxbpcp7r74i3hqvigcc8lcllf2s78",
-    "url": "https://nv-tegra.nvidia.com/tegra/gst-src/nvgstapps.git"
+    "url": "https://gitlab.com/nvidia/nv-tegra/tegra/gst-src/nvgstapps.git"
   },
   "tegra/kernel-src/nv-kernel-display-driver": {
     "date": "2025-07-01T06:51:43-07:00",
@@ -405,7 +405,7 @@
     "path": "/nix/store/g11a6lsdlxhh2gqai9dy84nb636d1cpi-nv-kernel-display-driver",
     "rev": "0508373a21f6c7ce01633466639c5fa0e91a314a",
     "sha256": "14kbpy2lh5plxi56j5m5xd8akdp0566js06jdmn645qpja9v58k0",
-    "url": "https://nv-tegra.nvidia.com/tegra/kernel-src/nv-kernel-display-driver.git"
+    "url": "https://gitlab.com/nvidia/nv-tegra/tegra/kernel-src/nv-kernel-display-driver.git"
   },
   "tegra/nv-sci-src/nvsci_headers": {
     "date": "2025-07-01T06:51:39-07:00",
@@ -417,7 +417,7 @@
     "path": "/nix/store/wkq5qii3m3nrf90nv050g0ypx3sz8rmd-nvsci_headers",
     "rev": "7086bf184b763bb2819714611860551aa5c5f2c0",
     "sha256": "0n2yfm0xncf1kf0i65f8k03cmzx91ymmh6z1vp4zh7q2f8zfjhb3",
-    "url": "https://nv-tegra.nvidia.com/tegra/nv-sci-src/nvsci_headers.git"
+    "url": "https://gitlab.com/nvidia/nv-tegra/tegra/nv-sci-src/nvsci_headers.git"
   },
   "tegra/optee-src/atf": {
     "date": "2025-07-01T06:51:37-07:00",
@@ -429,7 +429,7 @@
     "path": "/nix/store/7jmhvpwz8zy9a5lacx56aiz3pqnmrqwd-atf",
     "rev": "9d6c289e24ce6eb3e199bd1e2b9521ae60715d4f",
     "sha256": "0ch7966i57zrgwdzn6n6l9s7pdc83l1m1zvd31gx18p7gd9gmn7q",
-    "url": "https://nv-tegra.nvidia.com/tegra/optee-src/atf.git"
+    "url": "https://gitlab.com/nvidia/nv-tegra/tegra/optee-src/atf.git"
   },
   "tegra/optee-src/nv-optee": {
     "date": "2025-07-01T06:51:27-07:00",
@@ -441,7 +441,7 @@
     "path": "/nix/store/y9an1hymzamyscszyqqs7y4vw9k62lw4-nv-optee",
     "rev": "b67bc49a359a5c5c6413aeb06a49e0f30087e09c",
     "sha256": "0x5jzjfy81lqn86d2aj6vnnhd3wr37cxkm04bn07lj4dyg7dh531",
-    "url": "https://nv-tegra.nvidia.com/tegra/optee-src/nv-optee.git"
+    "url": "https://gitlab.com/nvidia/nv-tegra/tegra/optee-src/nv-optee.git"
   },
   "tegra/v4l2-src/libv4l2_nvargus": {
     "date": "2025-07-01T06:51:28-07:00",
@@ -453,7 +453,7 @@
     "path": "/nix/store/8pbbn0ka40my49kja8j08b16z7ksxrvb-libv4l2_nvargus",
     "rev": "c8d706dbf8b4dfa39fc9bc02b827ee6bcb399dda",
     "sha256": "15r4yq876wdcamihcvnvj5qf1i5ng9zl5j1n9yqq0khvwwylv1kf",
-    "url": "https://nv-tegra.nvidia.com/tegra/v4l2-src/libv4l2_nvargus.git"
+    "url": "https://gitlab.com/nvidia/nv-tegra/tegra/v4l2-src/libv4l2_nvargus.git"
   },
   "tegra/v4l2-src/v4l2_libs": {
     "date": "2025-07-01T06:51:29-07:00",
@@ -465,6 +465,6 @@
     "path": "/nix/store/6kkqa3l9xsi64ijml2wd7nlidh0wm1pb-v4l2_libs",
     "rev": "b16006fd7a4a5058b844dfbe349674c522fa5fd8",
     "sha256": "1j8rg9jqrwi0qdbvxihislbs4xdrgpcmizx10rxiypys1bjdsspa",
-    "url": "https://nv-tegra.nvidia.com/tegra/v4l2-src/v4l2_libs.git"
+    "url": "https://gitlab.com/nvidia/nv-tegra/tegra/v4l2-src/v4l2_libs.git"
   }
 }
