@@ -228,13 +228,15 @@ write_partitions() {
       disk_size=$(disk_size "$devnum" "$instnum")
       file_size=$(stat -c "%s" "$partfile")
       if [[ -n "$disk_size" ]]; then
-        start_location=$((disk_size - file_size))
-
-        # From edk2-nvidia/Silicon/NVIDIA/Include/Library/GptLib.h
-        # #define NVIDIA_GPT_BLOCK_SIZE   512
-        patchgpt "$partfile" "$start_location" 512 >"patched"
-        partfile="patched"
-        echo "Moving secondary_gpt to end: $disk_size - $file_size = $start_location"
+        _start_location=$((disk_size - file_size))
+        if [[ "$start_location" != "$_start_location" ]]; then
+          start_location="$_start_location"
+          # From edk2-nvidia/Silicon/NVIDIA/Include/Library/GptLib.h
+          # #define NVIDIA_GPT_BLOCK_SIZE   512
+          patchgpt "$partfile" "$start_location" 512 >"patched"
+          partfile="patched"
+          echo "Moving secondary_gpt to end: $disk_size - $file_size = $start_location"
+        fi
       else
         echo "WARNING: could not ensure secondary GPT is at end of disk"
       fi
