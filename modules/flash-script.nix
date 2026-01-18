@@ -247,6 +247,12 @@ in
             };
           }));
         };
+
+        socFamily = lib.mkOption {
+          type = types.nullOr types.str;
+          default = null;
+          internal = true;
+        };
       };
 
       flashScriptOverrides = {
@@ -424,5 +430,12 @@ in
             ];
           }.${cfg.som}
         )) else lib.mkOptionDefault [ ];
+
+    hardware.nvidia-jetpack.firmware.socFamily =
+          if cfg.som == null then null
+          else if lib.hasPrefix "thor-" cfg.som then "t26x"
+          else if lib.hasPrefix "orin-" cfg.som then "t23x"
+          else if lib.hasPrefix "xavier-" cfg.som then "t19x"
+          else null;
   };
 }
