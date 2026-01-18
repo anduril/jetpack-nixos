@@ -1,0 +1,35 @@
+diff --git a/p3509-0000+p3668-0000-qspi-sd.conf b/p3509-0000+p3668-0000-qspi-sd.conf
+index e327f03..2c5a96a 100644
+--- a/p3509-0000+p3668-0000-qspi-sd.conf
++++ b/p3509-0000+p3668-0000-qspi-sd.conf
+@@ -38,6 +38,7 @@ source "${LDK_DIR}/p3668.conf.common";
+ BLBlockSize=1048576;
+ EMMC_CFG=flash_l4t_t194_spi_sd_p3668.xml;
+ DTB_FILE=tegra194-p3668-0000-p3509-0000.dtb;
++TBCDTB_FILE=tegra194-p3668-0000-p3509-0000.dtb
+ RECROOTFSSIZE=100MiB
+ MISC_COLD_BOOT_CONFIG="tegra194-mb1-bct-misc-sd-l4t.cfg";
+ 
+diff --git a/p3509-0000+p3668-0000-qspi.conf b/p3509-0000+p3668-0000-qspi.conf
+index 69ab6f9..1320546 100644
+--- a/p3509-0000+p3668-0000-qspi.conf
++++ b/p3509-0000+p3668-0000-qspi.conf
+@@ -36,5 +36,6 @@
+ source "${LDK_DIR}/p3668.conf.common";
+ EMMC_CFG=flash_l4t_t194_qspi_p3668.xml;
+ DTB_FILE=tegra194-p3668-0000-p3509-0000.dtb;
++TBCDTB_FILE=tegra194-p3668-0000-p3509-0000.dtb;
+ NO_ROOTFS=${NO_ROOTFS:-1};
+ MISC_COLD_BOOT_CONFIG="tegra194-mb1-bct-misc-sd-l4t.cfg";
+diff --git a/p3509-0000+p3668-0001-qspi-emmc.conf b/p3509-0000+p3668-0001-qspi-emmc.conf
+index 2555474..7c12f9a 100644
+--- a/p3509-0000+p3668-0001-qspi-emmc.conf
++++ b/p3509-0000+p3668-0001-qspi-emmc.conf
+@@ -36,6 +36,7 @@
+ source "${LDK_DIR}/p3668.conf.common";
+ EMMC_CFG=flash_l4t_t194_spi_emmc_p3668.xml;
+ DTB_FILE=tegra194-p3668-0001-p3509-0000.dtb;
++TBCDTB_FILE=tegra194-p3668-0001-p3509-0000.dtb;
+ EMMCSIZE=17179869184;
+ RECROOTFSSIZE=100MiB;
+ 
