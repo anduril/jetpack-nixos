@@ -1,0 +1,40 @@
+From 0b38d68e3f9b2716e09c8416b956843bd89daf95 Mon Sep 17 00:00:00 2001
+From: Daniel Fullmer <danielrf12@gmail.com>
+Date: Mon, 19 Jan 2026 00:38:04 -0800
+Subject: [PATCH 1/2] Fix conftest use with gcc15
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+gcc15 now defaults to -std=gnu23 (See:
+https://gcc.gnu.org/gcc-15/porting_to.html#c23), which causes extraneous
+build failures in conftest. For example,
+
+> /nix/store/xpgdw24n47b8315inlis9yri6amv8cd7-linux-5.15.148-dev/lib/modules/5.15.148/source/include/linux/types.h:30:33: error: ‘bool’ cannot be defined via ‘typedef’
+
+during the disk_check_media_change conftest.
+
+This just sets -std=gcc11, which is what is used for KBUILD_CFLAGS since
+5.17
+
+See: https://github.com/NVIDIA/open-gpu-kernel-modules/issues/827
+---
+ scripts/conftest/conftest.sh | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/scripts/conftest/conftest.sh b/scripts/conftest/conftest.sh
+index fbe14b47..9be80f3f 100755
+--- a/scripts/conftest/conftest.sh
++++ b/scripts/conftest/conftest.sh
+@@ -90,7 +90,7 @@ build_cflags() {
+     ISYSTEM=`$CC -print-file-name=include 2> /dev/null`
+     BASE_CFLAGS="-O2 -D__KERNEL__ \
+ -DKBUILD_BASENAME=\"#conftest$$\" -DKBUILD_MODNAME=\"#conftest$$\" \
+--nostdinc -isystem $ISYSTEM \
++-nostdinc -isystem $ISYSTEM -std=gnu11 \
+ -Wno-implicit-function-declaration -Wno-strict-prototypes"
+ 
+     if [ "$OUTPUT" != "$SOURCES" ]; then
+-- 
+2.52.0
+
