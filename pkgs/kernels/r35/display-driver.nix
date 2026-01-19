@@ -16,7 +16,7 @@ stdenv.mkDerivation {
 
   setSourceRoot = "sourceRoot=$(echo */nvdisplay)";
 
-  patches = [ ./display-driver-reproducibility-fix.patch ./0001-conftest-Add-Wno-implicit-function-declaration-and-W.patch ];
+  patches = [ ./display-driver-reproducibility-fix.patch ./0001-Update-conftest-with-kernel-KBUILD-options.patch ];
 
   nativeBuildInputs = kernel.moduleBuildDependencies;
 
