@@ -56,6 +56,18 @@ let
           hash = "sha256-u+niqwjuLV5tNPykW4xhb7PW2XvUmXhx5uvftG1UIbU=";
         })
 
+        # MdePkg/BaseFdtLib: fix build with gcc 15
+        (fetchpatch {
+          url = "https://github.com/tianocore/edk2/commit/c0796335d3c6362b563844410499ff241d42ac63.patch";
+          sha256 = "sha256-F6wTh8xl+79AZmhhTTmeg7Cu7O2tFlh2JGQ5sYEfZ/o=";
+        })
+
+        # BaseTools/Pccts: set C standard
+        (fetchpatch {
+          url = "https://github.com/tianocore/edk2/commit/e063f8b8a53861043b9872cc35b08a3dc03b0942.patch";
+          sha256 = "sha256-KYkH0gBjdu12CDdwxMw0Un1Y7nwShuuhxoah9JDX/eg=";
+        })
+
         ./remove-gcc-prefix-checks.diff
       ];
     };
