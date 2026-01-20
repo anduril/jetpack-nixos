@@ -24,7 +24,15 @@ let
   '';
 
   l4t-oot-projects = {
-    inherit (gitRepos) hwpm nvidia-oot nvgpu nvdisplay unifiedgpudisp;
+    inherit (gitRepos) hwpm nvgpu nvdisplay unifiedgpudisp;
+    nvidia-oot = applyPatches {
+      name = "nvidia-oot";
+      src = gitRepos.nvidia-oot;
+      patches = [
+        ./0001-Fix-conftest-use-with-gcc15.patch
+        ./0002-Fix-header-guard-in-halfrf_ops_rtl8852c.h.patch
+      ];
+    };
     nvethernetrm = applyPatches {
       name = "nvethernetrm";
       src = gitRepos.nvethernetrm;

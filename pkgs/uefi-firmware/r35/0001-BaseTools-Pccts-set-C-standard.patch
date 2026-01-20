@@ -1,0 +1,45 @@
+From 64618e801dd31a9cf8dc0196c0801d5156a6c7eb Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Mon, 20 Jan 2025 09:40:31 +0100
+Subject: [PATCH] BaseTools/Pccts: set C standard
+
+The prehistoric code base doesn't build with ISO C23.  Set the C
+standard to C11 (for both clang and gcc) so it continues to build with
+gcc 15 (which uses C23 by default).
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ BaseTools/Source/C/VfrCompile/Pccts/antlr/makefile | 3 ++-
+ BaseTools/Source/C/VfrCompile/Pccts/dlg/makefile   | 2 +-
+ 2 files changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/BaseTools/Source/C/VfrCompile/Pccts/antlr/makefile b/BaseTools/Source/C/VfrCompile/Pccts/antlr/makefile
+index 559b1c99f1..4acdf19f28 100644
+--- a/BaseTools/Source/C/VfrCompile/Pccts/antlr/makefile
++++ b/BaseTools/Source/C/VfrCompile/Pccts/antlr/makefile
+@@ -174,7 +174,8 @@ ANTLR=${BIN_DIR}/antlr
+ DLG=${BIN_DIR}/dlg
+ OBJ_EXT=o
+ OUT_OBJ = -o
+-BUILD_CFLAGS= $(COPT) -I. -I$(SET) -I$(PCCTS_H) -DUSER_ZZSYN $(COTHER) -DZZLEXBUFSIZE=65536
++BUILD_CFLAGS= $(COPT) -I. -I$(SET) -I$(PCCTS_H) -DUSER_ZZSYN $(COTHER) -DZZLEXBUFSIZE=65536 -std=gnu11
++
+ BUILD_CPPFLAGS=
+ #
+ # SGI Users, use this CFLAGS
+diff --git a/BaseTools/Source/C/VfrCompile/Pccts/dlg/makefile b/BaseTools/Source/C/VfrCompile/Pccts/dlg/makefile
+index 5a3561edec..379aaaf717 100644
+--- a/BaseTools/Source/C/VfrCompile/Pccts/dlg/makefile
++++ b/BaseTools/Source/C/VfrCompile/Pccts/dlg/makefile
+@@ -122,7 +122,7 @@ endif
+ COPT=-O
+ ANTLR=${BIN_DIR}/antlr
+ DLG=${BIN_DIR}/dlg
+-BUILD_CFLAGS= $(COPT) -I. -I$(SET) -I$(PCCTS_H) -DUSER_ZZSYN -DZZLEXBUFSIZE=65536
++BUILD_CFLAGS= $(COPT) -I. -I$(SET) -I$(PCCTS_H) -DUSER_ZZSYN -DZZLEXBUFSIZE=65536 -std=gnu11
+ BUILD_CPPFLAGS=
+ OBJ_EXT=o
+ OUT_OBJ = -o
+-- 
+2.52.0
+

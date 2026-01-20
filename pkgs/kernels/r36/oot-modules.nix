@@ -31,6 +31,7 @@ let
       patches = [
         ./0001-rtl8822ce-Fix-Werror-address.patch
         ./0002-sound-Fix-include-path-for-tegra-virt-alt-include.patch
+        ./0003-Fix-conftest-use-with-gcc15.patch
       ];
     })
     (gitRepos.nvgpu.overrideAttrs { name = "nvgpu"; })

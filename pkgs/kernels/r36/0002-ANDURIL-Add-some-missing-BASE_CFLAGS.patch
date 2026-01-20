@@ -23,7 +23,7 @@ index 391374f..b89a15e 100644
      BASE_CFLAGS="-O2 -D__KERNEL__ \
  -DKBUILD_BASENAME=\"#conftest$$\" -DKBUILD_MODNAME=\"#conftest$$\" \
 --nostdinc -isystem $ISYSTEM \
-+-nostdinc -isystem $ISYSTEM -fshort-wchar -funsigned-char \
++-nostdinc -isystem $ISYSTEM -std=gnu11 -fshort-wchar -funsigned-char \
  -Wno-implicit-function-declaration -Wno-strict-prototypes"
  
      if [ "$OUTPUT" != "$SOURCES" ]; then

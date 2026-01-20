@@ -62,6 +62,11 @@ let
         url = "https://github.com/NVIDIA/edk2/commit/57a890fd03356350a1b7a2a0064c8118f44e9958.patch";
         hash = "sha256-on+yJOlH9B2cD1CS9b8Pmg99pzrlrZT6/n4qPHAbDcA=";
       })
+
+      # BaseTools/Pccts: set C standard
+      # Originaly from e063f8b8a53861043b9872cc35b08a3dc03b0942 upstream, but
+      # vendored here to fix merge conflict
+      ./0001-BaseTools-Pccts-set-C-standard.patch
     ];
   };
 
