@@ -158,11 +158,13 @@ in
         (mkIf (cfg.som == "xavier-nx") {
           targetBoard = mkDefault "jetson-xavier-nx-devkit";
           partitionTemplate = mkDefault (filterPartitions defaultPartitionsToRemove "${pkgs.nvidia-jetpack.bspSrc}/bootloader/${partitionTemplateDirectory}/cfg/flash_l4t_t194_spi_sd_p3668.xml");
+          patches = [ ../pkgs/r35-bsp.patch ]; # See: https://github.com/anduril/jetpack-nixos/pull/436
         })
 
         (mkIf (cfg.som == "xavier-nx-emmc") {
           targetBoard = mkDefault "jetson-xavier-nx-devkit-emmc";
           partitionTemplate = mkDefault (filterPartitions defaultPartitionsToRemove "${pkgs.nvidia-jetpack.bspSrc}/bootloader/${partitionTemplateDirectory}/cfg/flash_l4t_t194_spi_emmc_p3668.xml");
+          patches = [ ../pkgs/r35-bsp.patch ]; # See: https://github.com/anduril/jetpack-nixos/pull/436
         })
       ];
   }
