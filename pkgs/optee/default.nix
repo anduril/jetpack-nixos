@@ -52,6 +52,7 @@ let
     pname = "optee_xtest";
     version = l4tMajorMinorPatchVersion;
     src = nvopteeSrc;
+    patches = [ ./0001-GCC-15-compile-fix.patch ];
     nativeBuildInputs = [
       (buildPackages.python3.withPackages (p: [ p.cryptography ]))
     ] ++ lib.optionals (l4tOlder "36") [ openssl ];
