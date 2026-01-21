@@ -1,0 +1,55 @@
+From 3c57b50e105cd2d4be17444a70c530cccf67245b Mon Sep 17 00:00:00 2001
+From: Tanel Dettenborn <tanel.dettenborn@tii.ae>
+Date: Tue, 20 Jan 2026 13:06:08 +0200
+Subject: [PATCH] GCC 15 compile fix
+
+Patch is ported from OP-TEE's upstream repository. More details:
+https://github.com/OP-TEE/optee_test/commit/758da3ddc3e081999846f7c52bc2cf24687c2aff
+
+Signed-off-by: Tanel Dettenborn <tanel.dettenborn@tii.ae>
+---
+ optee/optee_test/host/xtest/regression_4000.c      | 3 +++
+ optee/optee_test/host/xtest/regression_4000_data.h | 6 ++++++
+ 2 files changed, 9 insertions(+)
+
+diff --git a/optee/optee_test/host/xtest/regression_4000.c b/optee/optee_test/host/xtest/regression_4000.c
+index 5e81211..7c4a459 100644
+--- a/optee/optee_test/host/xtest/regression_4000.c
++++ b/optee/optee_test/host/xtest/regression_4000.c
+@@ -1020,6 +1020,9 @@ static const uint8_t hash_data_shake256_out1[] = {
+  * https://tools.ietf.org/html/draft-sca-cfrg-sm3-02
+  * Appendix A.1
+  */
++#if __has_attribute(nonstring)
++__attribute__((nonstring))
++#endif
+ static const uint8_t hash_data_sm3_a1_in[3] = "abc";
+ 
+ static const uint8_t hash_data_sm3_a1_out[] = {
+diff --git a/optee/optee_test/host/xtest/regression_4000_data.h b/optee/optee_test/host/xtest/regression_4000_data.h
+index ae469b3..d8d109d 100644
+--- a/optee/optee_test/host/xtest/regression_4000_data.h
++++ b/optee/optee_test/host/xtest/regression_4000_data.h
+@@ -7757,6 +7757,9 @@ static struct derive_key_ecdh_t {
+ };
+ 
+ /* G/MT 0003 (SM2) Part 5 Annex C.2 - encryption/decryption */
++#if __has_attribute(nonstring)
++__attribute__((nonstring))
++#endif
+ static const uint8_t gmt_0003_part5_c2_sm2_testvector_ptx[19] =
+ /* M */
+ 	"encryption standard";
+@@ -8226,6 +8229,9 @@ static const uint8_t mac_data_sha3_512_out1[] = {
+  * GM/T 0042-2015
+  * Section D.3 Test vector 1
+  */
++#if __has_attribute(nonstring)
++__attribute__((nonstring))
++#endif
+ static const uint8_t mac_data_sm3_d31_in[112] =
+ 	"abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomn"
+ 	"opnopqabcdbcdecdefdefgefghfghighijhijkijkljklmklmn"
+-- 
+2.51.2
+
