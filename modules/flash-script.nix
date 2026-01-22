@@ -16,16 +16,17 @@ in
     (mkRenamedOptionModule [ "hardware" "nvidia-jetpack" "bootloader" "debugMode" ] [ "hardware" "nvidia-jetpack" "firmware" "uefi" "debugMode" ])
     (mkRenamedOptionModule [ "hardware" "nvidia-jetpack" "bootloader" "errorLevelInfo" ] [ "hardware" "nvidia-jetpack" "firmware" "uefi" "errorLevelInfo" ])
     (mkRenamedOptionModule [ "hardware" "nvidia-jetpack" "bootloader" "edk2NvidiaPatches" ] [ "hardware" "nvidia-jetpack" "firmware" "uefi" "edk2NvidiaPatches" ])
+    (mkRenamedOptionModule [ "hardware" "nvidia-jetpack" "firmware" "bootOrder" ] [ "hardware" "nvidia-jetpack" "firmware" "initialBootOrder" ])
   ];
 
   options = {
     hardware.nvidia-jetpack = {
       firmware = {
-        bootOrder = mkOption {
+        initialBootOrder = mkOption {
           # https://github.com/NVIDIA/edk2-nvidia/blob/71fc2f6de48f3e9f01214b4e9464dd03620b876b/Silicon/NVIDIA/Library/PlatformBootOrderLib/PlatformBootOrderLib.c#L26
           type = types.nullOr (types.listOf (types.enum [ "scsi" "usb" "sata" "pxev4" "httpv4" "pxev6" "httpv6" "nvme" "ufs" "sd" "emmc" "cdrom" "boot.img" "virtual" "shell" ]));
           default = null;
-          description = "The default boot order";
+          description = "The default/initial boot order used after a fresh flash of firmware";
         };
 
         uefi = {
