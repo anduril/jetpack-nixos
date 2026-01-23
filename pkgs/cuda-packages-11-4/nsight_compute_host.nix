@@ -1,6 +1,5 @@
 { alsa-lib
 , buildFHSEnv
-, buildFromDebs
 , dbus
 , expat
 , fontconfig
@@ -20,27 +19,32 @@ let
   finalAttrs = {
     pname = "nsight-compute-host";
     inherit (nsight_compute_target) version; # Host must match target.
-    srcs = nvidia-jetpack.debs.common."nsight-compute-${finalAttrs.version}".src;
+    srcs = [ nvidia-jetpack.debs.common."nsight-compute-${finalAttrs.version}".src ];
     dontAutoPatchelf = true;
-    postPatch =
+    preDebNormalization =
       let
-        mkPostPatch = arch: ''
-          mkdir -p host
-          cp -r "opt/nvidia/nsight-compute/${finalAttrs.version}/host/${arch}" host
-          cp -r "opt/nvidia/nsight-compute/${finalAttrs.version}/extras" .
-          cp -r "opt/nvidia/nsight-compute/${finalAttrs.version}/sections" .
-          rm -r opt
-
+        # Everything is deeply nested in opt, so we need to move it to the top-level.
+        mkPreNorm = arch: ''
+          pushd "$NIX_BUILD_TOP/$sourceRoot" >/dev/null
+          mv --verbose --no-clobber "$PWD/opt/nvidia/nsight-compute/${finalAttrs.version}/host/${arch}" "$PWD/host"
+          mv --verbose --no-clobber "$PWD/opt/nvidia/nsight-compute/${finalAttrs.version}/extras" "$PWD/extras"
+          mv --verbose --no-clobber "$PWD/opt/nvidia/nsight-compute/${finalAttrs.version}/sections" "$PWD/sections"
+          nixLog "removing $PWD/opt"
+          rm --recursive --dir "$PWD/opt" || {
+            nixErrorLog "$PWD/opt contains non-empty directories: $(ls -laR "$PWD/opt")"
+            exit 1
+          }
           # ncu requires that it remains under its original directory so symlink instead of copying
           # things out
           mkdir -p bin
-          ln -sfv ../host/${arch}/ncu-ui ./bin/ncu-ui
+          ln -sfv ../host/ncu-ui ./bin/ncu-ui
+          popd >/dev/null
         '';
       in
       if stdenv.hostPlatform.system == "x86_64-linux" then
-        mkPostPatch "linux-desktop-glibc_2_11_3-x64"
+        mkPreNorm "linux-desktop-glibc_2_11_3-x64"
       else if stdenv.hostPlatform.system == "aarch64-linux" then
-        mkPostPatch "linux-v4l_l4t-t210-a64"
+        mkPreNorm "linux-v4l_l4t-t210-a64"
       else
         throw "Unsupported architecture";
     meta.platforms = [
@@ -48,7 +52,7 @@ let
       "aarch64-linux"
     ];
   };
-  nsight_out = buildFromDebs finalAttrs;
+  nsight_out = nvidia-jetpack.buildFromDebs finalAttrs;
 in
 # ncu-ui has some hardcoded /usr access so use fhs instead of trying to patchelf
   # it also comes with its own qt6 .so, trying to use Nix qt6 libs results in weird

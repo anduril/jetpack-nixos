@@ -13,6 +13,12 @@ in
 {
   inherit (packages) vpi vpi-firmware;
 
+  # normalizeDebs must be constructed with import because we do not want callPackage's override to clobber our own.
+  normalizeDebs = import ./normalizeDebs.nix {
+    inherit (finalCudaPackages) cudaMajorMinorVersion;
+    inherit (finalCudaPackages.pkgs) dpkg lib srcOnly stdenvNoCC;
+  };
+
   # A pattern emerges here:
   # We must inject the driver libraries needed by various packages upstream uses autoPatchelfIgnoreMissingDeps to
   # build, since consumers of these packages will see transitive symbol resolution failures.

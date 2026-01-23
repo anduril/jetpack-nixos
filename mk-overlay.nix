@@ -102,7 +102,7 @@ makeScope final.newScope (self: {
   # on the SoC.
   defaultSomDebRepo = if l4tAtLeast "38" then "som" else "t234";
 
-  buildFromDebs = final.callPackage ./pkgs/buildFromDebs.nix { inherit (self) debs cudaMajorMinorVersion defaultSomDebRepo; };
+  buildFromDebs = self.callPackage ./pkgs/buildFromDebs.nix { };
 
   debsForSourcePackage = srcPackageName: filter (pkg: (pkg.source or "") == srcPackageName) (attrValues self.debs.common);
 

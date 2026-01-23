@@ -42,11 +42,6 @@ let
         inherit (finalCudaPackages.pkgs) lib nvidia-jetpack;
       };
 
-      normalizeDebs = import ./pkgs/cuda-packages-11-4/normalizeDebs.nix {
-        inherit (finalCudaPackages) cudaMajorMinorVersion;
-        inherit (finalCudaPackages.pkgs) dpkg lib srcOnly stdenvNoCC;
-      };
-
       cuda-samples = finalCudaPackages.callPackage ./pkgs/cuda-packages-11-4/cuda-samples.nix { };
 
       nsight_compute_host = finalCudaPackages.callPackage ./pkgs/cuda-packages-11-4/nsight_compute_host.nix { };
@@ -59,7 +54,7 @@ let
 
       cuda_cupti = finalCudaPackages.debWrapBuildRedist {
         drv = prevCudaPackages.cuda_cupti;
-        extraDebNormalization = ''
+        postDebNormalization = ''
           pushd "$NIX_BUILD_TOP/$sourceRoot" >/dev/null
           mv \
             --verbose \
@@ -157,12 +152,12 @@ let
         in
         finalCudaPackages.debWrapBuildRedist {
           drv = prevCudaPackages.tensorrt;
-          extraDebNormalization = ''
+          postDebNormalization = ''
             pushd "$NIX_BUILD_TOP/$sourceRoot" >/dev/null
             mv --verbose --no-clobber "$PWD/src/tensorrt" "$PWD/samples"
             nixLog "removing $PWD/src"
             rm --recursive --dir "$PWD/src" || {
-              nixErrorLog "$PWD/src contains non-empty directories: $(ls -laR "$PWD/extras")"
+              nixErrorLog "$PWD/src contains non-empty directories: $(ls -laR "$PWD/src")"
               exit 1
             }
 
@@ -351,7 +346,7 @@ let
       cuda_profiler_api = finalCudaPackages.debWrapBuildRedist {
         drv = prevCudaPackages.cuda_profiler_api;
         # Need additional normalization because the CUDA version is different from the one used in the package set.
-        extraDebNormalization = optionalString (system == "x86_64-linux") ''
+        postDebNormalization = optionalString (system == "x86_64-linux") ''
           pushd "$NIX_BUILD_TOP/$sourceRoot" >/dev/null
           mv \
             --verbose \

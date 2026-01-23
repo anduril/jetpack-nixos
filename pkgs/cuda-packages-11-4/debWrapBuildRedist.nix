@@ -22,7 +22,8 @@ in
   # `fromDeb` overrides parts of `buildRedist` to inject debian unpacking and normalization.
 lib.makeOverridable (
   { drv
-  , extraDebNormalization ? ""
+  , preDebNormalization ? ""
+  , postDebNormalization ? ""
   , sourceName ? replaceStrings [ "_" ] [ "-" ] drv.pname
   , extension ? (_: _: { })
   }:
@@ -49,7 +50,7 @@ lib.makeOverridable (
         srcs = map (getAttr "src") filteredDebs;
         inherit (finalAttrs) version;
         pname = finalAttrs.pname + "-" + "debs";
-        inherit extraDebNormalization;
+        inherit preDebNormalization postDebNormalization;
       };
 
       passthru = prevAttrs.passthru // {

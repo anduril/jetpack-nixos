@@ -30,7 +30,17 @@ buildFromDebs {
     debs.common."libnvvpi${majorVersion}".src
     debs.common."vpi${majorVersion}-dev".src
   ];
-  sourceRoot = "source/opt/nvidia/vpi${majorVersion}";
+  # Everything is deeply nested in opt, so we need to move it to the top-level.
+  preDebNormalization = ''
+    pushd "$NIX_BUILD_TOP/$sourceRoot" >/dev/null
+    mv --verbose --no-clobber "$PWD/opt/nvidia/vpi${majorVersion}"/* "$PWD/"
+    nixLog "removing $PWD/opt"
+    rm --recursive --dir "$PWD/opt" || {
+      nixErrorLog "$PWD/opt contains non-empty directories: $(ls -laR "$PWD/opt")"
+      exit 1
+    }
+    popd >/dev/null
+  '';
   buildInputs = [
     l4t-core
     l4t-3d-core

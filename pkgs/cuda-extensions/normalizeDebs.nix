@@ -17,7 +17,8 @@ in
   # with upstream's buildRedist.
 lib.makeOverridable (
   { srcs
-  , extraDebNormalization ? ""
+  , preDebNormalization ? ""
+  , postDebNormalization ? ""
   , pname
   , version
   }:
@@ -43,10 +44,16 @@ lib.makeOverridable (
       done
       unset -v src
 
+      runHook preDebNormalization
+
       runHook debNormalization
+
+      runHook postDebNormalization
 
       runHook postUnpack
     '';
+
+    inherit preDebNormalization postDebNormalization;
 
     debNormalization = ''
       pushd "$NIX_BUILD_TOP/$sourceRoot" >/dev/null
@@ -119,11 +126,27 @@ lib.makeOverridable (
         }
       fi
 
-      if [[ -e "$PWD/lib64" ]]; then
-        nixErrorLog "TODO(@connorbaker): $PWD/lib64's exists, copy everything into lib and make lib64 a symlink to lib"
-        ls -la "$PWD/lib64"
-        ls -laR "$PWD/lib64/"
-        exit 1
+      if [[ -d "$PWD/lib64" ]]; then
+        if [[ ! -e "$PWD/lib" ]]; then
+          nixLog "renaming $PWD/lib64 to $PWD/lib"
+          mv \
+            --verbose \
+            --no-clobber \
+            "$PWD/lib64" \
+            "$PWD/lib"
+        else
+          nixLog "moving contents of $PWD/lib64 to $PWD/lib"
+          mv \
+            --verbose \
+            --no-clobber \
+            --target-directory "$PWD/lib" \
+            "$PWD/lib64"/*
+          nixLog "removing $PWD/lib64"
+          rm --recursive --dir "$PWD/lib64" || {
+            nixErrorLog "$PWD/lib64 contains non-empty directories: $(ls -laR "$PWD/lib64")"
+            exit 1
+          }
+        fi
       elif [[ -d "$PWD/lib" ]]; then
         if [[ -L "$PWD/lib64" ]]; then
           nixLog "removing existing symlink $PWD/lib64"
@@ -135,17 +158,49 @@ lib.makeOverridable (
         fi
       fi
 
-      if [[ -d "$PWD/etc/ld.so.conf.d" ]]; then
-        rm --recursive --force --verbose "$PWD/etc/ld.so.conf.d"
+      if [[ -d "$PWD/sbin" ]]; then
+        if [[ -n "$(ls "$PWD/sbin")" ]]; then
+          mkdir -p "$PWD/bin"
+          mv \
+            --verbose \
+            --no-clobber \
+            --target-directory "$PWD/bin" \
+            "$PWD/sbin"/*
+        fi
+        rm --recursive --dir "$PWD/sbin" || {
+          nixErrorLog "$PWD/sbin contains non-empty directories: $(ls -laR "$PWD/sbin")"
+          exit 1
+        }
       fi
 
-      if [[ -f "$PWD/lib/ld.so.conf" ]]; then
-        rm --force --verbose "$PWD/lib/ld.so.conf"
+      if [[ -d "$PWD/lib" ]]; then
+        dir=""
+        for dir in nvidia tegra; do
+          # NOTE: Check if the directory is empty in the case it was symlinked to/from and we've already moved everything from it.
+          if [[ -e "$PWD/lib/$dir" && -n "$(ls "$PWD/lib/$dir/")" ]]; then
+            # NOTE: We do want to clobber, since existing entries in lib are usually symlinks to these files.
+            mv \
+              --verbose \
+              --target-directory "$PWD/lib" \
+              "$PWD/lib/$dir"/*
+            rm --recursive --dir "$PWD/lib/$dir" || {
+              nixErrorLog "$PWD/lib/$dir contains non-empty directories: $(ls -laR "$PWD/lib/$dir")"
+              exit 1
+            }
+          fi
+          if [[ -L "$PWD/lib/$dir" ]]; then
+            rm "$PWD/lib/$dir"
+          fi
+        done
+        unset -v dir
       fi
+
+      # General cleanup. Since we run with --force, missing files/directories do not cause errors.
+      rm --recursive --force --verbose "$PWD/etc/ld.so.conf.d"
+      rm --recursive --force --verbose "$PWD/etc/dpkg"
+      rm --force --verbose "$PWD/lib/ld.so.conf"
 
       popd >/dev/null
-
-      ${extraDebNormalization}
     '';
   }
 )

@@ -71,28 +71,29 @@ in
               ]
                 (lib.const null))
               pkgs.nvidia-jetpack);
-          # Exclude all the non-lib/bin stuff
+          # Exclude all the non-lib/bin stuff.
+          # NOTE: Using --force avoids failing when the directory does not exist.
           postBuild = ''
             nixLog "removing argus samples and includes"
-            rm -r "$out/argus"
+            rm -rf "$out/argus"
 
             nixLog "removing etc"
-            rm -r "$out/etc"
+            rm -rf "$out/etc"
 
             nixLog "removing include"
-            rm -r "$out/include"
+            rm -rf "$out/include"
 
             nixLog "removing lib/python3"
-            rm -r "$out/lib/python3"
+            rm -rf "$out/lib/python3"
 
             nixLog "removing samples"
-            rm -r "$out/samples"
+            rm -rf "$out/samples"
 
             nixLog "removing share/doc"
-            rm -r "$out/share/doc"
+            rm -rf "$out/share/doc"
 
             nixLog "removing var"
-            rm -r "$out/var"
+            rm -rf "$out/var"
           '';
         };
       in
