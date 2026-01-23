@@ -220,6 +220,7 @@ write_partitions() {
     # Hack for AGX Xavier, which places uefi_variables on sdmmc_user device. sdmmc_user is not zero'd when flashing,
     # but is zero'd on all other Jetsons because it lives on QSPI, which is zero'd. Let's keep consistent behavior
     if [[ "$partname" == "uefi_variables" ]] && [[ "$partfile" == "" ]] && [[ "$devnum" -eq 1 && "$instnum" -eq 3 ]]; then
+      report_step "Erasing entry:$partname (devnum=$devnum, instnum=$instnum) (offset=$start_location)"
       dd if=/dev/zero of=/dev/mmcblk0 bs=4096 seek="$start_location" count="$partsize" oflag=seek_bytes iflag=count_bytes
       continue
     fi
