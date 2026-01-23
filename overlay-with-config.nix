@@ -133,6 +133,10 @@ final: prev: (
 
               ln -s $gadget/functions/acm.usb0 $gadget/configs/c.1/
 
+              if [ -w /sys/bus/usb/devices/usb2/power/control ] ; then
+                echo on >/sys/bus/usb/devices/usb2/power/control
+              fi
+
               echo "$(ls /sys/class/udc | head -n 1)" >$gadget/UDC
 
               # force into device mode if OTG and something is up with automatic detection
