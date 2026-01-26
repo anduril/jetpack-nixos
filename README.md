@@ -150,6 +150,8 @@ via a capsule update, and when finished, boots into a NixOS configuration for Je
 As of 2023-12-09, the status of graphical output on Jetsons is described below.
 If you have problems with configurations that are expected to work, try different ports (HDMI/DP/USB-C), different cables, and rebooting with the cables initially connected or disconnected.
 
+For DP on Orin AGX in particular: try connecting the cable when the fan temporarily stops during the boot.
+
 #### Linux Console
 On Orin AGX/NX/Nano, the Linux console does not seem to work at all on the HDMI/DisplayPort.
 This may be an upstream limitation (not jetpack-nixos specific).
