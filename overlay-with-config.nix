@@ -174,7 +174,7 @@ final: prev: (
         (prev.makeInitrd {
           contents = [
             { object = jetpack-init; symlink = "/init"; }
-            { object = "${modulesClosure}/lib"; symlink = "/lib"; }
+            { object = modulesClosure; symlink = "/lib"; suffix = "/lib"; }
           ];
         }).overrideAttrs (prev: {
           passthru = prev.passthru // {
