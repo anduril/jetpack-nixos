@@ -18,9 +18,15 @@ buildFromDebs {
   pname = "cupva-${cupvaMajorMinorVersion}-l4t";
   repo = "common";
   buildInputs = [ stdenv.cc.cc.lib l4t-cuda l4t-nvsci l4t-pva ];
-  postPatch = ''
-    mkdir -p lib
-    mv opt/nvidia/cupva-${cupvaMajorMinorVersion}/lib/aarch64-linux-gnu/* lib/
-    rm -rf opt
+  # Everything is deeply nested in opt, so we need to move it to the top-level.
+  preDebNormalization = ''
+    pushd "$NIX_BUILD_TOP/$sourceRoot" >/dev/null
+    mv --verbose --no-clobber "$PWD/opt/nvidia/cupva-${cupvaMajorMinorVersion}/lib/aarch64-linux-gnu" "$PWD/lib"
+    nixLog "removing $PWD/opt"
+    rm --recursive --dir "$PWD/opt" || {
+      nixErrorLog "$PWD/opt contains non-empty directories: $(ls -laR "$PWD/opt")"
+      exit 1
+    }
+    popd >/dev/null
   '';
 }

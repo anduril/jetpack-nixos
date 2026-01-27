@@ -1,6 +1,6 @@
 {
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.05";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.11";
 
     cuda-legacy = {
       url = "github:nixos-cuda/cuda-legacy";
@@ -138,14 +138,24 @@
 
       nixosModules.default = import ./modules/default.nix self.overlays.default;
 
-      overlays.default = nixpkgs.lib.composeManyExtensions [
-        # We apply cuda-legacy here ourselves instead of making users do this becauase
-        # it is unlikely that users directly care about cuda-legacy as it's something
-        # jetpack-nixos has traditionally supplied.
-        # We apply cuda-legacy first because Connor says so.
-        cuda-legacy.overlays.default
-        (import ./overlay.nix)
-      ];
+      overlays.default = final: prev:
+        # We've already applied our overlay and should not apply it again.
+        # TODO(@connorbaker): Create a general "named overlay" mechanism which provides visibility into which overlays
+        # were applied and the order in which they were applied.
+        if prev."jetpack-nixos-overlay-applied-${self.narHash}" or false then
+          { }
+        else
+          nixpkgs.lib.composeManyExtensions [
+            # We apply cuda-legacy here ourselves instead of making users do this becauase
+            # it is unlikely that users directly care about cuda-legacy as it's something
+            # jetpack-nixos has traditionally supplied.
+            # We apply cuda-legacy first because Connor says so.
+            cuda-legacy.overlays.default
+            (import ./overlay.nix)
+            (_: _: { "jetpack-nixos-overlay-applied-${self.narHash}" = true; })
+          ]
+            final
+            prev;
 
       packages = {
         x86_64-linux =
@@ -195,13 +205,23 @@
               inherit system;
               config = {
                 allowUnfree = true;
-                cudaCapabilities = [ "7.2" "8.7" ];
+                cudaCapabilities = if system == "aarch64-linux" then [ "7.2" "8.7" ] else [ ];
                 cudaSupport = true;
               };
               overlays = [ self.overlays.default ];
             });
         in
-        pkgs.nvidia-jetpack // { inherit (pkgs) nvidia-jetpack5 nvidia-jetpack6 nvidia-jetpack7; }
+        pkgs.nvidia-jetpack // {
+          # For JetPack 5, both Xavier and Orin are supported.
+          inherit (pkgs) nvidia-jetpack5;
+          # For JetPack 6, only Orin is supported.
+          inherit (pkgs.pkgsForCudaArch.sm_87) nvidia-jetpack6;
+          # For JetPack 7[^1], only Thor is supported.[^2]
+          # [^1] As of this writing
+          # [^2] Thor being sm_110, not sm_101, as it is referred to in CUDA 12.7[^3]-12.9.
+          # [^3] CUDA 12.7 was never released but is regularly referred to in NVIDIA's documentation.
+          inherit (pkgs.pkgsForCudaArch.sm_110) nvidia-jetpack7;
+        }
       );
     };
 }

@@ -1,6 +1,6 @@
-diff -Naur a/lib/cmake/vpi/vpi-config.cmake b/lib/aarch64-linux-gnu/cmake/vpi/vpi-config.cmake
---- a/lib/aarch64-linux-gnu/cmake/vpi/vpi-config.cmake	1969-12-31 16:00:01.000000000 -0800
-+++ b/lib/aarch64-linux-gnu/cmake/vpi/vpi-config.cmake	2022-09-27 14:30:22.957595096 -0700
+diff -Naur a/lib/cmake/vpi/vpi-config.cmake b/lib/cmake/vpi/vpi-config.cmake
+--- a/lib/cmake/vpi/vpi-config.cmake	1969-12-31 16:00:01.000000000 -0800
++++ b/lib/cmake/vpi/vpi-config.cmake	2022-09-27 14:30:22.957595096 -0700
 @@ -42,16 +42,7 @@
  
  

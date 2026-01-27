@@ -15,15 +15,11 @@ let
   inherit (final.lib)
     attrValues
     callPackagesWith
-    composeManyExtensions
     concatMapAttrsStringSep
-    extends
     filter
     makeScope
     mapAttrsToList
     packagesFromDirectoryRecursive
-    optionalAttrs
-    replaceStrings
     versionAtLeast
     versionOlder
     versions
@@ -48,6 +44,15 @@ makeScope final.newScope (self: {
   inherit l4tAtLeast l4tOlder;
 
   callPackages = callPackagesWith (final // self);
+
+  # Present as a compatibility shim for packages which rely on `cudaPackages` to ensure they are able to draw from
+  # a package set of the correct version.
+  # Currently, these are:
+  # - pkgs/samples
+  # - pkgs/jetson-benchmarks
+  # - pkgs/buildFromDebs.nix
+  # This list should not grow.
+  cudaPackages = final.${final._cuda.lib.mkVersionedName "cudaPackages" cudaMajorMinorVersion};
 
   bspSrc = final.applyPatches {
     src = final.runCommand "l4t-unpacked"
@@ -97,7 +102,9 @@ makeScope final.newScope (self: {
   # on the SoC.
   defaultSomDebRepo = if l4tAtLeast "38" then "som" else "t234";
 
-  buildFromDebs = final.callPackage ./pkgs/buildFromDebs.nix { inherit (self) debs cudaMajorMinorVersion defaultSomDebRepo; };
+  buildFromDebs = self.callPackage ./pkgs/buildFromDebs.nix { };
+
+  debsForSourcePackage = srcPackageName: filter (pkg: (pkg.source or "") == srcPackageName) (attrValues self.debs.common);
 
   dlopenOverride = final.callPackage ./pkgs/dlopen-override { };
 
@@ -121,157 +128,6 @@ makeScope final.newScope (self: {
   tegra-eeprom-tool-static = final.pkgsStatic.callPackage ./pkgs/tegra-eeprom-tool { };
 
   patchgpt = self.callPackage ./pkgs/patchgpt { };
-
-  # Taken largely from:
-  # https://github.com/NixOS/nixpkgs/blob/b0401fdfb86201ed2e351665387ad6505b88f452/pkgs/top-level/cuda-packages.nix
-  cudaPackages =
-    let
-      inherit (final) _cuda;
-      inherit (self) cudaMajorMinorVersion;
-      cudaLib = _cuda.lib;
-
-      # We must use an instance of Nixpkgs where the CUDA package set we're building is the default; if we do not, members
-      # of the versioned, non-default package sets may rely on (transitively) members of the default, unversioned CUDA
-      # package set.
-      # See `Using cudaPackages.pkgs` in doc/languages-frameworks/cuda.section.md for more information.
-      pkgs' =
-        let
-          cudaPackagesUnversionedName = "cudaPackages";
-          cudaPackagesMajorVersionName = cudaLib.mkVersionedName cudaPackagesUnversionedName (
-            versions.major cudaMajorMinorVersion
-          );
-          cudaPackagesMajorMinorVersionName = cudaLib.mkVersionedName cudaPackagesUnversionedName cudaMajorMinorVersion;
-
-          nvidiaJetpackUnversionedName = "nvidia-jetpack";
-          nvidiaJetpackMajorVersionName = "${nvidiaJetpackUnversionedName}${versions.major jetpackMajorMinorPatchVersion}";
-        in
-        # If the CUDA version of pkgs matches our CUDA version, has the debs attribute (which is specific to
-          # JetPack-constructed CUDA package sets), and the version of `nvidia-jetpack` matches, we are constructing
-          # the default package set and can use pkgs without modification.
-        if final.cudaPackages.cudaMajorMinorVersion == cudaMajorMinorVersion && final.cudaPackages ? debs &&
-          final.nvidia-jetpack.jetpackMajorMinorPatchVersion == jetpackMajorMinorPatchVersion then
-          final
-        else
-          final.extend (
-            final: _: {
-              recurseForDerivations = false;
-              # The CUDA package set will be available as cudaPackages_x_y, so we need only update the aliases for the
-              # minor-versioned and unversioned package sets.
-              # cudaPackages_x = cudaPackages_x_y
-              ${cudaPackagesMajorVersionName} = final.${cudaPackagesMajorMinorVersionName};
-              # cudaPackages = cudaPackages_x
-              ${cudaPackagesUnversionedName} = final.${cudaPackagesMajorVersionName};
-              # nvidia-jetpack = nvidia-jetpackX
-              # TODO(@cbaker2): This might have the assumption that final.${nvidiaJetpackMajorVersionName} *is* self.
-              ${nvidiaJetpackUnversionedName} = final.${nvidiaJetpackMajorVersionName};
-            }
-          );
-
-      passthruFunction = finalCudaPackages: {
-        # Versions
-        inherit cudaMajorMinorPatchVersion cudaMajorMinorVersion;
-        cudaMajorVersion = versions.major finalCudaPackages.cudaMajorMinorVersion;
-        cudaVersionDashes = replaceStrings [ "." ] [ "-" ] cudaMajorMinorVersion;
-
-        # Utilities
-        callPackages = callPackagesWith (pkgs' // pkgs'.nvidia-jetpack // finalCudaPackages);
-        cudaAtLeast = versionAtLeast finalCudaPackages.cudaMajorMinorPatchVersion;
-        cudaOlder = versionOlder finalCudaPackages.cudaMajorMinorPatchVersion;
-        inherit (self) debs buildFromDebs; # NOTE: The presence of debs is used as a condition in construciton of pkgs'.
-        debsForSourcePackage = srcPackageName: filter (pkg: (pkg.source or "") == srcPackageName) (attrValues finalCudaPackages.debs.common);
-
-        # The manifests attribute is required to avoid breakages caused by going from a JetPack-provided CUDA package
-        # set to one of upstream Nixpkgs' CUDA package sets, since upstream compares against the manifests attribute.
-        # See: https://github.com/NixOS/nixpkgs/pull/462761.
-        manifests.cuda.release_label = cudaMajorMinorPatchVersion;
-
-        pkgs = pkgs';
-
-        # Use backendStdenv from upstream
-        backendStdenv =
-          if versionAtLeast final.lib.trivial.release "25.11" then
-            import (final.path + "/pkgs/development/cuda-modules/backendStdenv")
-              {
-                inherit cudaMajorMinorVersion;
-                inherit (final)
-                  _cuda
-                  config
-                  lib
-                  stdenv
-                  stdenvAdapters
-                  ;
-                pkgs = final;
-              }
-          else
-            finalCudaPackages.callPackage (final.path + "/pkgs/development/cuda-modules/packages/backendStdenv.nix") { };
-
-        # Include saxpy as a way to check functionality
-        saxpy = finalCudaPackages.callPackage (final.path + "/pkgs/development/cuda-modules/packages/saxpy/package.nix") { };
-
-        cudaNamePrefix = "cuda${cudaMajorMinorVersion}";
-
-        flags =
-          cudaLib.formatCapabilities
-            {
-              inherit (finalCudaPackages.backendStdenv) cudaCapabilities cudaForwardCompat;
-              inherit (_cuda.db) cudaCapabilityToInfo;
-            }
-          // {
-            inherit (cudaLib) dropDots;
-            cudaComputeCapabilityToName =
-              cudaCapability: _cuda.db.cudaCapabilityToInfo.${cudaCapability}.archName;
-            dropDot = cudaLib.dropDots;
-            isJetsonBuild = finalCudaPackages.backendStdenv.hasJetsonCudaCapability;
-          };
-
-        # NCCL is unavailable on Jetson devices.
-        # We create an attribute for a broken derivation to avoid missing attribute evaluation errors.
-        nccl = final.emptyFile.overrideAttrs {
-          name = "nccl-is-unavailable-on-jetson-devices";
-          meta.platforms = [ "x86_64-linux" ];
-        };
-
-        # The CUDA compatibility library is unavailable on JetPack relases because the CUDA driver and runtime versions match.
-        # NOTE: Upstream may check for existence or nullity of cuda_compat, but does not explicitly check
-        # meta.unavailable (which is unreliable anyway since meta is not checked recursively).
-        cuda_compat = null;
-
-        # Likewise, autoAddCudaCompatRunpath doesn't exist in the JetPack CUDA package set.
-        autoAddCudaCompatRunpath = null;
-
-        # Early releases of JetPack may not support or provide these packages.
-        # Since later overlays may replace these, we can generically set them to null.
-        cusparselt = null;
-        libcufile = null;
-
-        # Aliases
-        # TODO(@connorbaker): Deprecation warnings.
-        cudaFlags = finalCudaPackages.flags;
-      } // optionalAttrs (versionOlder cudaMajorMinorPatchVersion "11.8") {
-        # cuda_nvprof is expected to exist for CUDA versions prior to 11.8.
-        # However, JetPack NixOS provides cuda_profiler_api, so just include a reference to that.
-        # https://github.com/NixOS/nixpkgs/blob/9cb344e96d5b6918e94e1bca2d9f3ea1e9615545/pkgs/development/python-modules/torch/source/default.nix#L543-L545
-        cuda_nvprof = finalCudaPackages.cuda_profiler_api;
-      };
-    in
-    if final.lib.versionAtLeast cudaMajorMinorPatchVersion "13" then
-      final."cudaPackages_${cudaLib.dotsToUnderscores cudaMajorMinorVersion}"
-    else
-    # NOTE: We must ensure the scope allows us to draw on the contents of nvidia-jetpack.
-      makeScope pkgs'.nvidia-jetpack.newScope (
-        extends
-          (composeManyExtensions [
-            # Add the packages built from debians
-            # NOTE: We do not extend with _cuda.extensions because the JetPack CUDA package sets have a different set of
-            # attributes compared to upstream; we should not expect the overlays provided to work with our package set.
-            (finalCudaPackages: _: packagesFromDirectoryRecursive {
-              directory = ./pkgs/cuda-packages;
-              inherit (finalCudaPackages) callPackage;
-            })
-            (final.callPackage ./pkgs/cuda-extensions { })
-          ])
-          passthruFunction
-      );
 
   samples = makeScope self.newScope (finalSamples: {
     callPackages = callPackagesWith (self // finalSamples);

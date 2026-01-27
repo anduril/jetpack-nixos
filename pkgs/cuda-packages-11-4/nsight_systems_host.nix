@@ -1,8 +1,6 @@
 { alsa-lib
 , buildFHSEnv
-, buildFromDebs
 , dbus
-, debs
 , expat
 , fontconfig
 , ncurses5
@@ -11,6 +9,7 @@
 , nsightSystemSrcs ? null
 , nspr
 , nss
+, nvidia-jetpack
 , qt6
 , requireFile
 , stdenv
@@ -39,33 +38,34 @@ let
                 '';
               }
           else if stdenv.hostPlatform.system == "aarch64-linux" then
-            debs.common."nsight-systems-${finalAttrs.version}".src
+            [ nvidia-jetpack.debs.common."nsight-systems-${finalAttrs.version}".src ]
           else
             throw "Unsupported architecture"
         )
       else
         nsightSystemSrcs;
-    phases = [
-      "unpackPhase"
-      "patchPhase"
-      "installPhase"
-    ];
-    postPatch =
+    preDebNormalization =
       let
-        mkPostPatch = arch: ''
-          mv opt/nvidia/nsight-systems/${finalAttrs.version}/host-${arch} .
-          rm -r opt
-
-          mkdir -p bin
+        # Everything is deeply nested in opt, so we need to move it to the top-level.
+        mkPreNorm = arch: ''
+          pushd "$NIX_BUILD_TOP/$sourceRoot" >/dev/null
+          mv --verbose --no-clobber "$PWD/opt/nvidia/nsight-systems/${finalAttrs.version}/host-${arch}" "$PWD/host-${arch}"
+          nixLog "removing $PWD/opt"
+          rm --recursive --dir "$PWD/opt" || {
+            nixErrorLog "$PWD/opt contains non-empty directories: $(ls -laR "$PWD/opt")"
+            exit 1
+          }
           # nsys requires that it remains under its original directory so symlink instead of copying
           # things out
+          mkdir -p bin
           ln -sfv ../host-${arch}/nsys-ui ./bin/nsys-ui
+          popd >/dev/null
         '';
       in
       if stdenv.hostPlatform.system == "x86_64-linux" then
-        mkPostPatch "linux-x64"
+        mkPreNorm "linux-x64"
       else if stdenv.hostPlatform.system == "aarch64-linux" then
-        mkPostPatch "linux-armv8"
+        mkPreNorm "linux-armv8"
       else
         throw "Unsupported architecture";
     meta.platforms = [
@@ -73,7 +73,7 @@ let
       "aarch64-linux"
     ];
   };
-  nsight_out = buildFromDebs finalAttrs;
+  nsight_out = nvidia-jetpack.buildFromDebs finalAttrs;
 in
 # nsys-ui has some hardcoded /usr access so use fhs instead of trying to patchelf
   # it also comes with its own qt6 .so, trying to use Nix qt6 libs results in weird

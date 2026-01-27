@@ -7,10 +7,10 @@
 , l4t-pva
 , lib
 , opencv
-, stdenv
 }:
 let
   inherit (cudaPackages)
+    backendStdenv
     cuda_cudart
     cuda_nvcc
     vpi
@@ -18,7 +18,7 @@ let
 
   vpiMajor = lib.versions.major vpi.version;
 in
-stdenv.mkDerivation {
+backendStdenv.mkDerivation {
   __structuredAttrs = true;
   strictDeps = true;
 
