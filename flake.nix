@@ -162,6 +162,8 @@
               board-automation python-jetson;
             inherit (self.legacyPackages.x86_64-linux.cudaPackages)
               nsight_systems_host nsight_compute_host;
+            inherit (self.legacyPackages.x86_64-linux.nvidia-jetpack7)
+              nv_tcu_demuxer;
           }
           # Flashing and board automation scripts _only_ work on x86_64-linux
           // flashScripts;

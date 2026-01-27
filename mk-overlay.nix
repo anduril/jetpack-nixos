@@ -319,7 +319,9 @@ makeScope final.newScope (self: {
 
   # TODO(jared): deprecate this
   devicePkgsFromNixosConfig = config: config.system.build.jetsonDevicePkgs;
-}
+} // (optionalAttrs (versionAtLeast jetpackMajorMinorPatchVersion "6") {
+  nv_tcu_demuxer = final.callPackage ./pkgs/nv_tcu_demuxer { inherit (self) bspSrc; };
+})
   # Add the L4T packages
   # NOTE: Since this is adding packages to the top-level, and callPackage's auto args functionality draws from that
   # attribute set, we cannot use self.callPackages because we would end up with infinite recursion.
