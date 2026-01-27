@@ -133,9 +133,16 @@ final: prev: (
 
               ln -s $gadget/functions/acm.usb0 $gadget/configs/c.1/
 
+              # Disable autosuspend
               if [ -w /sys/bus/usb/devices/usb2/power/control ] ; then
                 echo on >/sys/bus/usb/devices/usb2/power/control
               fi
+
+              # Wait for udc to finish probing, if not done already
+              while [[ -z "$(ls /sys/class/udc | head -n 1)" ]] ; do
+                echo "Waiting for /sys/class/udc/*"
+                sleep 1
+              done
 
               echo "$(ls /sys/class/udc | head -n 1)" >$gadget/UDC
 
