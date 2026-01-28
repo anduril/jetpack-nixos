@@ -23,6 +23,10 @@ buildFromDebs {
     debs.common.nvidia-opencv-dev.src
   ];
 
+  postPatch = ''
+    substituteInPlace lib/pkgconfig/opencv4.pc --replace-fail "prefix=/usr/local" "prefix=${placeholder "out"}"
+  '';
+
   buildInputs = [
     glib
     gtk2
