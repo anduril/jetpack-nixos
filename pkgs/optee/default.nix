@@ -14,6 +14,7 @@
 , gitRepos
 , uefi-firmware
 , openssl
+, symlinkJoin
 }:
 
 let
@@ -48,7 +49,7 @@ let
     meta.platforms = [ "aarch64-linux" ];
   };
 
-  buildOpteeXtest = args: stdenv.mkDerivation {
+  buildOpteeXtest = args: stdenv.mkDerivation (finalAttrs: {
     pname = "optee_xtest";
     version = l4tMajorMinorPatchVersion;
     src = nvopteeSrc;
@@ -62,11 +63,28 @@ let
     postPatch = ''
       patchShebangs --build $(find optee/optee_test -type d -name scripts -printf '%p ')
     '';
+
+    # Use passthru + symlinkJoin instead of multiple outputs to avoid cyclic
+    # dependencies: xtest binary needs to reference TAs, and TAs contain
+    # references to $out in metadata/symbols (can't strip - they're signed).
+    passthru =
+      let
+        path = dir: "${lib.getOutput "out" finalAttrs.finalPackage }/${dir}";
+        package = name: symlinkJoin {
+          inherit name;
+          paths = [(path name)];
+        };
+      in {
+        tas = package "tas";
+        plugins = package "plugins";
+      };
+
     makeFlags = [
       "-C optee/optee_test"
       "CROSS_COMPILE=${stdenv.cc.targetPrefix}"
       "OPTEE_CLIENT_EXPORT=${opteeClient}"
       "TA_DEV_KIT_DIR=${buildOpteeTaDevKit args}/export-ta_arm64"
+      "TA_DIR=$(out)/tas" # xtest needs to manually load corrupt TA for test 1008
       "O=$(PWD)/out"
     ] ++ lib.optionals (l4tAtLeast "36") [
       "WITH_OPENSSL=n"
@@ -75,11 +93,13 @@ let
       runHook preInstall
 
       install -Dm 755 ./out/xtest/xtest $out/bin/xtest
-      find ./out -name "*.ta" -exec cp {} $out \;
+
+      find ./out -name "*.ta" -print0 | xargs -0 install -Dm 755 -t $out/tas
+      find ./out -name "*.plugin" -print0 | xargs -0 install -Dm 755 -t $out/plugins
 
       runHook postInstall
     '';
-  };
+  });
 
   buildPkcs11Ta = args: stdenv.mkDerivation {
     pname = "pkcs11ta";
