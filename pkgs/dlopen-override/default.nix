@@ -49,7 +49,7 @@ let
     buildPhase = ''
       runHook preBuild
 
-      cc -shared -fPIC -o dlopen-override.so dlopenoverride.c -ldl
+      $CC -shared -fPIC -o dlopen-override.so dlopenoverride.c -ldl
 
       runHook postBuild
     '';
