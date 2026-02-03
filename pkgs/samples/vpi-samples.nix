@@ -32,11 +32,17 @@ backendStdenv.mkDerivation {
   buildInputs = [ cuda_cudart opencv vpi ]
     ++ lib.optionals (l4tAtLeast "38") [ l4t-pva ];
 
+  # Sample directories which we won't build.
+  ignoredSampleDirs = {
+    "11-fisheye" = if (lib.versionAtLeast opencv.version "4.10") then "1" else "0";
+  };
+
   configurePhase = ''
     runHook preBuild
 
     for dirname in $(find . -type d | sort); do
       if [[ -e "$dirname/CMakeLists.txt" ]]; then
+        [[ ''${ignoredSampleDirs["$(basename $dirname)"]-0} -eq 1 ]] && continue
         echo "Configuring $dirname"
         pushd $dirname
         cmake .
@@ -52,6 +58,7 @@ backendStdenv.mkDerivation {
 
     for dirname in $(find . -type d | sort); do
       if [[ -e "$dirname/CMakeLists.txt" ]]; then
+        [[ ''${ignoredSampleDirs["$(basename $dirname)"]-0} -eq 1 ]] && continue
         echo "Building $dirname"
         pushd $dirname
         make $buildFlags
