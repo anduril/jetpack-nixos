@@ -353,7 +353,7 @@ in
     hardware.nvidia-jetpack.flashScriptOverrides.additionalDtbOverlays =
       let
         bootOrder = pkgs.runCommand "DefaultBootOrder.dtbo" { nativeBuildInputs = with pkgs.buildPackages; [ dtc ]; } ''
-          export bootOrder=${lib.concatStringsSep "," cfg.firmware.bootOrder}
+          export bootOrder=${lib.concatStringsSep "," cfg.firmware.initialBootOrder}
           substituteAll ${./uefi-boot-order.dts} keys.dts
           dtc -I dts -O dtb keys.dts -o $out
         '';
@@ -365,7 +365,7 @@ in
           dtc -I dts -O dtb keys.dts -o $out
         '';
       in
-      (lib.optional (cfg.firmware.bootOrder != null) bootOrder) ++
+      (lib.optional (cfg.firmware.initialBootOrder != null) bootOrder) ++
       (lib.optional cfg.firmware.uefi.secureBoot.enrollDefaultKeys uefiDefaultKeysDtbo);
 
     hardware.nvidia-jetpack.flashScriptOverrides.fuseArgs = lib.mkAfter [ cfg.flashScriptOverrides.configFileName ];
