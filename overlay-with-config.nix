@@ -89,9 +89,10 @@ final: prev: (
 
       flashInitrd =
         let
+          commonModules = [ "dm-mod" ];
           spiModules = if lib.versions.majorMinor config.system.build.kernel.version == "5.10" then [ "qspi_mtd" "spi_tegra210_qspi" "at24" "spi_nor" ] else [ "mtdblock" "spi_tegra210_quad" ];
           usbModules = if lib.versions.majorMinor config.system.build.kernel.version == "5.10" then [ ] else [ "libcomposite" "udc-core" "tegra-xudc" "xhci-tegra" "u_serial" "usb_f_acm" ];
-          modules = spiModules ++ usbModules ++ cfg.flashScriptOverrides.additionalInitrdFlashModules;
+          modules = commonModules ++ spiModules ++ usbModules ++ cfg.flashScriptOverrides.additionalInitrdFlashModules;
           modulesClosure = prev.makeModulesClosure {
             rootModules = modules;
             kernel = config.system.modulesTree;
