@@ -33,10 +33,10 @@ in
 } // lib.optionalAttrs (l4tAtLeast "36") {
   inherit (packages) l4t-nvml;
   nvidia-smi = packages.l4t-nvml;
-} // lib.optionalAttrs (l4tOlder "38") {
+} // lib.optionalAttrs (l4tOlder "36") {
   inherit (packages)
-    l4t-cupva# Not available on JP7+
-    l4t-xusb-firmware# L4T 38+ uses upstream firmware
+    l4t-cupva
+    l4t-xusb-firmware
     ;
 } // lib.optionalAttrs (l4tAtLeast "38") {
   inherit (packages)
