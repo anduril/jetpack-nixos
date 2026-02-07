@@ -27,6 +27,7 @@ let
         ./patches/nvidia-oot/0001-rtl8822ce-Fix-Werror-address.patch
         ./patches/nvidia-oot/0002-sound-Fix-include-path-for-tegra-virt-alt-include.patch
         ./patches/nvidia-oot/0003-Fix-conftest-use-with-gcc15.patch
+        ./patches/nvidia-oot/0004-rtl8852e-Fix-conflicting-types.patch
       ];
     };
     nvgpu = gitRepos.nvgpu;
