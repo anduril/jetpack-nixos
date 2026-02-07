@@ -167,9 +167,7 @@ makeScope final.newScope (self: {
   otaUtils = self.callPackage ./pkgs/ota-utils { };
 
   l4tCsv = self.callPackage ./pkgs/containers/l4t-csv.nix { };
-  genL4tJson = final.runCommand "l4t.json" { nativeBuildInputs = [ final.buildPackages.python3 ]; } ''
-    python3 ${./pkgs/containers/gen_l4t_json.py} ${self.l4tCsv} ${self.unpackedDebsFilenames} > $out
-  '';
+  genL4tJson = self.callPackage ./pkgs/containers/genL4tJson.nix { };
   containerDeps = self.callPackage ./pkgs/containers/deps.nix { };
   nvidia-ctk = warnOnInstantiate "nvidia-jetpack.nvidia-ctk has been removed, use pkgs.nvidia-container-toolkit" final.nvidia-container-toolkit;
 
