@@ -18,34 +18,29 @@ let
     ];
   };
 
-  mkCopyProjectCommand = project: ''
-    mkdir -p "$out/${project.name}"
-    cp --no-preserve=all -vr "${project}"/. "$out/${project.name}"
-  '';
-
-  l4t-oot-projects = [
-    (gitRepos.hwpm.overrideAttrs { name = "hwpm"; })
-    (applyPatches {
+  l4t-oot-projects = {
+    hwpm = gitRepos.hwpm;
+    nvidia-oot = applyPatches {
       name = "nvidia-oot";
       src = gitRepos.nvidia-oot;
       patches = [
-        ./0001-rtl8822ce-Fix-Werror-address.patch
-        ./0002-sound-Fix-include-path-for-tegra-virt-alt-include.patch
-        ./0003-Fix-conftest-use-with-gcc15.patch
+        ./patches/nvidia-oot/0001-rtl8822ce-Fix-Werror-address.patch
+        ./patches/nvidia-oot/0002-sound-Fix-include-path-for-tegra-virt-alt-include.patch
+        ./patches/nvidia-oot/0003-Fix-conftest-use-with-gcc15.patch
       ];
-    })
-    (gitRepos.nvgpu.overrideAttrs { name = "nvgpu"; })
-    (applyPatches {
+    };
+    nvgpu = gitRepos.nvgpu;
+    nvdisplay = applyPatches {
       name = "nvdisplay";
       src = gitRepos.nvdisplay;
       patches = [
-        ./0001-nvidia-drm-Guard-nv_dev-in-nv_drm_suspend_resume.patch
-        ./0002-ANDURIL-Add-some-missing-BASE_CFLAGS.patch
-        ./0003-ANDURIL-Update-drm_gem_object_vmap_has_map_arg-test.patch
-        ./0004-ANDURIL-override-KERNEL_SOURCES-and-KERNEL_OUTPUT-if.patch
+        ./patches/nvdisplay/0001-nvidia-drm-Guard-nv_dev-in-nv_drm_suspend_resume.patch
+        ./patches/nvdisplay/0002-ANDURIL-Add-some-missing-BASE_CFLAGS.patch
+        ./patches/nvdisplay/0003-ANDURIL-Update-drm_gem_object_vmap_has_map_arg-test.patch
+        ./patches/nvdisplay/0004-ANDURIL-override-KERNEL_SOURCES-and-KERNEL_OUTPUT-if.patch
       ];
-    })
-    (applyPatches {
+    };
+    nvethernetrm = applyPatches {
       name = "nvethernetrm";
       src = gitRepos.nvethernetrm;
       # Some directories in the git repo are RO.
@@ -53,8 +48,8 @@ let
       postPatch = ''
         chmod -R u+w osi
       '';
-    })
-  ];
+    };
+  };
 
   l4t-oot-modules-sources = runCommand "l4t-oot-sources" { }
     (
@@ -64,7 +59,12 @@ let
         cp "${patchedBsp}/source/Makefile" "$out/Makefile"
       ''
       # copy the projects
-      + lib.strings.concatMapStringsSep "\n" mkCopyProjectCommand l4t-oot-projects
+      + (lib.strings.concatStringsSep "\n" (lib.mapAttrsToList
+        (name: project: ''
+          mkdir -p "$out/${name}"
+          cp --no-preserve=all -vr "${project}"/. "$out/${name}"
+        '')
+        l4t-oot-projects))
       # See bspSrc/source/source_sync.sh symlink at end of file
       + ''
         ln -vsrf "$out/nvethernetrm" "$out/nvidia-oot/drivers/net/ethernet/nvidia/nvethernet/nvethernetrm"

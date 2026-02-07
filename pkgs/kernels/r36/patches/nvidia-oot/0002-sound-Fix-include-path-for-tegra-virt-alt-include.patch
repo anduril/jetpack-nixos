@@ -1,7 +1,7 @@
-From 8ccff3029f2d8bf626adc1dcd44924e86ec91ba8 Mon Sep 17 00:00:00 2001
+From 04859ad5e8f70edd911a2f7a04f267a85d4882e6 Mon Sep 17 00:00:00 2001
 From: Elliot Berman <eberman@anduril.com>
 Date: Fri, 25 Apr 2025 08:40:40 -0700
-Subject: [PATCH 2/2] sound: Fix include path for tegra-virt-alt/include
+Subject: [PATCH 2/4] sound: Fix include path for tegra-virt-alt/include
 
 overlay isn't defined.
 
@@ -24,5 +24,5 @@ index 77bad808..2853f096 100644
  ccflags-y += -I$(srctree.nvidia-oot)/sound/soc/tegra-virt-alt/nvaudio_ivc/
  
 -- 
-2.49.0
+2.50.0
 

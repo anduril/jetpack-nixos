@@ -38,11 +38,11 @@ buildLinux (args // {
   kernelPatches = [
     {
       name = "ipu: Depend on x86";
-      patch = ./0001-ipu-Depend-on-x86.patch;
+      patch = ./patches/kernel/0001-ipu-Depend-on-x86.patch;
     }
     {
       name = "Hack-to-select-VIDEOBUF2_DMA_CONTIG";
-      patch = ./0002-Hack-to-select-VIDEOBUF2_DMA_CONTIG.patch;
+      patch = ./patches/kernel/0002-Hack-to-select-VIDEOBUF2_DMA_CONTIG.patch;
     }
   ] ++ kernelPatches;
 
