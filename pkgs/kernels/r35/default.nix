@@ -198,7 +198,8 @@ buildLinux (args // {
     MD_RAID1 = module;
     MD_RAID10 = module;
     MD_RAID456 = module;
-  } // (lib.optionalAttrs realtime {
+  } // (import ../common-arch.nix { inherit lib; })
+  // (lib.optionalAttrs realtime {
     PREEMPT_VOLUNTARY = lib.mkForce no; # Disable the one set in common-config.nix
     # These are the options enabled/disabled by scripts/rt-patch.sh
     PREEMPT_RT = yes;
