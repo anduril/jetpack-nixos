@@ -38,7 +38,7 @@ buildLinux (args // {
   kernelPatches = [
     {
       name = "ipu: Depend on x86";
-      patch = ./0001-ipu-Depend-on-x86.patch;
+      patch = ./patches/kernel/0001-ipu-Depend-on-x86.patch;
     }
   ] ++ kernelPatches;
 
