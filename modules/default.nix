@@ -299,7 +299,7 @@ in
       ] ++ lib.optionals (lib.versionOlder cfg.majorVersion "7") [
         # Optional, but needed for pva_auth_allowlist firmware file used by VPI2
         cudaPackages.vpi-firmware
-      ] ++ lib.optionals (l4tOlder "38") [
+      ] ++ lib.optionals (l4tOlder "36") [
         l4t-xusb-firmware # usb firmware also present in linux-firmware package, but that package is huge and has much more than needed
       ] ++ lib.optionals (l4tAtLeast "38") (
         let
