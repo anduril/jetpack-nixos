@@ -11,6 +11,7 @@ let
     l4t-core
     l4t-cupva
     l4t-multimedia
+    l4t-pva
     l4t-video-codec-openrm
     l4tMajorMinorPatchVersion
     l4tOlder
@@ -49,6 +50,7 @@ buildFromDebs {
     libnpp
   ]
   ++ lib.optional (l4tMajorVersion == "35") l4t-cupva
+  ++ lib.optional (l4tMajorVersion == "36") l4t-pva
   ++ lib.optional (l4tMajorVersion == "38") l4t-video-codec-openrm;
   patches = [ ./vpi2.patch ];
   postPatch = ''
