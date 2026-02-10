@@ -288,7 +288,7 @@ in
         options nvgpu devfreq_timer="delayed"
       '' + lib.optionalString (jetpackAtLeast "7") ''
         # from L4T-Ubuntu /etc/modprobe.d/nvidia-unifiedgpudisp.conf
-        options nvidia NVreg_RegistryDwords="RMExecuteDevinitOnPmu=0;RMEnableAcr=1;RmCePceMap=0xffffff20;RmCePceMap1=0xffffffff;RmCePceMap2=0xffffffff;RmCePceMap3=0xffffffff;" NVreg_TegraGpuPgMask=512
+        options nvidia NVreg_RegistryDwords="RMExecuteDevinitOnPmu=0;RMEnableAcr=1;RmCePceMap=0xffffff20;RmCePceMap1=0xffffffff;RmCePceMap2=0xffffffff;RmCePceMap3=0xffffffff;"
         softdep nvidia pre: governor_pod_scaling post: nvidia-uvm
       '';
 
