@@ -32,7 +32,10 @@ in
   taPublicKeyFile = null;
 
   src = gitRepos."tegra/optee-src/nv-optee";
-  patches = [ ./remove-force-log-level.diff ];
+  patches = [
+    ./remove-force-log-level.diff
+    ./0003-Add-pre-sign-hook.patch
+  ];
 
   nativeBuildInputs = [
     dtc

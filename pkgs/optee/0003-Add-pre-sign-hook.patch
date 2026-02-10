@@ -1,0 +1,55 @@
+--- a/optee/optee_os/ta/link.mk
++++ b/optee/optee_os/ta/link.mk
+@@ -22,6 +22,7 @@ all: $(link-out-dir$(sm))/$(user-ta-uuid).dmp \
+ cleanfiles += $(link-out-dir$(sm))/$(user-ta-uuid).elf
+ cleanfiles += $(link-out-dir$(sm))/$(user-ta-uuid).dmp
+ cleanfiles += $(link-out-dir$(sm))/$(user-ta-uuid).map
++cleanfiles += $(link-out-dir$(sm))/$(user-ta-uuid).stripped.unneeded.elf
+ cleanfiles += $(link-out-dir$(sm))/$(user-ta-uuid).stripped.elf
+ cleanfiles += $(link-out-dir$(sm))/$(user-ta-uuid).ta
+ cleanfiles += $(link-script-pp$(sm)) $(link-script-dep$(sm))
+@@ -96,11 +97,16 @@ $(link-out-dir$(sm))/$(user-ta-uuid).dmp: \
+ 	@$(cmd-echo-silent) '  OBJDUMP $$@'
+ 	$(q)$(OBJDUMP$(sm)) -l -x -d $$< > $$@
+ 
+-$(link-out-dir$(sm))/$(user-ta-uuid).stripped.elf: \
++$(link-out-dir$(sm))/$(user-ta-uuid).stripped.unneeded.elf: \
+ 			$(link-out-dir$(sm))/$(user-ta-uuid).elf
+ 	@$(cmd-echo-silent) '  OBJCOPY $$@'
+ 	$(q)$(OBJCOPY$(sm)) --strip-unneeded $$< $$@
+ 
++$(link-out-dir$(sm))/$(user-ta-uuid).stripped.elf: \
++		$(link-out-dir$(sm))/$(user-ta-uuid).stripped.unneeded.elf
++	@$(cmd-echo-silent) '  PRESIGN $$@'
++	$(q)$(if $(NIX_TA_PRE_SIGN_HOOK),$(NIX_TA_PRE_SIGN_HOOK),cp) $$< $$@
++
+ cmd-echo$(user-ta-uuid) := SIGN   #
+ ifeq ($(CFG_ENCRYPT_TA),y)
+ crypt-args$(user-ta-uuid) := --enc-key $(TA_ENC_KEY)
+--- a/optee/optee_os/ta/link_shlib.mk
++++ b/optee/optee_os/ta/link_shlib.mk
+@@ -13,6 +13,7 @@ all: $(link-out-dir)/$(shlibname).so $(link-out-dir)/$(shlibname).dmp \
+ 
+ cleanfiles += $(link-out-dir)/$(shlibname).so
+ cleanfiles += $(link-out-dir)/$(shlibname).dmp
++cleanfiles += $(link-out-dir)/$(shlibname).stripped.unneeded.so
+ cleanfiles += $(link-out-dir)/$(shlibname).stripped.so
+ cleanfiles += $(link-out-dir)/$(shlibuuid).elf
+ cleanfiles += $(link-out-dir)/$(shlibuuid).ta
+@@ -39,10 +40,15 @@ $(link-out-dir)/$(shlibname).dmp: $(link-out-dir)/$(shlibname).so
+ 	@$(cmd-echo-silent) '  OBJDUMP $@'
+ 	$(q)$(OBJDUMP$(sm)) -l -x -d $< > $@
+ 
+-$(link-out-dir)/$(shlibname).stripped.so: $(link-out-dir)/$(shlibname).so
++$(link-out-dir)/$(shlibname).stripped.unneeded.so: $(link-out-dir)/$(shlibname).so
+ 	@$(cmd-echo-silent) '  OBJCOPY $@'
+ 	$(q)$(OBJCOPY$(sm)) --strip-unneeded $< $@
+ 
++$(link-out-dir)/$(shlibname).stripped.so: \
++		$(link-out-dir)/$(shlibname).stripped.unneeded.so
++	@$(cmd-echo-silent) '  PRESIGN $@'
++	$(q)$(if $(NIX_TA_PRE_SIGN_HOOK),$(NIX_TA_PRE_SIGN_HOOK),cp) $< $@
++
+ $(link-out-dir)/$(shlibuuid).elf: $(link-out-dir)/$(shlibname).so
+ 	@$(cmd-echo-silent) '  LN      $@'
+ 	$(q)ln -sf $(<F) $@
