@@ -8,6 +8,48 @@ let
     types;
 
   cfg = config.services.nvpmodel;
+
+  # This script is based of the nvpower.sh script nvidia provides
+  setupConf = pkgs.writeShellScriptBin "setupConf" ''
+    compat=$(tr -d '\0' < /proc/device-tree/compatible)
+
+    # xavier doesn't use the compat in the conf file name so we have to hard code the som 
+    if [[ "$compat" == *'tegra194'* ]]; then
+      if [[ "$compat" == *'agxi'* ]]; then
+        device_som="t194_agxi"
+      elif [[ "$compat" == *'p3668'* ]]; then
+        device_som="t194_p3668"
+      else
+        device_som="t194"
+      fi
+    else
+      tmp="''${compat#*"+"}"
+      tmp2="''${tmp%%"nvidia,"*}"
+      device_som="''${tmp2//-/_}"
+
+      echo "Selected device som before hard coding: $device_som"
+
+      # If there are no files that match the compat node use the default nvpower.sh uses
+      if [ ! -f ${pkgs.nvidia-jetpack.l4t-nvpmodel}/etc/nvpmodel/nvpmodel_"$device_som".conf ]; then
+        if [[ "$device_som" == 'p3767_0005' ]]; then
+          # The nvpower script maps p3767_0005 -> p3767_0003 so doing the same here
+          # looks to be difference between jp5 and jp6.
+          device_som="p3767_0003"
+        elif [[ "$compat" == *'tegra234'* ]]; then
+          device_som="p3701_0000"
+        elif [[ "$compat" == *'tegra264'* ]]; then
+          device_som="p3834_0005"
+        else
+          echo "Unable to find a valid conf file"
+          exit 1
+        fi
+      fi
+
+      echo "Selected device som after hard coding: $device_som"
+    fi
+
+    ln -s ${pkgs.nvidia-jetpack.l4t-nvpmodel}/etc/nvpmodel/nvpmodel_"$device_som".conf /etc/nvpmodel.conf
+  '';
 in
 {
   options = {
@@ -16,7 +58,8 @@ in
 
       configFile = mkOption {
         description = "config file name from l4t-nvpmodel package to use";
-        type = types.path;
+        default = null;
+        type = types.nullOr types.path;
       };
 
       profileNumber = mkOption {
@@ -36,12 +79,15 @@ in
         Type = "oneshot";
         Restart = "on-failure";
         RestartSec = "2s";
-        ExecStart = "${pkgs.nvidia-jetpack.l4t-nvpmodel}/bin/nvpmodel -f ${cfg.configFile}" + lib.optionalString (cfg.profileNumber != null) " -m ${builtins.toString cfg.profileNumber}";
+        ExecStartPre = mkIf (cfg.configFile == null) (lib.getExe setupConf);
+        ExecStart = "${pkgs.nvidia-jetpack.l4t-nvpmodel}/bin/nvpmodel -f /etc/nvpmodel.conf" + lib.optionalString (cfg.profileNumber != null) " -m ${builtins.toString cfg.profileNumber}";
       };
       wantedBy = [ "multi-user.target" ];
     };
 
-    environment.etc."nvpmodel.conf".source = cfg.configFile;
+    environment.etc."nvpmodel.conf" = mkIf (cfg.configFile != null) {
+      source = cfg.configFile;
+    };
     environment.etc."nvpmodel".source = "${pkgs.nvidia-jetpack.l4t-nvpmodel}/etc/nvpmodel";
     # Need this hack otherwise setting the mode requires a reboot on JP7 thor
     #
