@@ -111,7 +111,10 @@ in
   config = mkIf config.hardware.nvidia-jetpack.enable {
     hardware.nvidia-jetpack.firmware.optee.supplicant.trustedApplications =
       lib.optional cfg.pkcs11Support pkgs.nvidia-jetpack.pkcs11Ta
-      ++ lib.optional cfg.xtest pkgs.nvidia-jetpack.opteeXtest;
+      ++ lib.optional cfg.xtest pkgs.nvidia-jetpack.opteeXtest.tas;
+
+    hardware.nvidia-jetpack.firmware.optee.supplicant.plugins =
+      lib.optional cfg.xtest pkgs.nvidia-jetpack.opteeXtest.plugins;
 
     systemd.services.tee-supplicant =
       let
