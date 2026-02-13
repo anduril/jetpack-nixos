@@ -101,7 +101,8 @@ buildLinux (args // {
 
     # Restore default LSM from security/Kconfig. Undoes Nvidia downstream changes.
     LSM = freeform "landlock,lockdown,yama,loadpin,safesetid,integrity,selinux,smack,tomoyo,apparmor,bpf";
-  } // lib.optionalAttrs realtime {
+  } // (import ../common-arch.nix { inherit lib; })
+  // lib.optionalAttrs realtime {
     PREEMPT_VOLUNTARY = lib.mkForce no; # Disable the one set in common-config.nix
     # These are the options enabled/disabled by source/generic_rt_build.sh (this file comes after source/source_sync.sh)
     PREEMPT_RT = yes;
