@@ -98,6 +98,15 @@ buildLinux (args // {
 
     # Restore default LSM from security/Kconfig. Undoes Nvidia downstream changes.
     LSM = freeform "landlock,lockdown,yama,loadpin,safesetid,integrity,selinux,smack,tomoyo,apparmor,bpf";
+
+    # drivers/media/platform/tegra/camera/vi/channel.c from
+    # linux-oot-modules has ifdefs for
+    # CONFIG_VIDEOBUF2_DMA_CONTIG, but actually requires it to
+    # function.
+    # Otherwise it hits a WARN_ON() and outputs
+    # > tegra-capture-vi: failed to initialize VB2 queue
+    VIDEOBUF2_DMA_CONTIG = yes;
+
   } // (import ../common-arch.nix { inherit lib; })
   // lib.optionalAttrs realtime {
     PREEMPT_VOLUNTARY = lib.mkForce no; # Disable the one set in common-config.nix
