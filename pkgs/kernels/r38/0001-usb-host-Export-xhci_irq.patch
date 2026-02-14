@@ -1,7 +1,7 @@
-From 173bf15c5274580a344dae38a29edee51dd449ce Mon Sep 17 00:00:00 2001
+From 4b1552b3861382dcefd0ace133e7d52501499cb3 Mon Sep 17 00:00:00 2001
 From: Elliot Berman <eberman@anduril.com>
 Date: Tue, 26 Aug 2025 10:31:32 -0700
-Subject: [PATCH] usb: host: Export xhci_irq
+Subject: [PATCH 1/2] usb: host: Export xhci_irq
 
 This symbol is used by xhci-tegra, which can be built in a separate
 module from xhci.
@@ -25,5 +25,5 @@ index 7badf91645909..04186add014e4 100644
  irqreturn_t xhci_msi_irq(int irq, void *hcd)
  {
 -- 
-2.50.1
+2.50.0
 
