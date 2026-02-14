@@ -1,4 +1,8 @@
-{ lib, pkgs, pkgsStatic, runCommand, tegra-eeprom-tool-static }:
+{ lib
+, pkgsStatic
+, runCommand
+, tegra-eeprom-tool-static
+}:
 
 let
   mtdutils = pkgsStatic.mtdutils.overrideAttrs ({ version, patches ? [ ], ... }: {
@@ -21,6 +25,7 @@ let
     cp ${mtdutils}/bin/flash_erase $out/bin
     cp ${tegra-eeprom-tool-static}/bin/tegra-boardspec $out/bin
     cp ${lib.getExe pkgsStatic.nvidia-jetpack.patchgpt} $out/bin
+    cp ${lib.getExe' pkgsStatic.lvm2 "dmsetup"} $out/bin
   '';
   name = "flash-from-device";
 in
