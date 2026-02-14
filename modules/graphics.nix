@@ -67,6 +67,7 @@ in
                 "l4t-nvml" # JP6+
                 "l4t-nvsci"
                 "l4t-pva"
+                "l4t-video-codec-openrm" # JP7+
                 "l4t-wayland"
               ]
                 (lib.const null))
