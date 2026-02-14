@@ -341,6 +341,22 @@ in
           "${dtsTree}/t23x/nv-public/include/platforms"
           "${dtsTree}/t23x/nv-public"
         ];
+        # See DTC_INCLUDE inside ${gitRepos."kernel-devicetree"}/generic-dts/Makefile
+        "7" = let dtsTree = "${config.hardware.deviceTree.dtbSource.src}/hardware/nvidia"; in [
+          # SOC independent common include
+          "${dtsTree}/tegra/nv-public"
+          "${dtsTree}/tegra/nv-public/include/kernel"
+          "${dtsTree}/tegra/nv-public/include/nvidia-oot"
+          "${dtsTree}/tegra/nv-public/include/platforms"
+
+          # SOC T23X specific common include
+          "${dtsTree}/t23x/nv-public/include/kernel"
+          "${dtsTree}/t23x/nv-public/include/nvidia-oot"
+          "${dtsTree}/t23x/nv-public/include/platforms"
+          "${dtsTree}/t23x/nv-public"
+          "${dtsTree}/t264/nv-public/include/kernel-t264"
+          "${dtsTree}/t264/nv-public"
+        ];
       }.${cfg.majorVersion};
 
       services.udev.packages = [
