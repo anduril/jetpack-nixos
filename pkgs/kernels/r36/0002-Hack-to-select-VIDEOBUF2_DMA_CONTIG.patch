@@ -1,0 +1,37 @@
+From 0e7e514385c43aae07926eb7465222a2a51eba69 Mon Sep 17 00:00:00 2001
+From: Daniel Fullmer <dfullmer@anduril.com>
+Date: Sat, 14 Feb 2026 13:43:59 -0800
+Subject: [PATCH 2/2] Hack to select VIDEOBUF2_DMA_CONTIG
+
+drivers/media/platform/tegra/camera/vi/channel.c from linux-oot-modules
+has ifdefs for CONFIG_VIDEOBUF2_DMA_CONTIG, but actually requires it to
+function. Otherwise it hits a WARN_ON() and outputs
+> tegra-capture-vi: failed to initialize VB2 queue
+
+This option unfortunately can't be set via extraConfig or
+structuredExtraConfig because the config option does not include a
+"prompt" and therefore kconfig sets its visibility to false, and it never
+shows up in "make config",  which prevents generate-config.pl from
+setting it.  Manually adding it to the defconfig doesn't work either.
+
+Here we have a hack to just reuse another option that _is_ already
+enabled and have it select the CONFIG_VIDEOBUF2_DMA_CONTIG
+---
+ drivers/media/common/videobuf2/Kconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/media/common/videobuf2/Kconfig b/drivers/media/common/videobuf2/Kconfig
+index d2223a12c95fc..a2298bafa0b95 100644
+--- a/drivers/media/common/videobuf2/Kconfig
++++ b/drivers/media/common/videobuf2/Kconfig
+@@ -21,6 +21,7 @@ config VIDEOBUF2_VMALLOC
+ 	select VIDEOBUF2_CORE
+ 	select VIDEOBUF2_MEMOPS
+ 	select DMA_SHARED_BUFFER
++        select VIDEOBUF2_DMA_CONTIG
+ 
+ config VIDEOBUF2_DMA_SG
+ 	tristate
+-- 
+2.50.0
+

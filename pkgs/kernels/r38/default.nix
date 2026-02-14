@@ -38,6 +38,10 @@ buildLinux (args // {
       name = "usb: host: Export xhci_irq";
       patch = ./0001-usb-host-Export-xhci_irq.patch;
     }
+    {
+      name = "Hack-to-select-VIDEOBUF2_DMA_CONTIG";
+      patch = ./0002-Hack-to-select-VIDEOBUF2_DMA_CONTIG.patch;
+    }
   ] ++ kernelPatches;
 
   structuredExtraConfig = with lib.kernel; {
