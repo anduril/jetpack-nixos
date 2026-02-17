@@ -1,7 +1,7 @@
-From b357cda254885375bde6d67ea2738e3481906d93 Mon Sep 17 00:00:00 2001
+From fdc314163136fcd0b9277b959de4c0c45cd7dfaf Mon Sep 17 00:00:00 2001
 From: Elliot Berman <eberman@anduril.com>
 Date: Fri, 25 Apr 2025 08:21:53 -0700
-Subject: [PATCH 1/2] rtl8822ce: Fix -Werror=address
+Subject: [PATCH 1/4] rtl8822ce: Fix -Werror=address
 
 For -Werror=address
 
@@ -316,5 +316,5 @@ index cd4001af..315db53f 100644
  			input_idx++;
  		}
 -- 
-2.49.0
+2.50.0
 

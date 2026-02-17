@@ -2,10 +2,9 @@
 - [ ] Update `l4tMajorMinorPatchVersion`, `jetpackMajorMinorPatchVersion`, and `cudaMajorMinorPatchVersion` in overlay.nix
 - [ ] Update branch/revision/sha256s in:
     - [ ] `overlay.nix`
-    - [ ] `pkgs/kernels/r${l4tMajorVersion}/default.nix`
     - [ ] `pkgs/uefi-firmware/r${l4tMajorVersion}/default.nix`
     - [ ] Grep for "sha256 = ", see if there is anything else not covered
-- [ ] Update the kernel version in `kernel/default.nix` if it chaged.
+- [ ] Update the kernel version in `pkgs/kernels/r${l4tMajorVersion}/default.nix` if it chaged.
 - [ ] Run `debs-update.py` and `gitrepos-update.py` under `sourceinfo` to generate new sourceinfo json files
 - [ ] Compare files from `unpackedDebs` before and after
 - [ ] Grep for NvOsLibraryLoad in libraries from debs to see if any new packages not already handled in l4t use the function
