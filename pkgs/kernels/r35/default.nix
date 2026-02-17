@@ -17,16 +17,6 @@
 # structure, or reproduce it ourself below.
 
 let
-  useOe4tKernelSrc = false;
-
-  oe4tKernelSrc = fetchFromGitHub {
-    owner = "OE4T";
-    repo = "linux-tegra-5.10";
-    # No OE4T kernel branch/tag for 35.6.1 as of 2025-03-11
-    #rev = "4bce4d148ef3ff159ab55c127d8761aeaac5cc28";
-    #sha256 = "sha256-YCOEGQ943EbrApdVFKs+l+g2XWZ8TvdqRxcK8F9ebo8=";
-  };
-
   # keys are strings referring to repos in sourceInfo, keys are relative paths to place into kernel src dir
   subtrees = (lib.flip lib.genAttrs (lib.removePrefix "kernel/") [
     "kernel/nvidia"
@@ -73,20 +63,20 @@ buildLinux (args // {
   # Using applyPatches here since it's not obvious how to append an extra
   # postPatch. This is not very efficient.
   src = applyPatches {
-    src = if useOe4tKernelSrc then oe4tKernelSrc else gitRepos."kernel/kernel-5.10";
+    src = gitRepos."kernel/kernel-5.10";
 
-    prePatch = lib.optionalString (!useOe4tKernelSrc) (lib.concatStringsSep "\n" (lib.mapAttrsToList
+    prePatch = lib.concatStringsSep "\n" (lib.mapAttrsToList
       (treeName: outPath: ''
         echo "Copying ${treeName} to ./${outPath}"
         mkdir -p "./${outPath}"
         cp -r "${gitRepos.${treeName}}/." "./${outPath}"
         chmod +w -R "./${outPath}"
       '')
-      subtrees));
+      subtrees);
 
     # Patches from OE4T which modify the build files to work with a single common kernel directory
     # Also includes some toolchain and random fixes
-    patches = lib.optional (!useOe4tKernelSrc) ./oe4t-patches.mbox;
+    patches = ./oe4t-patches.mbox;
 
     postPatch = ''
       # Remove device tree overlays with some incorrect "remote-endpoint" nodes.
