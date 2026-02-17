@@ -1,7 +1,7 @@
-From 6c58c589ea44d1bb6f05adc133bf0f245f285394 Mon Sep 17 00:00:00 2001
+From 0a0e80bb9b800aee2322c1b934b1357a34662b1a Mon Sep 17 00:00:00 2001
 From: Daniel Fullmer <dfullmer@anduril.com>
 Date: Fri, 6 Feb 2026 18:52:49 -0800
-Subject: [PATCH 4/4] rtl8852e: Fix conflicting types
+Subject: [PATCH 4/5] rtl8852e: Fix conflicting types
 
 ---
  .../realtek/rtl8852ce/phl/hal_g6/phy/bb/halbb_physts.h        | 4 ++--
@@ -23,5 +23,5 @@ index dab93dbb..80367e33 100644
  			       enum bb_physts_ie_t ie, bool en);
  void halbb_phy_sts_manual_trig(struct bb_info *bb, enum bb_mode_type mode, u8 ss);
 -- 
-2.50.0
+2.52.0
 

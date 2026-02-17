@@ -1,7 +1,7 @@
-From 6c719a3aba4ad11874e54c21f9e93c4c1197e217 Mon Sep 17 00:00:00 2001
+From 6d5a47ffd4a87b57d3af955b56319884f882626a Mon Sep 17 00:00:00 2001
 From: Daniel Fullmer <danielrf12@gmail.com>
 Date: Mon, 19 Jan 2026 00:38:04 -0800
-Subject: [PATCH 3/4] Fix conftest use with gcc15
+Subject: [PATCH 3/5] Fix conftest use with gcc15
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -36,5 +36,5 @@ index 781ae90b..89b86575 100755
  
      if [ "$OUTPUT" != "$SOURCES" ]; then
 -- 
-2.50.0
+2.52.0
 
