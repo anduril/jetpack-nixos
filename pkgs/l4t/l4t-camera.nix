@@ -20,6 +20,8 @@ buildFromDebs {
     postFixupHooks+=('
       ${ dlopenOverride { "/usr/lib/aarch64-linux-gnu/tegra-egl/libEGL_nvidia.so.0" = "/run/opengl-driver/lib/libEGL_nvidia.so.0"; } "$out/lib/libnvscf.so" }
       ${ dlopenOverride { "/usr/lib/aarch64-linux-gnu/tegra-egl/libEGL_nvidia.so.0" = "/run/opengl-driver/lib/libEGL_nvidia.so.0"; } "$out/lib/libnvargus_socketclient.so" }
+      ${ dlopenOverride { "/usr/lib/aarch64-linux-gnu/tegra-egl/libEGL_nvidia.so.0" = "/run/opengl-driver/lib/libEGL_nvidia.so.0"; } "$out/lib/libnvargus.so" }
+      ${ dlopenOverride { "/usr/lib/aarch64-linux-gnu/tegra-egl/libEGL_nvidia.so.0" = "/run/opengl-driver/lib/libEGL_nvidia.so.0"; } "$out/lib/libnvargus_socketserver.so" }
     ')
   '';
 }
