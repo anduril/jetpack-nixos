@@ -9,19 +9,6 @@ let
 
   cfg = config.hardware.nvidia-jetpack;
 
-  # TODO: Replace default selection with dynamic logic from nvidia-l4t-init/etc/systemd/nvpower.sh
-  nvpModelConf = {
-    orin-agx = "${pkgs.nvidia-jetpack.l4t-nvpmodel}/etc/nvpmodel/nvpmodel_p3701_0000.conf";
-    orin-agx-industrial = "${pkgs.nvidia-jetpack.l4t-nvpmodel}/etc/nvpmodel/nvpmodel_p3701_0008.conf";
-    orin-nx = "${pkgs.nvidia-jetpack.l4t-nvpmodel}/etc/nvpmodel/nvpmodel_p3767_0000${lib.optionalString cfg.super "_super"}.conf";
-    orin-nano = "${pkgs.nvidia-jetpack.l4t-nvpmodel}/etc/nvpmodel/nvpmodel_p3767_0003${lib.optionalString cfg.super "_super"}.conf";
-    thor-agx = "${pkgs.nvidia-jetpack.l4t-nvpmodel}/etc/nvpmodel/nvpmodel_p3834_0008.conf";
-    xavier-agx = "${pkgs.nvidia-jetpack.l4t-nvpmodel}/etc/nvpmodel/nvpmodel_t194.conf";
-    xavier-agx-industrial = "${pkgs.nvidia-jetpack.l4t-nvpmodel}/etc/nvpmodel/nvpmodel_t194_agxi.conf";
-    xavier-nx = "${pkgs.nvidia-jetpack.l4t-nvpmodel}/etc/nvpmodel/nvpmodel_t194_p3668.conf";
-    xavier-nx-emmc = "${pkgs.nvidia-jetpack.l4t-nvpmodel}/etc/nvpmodel/nvpmodel_t194_p3668.conf";
-  };
-
   nvfancontrolConf = {
     orin-agx = "${pkgs.nvidia-jetpack.l4t-nvfancontrol}/etc/nvpower/nvfancontrol/nvfancontrol_p3701_0000.conf";
     orin-agx-industrial = "${pkgs.nvidia-jetpack.l4t-nvfancontrol}/etc/nvpower/nvfancontrol/nvfancontrol_p3701_0008.conf";
@@ -56,8 +43,7 @@ in
 {
   config = lib.mkIf cfg.enable (lib.mkMerge [{
     # Turn on nvpmodel if we have a config for it.
-    services.nvpmodel.enable = mkIf (nvpModelConf ? "${cfg.som}") (mkDefault true);
-    services.nvpmodel.configFile = mkIf (nvpModelConf ? "${cfg.som}") (mkDefault nvpModelConf.${cfg.som});
+    services.nvpmodel.enable = mkDefault true;
 
     # Set fan control service if we have a config for it
     services.nvfancontrol.configFile = mkIf (nvfancontrolConf ? "${cfg.som}") (mkDefault nvfancontrolConf.${cfg.som});
