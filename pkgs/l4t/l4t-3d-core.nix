@@ -11,6 +11,11 @@
 buildFromDebs {
   pname = "nvidia-l4t-3d-core";
   buildInputs = [ l4t-core libglvnd egl-wayland ];
+  preDebNormalization = ''
+    pushd "$NIX_BUILD_TOP/$sourceRoot" >/dev/null
+    mv --verbose --no-clobber "$PWD/usr/lib/xorg" "$PWD/usr/lib/aarch64-linux-gnu"
+    popd >/dev/null
+  '';
   postPatch = ''
     # Replace incorrect ICD symlinks
     rm -rf etc
