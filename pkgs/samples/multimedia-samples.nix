@@ -28,7 +28,6 @@ let
     backendStdenv
     cuda_nvcc
     cudatoolkit
-    libnvjpeg
     tensorrt
     ;
   inherit (xorg) libX11;
@@ -58,10 +57,6 @@ backendStdenv.mkDerivation {
     tensorrt
     vulkan-headers
     vulkan-loader
-  ] ++ lib.optionals (l4tAtLeast "38") [
-    libnvjpeg
-    l4t-video-codec-openrm
-    l4t-pva
   ];
 
   # Usually provided by pkg-config, but the samples don't use it.
@@ -114,23 +109,6 @@ backendStdenv.mkDerivation {
     rm -f $out/bin/*.h
 
     cp -r data $out/
-
-    # patchelf dlopen'd libraries so autoPatchelfHook can find them
-    for exe in $out/bin/*; do
-      patchelf \
-        --add-needed libcairo.so.2 \
-        --add-needed libgobject-2.0.so.0 \
-        --add-needed libpango-1.0.so.0 \
-        --add-needed libpangocairo-1.0.so.0 \
-        ${lib.optionalString (l4tAtLeast "38") ''
-          --add-needed libnvjpeg.so.13 \
-          --add-needed libnvcuvid.so.1 \
-          --add-needed libnvidia-encode.so.1 \
-          --add-needed libnvpvaumd_core.so \
-        ''} \
-        "$exe"
-    done
-    unset -v exe
 
     runHook postInstall
   '';
