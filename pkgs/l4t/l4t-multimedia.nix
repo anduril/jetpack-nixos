@@ -1,6 +1,7 @@
 { alsa-lib
 , buildFromDebs
 , buildPackages
+, cudaPackages
 , debs
 , defaultSomDebRepo
 , dpkg
@@ -16,9 +17,10 @@
 , lib
 , libv4l
 , pango
-,
 }:
 let
+  inherit (cudaPackages) libnvjpeg;
+
   # Nvidia's included libv4l has very minimal changes against the upstream
   # version. We need to rebuild it from source to ensure it can find nvidia's
   # v4l plugins in the right location. Nvidia's version has the path hardcoded.
@@ -101,5 +103,8 @@ buildFromDebs {
   '';
 
   runtimeDependencies = [ l4t-nvsci ];
-  appendRunpaths = [ "${placeholder "out"}/lib" ];
+  # libnvmm_jpeg.so has a reference to libnvjpeg, which in JP6 is also present
+  # in nvidia-l4t-multimedia. However, in JP7 this is now in a separate
+  # libnvjpeg package
+  appendRunpaths = [ "${placeholder "out"}/lib" ] ++ lib.optionals (l4tAtLeast "38") (builtins.map (p: (lib.getLib p) + "/lib") [ libnvjpeg ]);
 }
