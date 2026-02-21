@@ -1,6 +1,7 @@
 { alsa-lib
 , buildFromDebs
 , buildPackages
+, cudaPackages
 , debs
 , defaultSomDebRepo
 , dpkg
@@ -16,9 +17,10 @@
 , lib
 , libv4l
 , pango
-,
 }:
 let
+  inherit (cudaPackages) libnvjpeg;
+
   # Nvidia's included libv4l has very minimal changes against the upstream
   # version. We need to rebuild it from source to ensure it can find nvidia's
   # v4l plugins in the right location. Nvidia's version has the path hardcoded.
@@ -101,5 +103,9 @@ buildFromDebs {
   '';
 
   runtimeDependencies = [ l4t-nvsci ];
-  appendRunpaths = [ "${placeholder "out"}/lib" ];
+  # TODO: LD_DEBUG=libs reports libnvv4l2 as loading nvjpeg but that file
+  # doesn't have a string reference to it. It's likely being included by
+  # another library. Determine true source of these load requests and use the
+  # RUNPATH from those libraries
+  appendRunpaths = [ "${placeholder "out"}/lib" ] ++ builtins.map (p: (lib.getLib p) + "/lib") [ libnvjpeg ];
 }

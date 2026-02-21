@@ -13,7 +13,7 @@ writeShellApplication {
     echo
 
     CHIP="$(tr -d '\0' < /proc/device-tree/compatible)"
-    if [[ "''${CHIP}" =~ "tegra194" ]]; then
+    if [[ "''${CHIP}" =~ "tegra194" || "''${CHIP}" =~ "tegra264" ]]; then
       echo " * Running vpi_sample_05_benchmark pva"
       ${vpi-samples}/bin/vpi_sample_05_benchmark pva
       echo

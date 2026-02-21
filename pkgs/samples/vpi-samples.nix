@@ -75,15 +75,6 @@ backendStdenv.mkDerivation {
     runHook preInstall
 
     install -Dm 755 -t $out/bin $(find . -type f -maxdepth 2 -perm 755)
-  '' + lib.optionalString (l4tAtLeast "38") ''
-    # patchelf dlopen'd libraries so autoPatchelfHook can find them
-    for exe in $out/bin/*; do
-      patchelf \
-        --add-needed libnvpvaumd_core.so \
-        "$exe"
-    done
-    unset -v exe
-  '' + ''
 
     runHook postInstall
   '';
