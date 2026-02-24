@@ -2,7 +2,6 @@
 , libnpp
 , lib
 , nvidia-jetpack
-,
 }:
 let
   inherit (nvidia-jetpack)
@@ -12,12 +11,14 @@ let
     l4t-core
     l4t-cupva
     l4t-multimedia
+    l4t-pva
     l4t-video-codec-openrm
     l4tMajorMinorPatchVersion
-    l4tOlder
+    l4tAtLeast
     ;
 
-  majorVersion = lib.getAttr (lib.versions.major l4tMajorMinorPatchVersion) {
+  l4tMajorVersion = lib.versions.major l4tMajorMinorPatchVersion;
+  majorVersion = lib.getAttr l4tMajorVersion {
     "35" = "2";
     "36" = "3";
     "38" = "4";
@@ -47,12 +48,19 @@ buildFromDebs {
     l4t-multimedia
     libcufft
     libnpp
-  ] ++ (if (l4tOlder "38") then [ l4t-cupva ] else [ l4t-video-codec-openrm ]);
+  ]
+  ++ lib.optional (l4tMajorVersion == "35") l4t-cupva
+  ++ lib.optional (l4tAtLeast "36") l4t-pva
+  ++ lib.optional (l4tMajorVersion == "38") l4t-video-codec-openrm;
   patches = [ ./vpi2.patch ];
   postPatch = ''
     rm -rf etc
     substituteInPlace lib/cmake/vpi/vpi-config.cmake --subst-var out
     substituteInPlace lib/cmake/vpi/vpi-config-release.cmake \
       --replace "lib/aarch64-linux-gnu" "lib/"
+  '' + lib.optionalString (l4tMajorVersion == "38") ''
+
+    # This library can dlopen() libnvpvaintf.so, libnvpvaumd_core.so, libnvpvaumd_cuda.so
+    patchelf --add-rpath ${l4t-pva}/lib lib/libnvvpi.so.4.0.0
   '';
 }

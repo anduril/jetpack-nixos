@@ -1,7 +1,7 @@
-From 684f238159a15e58b935a9fc861744126f6833df Mon Sep 17 00:00:00 2001
+From 7c7566f1972d38f9d3c7c71010a8b4dc8e0fcb4f Mon Sep 17 00:00:00 2001
 From: Elliot Berman <eberman@anduril.com>
 Date: Mon, 28 Apr 2025 15:28:58 -0700
-Subject: [PATCH] ipu: Depend on x86
+Subject: [PATCH 1/2] ipu: Depend on x86
 
 The ipu6 module makes use of the following x86-specific function:
 clflush_cache_range(). Make the Kconfig reflect this so allmodconfig
@@ -13,7 +13,7 @@ Signed-off-by: Elliot Berman <eberman@anduril.com>
  1 file changed, 1 insertion(+)
 
 diff --git a/drivers/media/pci/intel/Kconfig b/drivers/media/pci/intel/Kconfig
-index ee4a77acb66f..5088f1e850c5 100644
+index ee4a77acb66f3..5088f1e850c56 100644
 --- a/drivers/media/pci/intel/Kconfig
 +++ b/drivers/media/pci/intel/Kconfig
 @@ -3,6 +3,7 @@ config VIDEO_INTEL_IPU6
@@ -25,5 +25,5 @@ index ee4a77acb66f..5088f1e850c5 100644
  	select IOMMU_IOVA
  	select X86_DEV_DMA_OPS if X86
 -- 
-2.49.0
+2.50.0
 

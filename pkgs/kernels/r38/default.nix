@@ -38,6 +38,10 @@ buildLinux (args // {
       name = "usb: host: Export xhci_irq";
       patch = ./0001-usb-host-Export-xhci_irq.patch;
     }
+    {
+      name = "Hack-to-select-VIDEOBUF2_DMA_CONTIG";
+      patch = ./0002-Hack-to-select-VIDEOBUF2_DMA_CONTIG.patch;
+    }
   ] ++ kernelPatches;
 
   structuredExtraConfig = with lib.kernel; {
@@ -98,7 +102,17 @@ buildLinux (args // {
 
     # Restore default LSM from security/Kconfig. Undoes Nvidia downstream changes.
     LSM = freeform "landlock,lockdown,yama,loadpin,safesetid,integrity,selinux,smack,tomoyo,apparmor,bpf";
-  } // lib.optionalAttrs realtime {
+
+    # drivers/media/platform/tegra/camera/vi/channel.c from
+    # linux-oot-modules has ifdefs for
+    # CONFIG_VIDEOBUF2_DMA_CONTIG, but actually requires it to
+    # function.
+    # Otherwise it hits a WARN_ON() and outputs
+    # > tegra-capture-vi: failed to initialize VB2 queue
+    VIDEOBUF2_DMA_CONTIG = yes;
+
+  } // (import ../common-arch.nix { inherit lib; })
+  // lib.optionalAttrs realtime {
     PREEMPT_VOLUNTARY = lib.mkForce no; # Disable the one set in common-config.nix
     # These are the options enabled/disabled by source/generic_rt_build.sh (this file comes after source/source_sync.sh)
     PREEMPT_RT = yes;

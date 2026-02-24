@@ -1,7 +1,7 @@
-From b2b36fe7135ffce591bf07f075eac0af979412c6 Mon Sep 17 00:00:00 2001
+From 6d5a47ffd4a87b57d3af955b56319884f882626a Mon Sep 17 00:00:00 2001
 From: Daniel Fullmer <danielrf12@gmail.com>
 Date: Mon, 19 Jan 2026 00:38:04 -0800
-Subject: [PATCH 3/3] Fix conftest use with gcc15
+Subject: [PATCH 3/5] Fix conftest use with gcc15
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -23,7 +23,7 @@ See: https://github.com/NVIDIA/open-gpu-kernel-modules/issues/827
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/scripts/conftest/conftest.sh b/scripts/conftest/conftest.sh
-index 2346a86e..a8428066 100755
+index 781ae90b..89b86575 100755
 --- a/scripts/conftest/conftest.sh
 +++ b/scripts/conftest/conftest.sh
 @@ -90,7 +90,7 @@ build_cflags() {

@@ -1,7 +1,6 @@
 { applyPatches
 , lib
 , fetchFromGitHub
-, l4t-xusb-firmware
 , realtime ? false
 , kernelPatches ? [ ]
 , structuredExtraConfig ? { }
@@ -12,7 +11,7 @@
 }@args:
 buildLinux (args // {
   # See Makefile in kernel source root for VERSION/PATCHLEVEL/SUBLEVEL.
-  version = "5.15.148";
+  version = "5.15.185";
   extraMeta.branch = "5.15";
 
   defconfig = "defconfig";
@@ -39,7 +38,11 @@ buildLinux (args // {
   kernelPatches = [
     {
       name = "ipu: Depend on x86";
-      patch = ./0001-ipu-Depend-on-x86.patch;
+      patch = ./patches/kernel/0001-ipu-Depend-on-x86.patch;
+    }
+    {
+      name = "Hack-to-select-VIDEOBUF2_DMA_CONTIG";
+      patch = ./patches/kernel/0002-Hack-to-select-VIDEOBUF2_DMA_CONTIG.patch;
     }
   ] ++ kernelPatches;
 
@@ -101,7 +104,9 @@ buildLinux (args // {
 
     # Restore default LSM from security/Kconfig. Undoes Nvidia downstream changes.
     LSM = freeform "landlock,lockdown,yama,loadpin,safesetid,integrity,selinux,smack,tomoyo,apparmor,bpf";
-  } // lib.optionalAttrs realtime {
+
+  } // (import ../common-arch.nix { inherit lib; })
+  // lib.optionalAttrs realtime {
     PREEMPT_VOLUNTARY = lib.mkForce no; # Disable the one set in common-config.nix
     # These are the options enabled/disabled by source/generic_rt_build.sh (this file comes after source/source_sync.sh)
     PREEMPT_RT = yes;

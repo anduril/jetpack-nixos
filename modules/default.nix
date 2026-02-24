@@ -288,7 +288,7 @@ in
         options nvgpu devfreq_timer="delayed"
       '' + lib.optionalString (jetpackAtLeast "7") ''
         # from L4T-Ubuntu /etc/modprobe.d/nvidia-unifiedgpudisp.conf
-        options nvidia NVreg_RegistryDwords="RMExecuteDevinitOnPmu=0;RMEnableAcr=1;RmCePceMap=0xffffff20;RmCePceMap1=0xffffffff;RmCePceMap2=0xffffffff;RmCePceMap3=0xffffffff;" NVreg_TegraGpuPgMask=512
+        options nvidia NVreg_RegistryDwords="RMExecuteDevinitOnPmu=0;RMEnableAcr=1;RmCePceMap=0xffffff20;RmCePceMap1=0xffffffff;RmCePceMap2=0xffffffff;RmCePceMap3=0xffffffff;"
         softdep nvidia pre: governor_pod_scaling post: nvidia-uvm
       '';
 
@@ -299,7 +299,7 @@ in
       ] ++ lib.optionals (lib.versionOlder cfg.majorVersion "7") [
         # Optional, but needed for pva_auth_allowlist firmware file used by VPI2
         cudaPackages.vpi-firmware
-      ] ++ lib.optionals (l4tOlder "38") [
+      ] ++ lib.optionals (l4tOlder "36") [
         l4t-xusb-firmware # usb firmware also present in linux-firmware package, but that package is huge and has much more than needed
       ] ++ lib.optionals (l4tAtLeast "38") (
         let
@@ -340,6 +340,22 @@ in
           "${dtsTree}/t23x/nv-public/include/nvidia-oot"
           "${dtsTree}/t23x/nv-public/include/platforms"
           "${dtsTree}/t23x/nv-public"
+        ];
+        # See DTC_INCLUDE inside ${gitRepos."kernel-devicetree"}/generic-dts/Makefile
+        "7" = let dtsTree = "${config.hardware.deviceTree.dtbSource.src}/hardware/nvidia"; in [
+          # SOC independent common include
+          "${dtsTree}/tegra/nv-public"
+          "${dtsTree}/tegra/nv-public/include/kernel"
+          "${dtsTree}/tegra/nv-public/include/nvidia-oot"
+          "${dtsTree}/tegra/nv-public/include/platforms"
+
+          # SOC T23X specific common include
+          "${dtsTree}/t23x/nv-public/include/kernel"
+          "${dtsTree}/t23x/nv-public/include/nvidia-oot"
+          "${dtsTree}/t23x/nv-public/include/platforms"
+          "${dtsTree}/t23x/nv-public"
+          "${dtsTree}/t264/nv-public/include/kernel-t264"
+          "${dtsTree}/t264/nv-public"
         ];
       }.${cfg.majorVersion};
 
