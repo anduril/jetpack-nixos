@@ -318,9 +318,15 @@
       "version": "1.15.0.42-1"
     },
     "holoscan": {
-      "filename": "pool/main/h/holoscan/holoscan_3.6.1_arm64.deb",
-      "sha256": "76ba0e4962d56ea4b3cb9b316eaabd2d4af14b889764af06415399fff89c42c0",
-      "version": "3.6.1"
+      "filename": "pool/main/h/holoscan/holoscan_3.9.0-2_all.deb",
+      "sha256": "023f47ca5f6adb48832bd66f1baae6b274d13d316561f4bc9212d3b80817930e",
+      "version": "3.9.0-2"
+    },
+    "holoscan-cuda-13": {
+      "filename": "pool/main/h/holoscan/holoscan-cuda-13_3.9.0.1-1_arm64.deb",
+      "sha256": "127be0c15aa7d282b4e37863460ebca18131ec251d4358f46bd003b32ef22a64",
+      "source": "holoscan",
+      "version": "3.9.0.1-1"
     },
     "libcublas-13-0": {
       "filename": "pool/main/libc/libcublas/libcublas-13-0_13.0.0.19-1_arm64.deb",
@@ -1075,7 +1081,7 @@
     },
     "pva-allow-2": {
       "filename": "pool/main/p/pva-allow-2/pva-allow-2_2.0.5_all.deb",
-      "sha256": "d699f86e2bf7d11b0d2d855dad40421022191885ead7b9ca18a4a8a5cf196655",
+      "sha256": "cc20598f9076fdb9fba176c1e55c2065276236ba0a64305f1b9da94b98e4c301",
       "version": "2.0.5"
     },
     "pva-sdk-2.7-l4t": {
