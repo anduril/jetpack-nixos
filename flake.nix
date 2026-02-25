@@ -91,7 +91,6 @@
             aarch64_config
             {
               hardware.nvidia-jetpack = { enable = true; } // cfg;
-              networking.hostName = name;
             }
           ];
         }))
@@ -104,10 +103,9 @@
             {
               hardware.nvidia-jetpack = {
                 enable = true;
-                # Cross-compilation isn't currently supported for cuda packages upstream, and causes an huge evluation slowdown.
+                # Cross-compilation isn't currently supported for cuda packages upstream, and causes an huge evaluation slowdown.
                 configureCuda = false;
               } // cfg;
-              networking.hostName = "${name}-cross";
             }
           ];
         }))
