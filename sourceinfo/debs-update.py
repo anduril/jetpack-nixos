@@ -1,5 +1,5 @@
 #!/usr/bin/env nix-shell
-#!nix-shell -i python -p "python3.withPackages (ps: with ps; [ debian ])"
+#!nix-shell -i python -p "python3.withPackages (ps: with ps; [ python-debian ])"
 
 # Usage: ./sourceinfo/debs-update.py r36.4.4 > sourceinfo/r36.4-debs.json
 

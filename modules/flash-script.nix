@@ -397,6 +397,11 @@ in
 
             thor-agx = [
               { boardid = "3834"; boardsku = "0008"; fab = "000"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; chipsku = "00:00:00:A0"; } # Thor AGX Devkit
+              { boardid = "3834"; boardsku = "0008"; fab = "401"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; chipsku = "00:00:00:A0"; }
+            ];
+
+            thor-agx-t4000 = [
+              { boardid = "3834"; boardsku = "0000"; fab = "000"; boardrev = ""; fuselevel = "fuselevel_production"; chiprev = ""; chipsku = "00:00:00:E2"; }
             ];
 
             orin-agx = [

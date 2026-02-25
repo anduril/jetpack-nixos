@@ -30,6 +30,13 @@ final: prev: (
         else if lib.hasPrefix "xavier-" cfg.som then "t194"
         else throw "Unknown SoC type";
 
+      socFamily =
+        if cfg.som == null then null
+        else if lib.hasPrefix "thor-" cfg.som then "t26x"
+        else if lib.hasPrefix "orin-" cfg.som then "t23x"
+        else if lib.hasPrefix "xavier-" cfg.som then "t19x"
+        else throw "Unknown SoC type";
+
       chipId =
         if cfg.som == null then null
         else if lib.hasPrefix "thor-" cfg.som then "0x26"
@@ -50,12 +57,7 @@ final: prev: (
         errorLevelInfo = cfg.firmware.uefi.errorLevelInfo;
         edk2NvidiaPatches = cfg.firmware.uefi.edk2NvidiaPatches;
         edk2UefiPatches = cfg.firmware.uefi.edk2UefiPatches;
-        socFamily =
-          if cfg.som == null then null
-          else if lib.hasPrefix "thor-" cfg.som then "t26x"
-          else if lib.hasPrefix "orin-" cfg.som then "t23x"
-          else if lib.hasPrefix "xavier-" cfg.som then "t19x"
-          else throw "Unknown SoC type";
+        inherit (finalJetpack) socFamily;
 
         # A hash of something that represents everything that goes into the
         # platform firmware so that we can include it in the firmware version.
@@ -201,7 +203,7 @@ final: prev: (
         inherit lib flash-tools;
         inherit (cfg.firmware) eksFile;
         inherit (cfg.flashScriptOverrides) flashArgs partitionTemplate preFlashCommands postFlashCommands;
-        inherit (finalJetpack) tosImage socType uefi-firmware;
+        inherit (finalJetpack) tosImage socType socFamily uefi-firmware l4tAtLeast;
 
         additionalDtbOverlays = args.additionalDtbOverlays or cfg.flashScriptOverrides.additionalDtbOverlays;
         dtbsDir = config.hardware.deviceTree.package;
