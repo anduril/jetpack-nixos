@@ -48,7 +48,7 @@ let
       echo "Selected device som after hard coding: $device_som"
     fi
 
-    ln -s ${pkgs.nvidia-jetpack.l4t-nvpmodel}/etc/nvpmodel/nvpmodel_"$device_som".conf /etc/nvpmodel.conf
+    ln -sf ${pkgs.nvidia-jetpack.l4t-nvpmodel}/etc/nvpmodel/nvpmodel_"$device_som".conf /etc/nvpmodel.conf
   '';
 in
 {
