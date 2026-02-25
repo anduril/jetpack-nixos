@@ -71,7 +71,15 @@ generate_compat_spec() {
 
   # Thor AGX
   3834)
-    fab=""
+    if [[ "${boardsku}" == "0008" ]]; then
+      if [[ "${fab}" -gt 400 ]]; then
+        fab="400"
+      else
+        fab="000"
+      fi
+    else
+      fab=""
+    fi
     boardsku=""
     boardrev=""
     chiprev=""
