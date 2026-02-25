@@ -55,6 +55,7 @@
     "/usr/lib/aarch64-linux-gnu/nvidia/libnvcamv4l2.so",
     "/usr/lib/aarch64-linux-gnu/nvidia/libnvcapture.so",
     "/usr/lib/aarch64-linux-gnu/nvidia/libnvfusacap.so",
+    "/usr/lib/aarch64-linux-gnu/nvidia/libnvfusacapext.so",
     "/usr/lib/aarch64-linux-gnu/nvidia/libnvfusacapinterface.so",
     "/usr/lib/aarch64-linux-gnu/nvidia/libnvisp.so",
     "/usr/lib/aarch64-linux-gnu/nvidia/libnvisppg.so",
@@ -73,10 +74,12 @@
     "/usr/lib/nvsipl_drv/libnvsipl_qry_vb1940.so",
     "/usr/lib/nvsipl_uddf/libnvuddf_eagle_library.so",
     "/var/nvidia/nvcam/settings/ar0234.nito",
+    "/var/nvidia/nvcam/settings/e3331.nito",
     "/var/nvidia/nvcam/settings/e3333.nito",
     "/var/nvidia/nvcam/settings/imx185.nito",
     "/var/nvidia/nvcam/settings/imx219.nito",
     "/var/nvidia/nvcam/settings/imx274_li.nito",
+    "/var/nvidia/nvcam/settings/imx390.nito",
     "/var/nvidia/nvcam/settings/imx477.nito",
     "/var/nvidia/nvcam/settings/sipl/vb1940.nito",
     "/usr/lib/aarch64-linux-gnu/libv4l/plugins/nv/libv4l2_nvargus.so"
@@ -180,8 +183,8 @@
     "/usr/lib/aarch64-linux-gnu/nvidia/libgstnvdsseimeta.so"
   ],
   "nvidia-l4t-libvulkan": [
-    "/usr/lib/aarch64-linux-gnu/nvidia/libvulkan.so.1.4.304",
-    "/usr/lib/aarch64-linux-gnu/libvulkan.so.1.4.304",
+    "/usr/lib/aarch64-linux-gnu/nvidia/libvulkan.so.1.4.321",
+    "/usr/lib/aarch64-linux-gnu/libvulkan.so.1.4.321",
     "/usr/lib/aarch64-linux-gnu/nvidia/libvulkan.so.1"
   ],
   "nvidia-l4t-multimedia": [
