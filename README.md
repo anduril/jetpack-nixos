@@ -24,7 +24,7 @@ This package supports JetPack 5, 6, and 7. It works with NVIDIA's developer kits
 
 The Jetson Nano, TX2, and TX1 devices are _not_ supported, since support for them was dropped upstream in JetPack 5.
 
-__NOTE__: CUDA is not currently supported in JetPack 7 (Thor AGX) due to dependencies on upstream nixpkgs. CUDA 13 support will be added after the release of NixOS/nixpkgs 25.11.
+__NOTE__: CUDA is currently supported in JetPack 7 (Thor AGX).
 
 ## Getting started
 
@@ -94,7 +94,7 @@ For your `flake.nix`, include the following:
 ```nix
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
     jetpack.url = "github:anduril/jetpack-nixos/master"; # Add this line
     jetpack.inputs.nixpkgs.follows = "nixpkgs";
   };
