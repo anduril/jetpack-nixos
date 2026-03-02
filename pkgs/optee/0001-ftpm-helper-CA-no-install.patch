@@ -1,0 +1,26 @@
+From c6b63d306ec1d13827ffb17e9109e6c63e3cbe92 Mon Sep 17 00:00:00 2001
+From: Tanel Dettenborn <tanel.dettenborn@tii.ae>
+Date: Fri, 27 Feb 2026 17:24:08 +0200
+Subject: [PATCH] ftpm-helper CA no install
+
+Signed-off-by: Tanel Dettenborn <tanel.dettenborn@tii.ae>
+---
+ optee/samples/ftpm-helper/host/Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/optee/samples/ftpm-helper/host/Makefile b/optee/samples/ftpm-helper/host/Makefile
+index 33ca6da08..01767f225 100644
+--- a/optee/samples/ftpm-helper/host/Makefile
++++ b/optee/samples/ftpm-helper/host/Makefile
+@@ -20,7 +20,7 @@ OBJS = $(patsubst %.c,$(O)/%.o,$(SRCS))
+ BINARY = nvftpm-helper-app
+ 
+ .PHONY: all install
+-all: $(BINARY) install
++all: $(BINARY)
+ 
+ $(BINARY): $(OBJS)
+ 	$(CC) -o $(O)/$@ $< $(LDADD)
+-- 
+2.51.2
+

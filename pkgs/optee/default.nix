@@ -121,6 +121,12 @@ let
         "O=$(out)"
         "CFG_TEE_CORE_LOG_LEVEL=${toString coreLogLevel}"
         "CFG_TEE_TA_LOG_LEVEL=${toString taLogLevel}"
+
+        # ftpm flags.
+        "CFG_JETSON_FTPM_HELPER_PTA=y"
+        "CFG_JETSON_FTPM_HELPER_INJECT_EPS=y"
+        "CFG_CORE_TPM_EVENT_LOG=y"
+        "CFG_REE_STATE=y"
       ]
       ++ (lib.optionals ((socType == "t194" || socType == "t234") && uefi-firmware != null) [
         "CFG_WITH_STMM_SP=y"
@@ -231,6 +237,62 @@ let
     '';
   };
 
+  buildFtpmHelper = args: stdenv.mkDerivation {
+    pname = "ftpm-helper";
+    version = l4tMajorMinorPatchVersion;
+    src = nvopteeSrc;
+    patches = [
+      ./0001-ftpm-helper-CA-no-install.patch
+    ];
+    nativeBuildInputs = [ (buildPackages.python3.withPackages (p: [ p.cryptography ])) ];
+    enableParallelBuilding = true;
+    makeFlags = [
+      "-C optee/samples/ftpm-helper"
+      "CROSS_COMPILE=${stdenv.cc.targetPrefix}"
+      "TA_DEV_KIT_DIR=${buildOpteeTaDevKit args}/export-ta_arm64"
+      "OPTEE_CLIENT_EXPORT=${opteeClient}"
+      "O=$(PWD)/out"
+    ];
+
+    installPhase = ''
+      runHook preInstall
+
+      install -Dm755 -t $out/bin out/ca/ftpm-helper/nvftpm-helper-app
+      install -Dm755 -t $out out/early_ta/ftpm-helper/*.stripped.elf
+
+      runHook postInstall
+    '';
+  };
+
+  buildMsTpm = args: stdenv.mkDerivation {
+    pname = "ms-ftpm";
+    version = l4tMajorMinorPatchVersion;
+    src = nvopteeSrc;
+    patches = [
+      ./0001-nvoptee-no-install-makefile.patch
+    ];
+    nativeBuildInputs = [ (buildPackages.python3.withPackages (p: [ p.cryptography ])) ];
+    enableParallelBuilding = true;
+    makeFlags = [
+      "-C optee/samples/ms-tpm-20-ref/Samples/ARM32-FirmwareTPM/optee_ta"
+      "CROSS_COMPILE=${stdenv.cc.targetPrefix}"
+      "TA_DEV_KIT_DIR=${buildOpteeTaDevKit args}/export-ta_arm64"
+      "OPTEE_CLIENT_EXPORT=${opteeClient}"
+      "OPTEE_OS_DIR=${nvopteeSrc}/optee/optee_os"
+      "CFG_TA_MEASURED_BOOT=y"
+      "CFG_USE_PLATFORM_EPS=y"
+      "O=$(PWD)/out"
+    ];
+    NIX_CFLAGS_COMPILE = "-Wno-incompatible-pointer-types -Wno-implicit-function-declaration";
+    installPhase = ''
+      runHook preInstall
+
+      install -Dm755 -t $out out/early_ta/ms-tpm/*.stripped.elf
+
+      runHook postInstall
+    '';
+  };
+  
   buildOpteeDTB = lib.makeOverridable ({ socType, ... }:
     let
       flavor = lib.replaceStrings [ "t" ] [ "" ] socType;
@@ -316,12 +378,16 @@ let
       nvLuksSrv = buildNvLuksSrv args;
       cpuBlPayloadDec = buildCpuBlPayloadDec args;
       hwKeyAgent = buildHwKeyAgent args;
-
+      msTpm = buildMsTpm args;
+      ftpmHelper = buildFtpmHelper args;
+      
       opteeOS = buildOptee ({
         earlyTaPaths = lib.optionals (socType == "t194" || socType == "t234") [
           "${nvLuksSrv}/b83d14a8-7128-49df-9624-35f14f65ca6c.stripped.elf"
           "${cpuBlPayloadDec}/0e35e2c9-b329-4ad9-a2f5-8ca9bbbd7713.stripped.elf"
           "${hwKeyAgent}/82154947-c1bc-4bdf-b89d-04f93c0ea97c.stripped.elf"
+          "${msTpm}/bc50d971-d4c9-42c4-82cb-343fb7f37896.stripped.elf"
+          "${ftpmHelper}/a6a3a74a-77cb-433a-990c-1dfb8a3fbc4c.stripped.elf"
         ];
       } // args);
 
@@ -331,7 +397,7 @@ let
       image = buildPackages.runCommand "tos.img"
         {
           nativeBuildInputs = [ nukeReferences ];
-          passthru = { inherit nvLuksSrv hwKeyAgent; };
+          passthru = { inherit nvLuksSrv hwKeyAgent ftpmHelper; };
         } ''
         mkdir -p $out
         ${buildPackages.python3}/bin/python3 ${bspSrc}/nv_tegra/tos-scripts/gen_tos_part_img.py \

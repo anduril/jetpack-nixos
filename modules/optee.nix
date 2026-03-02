@@ -142,6 +142,6 @@ in
         wantedBy = [ "multi-user.target" ];
       };
 
-    environment.systemPackages = lib.optional cfg.xtest pkgs.nvidia-jetpack.opteeXtest;
+    environment.systemPackages = (lib.optional cfg.xtest pkgs.nvidia-jetpack.opteeXtest) ++ [ pkgs.nvidia-jetpack.ftpmHelper ];
   };
 }
