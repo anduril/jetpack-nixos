@@ -28,6 +28,8 @@ in
       serviceConfig = {
         ExecStartPre = "${pkgs.coreutils}/bin/mkdir -p /var/lib/nvfancontrol";
         ExecStart = "${pkgs.nvidia-jetpack.l4t-nvfancontrol}/bin/nvfancontrol -f ${cfg.configFile}";
+        Restart = "on-failure";
+        RestartSec = "1s";
       };
       wantedBy = [ "multi-user.target" ];
     };
