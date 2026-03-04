@@ -45,6 +45,13 @@ in
     hardware.nvidia-jetpack = {
       enable = mkEnableOption "NVIDIA Jetson device support";
 
+      name = mkOption {
+        default = "${cfg.som}-${cfg.carrierBoard}";
+        defaultText = lib.literalExpression ''"''${som}-''${carrierBoard}"'';
+        type = types.str;
+        description = "Name to include in various artifacts, such as flashing scripts, etc";
+      };
+
       majorVersion = mkOption {
         default = if lib.hasPrefix "thor" cfg.som then "7" else if cfg.som == "generic" || lib.hasPrefix "orin" cfg.som then "6" else "5";
         type = types.enum jetpackVersions;
