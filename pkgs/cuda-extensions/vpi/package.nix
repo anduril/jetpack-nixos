@@ -56,11 +56,11 @@ buildFromDebs {
   postPatch = ''
     rm -rf etc
     substituteInPlace lib/cmake/vpi/vpi-config.cmake --subst-var out
-    substituteInPlace lib/cmake/vpi/vpi-config-release.cmake \
+    substituteInPlace lib/cmake/vpi/vpi-config-${if l4tMajorVersion == "38" then "relwithdebinfo" else "release"}.cmake \
       --replace "lib/aarch64-linux-gnu" "lib/"
   '' + lib.optionalString (l4tMajorVersion == "38") ''
 
     # This library can dlopen() libnvpvaintf.so, libnvpvaumd_core.so, libnvpvaumd_cuda.so
-    patchelf --add-rpath ${l4t-pva}/lib lib/libnvvpi.so.4.0.0
+    patchelf --add-rpath ${l4t-pva}/lib lib/libnvvpi.so.4.*.*
   '';
 }

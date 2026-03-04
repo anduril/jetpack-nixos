@@ -27,6 +27,7 @@ let
     flashInitrd
     mkFlashScript
     l4tMajorMinorPatchVersion
+    l4tAtLeast
     ;
 
   jetpackAtLeast = lib.versionAtLeast cfg.majorVersion;
@@ -135,8 +136,8 @@ let
   fuseScript = writeShellApplication {
     name = "fuse-${hostName}";
     text = import ./flash-script.nix {
-      inherit lib;
-      inherit (nvidia-jetpack) flash-tools;
+      inherit lib l4tAtLeast;
+      inherit (nvidia-jetpack) flash-tools socFamily;
       flashCommands = ''
         ./odmfuse.sh -i ${chipId} "$@" ${builtins.toString cfg.flashScriptOverrides.fuseArgs}
       '';
