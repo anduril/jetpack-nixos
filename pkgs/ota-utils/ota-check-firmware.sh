@@ -237,6 +237,6 @@ if [[ -e /sys/firmware/efi/efivars/BootChainFwStatus-781e084c-a330-417c-b678-38e
   echo "A reboot is required before capsule updates can be installed."
 fi
 
-if [[ $CURRENT_FW_VER != "$EXPECTED_FW_VER" ]]; then
+if [[ "$CURRENT_FW_VER" != "$EXPECTED_FW_VER" ]]; then
   exit 1
 fi
