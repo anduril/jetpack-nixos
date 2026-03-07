@@ -53,7 +53,7 @@ let
       repo = "edk2";
       rev = "r${l4tMajorMinorPatchVersion}";
       fetchSubmodules = true;
-      sha256 = "sha256-w+rZq7Wjni62MJds6QmqpLod+zSFZ/qAN7kRDOit+jo=";
+      sha256 = "sha256-4SGqdNOHPqZXxG8XYj8Md6CsxiO9bwecty57u/2xfwU=";
     };
     patches = [
       # Fix GCC 14 compile issue.
@@ -89,7 +89,7 @@ let
       owner = "NVIDIA";
       repo = "edk2-nvidia";
       rev = "r${l4tMajorMinorPatchVersion}";
-      sha256 = "sha256-q0SxS6mRJpD0t+TPvf4Sp+n+VBx/5PeqWXC2mgUJQ98=";
+      sha256 = "sha256-X4l0yf0Z181reSG8Y9sF9Kqmil56qBZc3fdWynXbZ50=";
     };
     patches = [
       # Fix Eqos driver to use correct TX clock name
@@ -100,11 +100,6 @@ let
       })
 
       ./capsule-authentication.patch
-
-      # Have UEFI use the device tree compiled into the firmware, instead of
-      # using one from the kernel-dtb partition.
-      # See: https://github.com/anduril/jetpack-nixos/pull/18
-      ./edk2-uefi-dtb.patch
 
       # Include patches to fix "Assertion 3" mentioned here:
       # https://forums.developer.nvidia.com/t/assertion-issue-in-uefi-during-boot/315628
@@ -142,7 +137,7 @@ let
     owner = "NVIDIA";
     repo = "edk2-nvidia-non-osi";
     rev = "r${l4tMajorMinorPatchVersion}";
-    sha256 = "sha256-l2rEbBvlXhlXFUyubsmPlWofqjJuDM/t9EqFwFoSdfk=";
+    sha256 = "sha256-LUpYaldctQz1/dAsybQjxjSRQN/EkgxxhbsJsRMkhwI=";
   };
 
   edk2-jetson = edk2.overrideAttrs (prev: {
