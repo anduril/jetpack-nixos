@@ -19,7 +19,6 @@
 
 let
   cfg = config.hardware.nvidia-jetpack;
-  inherit (config.networking) hostName;
 
   # We need to grab some packages from the device's aarch64 package set.
   inherit (pkgs.nvidia-jetpack)
@@ -61,7 +60,7 @@ let
 
   # Generate a flash script using the built configuration options set in a NixOS configuration
   legacyFlashScript = writeShellApplication {
-    name = "flash-${hostName}";
+    name = "flash-${cfg.name}";
     text = (mkFlashScriptAuto { });
     meta.platforms = [ "x86_64-linux" ];
   };
@@ -127,13 +126,13 @@ let
   # TODO: The flash script should not have the kernel output in its runtime closure
   initrdFlashScript =
     writeShellApplication {
-      name = "initrd-flash-${hostName}";
+      name = "initrd-flash-${cfg.name}";
       text = import ./initrdflash-script.nix { inherit mkRcmBootScript config flashInitrd lib l4tMajorMinorPatchVersion writeText deviceTree tio expect; };
       meta.platforms = [ "x86_64-linux" ];
     };
 
   fuseScript = writeShellApplication {
-    name = "fuse-${hostName}";
+    name = "fuse-${cfg.name}";
     text = import ./flash-script.nix {
       inherit lib;
       inherit (nvidia-jetpack) flash-tools;

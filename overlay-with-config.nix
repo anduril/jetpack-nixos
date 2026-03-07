@@ -1,10 +1,6 @@
 # device-specific packages that are influenced by the nixos config
 config:
 
-let
-  inherit (config.networking) hostName;
-in
-
 final: prev: (
   let
     cfg = config.hardware.nvidia-jetpack;
@@ -207,7 +203,7 @@ final: prev: (
         dtbsDir = config.hardware.deviceTree.package;
       } // (builtins.removeAttrs args [ "additionalDtbOverlays" ]));
 
-      bup = prev.runCommand "bup-${config.networking.hostName}-${finalJetpack.l4tMajorMinorPatchVersion}"
+      bup = prev.runCommand "bup-${cfg.name}-${finalJetpack.l4tMajorMinorPatchVersion}"
         {
           inherit (cfg.firmware.secureBoot) requiredSystemFeatures;
         }
@@ -245,7 +241,7 @@ final: prev: (
       # See l4t_generate_soc_bup.sh
       # python ${edk2-jetson}/BaseTools/BinWrappers/PosixLike/GenerateCapsule -v --encode --monotonic-count 1
       # NOTE: providing null public certs here will use the test certs in the EDK2 repo
-      uefiCapsuleUpdate = prev.runCommand "uefi-${config.networking.hostName}-${finalJetpack.l4tMajorMinorPatchVersion}.Cap"
+      uefiCapsuleUpdate = prev.runCommand "uefi-${cfg.name}-${finalJetpack.l4tMajorMinorPatchVersion}.Cap"
         {
           nativeBuildInputs = [ prev.buildPackages.python3 prev.buildPackages.openssl ];
           inherit (cfg.firmware.uefi.capsuleAuthentication) requiredSystemFeatures;
@@ -263,7 +259,7 @@ final: prev: (
           ${finalJetpack.socType}
         '');
 
-      signedFirmware = final.runCommand "signed-${hostName}-${finalJetpack.l4tMajorMinorPatchVersion}"
+      signedFirmware = final.runCommand "signed-${cfg.name}-${finalJetpack.l4tMajorMinorPatchVersion}"
         { inherit (cfg.firmware.secureBoot) requiredSystemFeatures; }
         (finalJetpack.mkFlashScript final.pkgsBuildBuild.nvidia-jetpack.flash-tools {
           flashCommands = ''
