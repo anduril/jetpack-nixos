@@ -188,6 +188,14 @@ buildLinux (args // {
     MD_RAID1 = module;
     MD_RAID10 = module;
     MD_RAID456 = module;
+
+    # Enable INFO_BTF and INFO_BTF_MODULES for consistency with Jetpack 6 and 7.
+    # Resolves error when systemd checks for RestrictFileSystems support.
+    # RestrictFileSystems appears to still not work due to bpf_link struct
+    # mismatch with recent systemd versions.
+    DEBUG_INFO_BTF = yes;
+    DEBUG_INFO_BTF_MODULES = yes;
+
   } // (import ../common-arch.nix { inherit lib; })
   // (lib.optionalAttrs realtime {
     PREEMPT_VOLUNTARY = lib.mkForce no; # Disable the one set in common-config.nix
