@@ -115,6 +115,7 @@ makeScope final.newScope (self: {
     inherit (self) bspSrc gitRepos l4tMajorMinorPatchVersion l4tOlder l4tAtLeast uefi-firmware;
   }) buildTOS buildOpteeTaDevKit opteeClient buildPkcs11Ta buildOpteeXtest;
   genEkb = self.callPackage ./pkgs/optee/gen-ekb.nix { };
+  ftpmSimTooling = self.callPackage ./pkgs/optee/ftpm-sim-tooling.nix { };
 
   flash-tools = self.callPackage ./pkgs/flash-tools { };
 
