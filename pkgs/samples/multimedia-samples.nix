@@ -82,7 +82,7 @@ backendStdenv.mkDerivation {
       ];
       "38" = [
         (fetchurl {
-          url = "https://raw.githubusercontent.com/OE4T/meta-tegra/refs/heads/master-l4t-r38.4.x/recipes-multimedia/argus/files/0001-Remove-DO-NOT-USE-declarations-from-v4l2_nv_extensio.patch";
+          url = "https://raw.githubusercontent.com/OE4T/meta-tegra/ea58f517a12268d2aada40f5e936d9ab8955bbbc/recipes-multimedia/argus/files/0001-Remove-DO-NOT-USE-declarations-from-v4l2_nv_extensio.patch";
           sha256 = "sha256-NBlgkl35jvXhjAm6Pexz+/tt4hc+1N5VyLCDIGP80rk=";
         })
       ];
