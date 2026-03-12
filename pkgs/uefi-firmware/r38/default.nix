@@ -17,22 +17,24 @@
 }@args:
 
 let
+  tagVersion = if lib.versions.patch l4tMajorMinorPatchVersion == "0" then lib.versions.majorMinor l4tMajorMinorPatchVersion else l4tMajorMinorPatchVersion;
+
   # See: https://github.com/NVIDIA/edk2-edkrepo-manifest/blob/7b298576d93b0fae216aee7a1539268f4ce9c6a9/edk2-nvidia/Platform/NVIDIAPlatformsManifest.xml#L306
   defaultOrigin = {
     owner = "NVIDIA";
-    rev = "r38.2";
+    rev = "r${tagVersion}";
   };
   repos = {
     edk2 = {
-      sha256 = "sha256-qJoQrU9o9HYdT9xwXV4fqQqIpG7zvL1nAzE+6fuwRFk=";
+      sha256 = "sha256-qfKtBZSRyRlSxEuR4jPFWxMGAiuGteeubrvgwFyLZWY=";
       fetchSubmodules = true;
     };
-    edk2-non-osi.sha256 = "sha256-Dj6Og/sc3MEMU/37rUMu7miHOvFi3Qvfkm+nMSUBUF0=";
+    edk2-non-osi.sha256 = "sha256-iRsSFFy5UITD1O+ALyocUZkXUQSsIXyq1Ppc/onybU0=";
     edk2-platforms.sha256 = "sha256-PsKxy/tiRl2/qcL/JQNXbUPsnWekAQ+4b+NiccSRGa4=";
     edk2-infineon.sha256 = "sha256-47UJfEd4ViTenx5dvy2G75NFSgmcsyIWpN0Lv1QlvA8=";
     edk2-redfish-client.sha256 = "sha256-EUWi5z+1sz2zMZM6x/sqE2NvdHRkQwQOcotsUwELsBY=";
-    edk2-nvidia.sha256 = "sha256-G+WoeWH4OxQlpwUijHSr5fcgQxLbzrGlackIUSxWtFc=";
-    edk2-nvidia-non-osi.sha256 = "sha256-8y7rNaaXC9ZvNHV/NRmbMVPCgYERqqley2SnMer5T0k=";
+    edk2-nvidia.sha256 = "sha256-sALmw1KURAe1CdvjW/QcPuOzvPNEwpmk7vNpvii+a70=";
+    edk2-nvidia-non-osi.sha256 = "sha256-LIgut03qDx/wRVb2adbo41s+psfI/NIx7GnjOxzGeF4=";
   };
 
   fetchRepo = name: value: fetchFromGitHub (defaultOrigin // { inherit name; repo = name; } // value);
@@ -78,6 +80,9 @@ let
       patches = [
         ./stuart-passthru-compiler-prefix.diff
         ./repeatability.diff
+
+        # UEFI firmware fail fails to boot unless we have a fTPM in OP-TEE. Disabling for now until we build/ship the fTPM TA.
+        ./disable-ftpm.diff
       ] ++ lib.optionals (trustedPublicCertPemFile != null) [
         ./capsule-authentication.diff
       ];

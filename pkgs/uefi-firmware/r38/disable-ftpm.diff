@@ -1,0 +1,13 @@
+diff --git a/Platform/NVIDIA/KconfigIncludes/BuildGeneral.conf b/Platform/NVIDIA/KconfigIncludes/BuildGeneral.conf
+index 476e38ca..d1e68159 100644
+--- a/Platform/NVIDIA/KconfigIncludes/BuildGeneral.conf
++++ b/Platform/NVIDIA/KconfigIncludes/BuildGeneral.conf
+@@ -11,7 +11,7 @@ config BUILD_GENERAL
+   help
+     "A general build for the development kit, with most available features enabled by default"
+   #Default features
+-  imply DEFAULT_SECURITY_TPM_FIRMWARE
++  imply DEFAULT_SECURITY_TPM_NONE
+   imply SECURITY_UEFI_MENU_USER_AUTH
+   imply DEFAULT_SECURITY_MM_OPTEE if SOC_T23X
+   imply DEFAULT_SECURITY_MM_FFA if SOC_T26X

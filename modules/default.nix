@@ -76,6 +76,7 @@ in
           "orin-nx"
           "orin-nano"
           "thor-agx"
+          "thor-agx-t4000"
           "xavier-agx"
           "xavier-agx-industrial"
           "xavier-nx"

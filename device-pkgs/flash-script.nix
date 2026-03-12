@@ -1,10 +1,12 @@
 { lib
+, l4tAtLeast
 , preFlashCommands ? ""
 , flashCommands ? ""
 , postFlashCommands ? ""
 , flashArgs ? [ ]
 , partitionTemplate ? null
 , socType ? null
+, socFamily ? null
 , # Optional directory containing DTBs to be used by flashing script, which can
   # be used by the bootloader(s) and passed to the kernel.
   dtbsDir ? null
@@ -19,7 +21,8 @@
 , flash-tools
 }:
 let
-  uefi_image = if socType == "t264" then "uefi_t26x_general.bin" else "uefi_jetson.bin";
+  uefi_bins = if l4tAtLeast "38" then "bootloader/uefi_bins" else "bootloader";
+  uefi_image = if l4tAtLeast "38" then "uefi_${socFamily}_general.bin" else "uefi_jetson.bin";
 in
 (''
   set -euo pipefail
@@ -48,9 +51,9 @@ in
   ${lib.optionalString (partitionTemplate != null) "cp ${partitionTemplate} flash.xml"}
   ${lib.optionalString (dtbsDir != null) "cp -r ${dtbsDir}/. kernel/dtb/"}
   ${lib.optionalString (uefi-firmware != null) ''
-  cp ${uefi-firmware}/uefi_jetson.bin bootloader/${uefi_image}
+  cp ${uefi-firmware}/uefi_jetson.bin ${uefi_bins}/${uefi_image}
   if [ -e "${uefi-firmware}/uefi_jetson_minimal.bin" ] ; then
-    cp ${uefi-firmware}/uefi_jetson_minimal.bin bootloader/uefi_jetson_minimal.bin
+    cp ${uefi-firmware}/uefi_jetson_minimal.bin ${uefi_bins}/uefi_jetson_minimal.bin
   fi
 
   # For normal NixOS usage, we'd probably use systemd-boot or GRUB instead,

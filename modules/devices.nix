@@ -15,6 +15,7 @@ let
     orin-nx = "${pkgs.nvidia-jetpack.l4t-nvfancontrol}/etc/nvpower/nvfancontrol/nvfancontrol_p3767_0000.conf";
     orin-nano = "${pkgs.nvidia-jetpack.l4t-nvfancontrol}/etc/nvpower/nvfancontrol/nvfancontrol_p3767_0000.conf";
     thor-agx = "${pkgs.nvidia-jetpack.l4t-nvfancontrol}/etc/nvpower/nvfancontrol/nvfancontrol_p3834_0008_p4071_0000.conf";
+    thor-agx-t4000 = "${pkgs.nvidia-jetpack.l4t-nvfancontrol}/etc/nvpower/nvfancontrol/nvfancontrol_p3834_0000_p4071_0000.conf";
     xavier-agx = "${pkgs.nvidia-jetpack.l4t-nvfancontrol}/etc/nvpower/nvfancontrol/nvfancontrol_p2888.conf";
     xavier-agx-industrial = "${pkgs.nvidia-jetpack.l4t-nvfancontrol}/etc/nvpower/nvfancontrol/nvfancontrol_p2888.conf";
     xavier-nx = "${pkgs.nvidia-jetpack.l4t-nvfancontrol}/etc/nvpower/nvfancontrol/nvfancontrol_p3668.conf";
@@ -125,6 +126,10 @@ in
           targetBoard = mkDefault "jetson-agx-thor-devkit";
         })
 
+        (mkIf (cfg.som == "thor-agx-t4000") {
+          targetBoard = mkDefault "jetson-agx-thor-t4000";
+        })
+
         (mkIf (cfg.som == "xavier-agx") {
           targetBoard = mkDefault "jetson-agx-xavier-devkit";
           # Remove unnecessary partitions to make it more like
@@ -212,7 +217,7 @@ in
         ])
       ];
     })
-    (lib.mkIf (cfg.som == "thor-agx") {
+    (lib.mkIf (lib.hasPrefix cfg.som "thor-agx") {
       hardware.firmware = [
         (extractLinuxFirmware "xusb-firmware" ([ "nvidia/tegra186/xusb.bin" ] ++ lib.optionals
           (config.hardware.bluetooth.enable
