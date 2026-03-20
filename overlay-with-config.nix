@@ -244,12 +244,14 @@ final: prev: (
       # python ${edk2-jetson}/BaseTools/BinWrappers/PosixLike/GenerateCapsule -v --encode --monotonic-count 1
       # NOTE: providing null public certs here will use the test certs in the EDK2 repo
       uefiCapsuleUpdate = prev.runCommand "uefi-${cfg.name}-${finalJetpack.l4tMajorMinorPatchVersion}.Cap"
-        {
+        ({
           nativeBuildInputs = [ prev.buildPackages.python3 prev.buildPackages.openssl ];
-          inherit (cfg.firmware.uefi.capsuleAuthentication) requiredSystemFeatures;
         }
+        // lib.optionalAttrs cfg.firmware.uefi.capsuleAuthentication.enable {
+          inherit (cfg.firmware.uefi.capsuleAuthentication) requiredSystemFeatures;
+        })
         (''
-          ${cfg.firmware.uefi.capsuleAuthentication.preSignCommands final.buildPackages}
+          ${lib.optionalString cfg.firmware.uefi.capsuleAuthentication.enable (cfg.firmware.uefi.capsuleAuthentication.preSignCommands final.buildPackages)}
           bash ${final.pkgsBuildBuild.nvidia-jetpack.flash-tools}/generate_capsule/l4t_generate_soc_capsule.sh \
         '' + (lib.optionalString cfg.firmware.uefi.capsuleAuthentication.enable ''
           --trusted-public-cert ${cfg.firmware.uefi.capsuleAuthentication.trustedPublicCertPemFile} \
