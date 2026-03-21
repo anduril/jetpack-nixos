@@ -1,0 +1,13 @@
+diff --git a/optee/samples/ftpm-helper/host/Makefile b/optee/samples/ftpm-helper/host/Makefile
+index 8f26a1f..2ec5f5d 100644
+--- a/optee/samples/ftpm-helper/host/Makefile
++++ b/optee/samples/ftpm-helper/host/Makefile
+@@ -20,7 +20,7 @@ OBJS = $(patsubst %.c,$(O)/%.o,$(SRCS))
+ BINARY = nvftpm-helper-app
+ 
+ .PHONY: all install
+-all: $(BINARY) install
++all: $(BINARY)
+ 
+ $(BINARY): $(OBJS)
+ 	$(CC) -o $(O)/$@ $< $(LDADD)

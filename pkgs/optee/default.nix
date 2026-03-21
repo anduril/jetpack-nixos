@@ -5,6 +5,7 @@
 , buildPackages
 , lib
 , stdenv
+, stdenvAdapters
 , fetchgit
 , pkg-config
 , libuuid
@@ -14,6 +15,8 @@
 , gitRepos
 , uefi-firmware
 , openssl
+, gcc13
+, symlinkJoin
 }:
 
 let
@@ -290,6 +293,63 @@ let
       mkdir -p $out
       dtc -I dts -O dtb -o $out/tegra${flavor}-optee.dtb ${nvopteeSrc}/optee/tegra${flavor}-optee.dts
     '');
+
+  buildFTpmHelperTa = args: stdenv.mkDerivation {
+    pname = "ftpm-helper-ta";
+    version = l4tMajorMinorPatchVersion;
+    src = nvopteeSrc;
+    patches = [ ./0001-ftpm-helper-no-install-makefile.patch ];
+    nativeBuildInputs = [ (buildPackages.python3.withPackages (p: [ p.cryptography ])) ];
+    enableParallelBuilding = true;
+    makeFlags = [
+      "-C optee/samples/ftpm-helper"
+      "CROSS_COMPILE=${stdenv.cc.targetPrefix}"
+      "TA_DEV_KIT_DIR=${buildOpteeTaDevKit args}/export-ta_arm64"
+      "OPTEE_CLIENT_EXPORT=${opteeClient}"
+      "O=$(PWD)/out"
+    ];
+    installPhase = ''
+      runHook preInstall
+
+      install -Dm755 -t $out/bin out/ca/ftpm-helper/nvftpm-helper-app
+      install -Dm755 -t $out out/early_ta/ftpm-helper/*.stripped.elf
+
+      runHook postInstall
+    '';
+    meta.platforms = [ "aarch64-linux" ];
+  };
+
+  buildMsTpm20RefTa = args:
+    let
+      gcc13Stdenv = stdenvAdapters.overrideCC stdenv gcc13;
+    in
+    gcc13Stdenv.mkDerivation {
+      pname = "ms-tpm-20-ref-ta";
+      version = l4tMajorMinorPatchVersion;
+      src = nvopteeSrc;
+      patches = args.opteePatches;
+      nativeBuildInputs = [ (buildPackages.python3.withPackages (p: [ p.cryptography ])) ];
+      enableParallelBuilding = true;
+      makeFlags = [
+        "-C optee/samples/ms-tpm-20-ref/Samples/ARM32-FirmwareTPM/optee_ta"
+        "CROSS_COMPILE=${gcc13Stdenv.cc.targetPrefix}"
+        "TA_DEV_KIT_DIR=${buildOpteeTaDevKit args}/export-ta_arm64"
+        "OPTEE_CLIENT_EXPORT=${opteeClient}"
+        "OPTEE_OS_DIR=$(PWD)/optee/optee_os"
+        "O=$(PWD)/out"
+        "CFG_TA_MEASURED_BOOT=y"
+        "CFG_USE_PLATFORM_EPS=y"
+        "CFG_TA_LOG_LEVEL=${toString args.taLogLevel}"
+      ];
+      installPhase = ''
+        runHook preInstall
+
+        install -Dm755 -t $out out/early_ta/ms-tpm/*.stripped.elf
+
+        runHook postInstall
+      '';
+      meta.platforms = [ "aarch64-linux" ];
+    };
 
   buildArmTrustedFirmware = lib.makeOverridable ({ socType, ... }:
     let
