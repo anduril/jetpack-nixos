@@ -10,8 +10,13 @@ final: prev: (
     jetpackAtLeast = lib.versionAtLeast cfg.majorVersion;
 
     tosArgs = {
+      enableFTPM = cfg.firmware.optee.ftpm.enable;
       inherit (final.nvidia-jetpack) socType;
-      inherit (cfg.firmware.optee) taPublicKeyFile extraMakeFlags coreLogLevel taLogLevel;
+      inherit (cfg.firmware.optee) taPublicKeyFile coreLogLevel taLogLevel;
+      extraMakeFlags = cfg.firmware.optee.extraMakeFlags
+        ++ lib.optional cfg.firmware.optee.ftpm.unsafeInjectEPS
+          (lib.warn "fTPM is using INSECURE Endorsement Primary Seed (EPS)."
+            "CFG_JETSON_FTPM_HELPER_INJECT_EPS=y");
       opteePatches = cfg.firmware.optee.patches;
     };
 

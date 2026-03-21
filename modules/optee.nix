@@ -68,6 +68,20 @@ in
         '';
       };
 
+      ftpm = {
+        enable = mkOption {
+          type = types.bool;
+          default = true;
+          description = ''
+            Add fTPM TA and kernel modules.
+          '';
+        };
+        unsafeInjectEPS = mkEnableOption ''
+          fTPM TA and CA have functionality added to inject a custom EPS.
+          This is effectively a TPM backdoor, and should only be enabled for testing.
+        '';
+      };
+
       patches = mkOption {
         type = types.listOf types.path;
         default = [ ];
@@ -111,7 +125,84 @@ in
   config = mkIf config.hardware.nvidia-jetpack.enable {
     hardware.nvidia-jetpack.firmware.optee.supplicant.trustedApplications =
       lib.optional cfg.pkcs11Support pkgs.nvidia-jetpack.pkcs11Ta
-      ++ lib.optional cfg.xtest pkgs.nvidia-jetpack.opteeXtest;
+      ++ lib.optional cfg.xtest pkgs.nvidia-jetpack.opteeXtest.tas;
+
+    hardware.nvidia-jetpack.firmware.optee.supplicant.plugins =
+      lib.optional cfg.xtest pkgs.nvidia-jetpack.opteeXtest.plugins;
+
+    boot.kernelModules = mkIf cfg.ftpm.enable [
+      "tpm"
+    ];
+
+    boot.initrd.availableKernelModules = mkIf cfg.ftpm.enable [
+      "tpm"
+      "tpm_ftpm_tee"
+    ];
+
+    boot.blacklistedKernelModules = mkIf cfg.ftpm.enable[ "tpm_ftpm_tee" ];
+
+    # Load tpm_ftpm_tee driver after tee-supplicant is ready
+    systemd.services.ftpm-driver =
+      let
+        ftpmDriverScript = pkgs.writeShellScript "ftpm-driver-load" ''
+          set -euo pipefail
+
+          ${lib.optionalString cfg.ftpm.unsafeInjectEPS ''
+            EPS_FILE="/var/lib/unsafeInjectEPS.hex"
+            EPS_SIZE=64  # 64 bytes
+
+            # Generate random EPS if it doesn't exist
+            if [ ! -f "''$EPS_FILE" ]; then
+              echo "Generating random EPS for fTPM..."
+              mkdir -p "''$(dirname "''$EPS_FILE")"
+
+              # Generate 64 random bytes and convert to hex with 0x prefix
+              EPS_HEX="0x''$(${pkgs.coreutils}/bin/dd if=/dev/urandom bs=1 count=''$EPS_SIZE 2>/dev/null | ${pkgs.xxd}/bin/xxd -p -c 256)"
+
+              # Save to file
+              echo "''$EPS_HEX" > "''$EPS_FILE"
+              chmod 600 "''$EPS_FILE"
+
+              echo "EPS saved to ''$EPS_FILE"
+            else
+              echo "Using existing EPS from ''$EPS_FILE"
+            fi
+
+            # Inject EPS before driver loads (which triggers fTPM manufacture)
+            EPS_VALUE=''$(cat "''$EPS_FILE")
+            echo "Injecting EPS into fTPM..."
+            ${pkgs.nvidia-jetpack.tosImage.fTpmHelperTa}/bin/nvftpm-helper-app -g "''$EPS_VALUE"
+            echo "EPS injection complete"
+          ''}
+
+          # Load the fTPM driver
+          echo "Loading tpm_ftpm_tee driver..."
+          ${pkgs.kmod}/bin/modprobe tpm_ftpm_tee
+        '';
+      in
+      mkIf cfg.ftpm.enable {
+        description = "Load fTPM driver after TEE supplicant";
+        after = [ "tee-supplicant.service" ];
+        requires = [ "tee-supplicant.service" ];
+        before = [ "tpm2.target" ];
+        wantedBy = [ "multi-user.target" ];
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          ExecStart = ftpmDriverScript;
+        };
+      };
+
+
+    boot.kernelPatches = mkIf cfg.ftpm.enable [{
+      name = "fTPM_tee";
+      patch = null;
+      structuredExtraConfig = with lib.kernel; {
+        TCG_TPM = module;
+        TCG_FTPM_TEE = module;
+      };
+      features.fTPM_tee = true;
+    }];
 
     systemd.services.tee-supplicant =
       let
@@ -136,6 +227,7 @@ in
       mkIf cfg.supplicant.enable {
         description = "Userspace supplicant for OPTEE-OS";
         serviceConfig = {
+          Type = "notify";
           ExecStart = "${pkgs.nvidia-jetpack.opteeClient}/bin/tee-supplicant ${args}";
           Restart = "always";
         };
