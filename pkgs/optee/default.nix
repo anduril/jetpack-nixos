@@ -34,6 +34,8 @@ let
           extraPrefix = "optee/optee_client/";
           hash = "sha256-XjFpMbyXy74sqnc8l+EgTaPXqwwHcvni1Z68ShokTGc=";
         })
+      ] ++ [
+        ./0002-tee-supplicant-add-systemd-sd_notify-support.patch
       ];
     nativeBuildInputs = [ pkg-config ];
     buildInputs = [ libuuid ];
