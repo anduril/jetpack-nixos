@@ -151,8 +151,9 @@ let
                                     , taPublicKeyFile ? null
                                     , coreLogLevel ? 2
                                     , taLogLevel ? coreLogLevel
+                                    , enableFTPM ? false
                                     , ...
-                                    }:
+                                    }@args:
     let
       nvCccPrebuilt = {
         t194 = "";
@@ -175,6 +176,11 @@ let
         "CFG_STMM_PATH=${uefi-firmware}/standalonemm_optee.bin"
       ])
       ++ (lib.optional (taPublicKeyFile != null) "TA_PUBLIC_KEY=${taPublicKeyFile}")
+      ++ (lib.optionals enableFTPM [
+          "CFG_CORE_TPM_EVENT_LOG=y"
+          "CFG_REE_STATE=y"
+          "CFG_JETSON_FTPM_HELPER_PTA=y"
+      ])
       ++ extraMakeFlags;
     in
     stdenv.mkDerivation {
@@ -202,6 +208,9 @@ let
       '';
       dontInstall = true;
       meta.platforms = [ "aarch64-linux" ];
+      passthru = {
+        inherit args;
+      };
     });
 
   buildOpteeTaDevKit = args: buildOptee (args // {
@@ -415,7 +424,7 @@ let
       meta.platforms = [ "aarch64-linux" ];
     });
 
-  buildTOS = { socType, ... }@args:
+  buildTOS = { socType, enableFTPM, ... }@args:
     let
       armTrustedFirmware = buildArmTrustedFirmware args;
 
@@ -424,13 +433,18 @@ let
       nvLuksSrv = buildNvLuksSrv args;
       cpuBlPayloadDec = buildCpuBlPayloadDec args;
       hwKeyAgent = buildHwKeyAgent args;
+      fTpmHelperTa = buildFTpmHelperTa args;
+      msTpm20RefTa = buildMsTpm20RefTa args;
 
       opteeOS = buildOptee ({
         earlyTaPaths = lib.optionals (socType == "t194" || socType == "t234") [
           "${nvLuksSrv}/b83d14a8-7128-49df-9624-35f14f65ca6c.stripped.elf"
           "${cpuBlPayloadDec}/0e35e2c9-b329-4ad9-a2f5-8ca9bbbd7713.stripped.elf"
           "${hwKeyAgent}/82154947-c1bc-4bdf-b89d-04f93c0ea97c.stripped.elf"
-        ];
+        ] ++ (lib.optionals enableFTPM [
+          "${fTpmHelperTa}/a6a3a74a-77cb-433a-990c-1dfb8a3fbc4c.stripped.elf"
+          "${msTpm20RefTa}/bc50d971-d4c9-42c4-82cb-343fb7f37896.stripped.elf"
+        ]);
       } // args);
 
       teeRaw = "${opteeOS}/core/tee-raw.bin";
@@ -439,7 +453,7 @@ let
       image = buildPackages.runCommand "tos.img"
         {
           nativeBuildInputs = [ nukeReferences ];
-          passthru = { inherit nvLuksSrv hwKeyAgent opteeOS; };
+          passthru = { inherit nvLuksSrv hwKeyAgent opteeOS msTpm20RefTa fTpmHelperTa;};
         } ''
         mkdir -p $out
         ${buildPackages.python3}/bin/python3 ${bspSrc}/nv_tegra/tos-scripts/gen_tos_part_img.py \

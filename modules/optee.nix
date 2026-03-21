@@ -68,6 +68,20 @@ in
         '';
       };
 
+      ftpm = {
+        enable = mkOption {
+          type = types.bool;
+          default = true;
+          description = ''
+            Add fTPM TA and kernel modules.
+          '';
+        };
+        unsafeInjectEPS = mkEnableOption ''
+          fTPM TA and CA have functionality added to inject a custom EPS.
+          This is effectively a TPM backdoor, and should only be enabled for testing.
+        '';
+      };
+
       patches = mkOption {
         type = types.listOf types.path;
         default = [ ];
