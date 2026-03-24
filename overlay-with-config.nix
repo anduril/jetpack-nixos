@@ -9,12 +9,6 @@ final: prev: (
 
     jetpackAtLeast = lib.versionAtLeast cfg.majorVersion;
 
-    tosArgs = {
-      inherit (final.nvidia-jetpack) socType;
-      inherit (cfg.firmware.optee) taPublicKeyFile extraMakeFlags coreLogLevel taLogLevel;
-      opteePatches = cfg.firmware.optee.patches;
-    };
-
     flashTools = cfg.flasherPkgs.callPackages (import ./device-pkgs { inherit config; pkgs = final; }) { };
   in
   {
@@ -79,11 +73,15 @@ final: prev: (
         postPatch = postPatch + cfg.flashScriptOverrides.postPatch;
       });
 
-      tosImage = finalJetpack.buildTOS tosArgs;
-      taDevKit = finalJetpack.buildOpteeTaDevKit tosArgs;
-      pkcs11Ta = finalJetpack.buildPkcs11Ta tosArgs;
-      opteeXtest = finalJetpack.buildOpteeXtest tosArgs;
-      inherit (finalJetpack.tosImage) nvLuksSrv hwKeyAgent;
+      armTrustedFirmware = prevJetpack.armTrustedFirmware.overrideAttrs {
+        inherit (finalJetpack) socType;
+      };
+      optee-os = prevJetpack.optee-os.overrideAttrs (prevAttrs: {
+        inherit (finalJetpack) socType;
+        inherit (cfg.firmware.optee) taPublicKeyFile coreLogLevel taLogLevel;
+        patches = prevAttrs.patches or [ ] ++ cfg.firmware.optee.patches;
+        makeFlags = prevAttrs.makeFlags or [ ] ++ cfg.firmware.optee.extraMakeFlags;
+      });
 
       flashInitrd =
         let

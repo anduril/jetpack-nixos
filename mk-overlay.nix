@@ -111,9 +111,6 @@ makeScope final.newScope (self: {
   inherit (final.callPackages ./pkgs/uefi-firmware/r${l4tMajorVersion} { inherit (self) l4tMajorMinorPatchVersion; })
     uefi-firmware;
 
-  inherit (final.callPackages ./pkgs/optee {
-    inherit (self) bspSrc gitRepos l4tMajorMinorPatchVersion l4tOlder l4tAtLeast uefi-firmware;
-  }) buildTOS buildOpteeTaDevKit opteeClient buildPkcs11Ta buildOpteeXtest;
   genEkb = self.callPackage ./pkgs/optee/gen-ekb.nix { };
 
   flash-tools = self.callPackage ./pkgs/flash-tools { };
@@ -174,10 +171,12 @@ makeScope final.newScope (self: {
   # TODO(jared): deprecate this
   devicePkgsFromNixosConfig = config: config.system.build.jetsonDevicePkgs;
 }
-  # Add the L4T packages
-  # NOTE: Since this is adding packages to the top-level, and callPackage's auto args functionality draws from that
-  # attribute set, we cannot use self.callPackages because we would end up with infinite recursion.
-  # Instead, we must either use final.callPackages or packagesFromDirectoryRecursive.
-  // final.callPackages ./pkgs/l4t {
+# Add the L4T packages
+# NOTE: Since this is adding packages to the top-level, and callPackage's auto args functionality draws from that
+# attribute set, we cannot use self.callPackages because we would end up with infinite recursion.
+# Instead, we must either use final.callPackages or packagesFromDirectoryRecursive.
+// (final.callPackages ./pkgs/l4t {
   inherit self l4tAtLeast l4tOlder;
 })
+  // (final.callPackages ./pkgs/optee { inherit self; })
+)
