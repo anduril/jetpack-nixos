@@ -39,6 +39,7 @@ in
     ./nvidia-container-toolkit.nix
     ./nvpmodel.nix
     ./optee.nix
+    ./pre-switch-checks.nix
   ];
 
   options = {
