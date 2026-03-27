@@ -29,6 +29,7 @@ let
 in
 {
   imports = [
+    ./boot-menu-timeout.nix
     ./capsule-updates.nix
     ./cuda.nix
     ./devices.nix
