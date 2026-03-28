@@ -113,6 +113,7 @@ makeScope final.newScope (self: {
 
   inherit (final.callPackages ./pkgs/optee {
     inherit (self) bspSrc gitRepos l4tMajorMinorPatchVersion l4tOlder l4tAtLeast uefi-firmware;
+    inherit (final) gcc13 stdenvAdapters;
   }) buildTOS buildOpteeTaDevKit opteeClient buildPkcs11Ta buildOpteeXtest;
   genEkb = self.callPackage ./pkgs/optee/gen-ekb.nix { };
 

@@ -5,6 +5,7 @@
 , buildPackages
 , lib
 , stdenv
+, stdenvAdapters
 , fetchgit
 , pkg-config
 , libuuid
@@ -14,6 +15,8 @@
 , gitRepos
 , uefi-firmware
 , openssl
+, gcc13
+, symlinkJoin
 }:
 
 let
@@ -34,6 +37,8 @@ let
           extraPrefix = "optee/optee_client/";
           hash = "sha256-XjFpMbyXy74sqnc8l+EgTaPXqwwHcvni1Z68ShokTGc=";
         })
+      ] ++ [
+        ./0002-tee-supplicant-add-systemd-sd_notify-support.patch
       ];
     nativeBuildInputs = [ pkg-config ];
     buildInputs = [ libuuid ];
@@ -48,13 +53,22 @@ let
     meta.platforms = [ "aarch64-linux" ];
   };
 
-  buildOpteeXtest = args: stdenv.mkDerivation {
+  buildOpteeXtest = args: stdenv.mkDerivation (finalAttrs: {
     pname = "optee_xtest";
     version = l4tMajorMinorPatchVersion;
     src = nvopteeSrc;
     patches = [ ./0001-GCC-15-compile-fix.patch ];
+
+    # Multiple outputs: xtest binary, TAs, and plugins
+    outputs = [
+      "out"
+      "tas"
+      "plugins"
+    ];
+
     nativeBuildInputs = [
       (buildPackages.python3.withPackages (p: [ p.cryptography ]))
+      nukeReferences
     ] ++ lib.optionals (l4tOlder "36") [ openssl ];
 
     buildInputs = [ ] ++ lib.optionals (l4tOlder "36") [ openssl ];
@@ -62,24 +76,58 @@ let
     postPatch = ''
       patchShebangs --build $(find optee/optee_test -type d -name scripts -printf '%p ')
     '';
+
     makeFlags = [
       "-C optee/optee_test"
       "CROSS_COMPILE=${stdenv.cc.targetPrefix}"
       "OPTEE_CLIENT_EXPORT=${opteeClient}"
       "TA_DEV_KIT_DIR=${buildOpteeTaDevKit args}/export-ta_arm64"
+      "TA_DIR=$(tas)" # xtest needs to manually load corrupt TA for test 1008
       "O=$(PWD)/out"
     ] ++ lib.optionals (l4tAtLeast "36") [
       "WITH_OPENSSL=n"
     ];
+
+    # We need to nuke-refs here because $tas/<uuid>.ta will retain a string
+    # reference to $out/lib (and glibc/lib) on the nix-store. We need to break
+    # this reference in order to split $out and $ta refs since $out/bin/xtest
+    # refers to the $tas location for runtime loading.
+    # The reason why the $out/lib reference is included in the TAs in the first
+    # place is during the linking phase, some TAs can statically link to
+    # eachother. This $out/lib path remains in the RPATH/RUNPATH for library
+    # searching metadata. The existing objcopy --strip-unneeded does not strip
+    # this unformation, despite it not being necessary for our TAs.
+    preBuild =
+      let
+        taPreSign = ''
+          cp \$input \$output
+          nuke-refs \$output
+        '';
+      in ''
+        cat > ta-pre-sign.sh <<EOF
+        #!/bin/sh
+        set -euo pipefail
+
+        input="\$1"
+        output="\$2"
+
+        ${taPreSign}
+        EOF
+        chmod +x ta-pre-sign.sh
+        makeFlagsArray+=(NIX_TA_PRE_SIGN_HOOK="$PWD/ta-pre-sign.sh")
+      '';
+
     installPhase = ''
       runHook preInstall
 
       install -Dm 755 ./out/xtest/xtest $out/bin/xtest
-      find ./out -name "*.ta" -exec cp {} $out \;
+
+      find ./out -name "*.ta" -print0 | xargs -0 install -Dm 755 -t $tas
+      find ./out -name "*.plugin" -print0 | xargs -0 install -Dm 755 -t $plugins
 
       runHook postInstall
     '';
-  };
+  });
 
   buildPkcs11Ta = args: stdenv.mkDerivation {
     pname = "pkcs11ta";
@@ -103,8 +151,9 @@ let
                                     , taPublicKeyFile ? null
                                     , coreLogLevel ? 2
                                     , taLogLevel ? coreLogLevel
+                                    , enableFTPM ? false
                                     , ...
-                                    }:
+                                    }@args:
     let
       nvCccPrebuilt = {
         t194 = "";
@@ -127,13 +176,21 @@ let
         "CFG_STMM_PATH=${uefi-firmware}/standalonemm_optee.bin"
       ])
       ++ (lib.optional (taPublicKeyFile != null) "TA_PUBLIC_KEY=${taPublicKeyFile}")
+      ++ (lib.optionals enableFTPM [
+          "CFG_CORE_TPM_EVENT_LOG=y"
+          "CFG_REE_STATE=y"
+          "CFG_JETSON_FTPM_HELPER_PTA=y"
+      ])
       ++ extraMakeFlags;
     in
     stdenv.mkDerivation {
       inherit pname;
       version = l4tMajorMinorPatchVersion;
       src = nvopteeSrc;
-      patches = opteePatches ++ [ ./remove-force-log-level.diff ];
+      patches = opteePatches ++ [
+        ./remove-force-log-level.diff
+        ./0003-Add-post-strip-hook.patch
+      ];
       postPatch = ''
         patchShebangs $(find optee/optee_os -type d -name scripts -printf '%p ')
       '';
@@ -151,6 +208,9 @@ let
       '';
       dontInstall = true;
       meta.platforms = [ "aarch64-linux" ];
+      passthru = {
+        inherit args;
+      };
     });
 
   buildOpteeTaDevKit = args: buildOptee (args // {
@@ -243,6 +303,63 @@ let
       dtc -I dts -O dtb -o $out/tegra${flavor}-optee.dtb ${nvopteeSrc}/optee/tegra${flavor}-optee.dts
     '');
 
+  buildFTpmHelperTa = args: stdenv.mkDerivation {
+    pname = "ftpm-helper-ta";
+    version = l4tMajorMinorPatchVersion;
+    src = nvopteeSrc;
+    patches = [ ./0001-ftpm-helper-no-install-makefile.patch ];
+    nativeBuildInputs = [ (buildPackages.python3.withPackages (p: [ p.cryptography ])) ];
+    enableParallelBuilding = true;
+    makeFlags = [
+      "-C optee/samples/ftpm-helper"
+      "CROSS_COMPILE=${stdenv.cc.targetPrefix}"
+      "TA_DEV_KIT_DIR=${buildOpteeTaDevKit args}/export-ta_arm64"
+      "OPTEE_CLIENT_EXPORT=${opteeClient}"
+      "O=$(PWD)/out"
+    ];
+    installPhase = ''
+      runHook preInstall
+
+      install -Dm755 -t $out/bin out/ca/ftpm-helper/nvftpm-helper-app
+      install -Dm755 -t $out out/early_ta/ftpm-helper/*.stripped.elf
+
+      runHook postInstall
+    '';
+    meta.platforms = [ "aarch64-linux" ];
+  };
+
+  buildMsTpm20RefTa = args:
+    let
+      gcc13Stdenv = stdenvAdapters.overrideCC stdenv gcc13;
+    in
+    gcc13Stdenv.mkDerivation {
+      pname = "ms-tpm-20-ref-ta";
+      version = l4tMajorMinorPatchVersion;
+      src = nvopteeSrc;
+      patches = args.opteePatches;
+      nativeBuildInputs = [ (buildPackages.python3.withPackages (p: [ p.cryptography ])) ];
+      enableParallelBuilding = true;
+      makeFlags = [
+        "-C optee/samples/ms-tpm-20-ref/Samples/ARM32-FirmwareTPM/optee_ta"
+        "CROSS_COMPILE=${gcc13Stdenv.cc.targetPrefix}"
+        "TA_DEV_KIT_DIR=${buildOpteeTaDevKit args}/export-ta_arm64"
+        "OPTEE_CLIENT_EXPORT=${opteeClient}"
+        "OPTEE_OS_DIR=$(PWD)/optee/optee_os"
+        "O=$(PWD)/out"
+        "CFG_TA_MEASURED_BOOT=y"
+        "CFG_USE_PLATFORM_EPS=y"
+        "CFG_TA_LOG_LEVEL=${toString args.taLogLevel}"
+      ];
+      installPhase = ''
+        runHook preInstall
+
+        install -Dm755 -t $out out/early_ta/ms-tpm/*.stripped.elf
+
+        runHook postInstall
+      '';
+      meta.platforms = [ "aarch64-linux" ];
+    };
+
   buildArmTrustedFirmware = lib.makeOverridable ({ socType, ... }:
     let
       socSpecialization = gitRepos ? "tegra/optee-src/atf_${socType}";
@@ -307,7 +424,7 @@ let
       meta.platforms = [ "aarch64-linux" ];
     });
 
-  buildTOS = { socType, ... }@args:
+  buildTOS = { socType, enableFTPM, ... }@args:
     let
       armTrustedFirmware = buildArmTrustedFirmware args;
 
@@ -316,13 +433,18 @@ let
       nvLuksSrv = buildNvLuksSrv args;
       cpuBlPayloadDec = buildCpuBlPayloadDec args;
       hwKeyAgent = buildHwKeyAgent args;
+      fTpmHelperTa = buildFTpmHelperTa args;
+      msTpm20RefTa = buildMsTpm20RefTa args;
 
       opteeOS = buildOptee ({
         earlyTaPaths = lib.optionals (socType == "t194" || socType == "t234") [
           "${nvLuksSrv}/b83d14a8-7128-49df-9624-35f14f65ca6c.stripped.elf"
           "${cpuBlPayloadDec}/0e35e2c9-b329-4ad9-a2f5-8ca9bbbd7713.stripped.elf"
           "${hwKeyAgent}/82154947-c1bc-4bdf-b89d-04f93c0ea97c.stripped.elf"
-        ];
+        ] ++ (lib.optionals enableFTPM [
+          "${fTpmHelperTa}/a6a3a74a-77cb-433a-990c-1dfb8a3fbc4c.stripped.elf"
+          "${msTpm20RefTa}/bc50d971-d4c9-42c4-82cb-343fb7f37896.stripped.elf"
+        ]);
       } // args);
 
       teeRaw = "${opteeOS}/core/tee-raw.bin";
@@ -331,7 +453,7 @@ let
       image = buildPackages.runCommand "tos.img"
         {
           nativeBuildInputs = [ nukeReferences ];
-          passthru = { inherit nvLuksSrv hwKeyAgent; };
+          passthru = { inherit nvLuksSrv hwKeyAgent opteeOS msTpm20RefTa fTpmHelperTa;};
         } ''
         mkdir -p $out
         ${buildPackages.python3}/bin/python3 ${bspSrc}/nv_tegra/tos-scripts/gen_tos_part_img.py \
