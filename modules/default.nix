@@ -229,10 +229,10 @@ in
       ];
 
       boot.kernelPackages =
-        (if cfg.kernel.realtime then
+        if cfg.kernel.realtime then
           pkgs.nvidia-jetpack.rtkernelPackages
         else
-          pkgs.nvidia-jetpack.kernelPackages).extend pkgs.nvidia-jetpack.kernelPackagesOverlay;
+          pkgs.nvidia-jetpack.kernelPackages;
 
       boot.kernelParams = [
         # Needed on Orin at least, but upstream has it for both

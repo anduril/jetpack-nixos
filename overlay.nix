@@ -99,6 +99,9 @@ in
     else
       final.nvidia-jetpack7;
 
+  # Add nvidia's custom modules to kernel package sets
+  kernelPackagesExtensions = (prev.kernelPackagesExtensions or []) ++ [ final.nvidia-jetpack.kernelPackagesOverlay ];
+
   # Set cudaPackage package sets to our JetPack-constructed package sets if we are on aarch64-linux. This is strictly
   # worse than conditioning on Jetson capabilities, but allows us to avoid infinite recursion when depending on the
   # version of the default CUDA package set. Since non-Jetson ARM platforms aren't supported by the CUDA 11.4 release,
