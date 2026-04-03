@@ -34,6 +34,7 @@ in
     ./devices.nix
     ./flash-script.nix
     ./graphics.nix
+    ./kernel.nix
     ./nvargus-daemon.nix
     ./nvfancontrol.nix
     ./nvidia-container-toolkit.nix
@@ -110,13 +111,6 @@ in
           Jetson carrier board to target. Can be set to "generic" to target a generic jetson carrier board, but some things may not work.
         '';
       };
-
-      kernel.realtime = mkOption {
-        default = false;
-        type = types.bool;
-        description = "Enable PREEMPT_RT patches";
-      };
-
 
       flasherPkgs = mkOption {
         type = options.nixpkgs.pkgs.type;
@@ -228,80 +222,7 @@ in
         ])
       ];
 
-      boot.kernelPackages =
-        (if cfg.kernel.realtime then
-          pkgs.nvidia-jetpack.rtkernelPackages
-        else
-          pkgs.nvidia-jetpack.kernelPackages).extend pkgs.nvidia-jetpack.kernelPackagesOverlay;
-
-      boot.kernelParams = [
-        # Needed on Orin at least, but upstream has it for both
-        "nvidia.rm_firmware_active=all"
-      ]
-      ++ lib.optionals cfg.console.enable cfg.console.args
-      ++ lib.optionals (pkgs.nvidia-jetpack.l4tAtLeast "38") [
-        "clk_ignore_unused"
-      ];
-
-      boot.initrd.includeDefaultModules = false; # Avoid a bunch of modules we may not get from tegra_defconfig
-      boot.initrd.availableKernelModules = [ "xhci-tegra" "ucsi_ccg" "typec_ucsi" "typec" ] # Make sure USB firmware makes it into initrd
-        ++ lib.optionals (pkgs.nvidia-jetpack.l4tAtLeast "36") [
-        "nvme"
-        "tegra_mce"
-        "phy-tegra-xusb"
-        "i2c-tegra"
-        "fusb301"
-        # PCIe for nvme, ethernet, etc.
-        "phy_tegra194_p2u"
-        "pcie_tegra194"
-        # Ethernet for AGX
-        "nvpps"
-        "nvethernet"
-      ] ++ lib.optionals (pkgs.nvidia-jetpack.l4tAtLeast "38") [
-        "pwm-fan"
-        "uas"
-        "r8152"
-        "phy-tegra194-p2u"
-        "nvme-core"
-        "tegra-bpmp-thermal"
-        "pwm-tegra"
-        "tegra_vblk"
-        "tegra_hv_vblk_oops"
-        "ufs-tegra"
-        "nvpps"
-        "pcie-tegra264"
-        "nvethernet"
-        "r8126"
-        "r8168"
-        "tegra_vnet"
-        "rtl8852ce"
-        "oak_pci"
-      ];
-
-      # See upstream default for this option, removes any modules that aren't enabled in JetPack kernel
-      boot.initrd.luks.cryptoModules = lib.mkDefault [
-        "aes"
-        "aes_generic"
-        "cbc"
-        "xts"
-        "sha1"
-        "sha256"
-        "sha512"
-        "af_alg"
-        "algif_skcipher"
-      ];
-
-      boot.kernelModules = if (jetpackAtLeast "7") then [ "nvidia-uvm" ] else [ "nvgpu" ];
-
-      boot.extraModprobeConfig = lib.optionalString (jetpackAtLeast "6") ''
-        options nvgpu devfreq_timer="delayed"
-      '' + lib.optionalString (jetpackAtLeast "7") ''
-        # from L4T-Ubuntu /etc/modprobe.d/nvidia-unifiedgpudisp.conf
-        options nvidia NVreg_RegistryDwords="RMExecuteDevinitOnPmu=0;RMEnableAcr=1;RmCePceMap=0xffffff20;RmCePceMap1=0xffffffff;RmCePceMap2=0xffffffff;RmCePceMap3=0xffffffff;"
-        softdep nvidia pre: governor_pod_scaling post: nvidia-uvm
-      '';
-
-      boot.extraModulePackages = lib.optional (jetpackAtLeast "6") config.boot.kernelPackages.nvidia-oot-modules;
+      boot.kernelParams = lib.optionals cfg.console.enable cfg.console.args;
 
       hardware.firmware = with pkgs.nvidia-jetpack; [
         l4t-firmware
@@ -317,8 +238,6 @@ in
         in
         nvidiaDriverFirmwareDebs ++ [ l4t-firmware-openrm ]
       );
-
-      boot.blacklistedKernelModules = [ "nouveau" ];
 
       hardware.deviceTree.enable = true;
       hardware.deviceTree.dtboBuildExtraIncludePaths = {
@@ -414,7 +333,7 @@ in
 
       # Nvidia's jammy kernel has downstream apparmor patches which require "apparmor"
       # to appear sufficiently early in the `lsm=<list of security modules>` kernel argument
-      security.lsm = lib.mkIf config.security.apparmor.enable (mkBefore [ "apparmor" ]);
+      security.lsm = lib.mkIf (cfg.kernel.useVendorProvided && config.security.apparmor.enable) (mkBefore [ "apparmor" ]);
     })
   ]);
 }
