@@ -31,7 +31,11 @@ let
 
       # If there are no files that match the compat node use the default nvpower.sh uses
       if [ ! -f ${pkgs.nvidia-jetpack.l4t-nvpmodel}/etc/nvpmodel/nvpmodel_"$device_som".conf ]; then
-        if [[ "$device_som" == 'p3767_0005' ]]; then
+        if [[ "$device_som" == 'p3767_0005_super' ]]; then
+          # The nvpower script maps p3767_0005 -> p3767_0003 so doing the same here
+          # for the super variant.
+          device_som="p3767_0003_super"
+        elif [[ "$device_som" == 'p3767_0005' ]]; then
           # The nvpower script maps p3767_0005 -> p3767_0003 so doing the same here
           # looks to be difference between jp5 and jp6.
           device_som="p3767_0003"
