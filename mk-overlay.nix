@@ -125,6 +125,7 @@ makeScope final.newScope (self: {
   tegra-eeprom-tool-static = final.pkgsStatic.callPackage ./pkgs/tegra-eeprom-tool { };
 
   patchgpt = self.callPackage ./pkgs/patchgpt { };
+  patchfv = self.callPackage ./pkgs/patchfv { };
 
   samples = makeScope self.newScope (finalSamples: {
     callPackages = callPackagesWith (self // finalSamples);
