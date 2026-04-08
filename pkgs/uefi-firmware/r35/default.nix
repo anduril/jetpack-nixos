@@ -16,6 +16,7 @@
 , applyPatches
 , nukeReferences
 , l4tMajorMinorPatchVersion
+, patchfv
 , uniqueHash ? ""
 , # Optional path to a boot logo that will be converted and cropped into the format required
   bootLogo ? null
@@ -244,13 +245,10 @@ let
           buildPhase = ''
             runHook preBuild
 
-            # Keep in sync with passthru.biosVersion below
-            BUILD_HASH=$(printf "%s-%s" "${uniqueHash}" "$out" | sha256sum | head -c 12)
-
             # The BUILDID_STRING and BUILD_DATE_TIME are used
             # just by nvidia, not generic edk2
             build -a ${targetArch} -b ${buildTarget} -t ${buildType} -p Platform/NVIDIA/${platformBuild}/${platformBuild}.dsc -n $NIX_BUILD_CORES \
-              -D BUILDID_STRING="${l4tMajorMinorPatchVersion}-''${BUILD_HASH}" \
+              -D BUILDID_STRING="${fakeVersion}" \
               -D BUILD_DATE_TIME="$(date --utc --iso-8601=seconds --date=@$SOURCE_DATE_EPOCH)" \
               ${lib.optionalString (trustedPublicCertPemFile != null) "-D CUSTOM_CAPSULE_CERT"} \
               $buildFlags
@@ -278,7 +276,7 @@ let
         };
     };
 
-  uefi-firmware = mkJetsonUefi (finalAttrs: {
+  unstamped-firmware = mkJetsonUefi {
     platformBuild = "Jetson";
     outputs = [
       "FV/UEFI_NS.Fv"
@@ -296,9 +294,27 @@ let
         mv $filename $out/dtbs/$(basename "$filename" ".dtb").dtbo
       done
     '';
+  };
 
-    passthru.biosVersion = "${l4tMajorMinorPatchVersion}-" + lib.substring 0 12 (builtins.hashString "sha256" "${uniqueHash}-${finalAttrs.out}");
-  });
+  fakeHash = "123456789012";
+  fakeVersion = "${l4tMajorMinorPatchVersion}-${fakeHash}";
+  biosVersion = "${l4tMajorMinorPatchVersion}-" + lib.substring 0 12 (builtins.hashString "sha256" "${uniqueHash}-${unstamped-firmware}");
+
+  uefi-firmware = runCommand "${unstamped-firmware.pname}-${unstamped-firmware.version}-stamped"
+    {
+      nativeBuildInputs = [ python3 buildPackages.nvidia-jetpack.patchfv ];
+      passthru = { inherit biosVersion; };
+    } ''
+    mkdir -p $out
+    cp -r ${unstamped-firmware}/* $out
+
+    rm $out/UEFI_NS.Fv $out/uefi_jetson.bin
+    patchfv ${unstamped-firmware}/UEFI_NS.Fv $out/UEFI_NS.Fv ${fakeVersion} ${biosVersion}
+
+    python3 ${edk2-nvidia}/Silicon/NVIDIA/Tools/FormatUefiBinary.py \
+        $out/UEFI_NS.Fv \
+        $out/uefi_jetson.bin
+  '';
 
   jetsonStandaloneMMOptee = mkJetsonUefi (finalAttrs: {
     platformBuild = "StandaloneMmOptee";
