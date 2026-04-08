@@ -108,7 +108,7 @@ makeScope final.newScope (self: {
 
   dlopenOverride = final.callPackage ./pkgs/dlopen-override { };
 
-  inherit (final.callPackages ./pkgs/uefi-firmware/r${l4tMajorVersion} { inherit (self) l4tMajorMinorPatchVersion; })
+  inherit (final.callPackages ./pkgs/uefi-firmware/r${l4tMajorVersion} { inherit (self) l4tMajorMinorPatchVersion patchfv; })
     uefi-firmware;
 
   genEkb = self.callPackage ./pkgs/optee/gen-ekb.nix { };

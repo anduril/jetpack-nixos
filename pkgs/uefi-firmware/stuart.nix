@@ -144,7 +144,7 @@ stdenv.mkDerivation (finalAttrs: {
     export LDFLAGS=$NIX_LDFLAGS_FOR_BUILD
 
     export WORKSPACE=$(pwd)
-    export GIT_SYNC_REVISION=$(printf "%s-%s" "${uniqueHash}" "$out" | sha256sum | head -c 12)
+    export GIT_SYNC_REVISION="${uniqueHash}"
     python edk2/BaseTools/Edk2ToolsBuild.py -t GCC5
     # DANGER: If someone else modifies PYTHONPATH, then we lose this
     # We're okay when this was written.
