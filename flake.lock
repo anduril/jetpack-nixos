@@ -10,11 +10,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1768505959,
-        "narHash": "sha256-oFCx/ApQ+S1/apUKWsvT9vq+Eo1m2vINWEDkW7/nckA=",
+        "lastModified": 1775497984,
+        "narHash": "sha256-Jyu+3yxxmiyaUUYHJY8mwEiDSIWXeBlBLtmxLJ4uOo4=",
         "owner": "nixos-cuda",
         "repo": "cuda-legacy",
-        "rev": "86ad7e2c2e314f0234539cbbc66b5cd7746bcd32",
+        "rev": "d0928b579a1f633d3275902225c430bf867fd9c6",
         "type": "github"
       },
       "original": {
@@ -25,11 +25,11 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1768773494,
-        "narHash": "sha256-XsM7GP3jHlephymxhDE+/TKKO1Q16phz/vQiLBGhpF4=",
+        "lastModified": 1774388614,
+        "narHash": "sha256-tFwzTI0DdDzovdE9+Ras6CUss0yn8P9XV4Ja6RjA+nU=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "77ef7a29d276c6d8303aece3444d61118ef71ac2",
+        "rev": "1073dad219cb244572b74da2b20c7fe39cb3fa9e",
         "type": "github"
       },
       "original": {
