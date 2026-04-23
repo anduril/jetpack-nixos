@@ -1,0 +1,96 @@
+From 451b0cebde6d1d34e271147a6a8466bf41124a91 Mon Sep 17 00:00:00 2001
+From: Elliot Berman <eberman@anduril.com>
+Date: Tue, 21 Apr 2026 18:05:04 -0700
+Subject: [PATCH] crypto: tegra - Disable softirqs before finalizing request
+
+Softirqs must be disabled when calling the finalization fucntion on
+a request.
+
+Reported-by: Guangwu Zhang <guazhang@redhat.com>
+Fixes: 0880bb3b00c8 ("crypto: tegra - Add Tegra Security Engine driver")
+Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
+Link: https://lore.kernel.org/all/aa_kPXrFeOmhydP6@gondor.apana.org.au/
+[eberman: Port to nvidia-oot repo]
+Signed-off-by: Elliot Berman <eberman@anduril.com>
+---
+ drivers/crypto/tegra/tegra-se-aes.c  | 9 +++++++++
+ drivers/crypto/tegra/tegra-se-hash.c | 3 +++
+ 2 files changed, 12 insertions(+)
+
+diff --git a/drivers/crypto/tegra/tegra-se-aes.c b/drivers/crypto/tegra/tegra-se-aes.c
+index ff1c58c0..7c5b108b 100644
+--- a/drivers/crypto/tegra/tegra-se-aes.c
++++ b/drivers/crypto/tegra/tegra-se-aes.c
+@@ -6,6 +6,7 @@
+ 
+ #include <nvidia/conftest.h>
+ 
++#include <linux/bottom_half.h>
+ #include <linux/clk.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/module.h>
+@@ -344,7 +345,9 @@ out:
+ 	if (tegra_key_is_reserved(key2_id))
+ 		tegra_key_invalidate_reserved(ctx->se, key2_id, ctx->alg);
+ 
++	local_bh_disable();
+ 	crypto_finalize_skcipher_request(se->engine, req, ret);
++	local_bh_enable();
+ 
+ 	return 0;
+ }
+@@ -1292,7 +1295,9 @@ outbuf_err:
+ 	if (tegra_key_is_reserved(rctx->key_id))
+ 		tegra_key_invalidate_reserved(ctx->se, rctx->key_id, ctx->alg);
+ 
++	local_bh_disable();
+ 	crypto_finalize_aead_request(ctx->se->engine, req, ret);
++	local_bh_enable();
+ 
+ 	return 0;
+ }
+@@ -1375,7 +1380,9 @@ outbuf_err:
+ 	if (tegra_key_is_reserved(rctx->key_id))
+ 		tegra_key_invalidate_reserved(ctx->se, rctx->key_id, ctx->alg);
+ 
++	local_bh_disable();
+ 	crypto_finalize_aead_request(ctx->se->engine, req, ret);
++	local_bh_enable();
+ 
+ 	return 0;
+ }
+@@ -1775,7 +1782,9 @@ out:
+ 	if (tegra_key_is_reserved(rctx->key_id))
+ 		tegra_key_invalidate_reserved(ctx->se, rctx->key_id, ctx->alg);
+ 
++	local_bh_disable();
+ 	crypto_finalize_hash_request(se->engine, req, ret);
++	local_bh_enable();
+ 
+ 	return 0;
+ }
+diff --git a/drivers/crypto/tegra/tegra-se-hash.c b/drivers/crypto/tegra/tegra-se-hash.c
+index 71e3a72b..0cf1c11f 100644
+--- a/drivers/crypto/tegra/tegra-se-hash.c
++++ b/drivers/crypto/tegra/tegra-se-hash.c
+@@ -5,6 +5,7 @@
+  */
+ 
+ #include <nvidia/conftest.h>
++#include <linux/bottom_half.h>
+ #include <linux/clk.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/module.h>
+@@ -447,7 +448,9 @@ static int tegra_sha_do_one_req(struct crypto_engine *engine, void *areq)
+ 		rctx->task &= ~SHA_FINAL;
+ 	}
+ 
++	local_bh_disable();
+ 	crypto_finalize_hash_request(se->engine, req, ret);
++	local_bh_enable();
+ 
+ 	return 0;
+ }
+-- 
+2.51.2
+
