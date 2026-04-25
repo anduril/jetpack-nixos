@@ -94,7 +94,7 @@ in
     # Upgrading to L4T 36 from L4T 35 requires 35.5.0 or newer per
     # https://docs.nvidia.com/jetson/archives/r36.3/DeveloperGuide/SD/SoftwarePackagesAndTheUpdateMechanism.html#updating-jetson-linux-with-image-based-over-the-air-update
     # Trying to go from older version straight to 36 gets NO_PROTOCOL_FOR_IMAGE error
-    {
+    (lib.mkIf cfg.enable {
       system.preSwitchChecks.jetpackMinimumUpgradeVersion =
         # bash
         ''
@@ -114,6 +114,6 @@ in
             fi
           fi
         '';
-    }
+    })
   ];
 }
