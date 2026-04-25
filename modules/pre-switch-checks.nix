@@ -47,11 +47,11 @@ in
     '';
   };
 
-  config = lib.mkMerge [
+  config = lib.mkIf cfg.enable (lib.mkMerge [
     # Prevent switching to a NixOS generation built for a lower L4T
     # version than the currently running firmware. Downgrading
     # requires re-flashing the device.
-    (lib.mkIf (cfg.enable && cfg.firmware.maxAllowedDowngrade != "major") {
+    (lib.mkIf (cfg.firmware.maxAllowedDowngrade != "major") {
       system.preSwitchChecks.jetpackDowngrade =
         # bash
         ''
@@ -94,7 +94,7 @@ in
     # Upgrading to L4T 36 from L4T 35 requires 35.5.0 or newer per
     # https://docs.nvidia.com/jetson/archives/r36.3/DeveloperGuide/SD/SoftwarePackagesAndTheUpdateMechanism.html#updating-jetson-linux-with-image-based-over-the-air-update
     # Trying to go from older version straight to 36 gets NO_PROTOCOL_FOR_IMAGE error
-    (lib.mkIf cfg.enable {
+    {
       system.preSwitchChecks.jetpackMinimumUpgradeVersion =
         # bash
         ''
@@ -114,6 +114,6 @@ in
             fi
           fi
         '';
-    })
-  ];
+    }
+  ]);
 }
