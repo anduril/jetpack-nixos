@@ -76,7 +76,7 @@ lib.makeOverridable (
             popd >/dev/null
 
             nixLog "removing $PWD/targets"
-            rm --recursive --dir "$PWD/targets" || {
+            rm --dir "$PWD/targets" || {
               nixErrorLog "$PWD/targets contains non-empty directories: $(ls -laR "$PWD/targets")"
               exit 1
             }
@@ -91,7 +91,7 @@ lib.makeOverridable (
           popd >/dev/null
 
           nixLog "removing $PWD/local"
-          rm --recursive --dir "$PWD/local" || {
+          rm --dir "$PWD/local" || {
             nixErrorLog "$PWD/local contains non-empty directories: $(ls -laR "$PWD/local")"
             exit 1
           }
@@ -120,7 +120,7 @@ lib.makeOverridable (
         popd >/dev/null
 
         nixLog "removing $PWD/usr"
-        rm --recursive --dir "$PWD/usr" || {
+        rm --dir "$PWD/usr" || {
           nixErrorLog "$PWD/usr contains non-empty directories: $(ls -laR "$PWD/usr")"
           exit 1
         }
@@ -142,7 +142,7 @@ lib.makeOverridable (
             --target-directory "$PWD/lib" \
             "$PWD/lib64"/*
           nixLog "removing $PWD/lib64"
-          rm --recursive --dir "$PWD/lib64" || {
+          rm --dir "$PWD/lib64" || {
             nixErrorLog "$PWD/lib64 contains non-empty directories: $(ls -laR "$PWD/lib64")"
             exit 1
           }
@@ -167,7 +167,7 @@ lib.makeOverridable (
             --target-directory "$PWD/bin" \
             "$PWD/sbin"/*
         fi
-        rm --recursive --dir "$PWD/sbin" || {
+        rm --dir "$PWD/sbin" || {
           nixErrorLog "$PWD/sbin contains non-empty directories: $(ls -laR "$PWD/sbin")"
           exit 1
         }
@@ -183,7 +183,7 @@ lib.makeOverridable (
               --verbose \
               --target-directory "$PWD/lib" \
               "$PWD/lib/$dir"/*
-            rm --recursive --dir "$PWD/lib/$dir" || {
+            rm --dir "$PWD/lib/$dir" || {
               nixErrorLog "$PWD/lib/$dir contains non-empty directories: $(ls -laR "$PWD/lib/$dir")"
               exit 1
             }
