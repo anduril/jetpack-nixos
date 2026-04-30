@@ -12,7 +12,7 @@ stdenv.mkDerivation {
   src = gitRepos."tegra/optee-src/nv-optee";
 
   patches =
-    if l4tAtLeast "36" then [ ] else [
+    (if l4tAtLeast "36" then [ ] else [
       ./0001-Don-t-prepend-foo-bar-baz-to-TEEC_LOAD_PATH.patch
       (fetchpatch {
         name = "tee-supplicant-Allow-for-TA-load-path-to-be-specified-at-runtime.patch";
@@ -20,6 +20,14 @@ stdenv.mkDerivation {
         stripLen = 1;
         extraPrefix = "optee/optee_client/";
         hash = "sha256-XjFpMbyXy74sqnc8l+EgTaPXqwwHcvni1Z68ShokTGc=";
+      })
+    ]) ++ [
+      (fetchpatch {
+        name = "tee-supplicant-add-systemd-sd_notify-support.patch";
+        url = "https://github.com/OP-TEE/optee_client/commit/a5b1ffcd26e328af0bbf18ab448a38ecd558e05c.patch";
+        stripLen = 1;
+        extraPrefix = "optee/optee_client/";
+        hash = "sha256-85DYu8BmWgpeowLMptLwXb77MWytNgvwqSZuPGtBFG4=";
       })
     ];
 
