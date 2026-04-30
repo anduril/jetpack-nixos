@@ -76,11 +76,42 @@ final: prev: (
       armTrustedFirmware = prevJetpack.armTrustedFirmware.overrideAttrs {
         inherit (finalJetpack) socType;
       };
+
+      # fTPM TAs are referenced from the BASE scope (`prev.nvidia-jetpack`), not
+      # `finalJetpack`/`prevJetpack`. `taDevKit = optee-os.overrideAttrs(...)`,
+      # so resolving via the new scope would create a cycle:
+      # optee-os.earlyTaPaths -> fTPM TA -> taDevKit -> optee-os. The TAs are
+      # functionally independent of the user's optee-os overrides (they only
+      # need ta_dev_kit headers, not the user's CFG flags or patches).
+      msTpm20RefTa = prev.nvidia-jetpack.msTpm20RefTa.overrideAttrs (prevAttrs: {
+        patches = prevAttrs.patches or [ ] ++ cfg.firmware.optee.patches;
+        makeFlags = prevAttrs.makeFlags or [ ]
+          ++ [ "CFG_TA_LOG_LEVEL=${toString cfg.firmware.optee.ftpm.taLogLevel}" ]
+          ++ lib.optional cfg.firmware.optee.ftpm.measuredBoot "CFG_TA_MEASURED_BOOT=y";
+      });
+
       optee-os = prevJetpack.optee-os.overrideAttrs (prevAttrs: {
         inherit (finalJetpack) socType;
         inherit (cfg.firmware.optee) taPublicKeyFile coreLogLevel taLogLevel;
         patches = prevAttrs.patches or [ ] ++ cfg.firmware.optee.patches;
-        makeFlags = prevAttrs.makeFlags or [ ] ++ cfg.firmware.optee.extraMakeFlags;
+        makeFlags = prevAttrs.makeFlags or [ ]
+          ++ cfg.firmware.optee.extraMakeFlags
+          ++ lib.optionals cfg.firmware.optee.ftpm.enable [
+            "CFG_REE_STATE=y"
+            "CFG_JETSON_FTPM_HELPER_PTA=y"
+          ]
+          ++ lib.optional cfg.firmware.optee.ftpm.measuredBoot
+            "CFG_CORE_TPM_EVENT_LOG=y"
+          ++ lib.optional cfg.firmware.optee.ftpm.unsecureInjectEPS.enable
+            (lib.warn
+              "fTPM is using UNSECURE Endorsement Primary Seed (EPS) injection."
+              "CFG_JETSON_FTPM_HELPER_INJECT_EPS=y");
+        earlyTaPaths = prevAttrs.earlyTaPaths or [ ]
+          ++ lib.optionals
+            (cfg.firmware.optee.ftpm.enable && finalJetpack.socType == "t234") [
+              "${prev.nvidia-jetpack.ftpmHelperTa}/a6a3a74a-77cb-433a-990c-1dfb8a3fbc4c.stripped.elf"
+              "${finalJetpack.msTpm20RefTa}/bc50d971-d4c9-42c4-82cb-343fb7f37896.stripped.elf"
+            ];
       });
 
       flashInitrd =
