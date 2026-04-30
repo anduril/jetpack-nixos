@@ -27,7 +27,7 @@ stdenv.mkDerivation {
         url = "https://github.com/OP-TEE/optee_client/commit/a5b1ffcd26e328af0bbf18ab448a38ecd558e05c.patch";
         stripLen = 1;
         extraPrefix = "optee/optee_client/";
-        hash = "sha256-85DYu8BmWgpeowLMptLwXb77MWytNgvwqSZuPGtBFG4=";
+        hash = "sha256-QDE6wKxA3kvLfcb5ILZZqgJ7WC3UGFmuKtrRP7MwPfM=";
       })
     ];
 
