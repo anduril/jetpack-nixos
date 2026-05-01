@@ -22,6 +22,7 @@ stdenv.mkDerivation {
         hash = "sha256-XjFpMbyXy74sqnc8l+EgTaPXqwwHcvni1Z68ShokTGc=";
       })
     ]) ++ [
+      ./0002-tee-supplicant-Makefile-drop-nvme-rpmb.patch
       (fetchpatch {
         name = "tee-supplicant-add-systemd-sd_notify-support.patch";
         url = "https://github.com/OP-TEE/optee_client/commit/a5b1ffcd26e328af0bbf18ab448a38ecd558e05c.patch";
@@ -29,6 +30,7 @@ stdenv.mkDerivation {
         extraPrefix = "optee/optee_client/";
         hash = "sha256-QDE6wKxA3kvLfcb5ILZZqgJ7WC3UGFmuKtrRP7MwPfM=";
       })
+      ./0003-tee-supplicant-Makefile-restore-nvme-rpmb.patch
     ];
 
   nativeBuildInputs = [ pkg-config ];
