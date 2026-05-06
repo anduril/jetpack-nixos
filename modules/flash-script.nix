@@ -315,6 +315,23 @@ in
           defaultText = lib.literalExpression "config.boot.initrd.availableKernelModules";
           description = "Additional kernel modules to be loaded during the initrd flashing method.";
         };
+
+        postFlashInitrdCommands = mkOption {
+          type = types.lines;
+          default = "";
+          description = ''
+            Shell commands appended to the device-side initrd `init` script,
+            spliced in after `flashFromDevice` reports success and before
+            the device reboots. Use this to extend the initrd flow with
+            additional device-side work (for example, exposing eMMC as a
+            USB Mass Storage gadget for host-driven partition writes).
+            Runs as PID 1 in the initrd; the only available tools are
+            busybox builtins from `pkgs.pkgsStatic.busybox` plus
+            whatever extra kernel modules you load via `additionalInitrdFlashModules`.
+            Commands must not call `reboot` or `exec`; the initrd script
+            issues `reboot -f` immediately after this hook returns.
+          '';
+        };
       };
 
       flashScript = mkOption {

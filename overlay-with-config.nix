@@ -170,8 +170,10 @@ final: prev: (
             # outside the context of this nixos config (which has an
             # aarch64-linux package-set).
             if ${lib.getExe finalJetpack.flashFromDevice} ${finalJetpack.signedFirmware}; then
-              echo "Flashing platform firmware successful. Rebooting now."
+              echo "Flashing platform firmware successful."
               sync
+              ${cfg.flashScriptOverrides.postFlashInitrdCommands}
+              echo "Rebooting now."
               reboot -f
             else
               echo "Flashing platform firmware unsuccessful."
