@@ -85,19 +85,21 @@ in
   # the version of the CUDA package set, blarg would have received nvidia-jetpack5 as nvidia-jetpack (since it would
   # stay unchanged) and nvidia-jetpack6.cudaPackages (CUDA 12.6) as cudaPackages -- this is likely unintentional!
   nvidia-jetpack =
-    # Support for pre-11.4 belongs with JetPack 4, which is no longer maintained.
-    # CUDA 11.4 - 12.2 is supported either natively (11.4) or through cuda_compat (everything else).
-    if final.cudaPackages.cudaOlder "12.3" then
-      final.nvidia-jetpack5
+    final.lib.recurseIntoAttrs (
+      # Support for pre-11.4 belongs with JetPack 4, which is no longer maintained.
+      # CUDA 11.4 - 12.2 is supported either natively (11.4) or through cuda_compat (everything else).
+      if final.cudaPackages.cudaOlder "12.3" then
+        final.nvidia-jetpack5
 
-    # CUDA 12.4 - 12.9 is supported either natively (12.4) or through cuda_compat (everything else).
-    # NOTE: CUDA 12.3 isn't supported by JetPack 5 or 6, but we lump it in with JetPack 6 to avoid throwing.
-    else if final.cudaPackages.cudaOlder "13.0" then
-      final.nvidia-jetpack6
+      # CUDA 12.4 - 12.9 is supported either natively (12.4) or through cuda_compat (everything else).
+      # NOTE: CUDA 12.3 isn't supported by JetPack 5 or 6, but we lump it in with JetPack 6 to avoid throwing.
+      else if final.cudaPackages.cudaOlder "13.0" then
+        final.nvidia-jetpack6
 
-    # CUDA 13.0+ is supported by JetPack 7, which we don't yet package.
-    else
-      final.nvidia-jetpack7;
+      # CUDA 13.0+ is supported by JetPack 7, which we don't yet package.
+      else
+        final.nvidia-jetpack7
+    );
 
   # Set cudaPackage package sets to our JetPack-constructed package sets if we are on aarch64-linux. This is strictly
   # worse than conditioning on Jetson capabilities, but allows us to avoid infinite recursion when depending on the

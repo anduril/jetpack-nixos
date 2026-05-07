@@ -24,7 +24,6 @@ in
     l4t-nvfancontrol
     l4t-nvpmodel
     l4t-nvsci
-    l4t-opencv
     l4t-pva
     l4t-tools
     l4t-wayland;
