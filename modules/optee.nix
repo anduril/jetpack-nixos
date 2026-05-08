@@ -284,7 +284,6 @@ in
             "systemd-modules-load.service"
           ];
           requires = [ "tee-supplicant.service" ];
-          before = [ "tpm2.target" ];
           wantedBy = [ "multi-user.target" ];
           serviceConfig = {
             Type = "oneshot";
