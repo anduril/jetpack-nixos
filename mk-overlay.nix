@@ -178,5 +178,8 @@ makeScope final.newScope (self: {
 // (final.callPackages ./pkgs/l4t {
   inherit self l4tAtLeast l4tOlder;
 })
-  // (final.callPackages ./pkgs/optee { inherit self; })
+  // final.lib.packagesFromDirectoryRecursive {
+  inherit (self) callPackage;
+  directory = ./pkgs/optee;
+}
 )
