@@ -7,6 +7,7 @@
 , applyPatches
 , nukeReferences
 , l4tMajorMinorPatchVersion
+, patchfv
 , uniqueHash ? ""
 , socFamily ? "t23x"
 , defconfig ? "${socFamily}_general"
@@ -103,7 +104,11 @@ let
     };
   };
 
-  mkStuartDrv = callPackage ../stuart.nix (args // { srcs = patchedRepos; });
+  fakeHash = "123456789012";
+  fakeVersion = "${l4tMajorMinorPatchVersion}-${fakeHash}";
+  biosVersion = "${l4tMajorMinorPatchVersion}-" + lib.substring 0 12 (builtins.hashString "sha256" "${uniqueHash}-${jetsonUefi}");
+
+  mkStuartDrv = callPackage ../stuart.nix (args // { srcs = patchedRepos; uniqueHash = fakeHash; });
 
   jetsonUefi = mkStuartDrv {
     platformBuild = "Tegra";
@@ -123,27 +128,27 @@ let
   uefi-firmware = runCommand "uefi-firmware-${l4tMajorMinorPatchVersion}"
     {
       nativeBuildInputs = [ python3 nukeReferences ];
-      # Keep in sync with FIRMWARE_VERSION_BASE and GIT_SYNC_REVISION above
       passthru = {
-        biosVersion = "${l4tMajorMinorPatchVersion}-" + lib.substring 0 12 (builtins.hashString "sha256" "${uniqueHash}-${jetsonUefi}");
-        inherit jetsonUefi jetsonStandaloneMMOptee;
+        inherit biosVersion jetsonUefi jetsonStandaloneMMOptee;
       } // patchedRepos;
     }
     ''
       mkdir -p $out
-      python3 ${patchedRepos.edk2-nvidia}/Silicon/NVIDIA/edk2nv/FormatUefiBinary.py \
-        ${jetsonUefi}/UEFI_NS.Fv \
-        $out/uefi_jetson.bin
+
+      ${lib.getExe patchfv} ${jetsonUefi}/UEFI_NS.Fv $out/UEFI_NS.Fv ${fakeVersion} ${biosVersion}
 
       python3 ${patchedRepos.edk2-nvidia}/Silicon/NVIDIA/edk2nv/FormatUefiBinary.py \
-        ${jetsonUefi}/L4TLauncher.efi \
-        $out/L4TLauncher.efi
+        $out/UEFI_NS.Fv \
+        $out/uefi_jetson.bin
+
+      cp ${jetsonUefi}/L4TLauncher.efi $out/L4TLauncher.efi
 
       python3 ${patchedRepos.edk2-nvidia}/Silicon/NVIDIA/edk2nv/FormatUefiBinary.py \
         ${jetsonStandaloneMMOptee}/UEFI_MM.Fv \
         $out/standalonemm_optee.bin
 
       # Get rid of any string references to source(s)
+      nuke-refs $out/UEFI_NS.Fv
       nuke-refs $out/uefi_jetson.bin
       nuke-refs $out/standalonemm_optee.bin
     '';

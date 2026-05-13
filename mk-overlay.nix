@@ -108,7 +108,7 @@ makeScope final.newScope (self: {
 
   dlopenOverride = final.callPackage ./pkgs/dlopen-override { };
 
-  inherit (final.callPackages ./pkgs/uefi-firmware/r${l4tMajorVersion} { inherit (self) l4tMajorMinorPatchVersion; })
+  inherit (final.callPackages ./pkgs/uefi-firmware/r${l4tMajorVersion} { inherit (self) l4tMajorMinorPatchVersion patchfv; })
     uefi-firmware;
 
   genEkb = self.callPackage ./pkgs/optee/gen-ekb.nix { };
@@ -125,6 +125,7 @@ makeScope final.newScope (self: {
   tegra-eeprom-tool-static = final.pkgsStatic.callPackage ./pkgs/tegra-eeprom-tool { };
 
   patchgpt = self.callPackage ./pkgs/patchgpt { };
+  patchfv = self.callPackage ./pkgs/patchfv { };
 
   samples = makeScope self.newScope (finalSamples: {
     callPackages = callPackagesWith (self // finalSamples);
