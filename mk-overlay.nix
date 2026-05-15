@@ -52,7 +52,7 @@ makeScope final.newScope (self: {
   # - pkgs/jetson-benchmarks
   # - pkgs/buildFromDebs.nix
   # This list should not grow.
-  cudaPackages = final.${final._cuda.lib.mkVersionedName "cudaPackages" cudaMajorMinorVersion};
+  cudaPackages = final.lib.recurseIntoAttrs final.${final._cuda.lib.mkVersionedName "cudaPackages" cudaMajorMinorVersion};
 
   bspSrc = final.applyPatches {
     src = final.runCommand "l4t-unpacked"
@@ -128,12 +128,13 @@ makeScope final.newScope (self: {
 
   samples = makeScope self.newScope (finalSamples: {
     callPackages = callPackagesWith (self // finalSamples);
+    recurseForDerivations = true;
   } // packagesFromDirectoryRecursive {
     directory = ./pkgs/samples;
     inherit (finalSamples) callPackage;
   });
 
-  tests = self.callPackages ./pkgs/tests { };
+  tests = final.lib.recurseIntoAttrs (self.callPackages ./pkgs/tests { });
 
   kernelPackagesOverlay = final: _:
     if self.l4tAtLeast "36" then {
@@ -170,14 +171,17 @@ makeScope final.newScope (self: {
 
   # TODO(jared): deprecate this
   devicePkgsFromNixosConfig = config: config.system.build.jetsonDevicePkgs;
+
+  # Make visible for Hydra
+  recurseForDerivations = true;
 }
 # Add the L4T packages
 # NOTE: Since this is adding packages to the top-level, and callPackage's auto args functionality draws from that
 # attribute set, we cannot use self.callPackages because we would end up with infinite recursion.
 # Instead, we must either use final.callPackages or packagesFromDirectoryRecursive.
-// (final.callPackages ./pkgs/l4t {
+// final.callPackages ./pkgs/l4t {
   inherit self l4tAtLeast l4tOlder;
-})
+}
   // final.lib.packagesFromDirectoryRecursive {
   inherit (self) callPackage;
   directory = ./pkgs/optee;
