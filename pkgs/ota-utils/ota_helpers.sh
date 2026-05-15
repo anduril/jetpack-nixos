@@ -73,7 +73,7 @@ generate_compat_spec() {
   3834)
     if [[ "${boardsku}" == "0008" ]]; then
       if [[ "${fab}" -gt 400 ]]; then
-        fab="400"
+        fab="401"
       else
         fab="000"
       fi
