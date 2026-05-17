@@ -37,7 +37,16 @@ in
   ftpmHelperTa = null;
   msTpm20RefTa = null;
 
-  earlyTaPaths = lib.optionals (finalAttrs.ftpmHelperTa != null) [
+  # Stripped ELFs are used here rather than signed .ta files. Early TAs
+  # are embedded directly in the OP-TEE binary image and do not require
+  # signing — they inherit the same trust level as OP-TEE OS itself.
+  # Only REE (file-system-loaded) TAs need to be signed.
+  # See: https://optee.readthedocs.io/en/latest/building/trusted_applications.html#signing-of-tas
+  #
+  # Using enableFTPM (rather than ftpmHelperTa != null) ensures that if
+  # enableFTPM = true but the TA paths weren't provided, you get an
+  # immediate eval error instead of a silent disable of fTPM.
+  earlyTaPaths = lib.optionals finalAttrs.enableFTPM [
     "${finalAttrs.ftpmHelperTa}/a6a3a74a-77cb-433a-990c-1dfb8a3fbc4c.stripped.elf"
     "${finalAttrs.msTpm20RefTa}/bc50d971-d4c9-42c4-82cb-343fb7f37896.stripped.elf"
   ];
@@ -85,15 +94,15 @@ in
     "CFG_STMM_PATH=${jetsonStandaloneMMOptee}/standalonemm_optee.bin"
   ])
   ++ (lib.optional (finalAttrs.taPublicKeyFile != null) "TA_PUBLIC_KEY=${finalAttrs.taPublicKeyFile}")
-  ++ lib.optionals finalAttrs.enableFTPM [
+  ++ lib.optionals finalAttrs.enableFTPM ([
     "CFG_REE_STATE=y"
     "CFG_JETSON_FTPM_HELPER_PTA=y"
   ]
-  ++ lib.optional (finalAttrs.enableFTPM && finalAttrs.measuredBoot) "CFG_CORE_TPM_EVENT_LOG=y"
-  ++ lib.optional (finalAttrs.enableFTPM && finalAttrs.unsecureInjectEPS)
+  ++ lib.optional finalAttrs.measuredBoot "CFG_CORE_TPM_EVENT_LOG=y"
+  ++ lib.optional finalAttrs.unsecureInjectEPS
     (lib.warn
       "fTPM is using UNSECURE Endorsement Primary Seed (EPS) injection."
-      "CFG_JETSON_FTPM_HELPER_INJECT_EPS=y")
+      "CFG_JETSON_FTPM_HELPER_INJECT_EPS=y"))
   ;
 
   dontInstall = true;
