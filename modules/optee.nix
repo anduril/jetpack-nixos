@@ -121,7 +121,7 @@ in
             description = ''
               Specific EPS value (64-byte hex string with 0x prefix) to
               inject. If null, a random EPS is generated on first boot
-              and persisted to /var/lib/unsecureInjectEPS.hex.
+              and persisted to /var/lib/optee/ftpm/unsecureInjectEPS.hex.
             '';
           };
         };
@@ -177,6 +177,12 @@ in
           requires l4t r36.x. r35 lacks fTPM source; r38 refactored fTPM
           compilation to use the CFG_MS_TPM_20_REF flag and is not yet
           supported here.
+        '';
+      } {
+        assertion = !cfg.ftpm.enable || pkgs.nvidia-jetpack.socType == "t234";
+        message = ''
+          hardware.nvidia-jetpack.firmware.optee.ftpm.enable currently
+          requires a t234 (Orin) SoC. Got: ${pkgs.nvidia-jetpack.socType}
         '';
       }];
 
@@ -240,32 +246,35 @@ in
 
       systemd.services.ftpm-driver =
         let
-          epsFile = "/var/lib/unsecureInjectEPS.hex";
+          epsFile = "/var/lib/optee/ftpm/unsecureInjectEPS.hex";
           helper = "${pkgs.nvidia-jetpack.ftpmHelperTa}/bin/nvftpm-helper-app";
+          # nvftpm-helper-app CLI changed between JetPack releases:
+          #   JP5 (r35): -g injects EPS
+          #   JP6+ (r36+): -g queries ECID, -m injects EPS
+          epsFlag = if l4tAtLeast "36" then "-m" else "-g";
 
-          epsInjectScript =
-            if cfg.ftpm.unsecureInjectEPS.value != null then ''
-              echo "Injecting configured EPS into fTPM..."
-              ${helper} -g ${lib.escapeShellArg cfg.ftpm.unsecureInjectEPS.value}
-            '' else ''
-              EPS_FILE=${lib.escapeShellArg epsFile}
-              EPS_SIZE=64
-
-              if [ ! -f "$EPS_FILE" ]; then
+          epsInjectScript = ''
+            EPS_FILE=${lib.escapeShellArg epsFile}
+            EPS_SIZE=64
+            if [ ! -f "$EPS_FILE" ]; then
+              ${if cfg.ftpm.unsecureInjectEPS.value != null then ''
+                echo "Generating configured EPS for fTPM..."
+                EPS_HEX="${lib.escapeShellArg cfg.ftpm.unsecureInjectEPS.value}"
+              '' else ''
                 echo "Generating random EPS for fTPM..."
                 mkdir -p "$(dirname "$EPS_FILE")"
                 EPS_HEX="0x$(${pkgs.coreutils}/bin/dd if=/dev/urandom bs=1 count=$EPS_SIZE 2>/dev/null | ${pkgs.xxd}/bin/xxd -p -c 256)"
-                echo "$EPS_HEX" > "$EPS_FILE"
-                chmod 600 "$EPS_FILE"
-                echo "EPS saved to $EPS_FILE"
-              else
-                echo "Using existing EPS from $EPS_FILE"
-              fi
-
-              EPS_VALUE=$(cat "$EPS_FILE")
-              echo "Injecting EPS into fTPM..."
-              ${helper} -g "$EPS_VALUE"
-            '';
+              ''}
+              echo "$EPS_HEX" > "$EPS_FILE"
+              chmod 600 "$EPS_FILE"
+              echo "EPS saved to $EPS_FILE"
+            else
+              echo "Using existing EPS from $EPS_FILE"
+            fi
+            EPS_VALUE=$(cat "$EPS_FILE")
+            echo "Injecting EPS into fTPM..."
+            ${helper} ${epsFlag} "$EPS_VALUE"
+          '';
 
           script = pkgs.writeShellScript "ftpm-driver-load" ''
             set -euo pipefail
@@ -289,6 +298,7 @@ in
             Type = "oneshot";
             RemainAfterExit = true;
             ExecStart = script;
+            StateDirectory = "optee/ftpm";
           };
         };
     })

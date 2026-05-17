@@ -92,9 +92,9 @@ final: prev: (
         enableFTPM = cfg.firmware.optee.ftpm.enable;
         measuredBoot = cfg.firmware.optee.ftpm.measuredBoot;
         unsecureInjectEPS = cfg.firmware.optee.ftpm.unsecureInjectEPS.enable;
-        ftpmHelperTa = if (cfg.firmware.optee.ftpm.enable && finalJetpack.socType == "t234")
+        ftpmHelperTa = if cfg.firmware.optee.ftpm.enable
                        then finalJetpack.ftpmHelperTa else null;
-        msTpm20RefTa = if (cfg.firmware.optee.ftpm.enable && finalJetpack.socType == "t234")
+        msTpm20RefTa = if cfg.firmware.optee.ftpm.enable
                        then finalJetpack.msTpm20RefTa else null;
       });
 
