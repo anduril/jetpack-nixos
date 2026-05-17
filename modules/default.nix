@@ -260,7 +260,7 @@ in
           name = "disable-rtc-hctosys";
           patch = null;
           structuredExtraConfig = with lib.kernel; {
-            RTC_HCTOSYS = no;
+            RTC_HCTOSYS = lib.mkForce no;
           };
         }
       ];
