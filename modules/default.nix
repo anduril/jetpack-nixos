@@ -259,7 +259,7 @@ in
         {
           name = "disable-rtc-hctosys";
           patch = null;
-          extraStructuredConfig = with lib.kernel; {
+          structuredExtraConfig = with lib.kernel; {
             RTC_HCTOSYS = no;
           };
         }
