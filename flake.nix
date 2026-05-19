@@ -1,4 +1,15 @@
 {
+  nixConfig = {
+    extra-substituters = [
+      "https://nix-community.cachix.org"
+      "https://cache.nixos-cuda.org"
+    ];
+    extra-trusted-public-keys = [
+      "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+      "cache.nixos-cuda.org:74DUi4Ye579gUqzH4ziL9IyiJBlDpMRn9MBN8oNan9M="
+    ];
+  };
+
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-25.11";
 
@@ -196,6 +207,24 @@
       });
 
       formatter = forAllSystems ({ pkgs, ... }: import ./treefmt.nix pkgs);
+
+      devShells = forAllSystems ({ system, ... }:
+        let
+          pkgs = import nixpkgs {
+            inherit system;
+            config.allowUnfree = true;
+          };
+        in
+        {
+          default = pkgs.mkShell {
+            name = "jetpack-nixos";
+            packages = [
+              self.formatter.${system}
+              pkgs.git
+              pkgs.gh
+            ];
+          };
+        });
 
       legacyPackages = forAllSystems ({ system, ... }:
         let
