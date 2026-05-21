@@ -83,7 +83,8 @@ final: prev: (
         makeFlags = prevAttrs.makeFlags or [ ] ++ cfg.firmware.optee.extraMakeFlags;
       });
       opteeClient = prevJetpack.opteeClient.overrideAttrs (prevAttrs: {
-        patches = (prevAttrs.patches or [ ]) ++ cfg.firmware.optee.patches;
+        patches = prevAttrs.patches or [ ] ++ cfg.firmware.optee.patches;
+        makeFlags = prevAttrs.makeFlags or [ ] ++ cfg.firmware.optee.extraMakeFlags;
       });
 
       flashInitrd =
