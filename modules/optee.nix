@@ -11,7 +11,7 @@ let
 
   cfg = config.hardware.nvidia-jetpack.firmware.optee;
 
-  inherit (pkgs.nvidia-jetpack) l4tAtLeast l4tOlder;
+  inherit (pkgs.nvidia-jetpack) l4tAtLeast;
 
 in
 {
@@ -81,9 +81,11 @@ in
             after tee-supplicant is ready. Toggling this option requires
             re-flashing the platform firmware.
 
-            Currently only supported on l4t r36.x. r35 lacks fTPM source;
-            r38 refactored fTPM compilation (see CFG_MS_TPM_20_REF) and is
-            not yet wired up here.
+            Supported on l4t r36.x (Orin / t234) and r38.x (Thor / t264).
+            r35 lacks fTPM source. On r38, additionally drops the patch
+            that force-disables UEFI's fTPM stack (see
+            pkgs/uefi-firmware/r38/disable-ftpm.diff) so that UEFI can
+            reach the fTPM TA over FF-A.
           '';
         };
 
@@ -170,20 +172,20 @@ in
   config = mkIf config.hardware.nvidia-jetpack.enable (lib.mkMerge [
     {
       assertions = [{
-        # TODO: extend to r38 once fTPM is wired up via CFG_MS_TPM_20_REF.
-        assertion = !cfg.ftpm.enable || (l4tAtLeast "36" && l4tOlder "38");
+        assertion = !cfg.ftpm.enable || l4tAtLeast "36";
         message = ''
-          hardware.nvidia-jetpack.firmware.optee.ftpm.enable currently
-          requires l4t r36.x. r35 lacks fTPM source; r38 refactored fTPM
-          compilation to use the CFG_MS_TPM_20_REF flag and is not yet
-          supported here.
+          hardware.nvidia-jetpack.firmware.optee.ftpm.enable requires
+          l4t r36.x or later. r35 lacks fTPM source.
         '';
       }
         {
-          assertion = !cfg.ftpm.enable || pkgs.nvidia-jetpack.socType == "t234";
+          assertion = !cfg.ftpm.enable
+            || pkgs.nvidia-jetpack.socType == "t234"
+            || pkgs.nvidia-jetpack.socType == "t264";
           message = ''
-            hardware.nvidia-jetpack.firmware.optee.ftpm.enable currently
-            requires a t234 (Orin) SoC. Got: ${pkgs.nvidia-jetpack.socType}
+            hardware.nvidia-jetpack.firmware.optee.ftpm.enable requires
+            a t234 (Orin) or t264 (Thor) SoC.
+            Got: ${pkgs.nvidia-jetpack.socType}
           '';
         }];
 

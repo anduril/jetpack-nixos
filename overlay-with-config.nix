@@ -64,6 +64,12 @@ final: prev: (
             })).bup;
           in
           builtins.hashString "sha256" "${cursedBup}";
+      } // lib.optionalAttrs (prevJetpack.l4tAtLeast "38") {
+        # r38-only: when true, skip the disable-ftpm.diff patch so UEFI uses
+        # the fTPM TA we embedded in tos.img. r35/r36 builders don't accept
+        # this argument (their fn args don't include enableFTPM), so we only
+        # pass it on r38+.
+        enableFTPM = cfg.firmware.optee.ftpm.enable;
       } // lib.optionalAttrs cfg.firmware.uefi.capsuleAuthentication.enable {
         inherit (cfg.firmware.uefi.capsuleAuthentication) trustedPublicCertPemFile;
       });
