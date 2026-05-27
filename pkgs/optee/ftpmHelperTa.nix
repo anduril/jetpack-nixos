@@ -1,7 +1,9 @@
-{ stdenv
+{ lib
+, stdenv
 , taDevKit
 , opteeClient
 , l4tMajorMinorPatchVersion
+, l4tAtLeast
 , buildPackages
 , gitRepos
 }:
@@ -9,7 +11,11 @@ stdenv.mkDerivation {
   pname = "ftpm-helper-ta";
   version = l4tMajorMinorPatchVersion;
   src = gitRepos."tegra/optee-src/nv-optee";
-  patches = [ ./0001-ftpm-helper-no-install-makefile.patch ];
+  patches = [
+    ./0001-ftpm-helper-no-install-makefile.patch
+  ] ++ lib.optionals (l4tAtLeast "36") [
+    ./0002-ftpm-helper-skip-prov-mode-for-inject-eps.patch
+  ];
   nativeBuildInputs = [ (buildPackages.python3.withPackages (p: [ p.cryptography ])) ];
   enableParallelBuilding = true;
   makeFlags = [
