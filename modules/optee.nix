@@ -172,10 +172,10 @@ in
   config = mkIf config.hardware.nvidia-jetpack.enable (lib.mkMerge [
     {
       assertions = [{
-        assertion = !cfg.ftpm.enable || l4tAtLeast "36";
+        assertion = !cfg.ftpm.enable || l4tAtLeast "35.5";
         message = ''
           hardware.nvidia-jetpack.firmware.optee.ftpm.enable requires
-          l4t r36.x or later. r35 lacks fTPM source.
+          l4t >= r35.5.0.
         '';
       }
         {
