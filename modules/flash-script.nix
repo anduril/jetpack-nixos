@@ -95,7 +95,7 @@ in
               '';
             };
             signer.key = mkOption {
-              type = lib.types.path;
+              type = types.oneOf [ types.path types.str ];
               description = ''
                 RSA Private key in PEM format used for signing.
                 This is currently only used for RCM payload verification used in initrd flash script.
@@ -131,7 +131,7 @@ in
             };
 
             signerPrivateCertPemFile = mkOption {
-              type = lib.types.path;
+              type = types.oneOf [ types.path types.str ];
               description = ''
                 The path to the private certificate (in PEM format) that will be
                 used for signing capsule payloads.
@@ -174,14 +174,14 @@ in
         # See: https://docs.nvidia.com/jetson/archives/r35.4.1/DeveloperGuide/text/SD/Security/SecureBoot.html#prepare-an-sbk-key
         secureBoot = {
           pkcFile = mkOption {
-            type = types.nullOr types.path;
+            type = types.nullOr (types.oneOf [ types.path types.str ]);
             default = null;
             description = "Path to Public Key Cryptography (PKC) .pem file used to validate authenticity and integrity of firmware partitions. Do not include this file in your /nix/store. Instead, use a sandbox exception to provide access to the key";
             example = "/run/keys/jetson/xavier_pkc.pem";
           };
 
           sbkFile = mkOption {
-            type = types.nullOr types.path;
+            type = types.nullOr (types.oneOf [ types.path types.str ]);
             default = null;
             description = "Path to Secure Boot Key (SBK) file used to encrypt firmware partitions. Do not include this file in your /nix/store.  Instead, use a sandbox exception to provide access to the key";
             example = "/run/keys/jetson/xavier_skb.key";
@@ -368,8 +368,8 @@ in
     };
 
     hardware.nvidia-jetpack.flashScriptOverrides.flashArgs = lib.mkAfter (
-      lib.optional (cfg.firmware.secureBoot.pkcFile != null) "-u ${cfg.firmware.secureBoot.pkcFile}" ++
-      lib.optional (cfg.firmware.secureBoot.sbkFile != null) "-v ${cfg.firmware.secureBoot.sbkFile}" ++
+      lib.optional (cfg.firmware.secureBoot.pkcFile != null) "-u ${lib.escapeShellArg "${cfg.firmware.secureBoot.pkcFile}"}" ++
+      lib.optional (cfg.firmware.secureBoot.sbkFile != null) "-v ${lib.escapeShellArg "${cfg.firmware.secureBoot.sbkFile}"}" ++
       [ cfg.flashScriptOverrides.configFileName "mmcblk0p1" ]
     );
 
