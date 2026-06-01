@@ -1,7 +1,7 @@
-From d6aa1bf797db8354aa2f4372ff2dd633b5ec3940 Mon Sep 17 00:00:00 2001
+From 2e99faf3d0f1d15cd26348d15785f17e51984cb2 Mon Sep 17 00:00:00 2001
 From: Daniel Fullmer <danielrf12@gmail.com>
 Date: Mon, 19 Jan 2026 10:54:40 -0800
-Subject: [PATCH 5/5] Fix header guard in halfrf_ops_rtl8852c.h
+Subject: [PATCH 5/6] Fix header guard in halfrf_ops_rtl8852c.h
 
 Fails compiler check -Werror=header-guard
 ---
@@ -22,5 +22,5 @@ index 7966290a..094ebd0f 100644
  
  
 -- 
-2.52.0
+2.53.0
 
