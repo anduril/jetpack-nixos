@@ -30,6 +30,7 @@ let
         ./patches/nvidia-oot/0004-rtl8852e-Fix-conflicting-types.patch
         ./patches/nvidia-oot/0005-Fix-header-guard-in-halfrf_ops_rtl8852c.h.patch
         ./patches/nvidia-oot/0001-crypto-tegra-Disable-softirqs-before-finalizing-requ.patch
+        ./patches/nvidia-oot/0001-Lower-priority-of-tegra-se-crypto.patch
       ];
     };
     nvgpu = gitRepos.nvgpu;

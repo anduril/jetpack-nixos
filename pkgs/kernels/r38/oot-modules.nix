@@ -32,6 +32,7 @@ let
         ./0001-Fix-conftest-use-with-gcc15.patch
         ./0002-Fix-header-guard-in-halfrf_ops_rtl8852c.h.patch
         ./0001-crypto-tegra-Disable-softirqs-before-finalizing-requ.patch
+        ./0001-Lower-priority-of-tegra-se-crypto.patch
       ];
     };
     nvethernetrm = applyPatches {
