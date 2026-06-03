@@ -47,6 +47,13 @@ backendStdenv.mkDerivation {
     ./0002-cupti_samples-Fix-include-path-search-for-common-hea.patch
   ];
 
+  # CUPTI headers from cudatoolkit are out of sync with what's in the deb.
+  # Use the ones from the deb so it builds
+  postPatch = lib.optionals (cudaMajorMinorVersion == "13.2") ''
+    substituteInPlace **/Makefile \
+      --replace "-I\"\$(CUDA_INSTALL_PATH)/include\"" "-I\"../../../../include\""
+  '';
+
   # Sample directories which we won't build.
   ignoredSampleDirs = {
     common = 1;
