@@ -25,7 +25,7 @@ let
     "13.2".arm64 = {
       finalImageTag = "13.2.1-base-ubuntu24.04";
       imageDigest = "sha256:92cbb7faec7ee66153c8ae0b35fec57f697ff4cfa1b25d2f6aab44bc3b7ffac2";
-      sha256 = "";
+      sha256 = "sha256-N7SwR2uoDnR20pou4PVAFema8NB8eDxD4UwrqervkyU=";
     };
     "12.6".amd64 = {
       finalImageTag = "12.6.3-base-ubuntu24.04";
@@ -61,7 +61,7 @@ let
     "13.2".arm64 = {
       finalImageTag = "13.2.1-devel-ubuntu24.04";
       imageDigest = "sha256:0e1392f431f89f143d0d6d0fa397a2b9a6a236f8b3628cfd3afbf21e15ab4a98";
-      sha256 = "";
+      sha256 = "sha256-yn/kN6A21i2HJWwZhEQCwCELs7UX25ABw7zlFVgjP4U=";
     };
     "12.6".amd64 = {
       finalImageTag = "12.6.3-devel-ubuntu24.04";
