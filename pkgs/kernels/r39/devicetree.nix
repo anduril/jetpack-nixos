@@ -13,7 +13,7 @@ let
     (lib.strings.concatStrings
       ([ "mkdir -p $out ; cp ${bspSrc}/source/Makefile $out/Makefile ;" ] ++
         lib.lists.forEach
-          [ "hardware/nvidia/t264/nv-public" "hardware/nvidia/t23x/nv-public" "hardware/nvidia/tegra/nv-public" "kernel-devicetree" ]
+          [ "hardware/nvidia/t264/nv-public" "hardware/nvidia/t23x/nv-public" "hardware/nvidia/tegra/nv-public" "build/nvidia-public" ]
           (
             project:
             ''
@@ -46,9 +46,9 @@ stdenv.mkDerivation (finalAttrs: {
     runHook preInstall
 
     mkdir -p "$out"/
-    # See kernel-devicetree/generic-dts/Makefile
-    # The dtbs are installed to kernel-devicetree/generic-dts/dtbs
-    install -Dm644 kernel-devicetree/generic-dts/dtbs/* "$out/"
+    # See build/nvidia-public/devicetree/Makefile.generic
+    # The dtbs are installed to build/nvidia-public/devicetree/generic-dtbs
+    install -Dm644 build/nvidia-public/devicetree/generic-dtbs/* "$out/"
 
     runHook postInstall
   '';
