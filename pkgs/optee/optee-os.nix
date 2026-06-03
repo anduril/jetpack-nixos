@@ -42,6 +42,10 @@ in
     (buildPackages.python3.withPackages (p: with p; [ pyelftools cryptography ]))
   ];
 
+  env.NIX_CFLAGS_COMPILE = builtins.toString [
+    "-Wno-incompatible-pointer-types"
+  ];
+
   enableParallelBuilding = true;
 
   postPatch = ''
