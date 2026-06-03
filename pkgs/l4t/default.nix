@@ -45,4 +45,8 @@ in
     l4t-firmware-openrm
     l4t-video-codec-openrm
     ;
+} // lib.optionalAttrs (l4tAtLeast "39") {
+  inherit (packages)
+    l4t-openwfd
+    ;
 }
