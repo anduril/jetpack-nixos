@@ -21,7 +21,7 @@ let
   majorVersion = lib.getAttr l4tMajorVersion {
     "35" = "2";
     "36" = "3";
-    "38" = "4";
+    "39" = "4";
   };
 in
 buildFromDebs {
@@ -51,14 +51,14 @@ buildFromDebs {
   ]
   ++ lib.optional (l4tMajorVersion == "35") l4t-cupva
   ++ lib.optional (l4tAtLeast "36") l4t-pva
-  ++ lib.optional (l4tMajorVersion == "38") l4t-video-codec-openrm;
+  ++ lib.optional (l4tAtLeast "38") l4t-video-codec-openrm;
   patches = [ ./vpi2.patch ];
   postPatch = ''
     rm -rf etc
     substituteInPlace lib/cmake/vpi/vpi-config.cmake --subst-var out
-    substituteInPlace lib/cmake/vpi/vpi-config-${if l4tMajorVersion == "38" then "relwithdebinfo" else "release"}.cmake \
+    substituteInPlace lib/cmake/vpi/vpi-config-${if l4tAtLeast "38" then "relwithdebinfo" else "release"}.cmake \
       --replace "lib/aarch64-linux-gnu" "lib/"
-  '' + lib.optionalString (l4tMajorVersion == "38") ''
+  '' + lib.optionalString (l4tAtLeast "38") ''
 
     # This library can dlopen() libnvpvaintf.so, libnvpvaumd_core.so, libnvpvaumd_cuda.so
     patchelf --add-rpath ${l4t-pva}/lib lib/libnvvpi.so.4.*.*

@@ -57,13 +57,13 @@ in
 
   nvidia-jetpack7 = import ./mk-overlay.nix
     {
-      jetpackMajorMinorPatchVersion = "7.1";
-      l4tMajorMinorPatchVersion = "38.4.0";
-      cudaMajorMinorPatchVersion = "13.0.2";
+      jetpackMajorMinorPatchVersion = "7.2";
+      l4tMajorMinorPatchVersion = "39.2.0";
+      cudaMajorMinorPatchVersion = "13.2.1";
 
-      cudaDriverMajorMinorVersion = "580.00";
+      cudaDriverMajorMinorVersion = "595.78";
 
-      bspHash = "sha256-a7DdB4bw/p+9DLzEi84zt3jwGXLN/N9db3Osi0b5D2c=";
+      bspHash = "sha256-FiZibNgn3g41C4gCAzudplPGmyKQrM7bnl0B9JYH4Jk=";
       bspPatches = [ ./pkgs/r38-bsp.patch ];
     }
     final

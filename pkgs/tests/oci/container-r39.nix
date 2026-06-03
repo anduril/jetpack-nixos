@@ -11,19 +11,21 @@ let
   # only CUDA 13 arm64 is actually currently used. We can run the CUDA 11 and 12 containers
   # as part of OCI test in the future.
 
+  # imageDigest is the Manifest digest when visiting docker hub
+
   # cuda "base" with only libcuda.so.1 and other essentials; used on device
   cudaBase = dockerTools.pullImage ({
     imageName = "nvidia/cuda";
   } // lib.getAttrFromPath [ cudaPackages.cudaMajorMinorVersion go.GOARCH ] {
-    "13.0".amd64 = {
-      finalImageTag = "13.0.2-base-ubuntu24.04";
-      imageDigest = "sha256:605fb0c8acf8674e164d822da8a8521f3a655056e569f0899e72ae940e1fe7dc";
+    "13.2".amd64 = {
+      finalImageTag = "13.2.1-base-ubuntu24.04";
+      imageDigest = "sha256:309cc9f8ab33e91ddb898c599415f66bdf5f7e0ae910bb62ae1b760c2a87831a";
       sha256 = "";
     };
-    "13.0".arm64 = {
-      finalImageTag = "13.0.2-base-ubuntu24.04";
-      imageDigest = "sha256:1ca86773be1716af6cfff3d2eb8cd10d4d9cac181931d1ee9be792d3e33c7322";
-      sha256 = "sha256-IOtmpA2xiNL1/zodFdUz5/nrDYMBssDibwYE0uwrCcI= ";
+    "13.2".arm64 = {
+      finalImageTag = "13.2.1-base-ubuntu24.04";
+      imageDigest = "sha256:92cbb7faec7ee66153c8ae0b35fec57f697ff4cfa1b25d2f6aab44bc3b7ffac2";
+      sha256 = "";
     };
     "12.6".amd64 = {
       finalImageTag = "12.6.3-base-ubuntu24.04";
@@ -51,15 +53,15 @@ let
   cudaDevel = dockerTools.pullImage ({
     imageName = "nvidia/cuda";
   } // lib.getAttrFromPath [ cudaPackages.cudaMajorMinorVersion go.GOARCH ] {
-    "13.0".amd64 = {
-      finalImageTag = "13.0.2-devel-ubuntu24.04";
-      imageDigest = "sha256:0eee3094c71518ad31d011a594ae6ed6de72959ee07e318cb31cffe71690e90c";
-      sha256 = "sha256-5PcPyKbIrNfHOsNJ8MCsBMSpVizR01qWaUtVsbEyqZE=";
+    "13.2".amd64 = {
+      finalImageTag = "13.2.1-devel-ubuntu24.04";
+      imageDigest = "sha256:0e1f7b8e96fa9ec5e36d4709a38c62df7b5665977446081811c12b8234d874bf";
+      sha256 = "";
     };
-    "13.0".arm64 = {
-      finalImageTag = "13.0.2-devel-ubuntu24.04";
-      imageDigest = "sha256:450d11555d20ac8ebbbc13ebf17589c2bd42869171a90179ce7098b4a5e64c6a";
-      sha256 = "sha256-fUwPPtLwAhU9UwxM59x35mboOPuxA1D6nV8N64I0uPI=";
+    "13.2".arm64 = {
+      finalImageTag = "13.2.1-devel-ubuntu24.04";
+      imageDigest = "sha256:0e1392f431f89f143d0d6d0fa397a2b9a6a236f8b3628cfd3afbf21e15ab4a98";
+      sha256 = "";
     };
     "12.6".amd64 = {
       finalImageTag = "12.6.3-devel-ubuntu24.04";

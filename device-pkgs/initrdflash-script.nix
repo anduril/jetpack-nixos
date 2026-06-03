@@ -18,7 +18,7 @@ let
   forceXusbPeripheralDts =
     let
       overridePaths = {
-        "38" = {
+        "39" = {
           thor = {
             xudcPadctlPath = "bus@0/padctl@a808680000";
             xudcPath = "bus@0/usb@a808670000";

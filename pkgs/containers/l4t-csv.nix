@@ -25,7 +25,7 @@ runCommand "l4t-csv"
         "devices.csv"
         "drivers.csv"
       ]
-    else if l4tMajorVersion == "38" then
+    else if l4tMajorVersion == "39" then
       [
         "devices.csv"
         "drivers.csv"
