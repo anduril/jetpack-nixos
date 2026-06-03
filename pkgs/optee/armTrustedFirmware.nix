@@ -25,7 +25,7 @@ in
   socType =
     if l4tMajorVersion == "35" then "t194"
     else if l4tMajorVersion == "36" then "t234"
-    else if l4tMajorVersion == "38" then "t264"
+    else if l4tMajorVersion == "39" then "t264"
     else throw "Unknown SoC type";
 
   # openssl is used to build fiptool
