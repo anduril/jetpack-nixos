@@ -178,100 +178,105 @@ let
   buildTarget = if debugMode then "DEBUG" else "RELEASE";
 
   mkJetsonUefi =
-    { platformBuild
-    , outputs
-    }:
-    let
-      _outputs = builtins.map (s: "Build/*/*/" + s) outputs;
-    in
-    stdenv.mkDerivation (finalAttrs: {
-      pname = "${platformBuild}-edk2-uefi";
-      version = l4tMajorMinorPatchVersion;
+    lib.extendMkDerivation {
+      constructDrv = stdenv.mkDerivation;
+      excludeDrvArgNames = [ "platformBuild" "outputs" ];
+      extendDrvArgs = finalAttrs: { platformBuild, outputs, nativeBuildInputs ? [ ], depsBuildBuild ? [ ], patches ? [ ], meta ? { }, NIX_CFLAGS_COMPILE ? [ ], ... }:
+        let
+          _outputs = builtins.map (s: "Build/*/*/" + s) outputs;
+        in
+        {
+          pname = "${platformBuild}-edk2-uefi";
+          version = l4tMajorMinorPatchVersion;
 
-      # Initialize the build dir with the build tools from edk2
-      src = edk2-src;
+          # Initialize the build dir with the build tools from edk2
+          src = edk2-src;
 
-      depsBuildBuild = [ buildPackages.stdenv.cc ];
-      nativeBuildInputs = [ bc pythonEnv acpica-tools dtc unixtools.whereis ];
-      strictDeps = true;
+          depsBuildBuild = depsBuildBuild ++ [ buildPackages.stdenv.cc ];
+          nativeBuildInputs = nativeBuildInputs ++ [ bc pythonEnv acpica-tools dtc unixtools.whereis nukeReferences ];
+          strictDeps = true;
 
-      NIX_CFLAGS_COMPILE = [
-        "-Wno-error=format-security" # TODO: Fix underlying issue
+          NIX_CFLAGS_COMPILE = NIX_CFLAGS_COMPILE ++ [
+            "-Wno-error=format-security" # TODO: Fix underlying issue
 
-        # Workaround for ../Silicon/NVIDIA/Drivers/EqosDeviceDxe/nvethernetrm/osi/core/osi_hal.c:1428: undefined reference to `__aarch64_ldadd4_sync'
-        "-mno-outline-atomics"
-      ];
+            # Workaround for ../Silicon/NVIDIA/Drivers/EqosDeviceDxe/nvethernetrm/osi/core/osi_hal.c:1428: undefined reference to `__aarch64_ldadd4_sync'
+            "-mno-outline-atomics"
+          ];
 
-      ${"GCC5_${targetArch}_PREFIX"} = stdenv.cc.targetPrefix;
+          ${"GCC5_${targetArch}_PREFIX"} = stdenv.cc.targetPrefix;
 
-      # From edk2-nvidia/Silicon/NVIDIA/edk2nv/stuart/settings.py
-      PACKAGES_PATH = lib.concatStringsSep ":" [
-        "${edk2-src}/BaseTools" # TODO: Is this needed?
-        finalAttrs.src
-        edk2-platforms
-        edk2-non-osi
-        edk2-nvidia
-        edk2-nvidia-non-osi
-        "${edk2-platforms}/Features/Intel/OutOfBandManagement"
-      ];
+          # From edk2-nvidia/Silicon/NVIDIA/edk2nv/stuart/settings.py
+          PACKAGES_PATH = lib.concatStringsSep ":" [
+            "${edk2-src}/BaseTools" # TODO: Is this needed?
+            finalAttrs.src
+            edk2-platforms
+            edk2-non-osi
+            edk2-nvidia
+            edk2-nvidia-non-osi
+            "${edk2-platforms}/Features/Intel/OutOfBandManagement"
+          ];
 
-      enableParallelBuilding = true;
+          enableParallelBuilding = true;
 
-      prePatch = ''
-        rm -rf BaseTools
-        cp -r ${edk2-jetson}/BaseTools BaseTools
-        chmod -R u+w BaseTools
-      '';
+          prePatch = ''
+            rm -rf BaseTools
+            cp -r ${edk2-jetson}/BaseTools BaseTools
+            chmod -R u+w BaseTools
+          '';
 
-      patches = edk2UefiPatches;
+          patches = edk2UefiPatches ++ patches;
 
-      configurePhase = ''
-        runHook preConfigure
-        export WORKSPACE="$PWD"
-        source ./edksetup.sh BaseTools
+          configurePhase = ''
+            runHook preConfigure
+            export WORKSPACE="$PWD"
+            source ./edksetup.sh BaseTools
 
-        ${lib.optionalString (trustedPublicCertPemFile != null) ''
-        echo Using ${trustedPublicCertPemFile} as public certificate for capsule verification
-        ${lib.getExe buildPackages.openssl} x509 -outform DER -in ${trustedPublicCertPemFile} -out PublicCapsuleKey.cer
-        python3 BaseTools/Scripts/BinToPcd.py -p gEfiSecurityPkgTokenSpaceGuid.PcdPkcs7CertBuffer -i PublicCapsuleKey.cer -o PublicCapsuleKey.cer.gEfiSecurityPkgTokenSpaceGuid.PcdPkcs7CertBuffer.inc
-        python3 BaseTools/Scripts/BinToPcd.py -x -p gFmpDevicePkgTokenSpaceGuid.PcdFmpDevicePkcs7CertBufferXdr -i PublicCapsuleKey.cer -o PublicCapsuleKey.cer.gFmpDevicePkgTokenSpaceGuid.PcdFmpDevicePkcs7CertBufferXdr.inc
-        ''}
+            ${lib.optionalString (trustedPublicCertPemFile != null) ''
+            echo Using ${trustedPublicCertPemFile} as public certificate for capsule verification
+            ${lib.getExe buildPackages.openssl} x509 -outform DER -in ${trustedPublicCertPemFile} -out PublicCapsuleKey.cer
+            python3 BaseTools/Scripts/BinToPcd.py -p gEfiSecurityPkgTokenSpaceGuid.PcdPkcs7CertBuffer -i PublicCapsuleKey.cer -o PublicCapsuleKey.cer.gEfiSecurityPkgTokenSpaceGuid.PcdPkcs7CertBuffer.inc
+            python3 BaseTools/Scripts/BinToPcd.py -x -p gFmpDevicePkgTokenSpaceGuid.PcdFmpDevicePkcs7CertBufferXdr -i PublicCapsuleKey.cer -o PublicCapsuleKey.cer.gFmpDevicePkgTokenSpaceGuid.PcdFmpDevicePkcs7CertBufferXdr.inc
+            ''}
 
-        runHook postConfigure
-      '';
+            runHook postConfigure
+          '';
 
-      buildPhase = ''
-        runHook preBuild
+          buildPhase = ''
+            runHook preBuild
 
-        # Keep in sync with passthru.biosVersion below
-        BUILD_HASH=$(printf "%s-%s" "${uniqueHash}" "$out" | sha256sum | head -c 12)
+            # Keep in sync with passthru.biosVersion below
+            BUILD_HASH=$(printf "%s-%s" "${uniqueHash}" "$out" | sha256sum | head -c 12)
 
-        # The BUILDID_STRING and BUILD_DATE_TIME are used
-        # just by nvidia, not generic edk2
-        build -a ${targetArch} -b ${buildTarget} -t ${buildType} -p Platform/NVIDIA/${platformBuild}/${platformBuild}.dsc -n $NIX_BUILD_CORES \
-          -D BUILDID_STRING="${l4tMajorMinorPatchVersion}-''${BUILD_HASH}" \
-          -D BUILD_DATE_TIME="$(date --utc --iso-8601=seconds --date=@$SOURCE_DATE_EPOCH)" \
-          ${lib.optionalString (trustedPublicCertPemFile != null) "-D CUSTOM_CAPSULE_CERT"} \
-          $buildFlags
+            # The BUILDID_STRING and BUILD_DATE_TIME are used
+            # just by nvidia, not generic edk2
+            build -a ${targetArch} -b ${buildTarget} -t ${buildType} -p Platform/NVIDIA/${platformBuild}/${platformBuild}.dsc -n $NIX_BUILD_CORES \
+              -D BUILDID_STRING="${l4tMajorMinorPatchVersion}-''${BUILD_HASH}" \
+              -D BUILD_DATE_TIME="$(date --utc --iso-8601=seconds --date=@$SOURCE_DATE_EPOCH)" \
+              ${lib.optionalString (trustedPublicCertPemFile != null) "-D CUSTOM_CAPSULE_CERT"} \
+              $buildFlags
 
-        runHook postBuild
-      '';
+            runHook postBuild
+          '';
 
-      installPhase = ''
-        runHook preInstall
-        mkdir -p $out
-        # all-build-outputs and build log are helpful to have on hand when debugging issues
-        find ./Build ./Conf > $out/all-build-outputs
+          installPhase = ''
+            runHook preInstall
+            mkdir -p $out
+            # all-build-outputs and build log are helpful to have on hand when debugging issues
+            find ./Build ./Conf > $out/all-build-outputs
 
-        for file in Build/BUILDLOG_*.txt ${builtins.concatStringsSep " " _outputs} ; do
-          mv -v $file $out/
-        done
+            for file in Build/BUILDLOG_*.txt ${builtins.concatStringsSep " " _outputs} ; do
+              mv -v $file $out/
+            done
 
-        runHook postInstall
-      '';
+            # Everything is statically linked
+            nuke-refs $out/*
 
-      meta.platforms = [ "aarch64-linux" ];
-    });
+            runHook postInstall
+          '';
+
+          meta = meta // { platforms = [ "aarch64-linux" ]; };
+        };
+    };
 
   jetson-edk2-uefi = mkJetsonUefi {
     platformBuild = "Jetson";
