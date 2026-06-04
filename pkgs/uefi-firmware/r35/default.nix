@@ -278,48 +278,39 @@ let
         };
     };
 
-  jetson-edk2-uefi = mkJetsonUefi {
+  uefi-firmware = mkJetsonUefi (finalAttrs: {
     platformBuild = "Jetson";
     outputs = [
       "FV/UEFI_NS.Fv"
       "AARCH64/L4TLauncher.efi"
       "AARCH64/Silicon/NVIDIA/Tegra/DeviceTree/DeviceTree/OUTPUT/*.dtb"
     ];
-  };
-  jetson-edk-uefi-stmm-optee = mkJetsonUefi {
+
+    postInstall = ''
+      python3 ${edk2-nvidia}/Silicon/NVIDIA/Tools/FormatUefiBinary.py \
+        $out/UEFI_NS.Fv \
+        $out/uefi_jetson.bin
+
+      mkdir -p $out/dtbs
+      for filename in $out/*.dtb; do
+        mv $filename $out/dtbs/$(basename "$filename" ".dtb").dtbo
+      done
+    '';
+
+    passthru.biosVersion = "${l4tMajorMinorPatchVersion}-" + lib.substring 0 12 (builtins.hashString "sha256" "${uniqueHash}-${finalAttrs.out}");
+  });
+
+  jetsonStandaloneMMOptee = mkJetsonUefi (finalAttrs: {
     platformBuild = "StandaloneMmOptee";
     outputs = [ "FV/UEFI_MM.Fv" ];
-  };
 
-  uefi-firmware = runCommand "uefi-firmware-${l4tMajorMinorPatchVersion}"
-    {
-      nativeBuildInputs = [ python3 nukeReferences ];
-      # Keep in sync with BUILDID_STRING and BUILD_HASH above
-      passthru.biosVersion = "${l4tMajorMinorPatchVersion}-" + lib.substring 0 12 (builtins.hashString "sha256" "${uniqueHash}-${jetson-edk2-uefi}");
-    } ''
-    mkdir -p $out
-    python3 ${edk2-nvidia}/Silicon/NVIDIA/Tools/FormatUefiBinary.py \
-      ${jetson-edk2-uefi}/UEFI_NS.Fv \
-      $out/uefi_jetson.bin
-
-    python3 ${edk2-nvidia}/Silicon/NVIDIA/Tools/FormatUefiBinary.py \
-      ${jetson-edk2-uefi}/L4TLauncher.efi \
-      $out/L4TLauncher.efi
-
-    python3 ${edk2-nvidia}/Silicon/NVIDIA/Tools/FormatUefiBinary.py \
-      ${jetson-edk-uefi-stmm-optee}/UEFI_MM.Fv \
-      $out/standalonemm_optee.bin
-
-    mkdir -p $out/dtbs
-    for filename in ${jetson-edk2-uefi}/*.dtb; do
-      cp $filename $out/dtbs/$(basename "$filename" ".dtb").dtbo
-    done
-
-    # Get rid of any string references to source(s)
-    nuke-refs $out/uefi_jetson.bin
-    nuke-refs $out/standalonemm_optee.bin
-  '';
+    postInstall = ''
+      python3 ${edk2-nvidia}/Silicon/NVIDIA/Tools/FormatUefiBinary.py \
+        $out/UEFI_MM.Fv \
+        $out/standalonemm_optee.bin
+    '';
+  });
 in
 {
-  inherit edk2-jetson uefi-firmware;
+  inherit uefi-firmware jetsonStandaloneMMOptee;
 }

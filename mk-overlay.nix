@@ -109,7 +109,7 @@ makeScope final.newScope (self: {
   dlopenOverride = final.callPackage ./pkgs/dlopen-override { };
 
   inherit (final.callPackages ./pkgs/uefi-firmware/r${l4tMajorVersion} { inherit (self) l4tMajorMinorPatchVersion; })
-    uefi-firmware;
+    uefi-firmware jetsonStandaloneMMOptee;
 
   genEkb = self.callPackage ./pkgs/optee/gen-ekb.nix { };
 
