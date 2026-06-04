@@ -10,6 +10,7 @@
 , which
 , nasm
 , applyPatches
+, nukeReferences
 , l4tMajorMinorPatchVersion
 , uniqueHash ? ""
 , # Optional path to a boot logo that will be converted and cropped into the format required
@@ -65,118 +66,126 @@ let
       "LOONGARCH64"
     else
       throw "Unsupported architecture";
-
 in
-{ platformBuild
-, outputs
-, stuartExtraArgs ? ""
-}:
-let
-  _outputs = builtins.map (s: "Build/*/*/" + s) outputs;
-in
-stdenv.mkDerivation (finalAttrs: {
-  pname = "${platformBuild}-edk2-uefi-${buildTarget}";
-  version = l4tMajorMinorPatchVersion;
+lib.extendMkDerivation {
+  constructDrv = stdenv.mkDerivation;
+  excludeDrvArgNames = [ "platformBuild" "outputs" "stuartExtraArgs" ];
+  extendDrvArgs = finalAttrs: { platformBuild, outputs, stuartExtraArgs ? "", nativeBuildInputs ? [ ], depsBuildBuild ? [ ], env ? { }, patches ? [ ], meta ? { }, ... }:
+    let
+      _outputs = builtins.map (s: "Build/*/*/" + s) outputs;
+    in
+    {
+      pname = "${platformBuild}-edk2-uefi-${buildTarget}";
+      version = l4tMajorMinorPatchVersion;
 
-  srcs = builtins.attrValues patchedSrcs;
+      srcs = builtins.attrValues patchedSrcs;
 
-  sourceRoot = ".";
+      sourceRoot = ".";
 
-  depsBuildBuild = [ buildPackages.stdenv.cc buildPackages.bash libuuid ];
-  nativeBuildInputs = [
-    pythonEnv
+      depsBuildBuild = depsBuildBuild ++ [ buildPackages.stdenv.cc buildPackages.bash libuuid ];
+      nativeBuildInputs = nativeBuildInputs ++ [
+        pythonEnv
+        nukeReferences
 
-    # from nixpkgs, for stuart
-    acpica-tools
-    dtc
-    nasm
-    unixtools.whereis
-    which
-  ];
-  strictDeps = true;
+        # from nixpkgs, for stuart
+        acpica-tools
+        dtc
+        nasm
+        unixtools.whereis
+        which
+      ];
+      strictDeps = true;
 
-  env = {
-    # NVIDIA's PrePI performs C function calls before stack has been set up.
-    # https://github.com/NVIDIA/edk2-nvidia/blob/r38.2/Silicon/NVIDIA/Library/TegraPlatformInfoLib/AArch64/TegraPlatformInfo.S#L61
-    # https://github.com/NVIDIA/edk2-nvidia/blob/r38.2/Silicon/NVIDIA/Library/TegraPlatformInfoLib/TegraPlatformInfoLib.c#L24
-    # nixos/nixpkgs#399014 enables `-fno-omit-frame-pointer` by default which
-    # causes PrePI to try to derefence uninitalized stack pointer.
-    NIX_CFLAGS_COMPILE = "-fomit-frame-pointer";
+      env = {
+        # NVIDIA's PrePI performs C function calls before stack has been set up.
+        # https://github.com/NVIDIA/edk2-nvidia/blob/r38.2/Silicon/NVIDIA/Library/TegraPlatformInfoLib/AArch64/TegraPlatformInfo.S#L61
+        # https://github.com/NVIDIA/edk2-nvidia/blob/r38.2/Silicon/NVIDIA/Library/TegraPlatformInfoLib/TegraPlatformInfoLib.c#L24
+        # nixos/nixpkgs#399014 enables `-fno-omit-frame-pointer` by default which
+        # causes PrePI to try to derefence uninitalized stack pointer.
+        NIX_CFLAGS_COMPILE = "-fomit-frame-pointer";
 
-    # stuart (nvidia extensions) really wants CROSS_COMPILER_PREFIX to look like this
-    CROSS_COMPILER_PREFIX = "${stdenv.cc}/bin/${stdenv.cc.targetPrefix}";
-    # Version is ${FIRMWARE_VERSION_BASE}-${GIT_SYNC_REVISION}
-    FIRMWARE_VERSION_BASE = "${l4tMajorMinorPatchVersion}";
+        # stuart (nvidia extensions) really wants CROSS_COMPILER_PREFIX to look like this
+        CROSS_COMPILER_PREFIX = "${stdenv.cc}/bin/${stdenv.cc.targetPrefix}";
+        # Version is ${FIRMWARE_VERSION_BASE}-${GIT_SYNC_REVISION}
+        FIRMWARE_VERSION_BASE = "${l4tMajorMinorPatchVersion}";
 
-    # Needed for Edk2ToolsBuild
-    # trick taken from https://src.fedoraproject.org/rpms/edk2/blob/08f2354cd280b4ce5a7888aa85cf520e042955c3/f/edk2.spec#_319
-    ${"GCC5_${targetArch}_PREFIX"} = stdenv.cc.targetPrefix;
-    ${"GCC_${targetArch}_PREFIX"} = stdenv.cc.targetPrefix;
-  };
+        # Needed for Edk2ToolsBuild
+        # trick taken from https://src.fedoraproject.org/rpms/edk2/blob/08f2354cd280b4ce5a7888aa85cf520e042955c3/f/edk2.spec#_319
+        ${"GCC5_${targetArch}_PREFIX"} = stdenv.cc.targetPrefix;
+        ${"GCC_${targetArch}_PREFIX"} = stdenv.cc.targetPrefix;
+      } // env;
 
-  # see nixpkgs/pkgs/by-name/ed/edk2/package.nix
-  hardeningDisable = [
-    "format"
-    "fortify"
-  ];
+      # see nixpkgs/pkgs/by-name/ed/edk2/package.nix
+      hardeningDisable = [
+        "format"
+        "fortify"
+      ];
 
-  patches = edk2UefiPatches;
+      patches = edk2UefiPatches ++ patches;
 
-  patchPhase = ''
-    find . -name \*_ext_dep.yaml -delete
-    patchShebangs .
-  '' + lib.optionalString errorLevelInfo ''
-    sed -i 's#PcdDebugPrintErrorLevel|.*#PcdDebugPrintErrorLevel|0x8000004F#' edk2-nvidia/Platform/NVIDIA/NVIDIA.common.dsc.inc
-  '' + lib.optionalString (bootLogo != null) ''
-    cp ${bootLogoVariants}/logo1080.bmp edk2-nvidia/Silicon/NVIDIA/Drivers/Logo/nvidiagray1080.bmp
-    cp ${bootLogoVariants}/logo720.bmp edk2-nvidia/Silicon/NVIDIA/Drivers/Logo/nvidiagray720.bmp
-    cp ${bootLogoVariants}/logo480.bmp edk2-nvidia/Silicon/NVIDIA/Drivers/Logo/nvidiagray480.bmp
-  '';
+      patchPhase = ''
+        runHook prePatch
 
-  configurePhase = ''
-    runHook preConfigure
+        find . -name \*_ext_dep.yaml -delete
+        patchShebangs .
+      '' + lib.optionalString errorLevelInfo ''
+        sed -i 's#PcdDebugPrintErrorLevel|.*#PcdDebugPrintErrorLevel|0x8000004F#' edk2-nvidia/Platform/NVIDIA/NVIDIA.common.dsc.inc
+      '' + lib.optionalString (bootLogo != null) ''
+        cp ${bootLogoVariants}/logo1080.bmp edk2-nvidia/Silicon/NVIDIA/Drivers/Logo/nvidiagray1080.bmp
+        cp ${bootLogoVariants}/logo720.bmp edk2-nvidia/Silicon/NVIDIA/Drivers/Logo/nvidiagray720.bmp
+        cp ${bootLogoVariants}/logo480.bmp edk2-nvidia/Silicon/NVIDIA/Drivers/Logo/nvidiagray480.bmp
 
-    export CC=$CC_FOR_BUILD
-    export LD=$LD_FOR_BUILD
-    export CPP=$CPP_FOR_BUILD
-    export CXX=$CXX_FOR_BUILD
-    export CFLAGS=$NIX_CFLAGS_COMPILE_FOR_BUILD
-    export LDFLAGS=$NIX_LDFLAGS_FOR_BUILD
+        runHook postPatch
+      '';
 
-    export WORKSPACE=$(pwd)
-    export GIT_SYNC_REVISION=$(printf "%s-%s" "${uniqueHash}" "$out" | sha256sum | head -c 12)
-    python edk2/BaseTools/Edk2ToolsBuild.py -t GCC5
-    # DANGER: If someone else modifies PYTHONPATH, then we lose this
-    # We're okay when this was written.
-    export PYTHONPATH=$(pwd)/edk2-nvidia/Silicon/NVIDIA
+      configurePhase = ''
+        runHook preConfigure
 
-    ${lib.optionalString (trustedPublicCertPemFile != null) ''
-    echo Using ${trustedPublicCertPemFile} as public certificate for capsule verification
-    ${lib.getExe buildPackages.openssl} x509 -outform DER -in ${trustedPublicCertPemFile} -out edk2/PublicCapsuleKey.cer
-    python3 edk2/BaseTools/Scripts/BinToPcd.py -p gEfiSecurityPkgTokenSpaceGuid.PcdPkcs7CertBuffer -i edk2/PublicCapsuleKey.cer -o edk2/PublicCapsuleKey.cer.gEfiSecurityPkgTokenSpaceGuid.PcdPkcs7CertBuffer.inc
-    python3 edk2/BaseTools/Scripts/BinToPcd.py -x -p gFmpDevicePkgTokenSpaceGuid.PcdFmpDevicePkcs7CertBufferXdr -i edk2/PublicCapsuleKey.cer -o edk2/PublicCapsuleKey.cer.gFmpDevicePkgTokenSpaceGuid.PcdFmpDevicePkcs7CertBufferXdr.inc
-    ''}
+        export CC=$CC_FOR_BUILD
+        export LD=$LD_FOR_BUILD
+        export CPP=$CPP_FOR_BUILD
+        export CXX=$CXX_FOR_BUILD
+        export CFLAGS=$NIX_CFLAGS_COMPILE_FOR_BUILD
+        export LDFLAGS=$NIX_LDFLAGS_FOR_BUILD
 
-    runHook postConfigure
-  '';
+        export WORKSPACE=$(pwd)
+        export GIT_SYNC_REVISION=$(printf "%s-%s" "${uniqueHash}" "$out" | sha256sum | head -c 12)
+        python edk2/BaseTools/Edk2ToolsBuild.py -t GCC5
+        # DANGER: If someone else modifies PYTHONPATH, then we lose this
+        # We're okay when this was written.
+        export PYTHONPATH=$(pwd)/edk2-nvidia/Silicon/NVIDIA
 
-  buildPhase = ''
-    stuart_setup -c "edk2-nvidia/Platform/NVIDIA/${platformBuild}/PlatformBuild.py"
-    stuart_build -c "edk2-nvidia/Platform/NVIDIA/${platformBuild}/PlatformBuild.py" ${stuartExtraArgs} --target ${buildTarget}
-  '';
+        ${lib.optionalString (trustedPublicCertPemFile != null) ''
+        echo Using ${trustedPublicCertPemFile} as public certificate for capsule verification
+        ${lib.getExe buildPackages.openssl} x509 -outform DER -in ${trustedPublicCertPemFile} -out edk2/PublicCapsuleKey.cer
+        python3 edk2/BaseTools/Scripts/BinToPcd.py -p gEfiSecurityPkgTokenSpaceGuid.PcdPkcs7CertBuffer -i edk2/PublicCapsuleKey.cer -o edk2/PublicCapsuleKey.cer.gEfiSecurityPkgTokenSpaceGuid.PcdPkcs7CertBuffer.inc
+        python3 edk2/BaseTools/Scripts/BinToPcd.py -x -p gFmpDevicePkgTokenSpaceGuid.PcdFmpDevicePkcs7CertBufferXdr -i edk2/PublicCapsuleKey.cer -o edk2/PublicCapsuleKey.cer.gFmpDevicePkgTokenSpaceGuid.PcdFmpDevicePkcs7CertBufferXdr.inc
+        ''}
 
-  installPhase = ''
-    runHook preInstall
-    mkdir -p $out
-    # all-build-outputs and build log are helpful to have on hand when debugging issues
-    find ./Build ./Conf > $out/all-build-outputs
+        runHook postConfigure
+      '';
 
-    for file in Build/BUILDLOG_*.txt ${builtins.concatStringsSep " " _outputs} ; do
-      mv -v $file $out/
-    done
+      buildPhase = ''
+        stuart_setup -c "edk2-nvidia/Platform/NVIDIA/${platformBuild}/PlatformBuild.py"
+        stuart_build -c "edk2-nvidia/Platform/NVIDIA/${platformBuild}/PlatformBuild.py" ${stuartExtraArgs} --target ${buildTarget}
+      '';
 
-    runHook postInstall
-  '';
+      installPhase = ''
+        runHook preInstall
+        mkdir -p $out
+        # all-build-outputs and build log are helpful to have on hand when debugging issues
+        find ./Build ./Conf > $out/all-build-outputs
 
-  meta.platforms = [ "aarch64-linux" ];
-})
+        for file in Build/BUILDLOG_*.txt ${builtins.concatStringsSep " " _outputs} ; do
+          mv -v $file $out/
+        done
+
+        # Everything is statically linked
+        nuke-refs $out/*
+
+        runHook postInstall
+      '';
+
+      meta = meta // { platforms = [ "aarch64-linux" ]; };
+    };
+}
