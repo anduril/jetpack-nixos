@@ -7,6 +7,7 @@ let
   inherit (nvidia-jetpack)
     buildFromDebs
     debs
+    gpuDriver
     l4t-3d-core
     l4t-core
     l4t-cupva
@@ -51,7 +52,7 @@ buildFromDebs {
   ]
   ++ lib.optional (l4tMajorVersion == "35") l4t-cupva
   ++ lib.optional (l4tAtLeast "36") l4t-pva
-  ++ lib.optional (l4tAtLeast "38") l4t-video-codec-openrm;
+  ++ lib.optional (gpuDriver == "openrm") l4t-video-codec-openrm;
   patches = [ ./vpi2.patch ];
   postPatch = ''
     rm -rf etc

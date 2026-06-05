@@ -42,6 +42,7 @@ makeScope final.newScope (self: {
   inherit (sourceInfo) debs gitRepos;
   inherit jetpackMajorMinorPatchVersion l4tMajorMinorPatchVersion cudaMajorMinorVersion cudaDriverMajorMinorVersion;
   inherit l4tAtLeast l4tOlder;
+  gpuDriver = "nvgpu"; # GPU driver for JP5, JP6, and Orin JP7. Overridden in overlay-with-config.nix
 
   callPackages = callPackagesWith (final // self);
 
