@@ -23,6 +23,10 @@ let
             xudcPadctlPath = "bus@0/padctl@a808680000";
             xudcPath = "bus@0/usb@a808670000";
           };
+          orin = {
+            xudcPadctlPath = "bus@0/padctl@3520000";
+            xudcPath = "bus@0/usb@3550000";
+          };
         };
         "36" = {
           orin = {

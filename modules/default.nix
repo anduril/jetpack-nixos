@@ -176,7 +176,7 @@ in
         }
         (validSomsAssertion "5" [ "xavier" "orin" ])
         (validSomsAssertion "6" [ "orin" ])
-        (validSomsAssertion "7" [ "thor" ])
+        (validSomsAssertion "7" [ "orin" "thor" ])
         {
           assertion = ! (cfg.carrierBoard == "xavierNxDevkit" && cfg.som != "orin-nx");
           message = ''
