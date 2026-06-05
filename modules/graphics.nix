@@ -10,6 +10,7 @@ let
   cfg = config.hardware.nvidia-jetpack;
 
   checkValidSoms = soms: cfg.som == "generic" || lib.lists.any (s: lib.hasPrefix s cfg.som) soms;
+  jetpackAtLeast = lib.versionAtLeast cfg.majorVersion;
 in
 {
   options = {
@@ -32,6 +33,8 @@ in
 
   config = mkIf cfg.enable (lib.mkMerge [
     {
+      boot.blacklistedKernelModules = [ "nouveau" ];
+
       # For Orin on JP5. Unsupported with PREEMPT_RT.
       boot.extraModulePackages = lib.optional (cfg.majorVersion == "5" && !cfg.kernel.realtime)
         config.boot.kernelPackages.nvidia-display-driver;
@@ -150,6 +153,57 @@ in
         options tegra-udrm modeset=1
         options nvidia-drm modeset=1 ${lib.optionalString (cfg.majorVersion == "6") "fbdev=1"}
       '';
+    })
+    (lib.mkIf (checkValidSoms [ "xavier" ]) {
+      boot.kernelModules = [ "nvgpu" ];
+    })
+    (lib.mkIf (checkValidSoms [ "orin" ]) {
+      boot.kernelModules = [ "nvgpu" ];
+      boot.blacklistedKernelModules = [ "nvidia-uvm" ];
+
+      boot.extraModprobeConfig = lib.optionalString (jetpackAtLeast "6") ''
+        options nvgpu devfreq_timer="delayed"
+      '';
+
+      boot.extraModulePackages = lib.mkIf (jetpackAtLeast "7") [
+        (pkgs.writeTextFile {
+          name = "nvgpu-depmod";
+          destination = "/etc/depmod.d/openrm-l4t-display.conf";
+          text = ''
+            override nvidia-drm * updates/opensrc-disp
+            override nvidia-modeset * updates/opensrc-disp
+            override nvidia * updates/opensrc-disp
+          '';
+        })
+      ];
+    })
+    (lib.mkIf (checkValidSoms [ "thor" ]) {
+      boot.kernelModules = [ "nvidia-uvm" ];
+      boot.blacklistedKernelModules = [ "nvgpu" ];
+
+      boot.extraModulePackages = [
+        (pkgs.writeTextFile {
+          name = "nvgpu-depmod";
+          destination = "/etc/depmod.d/openrm-l4t-display.conf";
+          text = ''
+            override nvidia-drm * updates/opensource-gpu-disp
+            override nvidia-modeset * updates/opensource-gpu-disp
+            override nvidia-uvm * updates/opensource-gpu-disp
+            override nvidia * updates/opensource-gpu-disp
+          '';
+        })
+      ];
+
+      boot.extraModprobeConfig = ''
+        options nv-gpu-static-pg gpu_pg_mask_param=4294967295
+        softdep nvidia pre:nv-gpu-static-pg post:nvidia-uvm
+
+        options nvidia NVreg_TemporaryFilePath=/var/tmp
+        options nvidia NVreg_EnableS0ixPowerManagement=1
+        options nvidia NVreg_PreserveVideoMemoryAllocations=1
+      '';
+
+      hardware.firmware = [ pkgs.nvidia-jetpack.l4t-firmware-openrm ];
     })
   ]);
 }
