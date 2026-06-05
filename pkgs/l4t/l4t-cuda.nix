@@ -2,6 +2,7 @@
 , cudaDriverMajorMinorVersion
 , debs
 , defaultSomDebRepo
+, gpuDriver
 , l4tAtLeast
 , l4t-core
 , l4tMajorMinorPatchVersion
@@ -11,7 +12,7 @@
 buildFromDebs {
   pname = "nvidia-l4t-cuda";
   # l4t-cuda and l4t-cuda-openrm are interdependent; can't repack them separately
-  srcs = [ debs.${defaultSomDebRepo}.nvidia-l4t-cuda.src ] ++ lib.optionals (l4tAtLeast "39") [ debs.${defaultSomDebRepo}.nvidia-l4t-cuda-openrm.src ];
+  srcs = [ debs.${defaultSomDebRepo}.nvidia-l4t-cuda.src ] ++ lib.optionals (l4tAtLeast "39") [ debs.${defaultSomDebRepo}."nvidia-l4t-cuda-${gpuDriver}".src ];
   buildInputs = [ l4t-core ];
 
   postDebNormalization = lib.optionalString (l4tAtLeast "39") ''
@@ -19,7 +20,9 @@ buildFromDebs {
 
     nixLog "moving libs to top-level lib directory"
     mkdir -p $PWD/lib
-    mv --verbose --no-clobber "$PWD/opt/nvidia/l4t-gpu-libs/openrm/"*.so* "$PWD/lib"
+    ${lib.optionalString (l4tAtLeast "39") ''
+      mv --verbose --no-clobber "$PWD/opt/nvidia/l4t-gpu-libs/${gpuDriver}/"*.so* "$PWD/lib"
+    ''}
 
     popd >/dev/null
   '';
