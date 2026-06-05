@@ -8,9 +8,6 @@
 , l4t-camera
 , l4t-cuda
 , l4t-multimedia
-, l4t-pva
-, l4t-video-codec-openrm ? null
-, l4tAtLeast
 , l4tMajorMinorPatchVersion
 , lib
 , libdrm
