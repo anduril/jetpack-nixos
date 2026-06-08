@@ -99,6 +99,7 @@ let
     initrdPath = "${flashInitrd}/initrd";
     kernelCmdline = lib.concatStringsSep " " ([
       "sdhci_tegra.en_boot_part_access=1"
+      "clk_ignore_unused"
     ] ++ cfg.console.args);
     # During the initrd flash script, we upload two edk2 builds to the
     # board, one that is only used temporarily to boot into our

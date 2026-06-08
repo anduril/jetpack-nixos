@@ -242,6 +242,7 @@ in
       ++ lib.optionals cfg.console.enable cfg.console.args
       ++ lib.optionals (pkgs.nvidia-jetpack.l4tAtLeast "38") [
         "clk_ignore_unused"
+        "swiotlb=2048"
       ];
 
       boot.initrd.includeDefaultModules = false; # Avoid a bunch of modules we may not get from tegra_defconfig
