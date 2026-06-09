@@ -279,13 +279,20 @@ in
             ${helper} ${epsFlag} "$EPS_VALUE"
           '';
 
-          script = pkgs.writeShellScript "ftpm-driver-load" ''
+          startScript = pkgs.writeShellScript "ftpm-driver-load" ''
             set -euo pipefail
 
             ${lib.optionalString cfg.ftpm.unsecureInjectEPS.enable epsInjectScript}
 
             echo "Loading tpm_ftpm_tee driver..."
             ${pkgs.kmod}/bin/modprobe tpm_ftpm_tee
+          '';
+
+          stopScript = pkgs.writeShellScript "ftpm-driver-unload" ''
+            set -euo pipefail
+
+            echo "Unloading tpm_ftpm_tee driver..."
+            ${pkgs.kmod}/bin/modprobe -v -r tpm_ftpm_tee
           '';
         in
         {
@@ -300,7 +307,8 @@ in
           serviceConfig = {
             Type = "oneshot";
             RemainAfterExit = true;
-            ExecStart = script;
+            ExecStart = startScript;
+            ExecStop = stopScript;
             StateDirectory = "optee/ftpm";
           };
         };
