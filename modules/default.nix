@@ -370,7 +370,8 @@ in
 
       services.udev.packages = [
         (pkgs.runCommand "jetson-udev-rules" { } ''
-          install -D -t $out/etc/udev/rules.d ${pkgs.nvidia-jetpack.l4t-init}/etc/udev/rules.d/99-tegra-devices.rules
+          install -D ${pkgs.nvidia-jetpack.l4t-init}/etc/udev/rules.d/99-tegra-devices.rules \
+            $out/etc/udev/rules.d/90-tegra-devices.rules
           sed -i \
             -e '/camera_device_detect/d' \
             -e 's#/bin/mknod#${lib.getExe' pkgs.coreutils "mknod"}#' \
@@ -379,7 +380,7 @@ in
             -e 's#/bin/grep#${lib.getExe pkgs.gnugrep}#' \
             -e 's#/bin/bash /etc/systemd/nvpower.sh#${pkgs.nvidia-jetpack.l4t-nvpmodel}/etc/systemd/nvpower.sh#' \
             -e 's#/bin/bash#${lib.getExe pkgs.bash}#' \
-            $out/etc/udev/rules.d/99-tegra-devices.rules
+            $out/etc/udev/rules.d/90-tegra-devices.rules
         '')
       ];
 
