@@ -228,10 +228,13 @@ let
         temp_signed_dir=$(mktemp -d)
         trap cleanup EXIT
 
+        echo "Extracting signed Orin artifacts from $signed_sd_image" >&2
+        echo "(decompressing sd-image .img.zst and mounting partitions; can take ~1 minute)" >&2
         ${extractSignedOrinArtifacts}/bin/extract-signed-orin-artifacts \
           --sd-image-dir "$signed_sd_image" \
           --output "$temp_signed_dir" \
           --force >/dev/null
+        echo "Signed artifacts staged under $temp_signed_dir" >&2
 
         export SIGNED_ARTIFACTS_DIR="$temp_signed_dir"
         export SIGNED_SD_IMAGE_DIR="$signed_sd_image"
