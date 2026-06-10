@@ -127,7 +127,7 @@ program_mmcboot_partition() {
   fi
   report_step "Writing $part_file (size=$file_size) to $partname on $bootpart (offset=$part_offset)"
   if [[ "$file_size" -ne 0 ]]; then
-    if ! dd if="$part_file" of="$bootpart" bs=4096 seek="$part_offset" oflag=seek_bytes >/dev/null; then
+    if ! dd if="$part_file" of="$bootpart" bs=4096 seek="$part_offset" oflag=seek_bytes conv=fsync >/dev/null; then
       return 1
     fi
     # Multiple copies of the BCT get installed at 16KiB boundaries
@@ -139,7 +139,7 @@ program_mmcboot_partition() {
       local i=1
       while [[ "$i" -lt "$copycount" ]]; do
         echo "Writing $part_file (size=$file_size) to BCT+$i (offset=$curr_offset)"
-        if ! dd if="$part_file" of="$bootpart" bs=4096 seek="$curr_offset" oflag=seek_bytes >/dev/null; then
+        if ! dd if="$part_file" of="$bootpart" bs=4096 seek="$curr_offset" oflag=seek_bytes conv=fsync >/dev/null; then
           return 1
         fi
         i=$((i + 1))
@@ -221,7 +221,7 @@ write_partitions() {
     # but is zero'd on all other Jetsons because it lives on QSPI, which is zero'd. Let's keep consistent behavior
     if [[ "$partname" == "uefi_variables" ]] && [[ "$partfile" == "" ]] && [[ "$devnum" -eq 1 && "$instnum" -eq 3 ]]; then
       report_step "Erasing entry:$partname (devnum=$devnum, instnum=$instnum) (offset=$start_location)"
-      dd if=/dev/zero of=/dev/mmcblk0 bs=4096 seek="$start_location" count="$partsize" oflag=seek_bytes iflag=count_bytes
+      dd if=/dev/zero of=/dev/mmcblk0 bs=4096 seek="$start_location" count="$partsize" oflag=seek_bytes iflag=count_bytes conv=fsync
       continue
     fi
 
@@ -262,7 +262,7 @@ write_partitions() {
     elif [[ "$devnum" -eq 1 && "$instnum" -eq 3 ]] || [[ "$devnum" -eq 6 && "$instnum" -eq 0 ]]; then
       report_step "Writing $partfile (size=$partsize) to $partname on /dev/mmcblk0 (offset=$start_location)"
       file_size=$(stat -c "%s" "$partfile")
-      if ! dd if="$partfile" of="/dev/mmcblk0" bs=4096 seek="$start_location" oflag=seek_bytes >/dev/null; then
+      if ! dd if="$partfile" of="/dev/mmcblk0" bs=4096 seek="$start_location" oflag=seek_bytes conv=fsync >/dev/null; then
         return 1
       fi
     fi
