@@ -189,8 +189,9 @@ in
         })
       ];
 
+      # see comment in modules/nvpmodel.nix for initialGpuPgMaskParam for details about gpu_pg_mask_param
       boot.extraModprobeConfig = ''
-        options nv-gpu-static-pg gpu_pg_mask_param=4294967295
+        options nv-gpu-static-pg $(grep -E '^gpu_pg_mask_param=' /opt/nvidia/l4t-gpusetup/gpu_pg_mask || echo "${toString config.services.nvpmodel.initialGpuPgMaskParam}" 2>/dev/null)
         softdep nvidia pre:nv-gpu-static-pg post:nvidia-uvm
 
         options nvidia NVreg_TemporaryFilePath=/var/tmp
