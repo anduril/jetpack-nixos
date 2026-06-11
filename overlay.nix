@@ -148,8 +148,7 @@ in
   });
   cudaPackages_13_2 = prev.cudaPackages_13_2.override (prevArgs: {
     manifests = prevArgs.manifests // {
-      # Orin isn't supported on JetPack 7 at the moment so use the newest version available.
-      tensorrt = final._cuda.manifests.tensorrt."10.14.1";
+      tensorrt = final._cuda.manifests.tensorrt."10.16.1";
     };
   });
 
