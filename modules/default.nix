@@ -93,7 +93,7 @@ in
         default = false;
         type = types.bool;
         description = ''
-          Whether to enable "super mode" for Jetson Orin NX and Nano
+          Whether to enable "super mode" for Jetson Orin NX and Nano (JetPack 5+) or AGX Orin (JetPack 7 only)
         '';
       };
 

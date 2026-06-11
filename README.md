@@ -16,15 +16,13 @@ This package supports JetPack 5, 6, and 7. It works with NVIDIA's developer kits
 |       Device       | JetPack 5 | JetPack 6 | JetPack 7 |
 | ------------------ | --------- | --------- | --------- |
 | Jetson Thor AGX    |           |           |     ✓     |
-| Jetson Orin AGX    |     ✓     |     ✓     |           |
-| Jetson Orin NX     |     ✓     |     ✓     |           |
-| Jetson Orin Nano   |     ✓     |     ✓     |           |
+| Jetson Orin AGX    |     ✓     |     ✓     |     ✓     |
+| Jetson Orin NX     |     ✓     |     ✓     |     ✓     |
+| Jetson Orin Nano   |     ✓     |     ✓     |     ✓     |
 | Jetson Xavier AGX  |     ✓     |           |           |
 | Jetson Xavier NX   |     ✓     |           |           |
 
 The Jetson Nano, TX2, and TX1 devices are _not_ supported, since support for them was dropped upstream in JetPack 5.
-
-__NOTE__: CUDA is currently supported in JetPack 7 (Thor AGX).
 
 ## Getting started
 
