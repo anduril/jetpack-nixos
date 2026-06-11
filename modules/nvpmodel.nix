@@ -9,8 +9,19 @@ let
 
   cfg = config.services.nvpmodel;
 
+  # Experimentally found by doing each of the following for the different power modes
+  # rm -f /var/lib/nvpmodel/status && echo gpu_pg_mask_param=4294967295 >/opt/nvidia/l4t-gpusetup/gpu_pg_mask && /nix/store/0000000000-nvidia-l4t-nvpmodel-x.y.z/bin/nvpmodel -f /etc/nvpmodel.conf -m 3 && cat /opt/nvidia/l4t-gpusetup/gpu_pg_mask
+  initialGpuPgMaskParamDefaults = {
+    "0" = 512;
+    "1" = 512;
+    "2" = 17353;
+    "3" = 17353;
+  };
+  profileString = toString cfg.profileNumber;
+
+
   # This script is based of the nvpower.sh script nvidia provides
-  setupConf = pkgs.writeShellScriptBin "setupConf" ''
+  setupConf = pkgs.writeShellScriptBin "setupConf" (''
     compat=$(tr -d '\0' < /proc/device-tree/compatible)
 
     # xavier doesn't use the compat in the conf file name so we have to hard code the som 
@@ -53,7 +64,13 @@ let
     fi
 
     ln -sf ${pkgs.nvidia-jetpack.l4t-nvpmodel}/etc/nvpmodel/nvpmodel_"$device_som".conf /etc/nvpmodel.conf
-  '';
+  ''
+  + lib.optionalString (pkgs.nvidia-jetpack.gpuDriver == "openrm") ''
+    if [ ! -e /opt/nvidia/l4t-gpusetup/gpu_pg_mask ] ; then
+      mkdir -p /opt/nvidia/l4t-gpusetup
+      echo "gpu_pg_mask_param=${toString cfg.initialGpuPgMaskParam}" >/opt/nvidia/l4t-gpusetup/gpu_pg_mask
+    fi
+  '');
 in
 {
   options = {
@@ -70,6 +87,26 @@ in
         description = "ID integer of POWER_MODEL to use from nvpmodel config file. If null, nvpmodel will use the PM_CONFIG DEFAULT setting from the configFile";
         default = null;
         type = types.nullOr types.int;
+      };
+
+      # THOR only --
+      # Per this thread for some reason the new driver they are using for the GPU doesn't expose
+      # a GPU_POWER_GATING sysfs node. And the hack they suggested doesn't work.
+      # https://forums.developer.nvidia.com/t/nvpmodel-conf-for-70w-with-jetson-thor/348826/13
+      #
+      # How nvpmodel now determines the current state of GPU_POWER_GATING is through /opt/nvidia/l4t-gpusetup/gpu_pg_mask
+      # This file is read by modprobe.d when loading the GPU drivers to set the GPU_POWER_GATING setting.
+      # This file is modified by nvpmodel when changing the power mode. Due to implementation, changing the
+      # module paramter at runtime is not supported(?) and requires a reboot.
+      #
+      # We populate /opt/nvidia/l4t-gpusetup/gpu_pg_mask with default value or with desired initial setting
+      # for requested power mode. Further, modeprobe is configured to read /opt/nvidia/l4t-gpusetup/gpu_pg_mask
+      # if present or fallback to cfg.initialGpuPgMaskParam.
+      initialGpuPgMaskParam = mkOption {
+        description = "Initial gpu_pg_mask_param to use during *first* boot of a NixOS system";
+        default = 4294967295;
+        internal = true;
+        type = types.int;
       };
     };
   };
@@ -93,29 +130,11 @@ in
       source = cfg.configFile;
     };
     environment.etc."nvpmodel".source = "${pkgs.nvidia-jetpack.l4t-nvpmodel}/etc/nvpmodel";
-    # Need this hack otherwise setting the mode requires a reboot on JP7 thor
-    #
-    # Per this thread for some reason the new driver they are using for the GPU doesn't expose
-    # a GPU_POWER_GATING sysfs node. And the hack they suggested doesn't work.
-    # https://forums.developer.nvidia.com/t/nvpmodel-conf-for-70w-with-jetson-thor/348826/13
-    #
-    # How nvpmodel now determines the current state of GPU_POWER_GATING is through the /etc/modprobe.d conf files.
-    # You might think wow that seems strange because you can change this file at runtime and set a different gpu_pg_mask
-    # and then change modes without a reboot. This works and seems to break the rules in the note here
-    # https://docs.nvidia.com/jetson/archives/r38.2/DeveloperGuide/SD/PlatformPowerAndPerformance/JetsonThor.html#power-mode-controls
-    #
-    # The reason thor was failing to set a power mode is because nvpmodel ignores symlinks which all of the NixOS kernel module confs are.
-    # Since they symlink back to the nix store.
-    # newfstatat(AT_FDCWD, "/etc/modprobe.d/nixos.conf", {st_mode=S_IFLNK|0777, st_size=33, ...}, AT_SYMLINK_NOFOLLOW) = 0
-    #
-    # To fix this we drop a hardlink for this option at /etc/modprobe.d. Setting the value to -1 allows nvpmodel to overwrite
-    # the conf file on first boot.
-    environment.etc."NVreg_TegraGpuPgMask.conf" = mkIf (config.hardware.nvidia-jetpack.majorVersion == "7") {
-      target = "modprobe.d/NVreg_TegraGpuPgMask.conf";
-      text = "options nvidia NVreg_TegraGpuPgMask=-1";
-      mode = "0644";
-    };
 
     environment.systemPackages = with pkgs.nvidia-jetpack; [ l4t-nvpmodel ];
+
+    services.nvpmodel.initialGpuPgMaskParam = lib.mkIf (cfg.profileNumber != null && builtins.hasAttr profileString initialGpuPgMaskParamDefaults) (lib.mkDefault (
+      builtins.getAttr profileString initialGpuPgMaskParamDefaults
+    ));
   };
 }
