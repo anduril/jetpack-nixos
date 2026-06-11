@@ -68,6 +68,14 @@ final: prev: (
         inherit (cfg.firmware.uefi.capsuleAuthentication) trustedPublicCertPemFile;
       });
 
+      jetsonStandaloneMMOptee = prevJetpack.jetsonStandaloneMMOptee.override {
+        debugMode = cfg.firmware.uefi.debugMode;
+        errorLevelInfo = cfg.firmware.uefi.errorLevelInfo;
+        edk2NvidiaPatches = cfg.firmware.uefi.edk2NvidiaPatches;
+        edk2UefiPatches = cfg.firmware.uefi.edk2UefiPatches;
+        inherit (finalJetpack) socFamily;
+      };
+
       flash-tools = prevJetpack.flash-tools.overrideAttrs ({ patches ? [ ], postPatch ? "", ... }: {
         patches = patches ++ cfg.flashScriptOverrides.patches;
         postPatch = postPatch + cfg.flashScriptOverrides.postPatch;

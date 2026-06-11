@@ -1,4 +1,5 @@
 { lib
+, buildPackages
 , callPackage
 , fetchFromGitHub
 , fetchpatch
@@ -7,6 +8,7 @@
 , applyPatches
 , nukeReferences
 , l4tMajorMinorPatchVersion
+, patchfv
 , uniqueHash ? ""
 , socFamily ? "t26x"
 , defconfig ? "${socFamily}_general"
@@ -89,53 +91,57 @@ let
     };
   };
 
-  mkStuartDrv = callPackage ../stuart.nix (args // { srcs = patchedRepos; });
+  fakeHash = "123456789012";
+  fakeVersion = "${l4tMajorMinorPatchVersion}-${fakeHash}";
+  biosVersion = "${l4tMajorMinorPatchVersion}-" + lib.substring 0 12 (builtins.hashString "sha256" "${uniqueHash}-${unstamped-firmware}");
 
-  jetsonUefi = mkStuartDrv {
+  mkStuartDrv = callPackage ../stuart.nix (args // { srcs = patchedRepos; uniqueHash = fakeHash; });
+
+  unstamped-firmware = mkStuartDrv {
     platformBuild = "Tegra";
     stuartExtraArgs = "--init-defconfig edk2-nvidia/Platform/NVIDIA/Tegra/DefConfigs/${defconfig}.defconfig";
     outputs = [
       "FV/UEFI_NS.Fv"
       "AARCH64/L4TLauncher.efi"
+      "AARCH64/Silicon/NVIDIA/Tegra/DeviceTree/DeviceTree/OUTPUT/*.dtb"
     ];
+
+    postInstall = ''
+      python3 edk2-nvidia/Silicon/NVIDIA/edk2nv/FormatUefiBinary.py \
+        $out/UEFI_NS.Fv \
+        $out/uefi_jetson.bin
+    '';
   };
+
+  uefi-firmware = runCommand "${unstamped-firmware.pname}-${unstamped-firmware.version}-stamped"
+    {
+      nativeBuildInputs = [ python3 buildPackages.nvidia-jetpack.patchfv ];
+      passthru = { inherit biosVersion; };
+    } ''
+    mkdir -p $out
+    cp -r ${unstamped-firmware}/* $out
+
+    rm $out/UEFI_NS.Fv $out/uefi_jetson.bin
+    patchfv ${unstamped-firmware}/UEFI_NS.Fv $out/UEFI_NS.Fv ${fakeVersion} ${biosVersion}
+
+    python3 ${patchedRepos.edk2-nvidia}/Silicon/NVIDIA/edk2nv/FormatUefiBinary.py \
+        $out/UEFI_NS.Fv \
+        $out/uefi_jetson.bin
+  '';
 
   jetsonStandaloneMMOptee = mkStuartDrv {
     platformBuild = "StandaloneMmOptee";
     outputs = [ "FV/UEFI_MM.Fv" ];
-  };
 
-  uefi-firmware = runCommand "uefi-firmware-${l4tMajorMinorPatchVersion}"
-    {
-      nativeBuildInputs = [ python3 nukeReferences ];
-      passthru = {
-        # Keep in sync with FIRMWARE_VERSION_BASE and GIT_SYNC_REVISION above
-        biosVersion = "${l4tMajorMinorPatchVersion}-" + lib.substring 0 12 (builtins.hashString "sha256" "${uniqueHash}-${jetsonUefi}");
-        inherit jetsonUefi jetsonStandaloneMMOptee;
-      } // patchedRepos;
-    }
-    (''
-      mkdir -p $out
-      python3 ${patchedRepos.edk2-nvidia}/Silicon/NVIDIA/edk2nv/FormatUefiBinary.py \
-        ${jetsonUefi}/UEFI_NS.Fv \
-        $out/uefi_jetson.bin
-
-      python3 ${patchedRepos.edk2-nvidia}/Silicon/NVIDIA/edk2nv/FormatUefiBinary.py \
-        ${jetsonUefi}/L4TLauncher.efi \
-        $out/L4TLauncher.efi
-
-      # Get rid of any string references to source(s)
-      nuke-refs $out/uefi_jetson.bin
-    '' + lib.optionalString (socFamily == "t19x" || socFamily == "t23x") ''
-      python3 ${patchedRepos.edk2-nvidia}/Silicon/NVIDIA/edk2nv/FormatUefiBinary.py \
-        ${jetsonStandaloneMMOptee}/UEFI_MM.Fv \
+    postInstall = ''
+      python3 edk2-nvidia/Silicon/NVIDIA/edk2nv/FormatUefiBinary.py \
+        $out/UEFI_MM.Fv \
         $out/standalonemm_optee.bin
-
-      nuke-refs $out/standalonemm_optee.bin
-    '');
+    '';
+  };
 in
 {
-  inherit uefi-firmware;
+  inherit uefi-firmware jetsonStandaloneMMOptee;
 }
 
 

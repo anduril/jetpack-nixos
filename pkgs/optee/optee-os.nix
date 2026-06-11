@@ -4,7 +4,7 @@
 , l4tMajorMinorPatchVersion
 , lib
 , stdenv
-, uefi-firmware ? null
+, jetsonStandaloneMMOptee ? null
 }:
 stdenv.mkDerivation (finalAttrs:
 let
@@ -65,9 +65,9 @@ in
     "CFG_TEE_CORE_LOG_LEVEL=${toString finalAttrs.coreLogLevel}"
     "CFG_TEE_TA_LOG_LEVEL=${toString finalAttrs.taLogLevel}"
   ]
-  ++ (lib.optionals ((finalAttrs.socType == "t194" || finalAttrs.socType == "t234") && uefi-firmware != null) [
+  ++ (lib.optionals ((finalAttrs.socType == "t194" || finalAttrs.socType == "t234") && jetsonStandaloneMMOptee != null) [
     "CFG_WITH_STMM_SP=y"
-    "CFG_STMM_PATH=${uefi-firmware}/standalonemm_optee.bin"
+    "CFG_STMM_PATH=${jetsonStandaloneMMOptee}/standalonemm_optee.bin"
   ])
   ++ (lib.optional (finalAttrs.taPublicKeyFile != null) "TA_PUBLIC_KEY=${finalAttrs.taPublicKeyFile}")
   ;

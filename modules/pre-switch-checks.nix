@@ -3,6 +3,10 @@
 let
   cfg = config.hardware.nvidia-jetpack;
 
+  sed = lib.getExe pkgs.gnused;
+  sort = lib.getExe' pkgs.coreutils "sort";
+  head = lib.getExe' pkgs.coreutils "head";
+
   l4tVersionPreamble = ''
     # shellcheck disable=SC2034
     incoming="''${1-}"
@@ -23,7 +27,7 @@ let
 
     # bios_version contains the L4T version, possibly with a unique hash suffix
     # Strip everything after major.minor.patch
-    running_l4t="$(sed 's/^\([0-9]\+\.[0-9]\+\.[0-9]\+\).*/\1/' < /sys/devices/virtual/dmi/id/bios_version)"
+    running_l4t="$(${sed} 's/^\([0-9]\+\.[0-9]\+\.[0-9]\+\).*/\1/' < /sys/devices/virtual/dmi/id/bios_version)"
     target_l4t="${pkgs.nvidia-jetpack.l4tMajorMinorPatchVersion}"
   '';
 in
@@ -78,7 +82,7 @@ in
           esac
 
           # If target is the lesser version after sorting, it's a downgrade
-          oldest="$(printf '%s\n%s' "$target_compare" "$running_compare" | sort -V | head -n1)"
+          oldest="$(printf '%s\n%s' "$target_compare" "$running_compare" | ${sort} -V | ${head} -n1)"
           if [ "$oldest" = "$target_compare" ] && [ "$target_compare" != "$running_compare" ]; then
             echo "Error: L4T version downgrade detected!"
             echo "Running L4T version: $running_l4t"
@@ -104,7 +108,7 @@ in
           running_major="''${running_l4t%%.*}"
           if [ "$target_major" = "36" ] && [ "$running_major" = "35" ]; then
             min_required="35.5.0"
-            oldest="$(printf '%s\n%s' "$running_l4t" "$min_required" | sort -V | head -n1)"
+            oldest="$(printf '%s\n%s' "$running_l4t" "$min_required" | ${sort} -V | ${head} -n1)"
             if [ "$oldest" = "$running_l4t" ] && [ "$running_l4t" != "$min_required" ]; then
               echo "Error: Upgrading to L4T 36 requires running L4T $min_required or newer."
               echo "Running L4T version: $running_l4t"
