@@ -3,7 +3,7 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixos-25.11";
 
     cuda-legacy = {
-      url = "github:nixos-cuda/cuda-legacy";
+      url = "github:nixos-cuda/cuda-legacy/pull/12/merge";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
