@@ -15,6 +15,11 @@
 , deviceTree
 , tio
 , expect
+, coreutils
+, e2fsprogs
+, gawk
+, mtools
+, zstd
 }:
 
 let
@@ -132,6 +137,114 @@ let
       meta.platforms = [ "x86_64-linux" ];
     };
 
+  extractSignedOrinArtifacts = writeShellApplication {
+    name = "extract-signed-orin-artifacts";
+    runtimeInputs = [
+      coreutils
+      e2fsprogs
+      gawk
+      mtools
+      zstd
+    ];
+    text = builtins.readFile ./extract-signed-orin-artifacts.sh;
+    meta = {
+      description = "Helper that extracts signed Jetson Orin artifacts from an sd-image build result";
+      platforms = [
+        "x86_64-linux"
+        "aarch64-linux"
+      ];
+    };
+  };
+
+  flashScript = writeShellApplication {
+    name = "flash-${cfg.name}";
+    runtimeInputs = [
+      coreutils
+      extractSignedOrinArtifacts
+    ];
+    text = ''
+      set -euo pipefail
+
+      usage() {
+        cat <<'USAGE'
+      Usage: flash-${cfg.name} [options] [-s <signed-sd-image>]
+
+        -s, --signed-sd-image DIR   Path to signed sd-image result directory.
+                                    When provided, signed boot artifacts are automatically
+                                    extracted before flashing.
+        -h, --help                  Show this help and exit.
+
+      All other arguments are forwarded to NVIDIA's flashing script verbatim.
+      USAGE
+      }
+
+      signed_sd_image=""
+
+      while [[ $# -gt 0 ]]; do
+        case "$1" in
+          -s|--signed-sd-image)
+            if [[ $# -lt 2 ]]; then
+              echo "Missing argument for $1" >&2
+              usage
+              exit 1
+            fi
+            signed_sd_image="$2"
+            if ! signed_sd_image=$(realpath -e "$signed_sd_image"); then
+              echo "Signed image directory not found: $2" >&2
+              exit 1
+            fi
+            shift 2
+            ;;
+          -h|--help)
+            usage
+            exit 0
+            ;;
+          --)
+            shift
+            break
+            ;;
+          *)
+            break
+            ;;
+        esac
+      done
+
+      temp_signed_dir=""
+      cleanup() {
+        if [[ -n "$temp_signed_dir" && -d "$temp_signed_dir" ]]; then
+          rm -rf "$temp_signed_dir"
+        fi
+      }
+
+      unset SIGNED_ARTIFACTS_DIR
+      unset SIGNED_SD_IMAGE_DIR
+
+      if [[ -n "$signed_sd_image" ]]; then
+        if [[ ! -d "$signed_sd_image" ]]; then
+          echo "Signed image directory not found: $signed_sd_image" >&2
+          exit 1
+        fi
+
+        temp_signed_dir=$(mktemp -d)
+        trap cleanup EXIT
+
+        ${extractSignedOrinArtifacts}/bin/extract-signed-orin-artifacts \
+          --sd-image-dir "$signed_sd_image" \
+          --output "$temp_signed_dir" \
+          --force >/dev/null
+
+        export SIGNED_ARTIFACTS_DIR="$temp_signed_dir"
+        export SIGNED_SD_IMAGE_DIR="$signed_sd_image"
+      fi
+
+      "${legacyFlashScript}/bin/flash-${cfg.name}" "$@"
+      status=$?
+      cleanup
+      exit $status
+    '';
+    meta.platforms = [ "x86_64-linux" ];
+  };
+
   fuseScript = writeShellApplication {
     name = "fuse-${cfg.name}";
     text = import ./flash-script.nix {
@@ -148,4 +261,4 @@ let
     meta.platforms = [ "x86_64-linux" ];
   };
 in
-{ inherit initrdFlashScript legacyFlashScript fuseScript rcmBoot; flashScript = initrdFlashScript; }
+{ inherit initrdFlashScript legacyFlashScript fuseScript rcmBoot flashScript; }
