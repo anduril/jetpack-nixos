@@ -108,15 +108,11 @@ program_mmcboot_partition() {
   local part_size="$3"
   local part_file="$4"
   local file_size=0
-  local bootpart="/dev/mmcblk0boot0"
+  local bootpart="/dev/dm-0"
 
   if [[ -z "$BOOTPART_SIZE" ]]; then
     echo "ERR: boot partition size not set" >&2
     return 1
-  fi
-  if [[ "$part_offset" -ge "$BOOTPART_SIZE" ]]; then
-    part_offset=$((part_offset - BOOTPART_SIZE))
-    bootpart="/dev/mmcblk0boot1"
   fi
   if [[ -n "$part_file" ]]; then
     file_size=$(stat -c "%s" "$part_file")
@@ -196,6 +192,9 @@ erase_bootdev() {
     blkdiscard -f /dev/mmcblk0boot0
     echo "Erasing /dev/mmcblk0boot1"
     blkdiscard -f /dev/mmcblk0boot1
+
+    echo "0 $(blockdev --getsz /dev/mmcblk0boot0) linear /dev/mmcblk0boot0 0
+    $(blockdev --getsz /dev/mmcblk0boot0) $(blockdev --getsz /dev/mmcblk0boot1) linear /dev/mmcblk0boot1 0" | dmsetup create boot
   elif [ "$BOOTDEV_TYPE" = "spi" ]; then
     if [ ! -e /dev/mtd0 ]; then
       echo "ERR: SPI boot device, but mtd0 device does not exist" >&2
