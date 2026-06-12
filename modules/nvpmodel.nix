@@ -120,6 +120,7 @@ in
         Type = "oneshot";
         Restart = "on-failure";
         RestartSec = "2s";
+        RestartMode = "direct"; # Keep auto-restarts in activating state instead of transitioning to failed (temporarily)
         ExecStartPre = mkIf (cfg.configFile == null) (lib.getExe setupConf);
         ExecStart = "${pkgs.nvidia-jetpack.l4t-nvpmodel}/bin/nvpmodel -f /etc/nvpmodel.conf" + lib.optionalString (cfg.profileNumber != null) " -m ${builtins.toString cfg.profileNumber}";
       };
