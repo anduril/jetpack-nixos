@@ -118,7 +118,7 @@ let
     # --log-strip -> Strip control characters and escape sequences
     # --mute -> Mute tio messages
     spawn -noecho "${lib.getExe tio}" --log-strip --mute "$modem"
-    set timeout 900
+    set timeout ${builtins.toString cfg.flashScriptOverrides.initrdFlashCompletionTimeoutSeconds}
     set failed 0
     expect {
       "Flashing platform firmware successful" {
@@ -159,10 +159,10 @@ in
 
   # TODO(eberman): maybe stop assuming /dev/serial/by-id is present
   # It'll be populated with udev, so most Linux systems will work fine
-  echo -n "Waiting for Jetson device to appear via USB, this may take up to 4 minutes"
+  echo -n "Waiting up to ${builtins.toString cfg.flashScriptOverrides.initrdFlashSerialEnumerateTimeoutSeconds}s for Jetson device to appear via USB"
 
   counter=0
-  until [[ -e /dev/serial/by-id/${serialPortId} || $counter -gt ${builtins.toString (4 * 60 * 2)} ]] ; do
+  until [[ -e /dev/serial/by-id/${serialPortId} || $counter -gt ${builtins.toString (cfg.flashScriptOverrides.initrdFlashSerialEnumerateTimeoutSeconds * 2)} ]] ; do
     echo -n "."
     sleep 0.5
     ((++counter))
