@@ -49,6 +49,17 @@ $ nix build github:anduril/jetpack-nixos#flash-xavier-agx-devkit
 $ sudo ./result/bin/flash-xavier-agx-devkit
 ```
 
+#### Flashing with pre-signed boot artifacts
+
+If you have a signed sd-image output directory, pass it with `-s`:
+
+```shell
+$ sudo ./result/bin/flash-xavier-agx-devkit -s /path/to/signed-image-dir
+```
+
+The directory must include `esp.offset`, `esp.size`, `root.offset`, and `root.size`, plus a compressed image either at `./*.img.zst` or `./sd-image/*.img.zst`.
+When `-s` is not provided, the script flashes the standard image bundled with the build output.
+
 At this point, your device should have a working UEFI firmware accessible either a monitor/keyboard, or via UART.
 
 ### Installation ISO
