@@ -86,6 +86,12 @@ buildFromDebs {
     ln -sf ../../../libv4l2_nvcuvidvideocodec.so lib/libv4l/plugins/nv/libv4l2_nvcuvidvideocodec.so
     ln -sf ../../../libv4l2_nvvideocodec.so lib/libv4l/plugins/nv/libv4l2_nvvideocodec.so
 
+    ${lib.optionalString (l4tAtLeast "39") ''
+      ln -sf libnvbuf_fdmap.so.1.0.0 lib/libnvbuf_fdmap.so.1.0
+      ln -sf libnvbuf_fdmap.so.1.0.0 lib/libnvbuf_fdmap.so.1
+      ln -sf libnvbuf_fdmap.so.1.0.0 lib/libnvbuf_fdmap.so
+    ''}
+
     # Make a copy of libnvos specifically for this package so we can set the RUNPATH differently here.
     # See note above for NvOsLibraryLoad
     cp --no-preserve=ownership,mode ${l4t-core}/lib/libnvos.so lib/libnvos_multimedia.so

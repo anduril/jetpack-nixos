@@ -88,7 +88,7 @@ in
       in
       mkMerge [
         (mkIf (cfg.som == "orin-agx") {
-          targetBoard = mkDefault "jetson-agx-orin-devkit";
+          targetBoard = mkDefault "jetson-agx-orin-devkit${lib.optionalString cfg.super "-super"}";
           # We don't flash the sdmmc with kernel/initrd/etc at all. Just let it be a
           # regular NixOS machine instead of having some weird partition structure.
           partitionTemplate = mkDefault "${pkgs.nvidia-jetpack.bspSrc}/bootloader/${partitionTemplateDirectory}/cfg/flash_t234_qspi.xml";

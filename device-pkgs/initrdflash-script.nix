@@ -18,10 +18,14 @@ let
   forceXusbPeripheralDts =
     let
       overridePaths = {
-        "38" = {
+        "39" = {
           thor = {
             xudcPadctlPath = "bus@0/padctl@a808680000";
             xudcPath = "bus@0/usb@a808670000";
+          };
+          orin = {
+            xudcPadctlPath = "bus@0/padctl@3520000";
+            xudcPath = "bus@0/usb@3550000";
           };
         };
         "36" = {
@@ -95,6 +99,7 @@ let
     initrdPath = "${flashInitrd}/initrd";
     kernelCmdline = lib.concatStringsSep " " ([
       "sdhci_tegra.en_boot_part_access=1"
+      "clk_ignore_unused"
     ] ++ cfg.console.args);
     # During the initrd flash script, we upload two edk2 builds to the
     # board, one that is only used temporarily to boot into our

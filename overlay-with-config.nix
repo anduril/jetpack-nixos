@@ -34,6 +34,12 @@ final: prev: (
         else if lib.hasPrefix "xavier-" cfg.som then "0x19"
         else throw "Unknown SoC type";
 
+      gpuDriver =
+        if cfg.som == null then null
+        else if lib.hasPrefix "thor-" cfg.som then "openrm"
+        else if lib.hasPrefix "orin-" cfg.som then "nvgpu"
+        else throw "Unknown SoC type";
+
       otaUtils = prevJetpack.otaUtils.override {
         inherit (config.boot.loader.efi) efiSysMountPoint;
 

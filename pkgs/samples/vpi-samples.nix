@@ -4,6 +4,8 @@
 , debs
 , dpkg
 , l4tAtLeast
+, l4t-multimedia
+, l4t-nvsci
 , l4t-pva
 , lib
 , opencv
@@ -30,11 +32,14 @@ backendStdenv.mkDerivation {
 
   nativeBuildInputs = [ autoPatchelfHook cmake cuda_nvcc dpkg ];
   buildInputs = [ cuda_cudart opencv vpi ]
-    ++ lib.optionals (l4tAtLeast "38") [ l4t-pva ];
+    ++ lib.optionals (l4tAtLeast "38") [ l4t-pva ]
+    ++ lib.optionals (l4tAtLeast "39") [ l4t-multimedia l4t-nvsci ];
 
   # Sample directories which we won't build.
   ignoredSampleDirs = {
     "11-fisheye" = if (lib.versionAtLeast opencv.version "4.10") then "1" else "0";
+    "22-submit_cuda_host" = "1"; # Needs CUDA::nppif ?
+    "23-lock_extract_interop" = "1"; # needs nvscibuf.h (where is this?)
   };
 
   configurePhase = ''

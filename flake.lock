@@ -10,15 +10,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1768505959,
-        "narHash": "sha256-oFCx/ApQ+S1/apUKWsvT9vq+Eo1m2vINWEDkW7/nckA=",
+        "lastModified": 1781144723,
+        "narHash": "sha256-qip4iYrX4+9aolx8BNwfRgRKXRJXQeNffoj6HLauooU=",
         "owner": "nixos-cuda",
         "repo": "cuda-legacy",
-        "rev": "86ad7e2c2e314f0234539cbbc66b5cd7746bcd32",
+        "rev": "2aca577fcb54ba1e685de7db654ebfe7f8c10e4a",
         "type": "github"
       },
       "original": {
         "owner": "nixos-cuda",
+        "ref": "pull/12/merge",
         "repo": "cuda-legacy",
         "type": "github"
       }
