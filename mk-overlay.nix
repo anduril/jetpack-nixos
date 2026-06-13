@@ -63,10 +63,7 @@ makeScope final.newScope (self: {
           url = "https://developer.download.nvidia.com/embedded/L4T/r${versions.major l4tMajorMinorPatchVersion}_Release_v${versions.minor l4tMajorMinorPatchVersion}.${versions.patch l4tMajorMinorPatchVersion}/release/Jetson_Linux_R${l4tMajorMinorPatchVersion}_aarch64.tbz2";
           hash = bspHash;
         };
-        # We use a more recent version of bzip2 here because we hit this bug
-        # extracting nvidia's archives:
-        # https://bugs.launchpad.net/ubuntu/+source/bzip2/+bug/1834494
-        nativeBuildInputs = [ final.buildPackages.bzip2_1_1 ];
+        nativeBuildInputs = [ final.buildPackages.bzip2 ];
       } ''
       bzip2 -d -c $src | tar xf -
       mv Linux_for_Tegra $out
