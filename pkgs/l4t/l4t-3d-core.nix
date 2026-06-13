@@ -4,7 +4,9 @@
 , l4t-core
 , lib
 , libglvnd
-, xorg
+, libx11
+, libxext
+, libxcb
 ,
 }:
 # TODO: Split this package up into subpackages similar to what is done in meta-tegra: vulkan, glx, egl, etc
@@ -60,5 +62,5 @@ buildFromDebs {
     rm -r share/doc
   '';
 
-  appendRunpaths = [ "${placeholder "out"}/lib" ] ++ builtins.map (p: (lib.getLib p) + "/lib") [ libglvnd xorg.libX11 xorg.libXext xorg.libxcb ];
+  appendRunpaths = [ "${placeholder "out"}/lib" ] ++ builtins.map (p: (lib.getLib p) + "/lib") [ libglvnd libx11 libxext libxcb ];
 }
