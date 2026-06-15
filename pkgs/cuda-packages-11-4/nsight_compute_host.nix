@@ -12,7 +12,13 @@
 , qt6
 , stdenv
 , xkeyboard_config
-, xorg
+, libxcb
+, libxcomposite
+, libxdamage
+, libXtst
+, libsm
+, libice
+, libxfixes
 ,
 }:
 let
@@ -65,18 +71,18 @@ buildFHSEnv {
     (
       [
         ncurses5
-        xorg.libxcb
+        libxcb
         fontconfig
         noto-fonts
         dbus
         nss
-        xorg.libXcomposite
-        xorg.libXdamage
+        libxcomposite
+        libxdamage
         alsa-lib
-        xorg.libXtst
-        xorg.libSM
-        xorg.libICE
-        xorg.libXfixes
+        libXtst
+        libsm
+        libice
+        libxfixes
         xkeyboard_config
         expat
         nspr
