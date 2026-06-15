@@ -155,7 +155,7 @@ buildLinux (args // {
     #ERROR: modpost: "xhci_urb_enqueue" [drivers/usb/host/xhci-tegra.ko] undefined!
     #ERROR: modpost: "xhci_irq" [drivers/usb/host/xhci-tegra.ko] undefined!
     #USB_XHCI_TEGRA = module;
-    USB_XHCI_TEGRA = yes;
+    USB_XHCI_TEGRA = lib.mkForce yes;
 
     # stage-1 links /lib/firmware to the /nix/store path in the initramfs.
     # However, since it's builtin and not a module, that's too late, since
