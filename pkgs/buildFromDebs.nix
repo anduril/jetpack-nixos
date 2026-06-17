@@ -31,8 +31,8 @@ stdenv.mkDerivation (finalAttrs: removeAttrs args [ "autoPatchelf" "preDebNormal
   nativeBuildInputs =
     [ dpkg ]
       # autoPatchelfHook must run before autoAddDriverRunpath
-      ++ lib.optionals autoPatchelf [ autoPatchelfHook ]
-      ++ lib.optionals config.cudaSupport [ cudaPackages.markForCudatoolkitRootHook autoAddDriverRunpath ]
+      ++ lib.optionals autoPatchelf [ autoPatchelfHook autoAddDriverRunpath ]
+      ++ lib.optionals config.cudaSupport [ cudaPackages.markForCudatoolkitRootHook ]
       ++ nativeBuildInputs;
   buildInputs = [ stdenv.cc.cc.lib ] ++ buildInputs;
 
