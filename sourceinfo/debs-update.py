@@ -53,7 +53,7 @@ def fetch_debs(url):
 def main():
     version = ".".join(sys.argv[1].removeprefix("r").split(sep=".", maxsplit=2)[:2])
     majorVersion = version.split(".")[0]
-    if majorVersion == "38":
+    if majorVersion == "38" or majorVersion == "39":
         repos = ["common", "som"]
     elif majorVersion == "35" or majorVersion == "36":
         repos = ["common", "t234"]

@@ -1,30 +1,24 @@
 {
-  "libnvidia-compute-580": [
-    "/usr/lib/aarch64-linux-gnu/libcuda.so.580.65.06",
-    "/usr/lib/aarch64-linux-gnu/libcuda.so",
-    "/usr/lib/aarch64-linux-gnu/libcuda.so.1"
-  ],
-  "libnvidia-extra-580": [
-    "/usr/lib/aarch64-linux-gnu/gbm/nvidia-drm_gbm.so"
-  ],
-  "libnvidia-gl-580": [
-    "/usr/share/glvnd/egl_vendor.d/10_nvidia.json"
-  ],
-  "nvidia-compute-utils-580": [
+  "libnvidia-compute": [
     "/usr/bin/nvidia-cuda-mps-control",
     "/usr/bin/nvidia-cuda-mps-server"
   ],
+  "libnvidia-gl": [
+    "/usr/share/glvnd/egl_vendor.d/10_nvidia.json",
+    "/usr/lib/aarch64-linux-gnu/gbm/nvidia-drm_gbm.so"
+  ],
   "nvidia-l4t-3d-core": [
     "/usr/lib/aarch64-linux-gnu/nvidia/libGLX_nvidia.so.0",
-    "/usr/lib/aarch64-linux-gnu/nvidia/libnvidia-eglcore.so.580.00",
-    "/usr/lib/aarch64-linux-gnu/nvidia/libnvidia-glcore.so.580.00",
-    "/usr/lib/aarch64-linux-gnu/nvidia/libnvidia-glsi.so.580.00",
-    "/usr/lib/aarch64-linux-gnu/nvidia/libnvidia-glvkspirv.so.580.00",
-    "/usr/lib/aarch64-linux-gnu/nvidia/libnvidia-gpucomp.so.580.00",
-    "/usr/lib/aarch64-linux-gnu/nvidia/libnvidia-nvvm.so.580.00",
-    "/usr/lib/aarch64-linux-gnu/nvidia/libnvidia-nvvm70.so.580.00",
-    "/usr/lib/aarch64-linux-gnu/nvidia/libnvidia-ptxjitcompiler.so.580.00",
-    "/usr/lib/aarch64-linux-gnu/nvidia/libnvidia-rtcore.so.580.00",
+    "/usr/lib/aarch64-linux-gnu/nvidia/libnvidia-eglcore.so.595.78",
+    "/usr/lib/aarch64-linux-gnu/nvidia/libnvidia-glcore.so.595.78",
+    "/usr/lib/aarch64-linux-gnu/nvidia/libnvidia-glsi.so.595.78",
+    "/usr/lib/aarch64-linux-gnu/nvidia/libnvidia-glvkspirv.so.595.78",
+    "/usr/lib/aarch64-linux-gnu/nvidia/libnvidia-gpucomp.so.595.78",
+    "/usr/lib/aarch64-linux-gnu/nvidia/libnvidia-nvvm.so.595.78",
+    "/usr/lib/aarch64-linux-gnu/nvidia/libnvidia-nvvm70.so.595.78",
+    "/usr/lib/aarch64-linux-gnu/nvidia/libnvidia-ptxjitcompiler.so.595.78",
+    "/usr/lib/aarch64-linux-gnu/nvidia/libnvidia-rtcore.so.595.78",
+    "/usr/lib/aarch64-linux-gnu/nvidia/libnvidia-tileiras.so.595.78",
     "/usr/lib/aarch64-linux-gnu/nvidia/nvidia_icd.json",
     "/usr/lib/aarch64-linux-gnu/tegra-egl/",
     "/usr/lib/aarch64-linux-gnu/tegra-egl/libEGL_nvidia.so.0",
@@ -38,8 +32,8 @@
     "/usr/share/glvnd/egl_vendor.d/10_nvidia.json"
   ],
   "nvidia-l4t-adaruntime": [
-    "/usr/lib/aarch64-linux-gnu/nvidia/libgnarl-24.so",
-    "/usr/lib/aarch64-linux-gnu/nvidia/libgnat-24.so",
+    "/usr/lib/aarch64-linux-gnu/nvidia/libgnarl-25.so",
+    "/usr/lib/aarch64-linux-gnu/nvidia/libgnat-25.so",
     "/usr/lib/aarch64-linux-gnu/nvidia/libgnarl.so",
     "/usr/lib/aarch64-linux-gnu/nvidia/libgnat.so"
   ],
@@ -47,6 +41,7 @@
     "/usr/lib/aarch64-linux-gnu/nvidia/libnvargus.so",
     "/usr/lib/aarch64-linux-gnu/nvidia/libnvargus_socketclient.so",
     "/usr/lib/aarch64-linux-gnu/nvidia/libnvargus_socketserver.so",
+    "/usr/lib/aarch64-linux-gnu/nvidia/libnvcam_fsync.so",
     "/usr/lib/aarch64-linux-gnu/nvidia/libnvcam_imageencoder.so",
     "/usr/lib/aarch64-linux-gnu/nvidia/libnvcamerahal.so",
     "/usr/lib/aarch64-linux-gnu/nvidia/libnvcameratools.so",
@@ -71,8 +66,18 @@
     "/usr/lib/aarch64-linux-gnu/nvidia/libnvsipl_pipeline.so",
     "/usr/lib/aarch64-linux-gnu/nvidia/libnvsipl_query.so",
     "/usr/lib/aarch64-linux-gnu/nvidia/libv4l2_nvargus.so",
+    "/usr/lib/nvsipl_drv/libnvsipl_qry_nova0_hawk.so",
+    "/usr/lib/nvsipl_drv/libnvsipl_qry_smart_imx623.so",
+    "/usr/lib/nvsipl_drv/libnvsipl_qry_smart_imx728.so",
     "/usr/lib/nvsipl_drv/libnvsipl_qry_vb1940.so",
-    "/usr/lib/nvsipl_uddf/libnvuddf_eagle_library.so",
+    "/usr/lib/nvsipl_drv/libnvuddf_ar0234hawkcameramodule_library.so",
+    "/usr/lib/nvsipl_drv/libnvuddf_eagle_library.so",
+    "/usr/lib/nvsipl_drv/libnvuddf_max20087_library.so",
+    "/usr/lib/nvsipl_drv/libnvuddf_max96712_library.so",
+    "/usr/lib/nvsipl_drv/libnvuddf_max96724_library.so",
+    "/usr/lib/nvsipl_drv/libnvuddf_r0sim623cameramodule_library.so",
+    "/usr/lib/nvsipl_drv/libnvuddf_r0sim728cameramodule_library.so",
+    "/usr/lib/nvsipl_drv/libnvuddf_tegra_deser_power_library.so",
     "/var/nvidia/nvcam/settings/ar0234.nito",
     "/var/nvidia/nvcam/settings/e3331.nito",
     "/var/nvidia/nvcam/settings/e3333.nito",
@@ -81,11 +86,13 @@
     "/var/nvidia/nvcam/settings/imx274_li.nito",
     "/var/nvidia/nvcam/settings/imx390.nito",
     "/var/nvidia/nvcam/settings/imx477.nito",
+    "/var/nvidia/nvcam/settings/sipl/AR0234CS_HAWK.nito",
+    "/var/nvidia/nvcam/settings/sipl/R0SIM623S5RU1197NB3.nito",
+    "/var/nvidia/nvcam/settings/sipl/R0SIM728S3RU2120NB2.nito",
     "/var/nvidia/nvcam/settings/sipl/vb1940.nito",
     "/usr/lib/aarch64-linux-gnu/libv4l/plugins/nv/libv4l2_nvargus.so"
   ],
   "nvidia-l4t-core": [
-    "/usr/lib/aarch64-linux-gnu/nvidia/libdrm.so.2",
     "/usr/lib/aarch64-linux-gnu/nvidia/libjetsonpower.so",
     "/usr/lib/aarch64-linux-gnu/nvidia/libnvcolorutil.so",
     "/usr/lib/aarch64-linux-gnu/nvidia/libnvdc.so",
@@ -95,11 +102,10 @@
     "/usr/lib/aarch64-linux-gnu/nvidia/libnvfnet.so",
     "/usr/lib/aarch64-linux-gnu/nvidia/libnvfnetstoredefog.so",
     "/usr/lib/aarch64-linux-gnu/nvidia/libnvfnetstorehdfx.so",
-    "/usr/lib/aarch64-linux-gnu/nvidia/libnvidia-rmapi-tegra.so.580.00",
-    "/usr/lib/aarch64-linux-gnu/nvidia/libnvidia-tls.so.580.00",
+    "/usr/lib/aarch64-linux-gnu/nvidia/libnvidia-rmapi-tegra.so.595.78",
+    "/usr/lib/aarch64-linux-gnu/nvidia/libnvidia-tls.so.595.78",
     "/usr/lib/aarch64-linux-gnu/nvidia/libnvimp.so",
     "/usr/lib/aarch64-linux-gnu/nvidia/libnvisp_utils.so",
-    "/usr/lib/aarch64-linux-gnu/nvidia/libnvll.so",
     "/usr/lib/aarch64-linux-gnu/nvidia/libnvos.so",
     "/usr/lib/aarch64-linux-gnu/nvidia/libnvplayfair.so",
     "/usr/lib/aarch64-linux-gnu/nvidia/libnvpva.so",
@@ -118,19 +124,26 @@
     "/usr/lib/aarch64-linux-gnu/tegra"
   ],
   "nvidia-l4t-cuda": [
-    "/usr/lib/aarch64-linux-gnu/nvidia/libcuda.so.1.1",
-    "/usr/lib/aarch64-linux-gnu/nvidia/libcuda_instrumentation.so",
     "/usr/lib/aarch64-linux-gnu/nvidia/libnvcucompat.so",
     "/usr/lib/aarch64-linux-gnu/nvidia/libnvcudla.so",
     "/usr/lib/aarch64-linux-gnu/nvidia/libnvcuextend.so",
-    "/usr/lib/aarch64-linux-gnu/libcuda.so",
-    "/usr/lib/aarch64-linux-gnu/libcuda_instrumentation.so",
     "/usr/lib/aarch64-linux-gnu/libnvcucompat.so",
     "/usr/lib/aarch64-linux-gnu/libnvcudla.so",
-    "/usr/lib/aarch64-linux-gnu/libnvcuextend.so",
-    "/usr/lib/aarch64-linux-gnu/nvidia/libcuda.so",
-    "/usr/lib/aarch64-linux-gnu/nvidia/libcuda.so.1",
-    "/usr/lib/aarch64-linux-gnu/nvidia/libcuda_instrumentation.so.1"
+    "/usr/lib/aarch64-linux-gnu/libnvcuextend.so"
+  ],
+  "nvidia-l4t-cuda-nvgpu": [
+    "/opt/nvidia/l4t-gpu-libs/nvgpu/libcuda.so.1.1",
+    "/opt/nvidia/l4t-gpu-libs/nvgpu/libcuda_instrumentation.so",
+    "/opt/nvidia/l4t-gpu-libs/nvgpu/libcuda.so",
+    "/opt/nvidia/l4t-gpu-libs/nvgpu/libcuda.so.1",
+    "/opt/nvidia/l4t-gpu-libs/nvgpu/libcuda_instrumentation.so.1"
+  ],
+  "nvidia-l4t-cuda-openrm": [
+    "/opt/nvidia/l4t-gpu-libs/openrm/libcuda.so.1.1",
+    "/opt/nvidia/l4t-gpu-libs/openrm/libcuda_instrumentation.so",
+    "/opt/nvidia/l4t-gpu-libs/openrm/libcuda.so",
+    "/opt/nvidia/l4t-gpu-libs/openrm/libcuda.so.1",
+    "/opt/nvidia/l4t-gpu-libs/openrm/libcuda_instrumentation.so.1"
   ],
   "nvidia-l4t-cuda-utils": [
     "/usr/bin/nvidia-cuda-mps-control",
@@ -154,6 +167,7 @@
   "nvidia-l4t-gstreamer": [
     "/usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstnvarguscamerasrc.so",
     "/usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstnvcompositor.so",
+    "/usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstnvdeinterlace.so",
     "/usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstnvdrmvideosink.so",
     "/usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstnveglglessink.so",
     "/usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstnveglstreamsrc.so",
@@ -188,8 +202,12 @@
     "/usr/lib/aarch64-linux-gnu/nvidia/libvulkan.so.1"
   ],
   "nvidia-l4t-multimedia": [
+    "/usr/lib/aarch64-linux-gnu/nvidia/libnvbuf_deinterlace.so.1.0.0",
+    "/usr/lib/aarch64-linux-gnu/nvidia/libnvbuf_deinterlace_gpu.so",
+    "/usr/lib/aarch64-linux-gnu/nvidia/libnvbuf_deinterlace_vic.so",
     "/usr/lib/aarch64-linux-gnu/nvidia/libnvbufsurftransform.so.1.0.0",
     "/usr/lib/aarch64-linux-gnu/nvidia/libnvdecode2eglimage.so",
+    "/usr/lib/aarch64-linux-gnu/nvidia/libnvdi.so",
     "/usr/lib/aarch64-linux-gnu/nvidia/libnvdsbufferpool.so.1.0.0",
     "/usr/lib/aarch64-linux-gnu/nvidia/libnveventlib.so",
     "/usr/lib/aarch64-linux-gnu/nvidia/libnvexif.so",
@@ -230,6 +248,7 @@
     "/usr/lib/aarch64-linux-gnu/nvidia/libnvvideoencode_ppe.so",
     "/usr/lib/aarch64-linux-gnu/libv4l2.so.0.0.999999",
     "/usr/lib/aarch64-linux-gnu/libv4lconvert.so.0.0.999999",
+    "/usr/lib/aarch64-linux-gnu/nvidia/libnvbuf_deinterlace.so",
     "/usr/lib/aarch64-linux-gnu/nvidia/libnvbufsurftransform.so",
     "/usr/lib/aarch64-linux-gnu/nvidia/libnvdsbufferpool.so",
     "/usr/lib/aarch64-linux-gnu/nvidia/libnvid_mapper.so",
@@ -269,7 +288,7 @@
     "/usr/lib/aarch64-linux-gnu/nvidia/libnvscisync.so"
   ],
   "nvidia-l4t-openwfd": [
-    "/usr/lib/aarch64-linux-gnu/nvidia/libnvidia-kms.so.580.00",
+    "/usr/lib/aarch64-linux-gnu/nvidia/libnvidia-kms.so.595.78",
     "/usr/lib/aarch64-linux-gnu/nvidia/libtegrawfd.so",
     "/usr/lib/aarch64-linux-gnu/nvidia/libnvidia-kms.so"
   ],

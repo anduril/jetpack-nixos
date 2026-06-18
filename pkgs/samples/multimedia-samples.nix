@@ -8,9 +8,6 @@
 , l4t-camera
 , l4t-cuda
 , l4t-multimedia
-, l4t-pva
-, l4t-video-codec-openrm ? null
-, l4tAtLeast
 , l4tMajorMinorPatchVersion
 , lib
 , libdrm
@@ -80,7 +77,7 @@ backendStdenv.mkDerivation {
           sha256 = "sha256-J9Hhm7oOptUR39KMbxZB1+esAlKWTyyKk1Ep3ZlJ488=";
         })
       ];
-      "38" = [
+      "39" = [
         (fetchurl {
           url = "https://raw.githubusercontent.com/OE4T/meta-tegra/ea58f517a12268d2aada40f5e936d9ab8955bbbc/recipes-multimedia/argus/files/0001-Remove-DO-NOT-USE-declarations-from-v4l2_nv_extensio.patch";
           sha256 = "sha256-NBlgkl35jvXhjAm6Pexz+/tt4hc+1N5VyLCDIGP80rk=";

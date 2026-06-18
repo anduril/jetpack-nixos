@@ -93,7 +93,7 @@ in
         default = false;
         type = types.bool;
         description = ''
-          Whether to enable "super mode" for Jetson Orin NX and Nano
+          Whether to enable "super mode" for Jetson Orin NX and Nano (JetPack 5+) or AGX Orin (JetPack 7 only)
         '';
       };
 
@@ -175,7 +175,7 @@ in
         }
         (validSomsAssertion "5" [ "xavier" "orin" ])
         (validSomsAssertion "6" [ "orin" ])
-        (validSomsAssertion "7" [ "thor" ])
+        (validSomsAssertion "7" [ "orin" "thor" ])
         {
           assertion = ! (cfg.carrierBoard == "xavierNxDevkit" && cfg.som != "orin-nx");
           message = ''
@@ -241,6 +241,7 @@ in
       ++ lib.optionals cfg.console.enable cfg.console.args
       ++ lib.optionals (pkgs.nvidia-jetpack.l4tAtLeast "38") [
         "clk_ignore_unused"
+        "swiotlb=2048"
       ];
 
       boot.initrd.includeDefaultModules = false; # Avoid a bunch of modules we may not get from tegra_defconfig
@@ -291,16 +292,6 @@ in
         "algif_skcipher"
       ];
 
-      boot.kernelModules = if (jetpackAtLeast "7") then [ "nvidia-uvm" ] else [ "nvgpu" ];
-
-      boot.extraModprobeConfig = lib.optionalString (jetpackAtLeast "6") ''
-        options nvgpu devfreq_timer="delayed"
-      '' + lib.optionalString (jetpackAtLeast "7") ''
-        # from L4T-Ubuntu /etc/modprobe.d/nvidia-unifiedgpudisp.conf
-        options nvidia NVreg_RegistryDwords="RMExecuteDevinitOnPmu=0;RMEnableAcr=1;RmCePceMap=0xffffff20;RmCePceMap1=0xffffffff;RmCePceMap2=0xffffffff;RmCePceMap3=0xffffffff;"
-        softdep nvidia pre: governor_pod_scaling post: nvidia-uvm
-      '';
-
       boot.extraModulePackages = lib.optional (jetpackAtLeast "6") config.boot.kernelPackages.nvidia-oot-modules;
 
       hardware.firmware = with pkgs.nvidia-jetpack; [
@@ -315,10 +306,8 @@ in
           getDriverDebs = prefix: (lib.filter (drv: lib.hasPrefix prefix (drv.pname or "")) (lib.attrValues pkgs.nvidia-jetpack.driverDebs));
           nvidiaDriverFirmwareDebs = getDriverDebs "nvidia-firmware-";
         in
-        nvidiaDriverFirmwareDebs ++ [ l4t-firmware-openrm ]
+        nvidiaDriverFirmwareDebs
       );
-
-      boot.blacklistedKernelModules = [ "nouveau" ];
 
       hardware.deviceTree.enable = true;
       hardware.deviceTree.dtboBuildExtraIncludePaths = {

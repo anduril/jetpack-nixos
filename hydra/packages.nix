@@ -56,6 +56,6 @@ in
   } // getFlasherScripts "orin";
 
   thor = {
-    nvidia-jetpack7 = mkJetPackPackageSet "cudaPackages_13_0" "11.0";
+    nvidia-jetpack7 = mkJetPackPackageSet "cudaPackages_13_2" "11.0";
   } // getFlasherScripts "thor";
 }

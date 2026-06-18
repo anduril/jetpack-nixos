@@ -1,14 +1,17 @@
 { buildFromDebs
 , dlopenOverride
 , gtk3
+, l4tAtLeast
 , l4t-core
 , l4t-multimedia
+, l4t-openwfd ? null
+, lib
 , stdenv
 ,
 }:
 buildFromDebs {
   pname = "nvidia-l4t-camera";
-  buildInputs = [ stdenv.cc.cc.lib l4t-core l4t-multimedia gtk3 ];
+  buildInputs = [ stdenv.cc.cc.lib l4t-core l4t-multimedia gtk3 ] ++ lib.optionals (l4tAtLeast "39") [ l4t-openwfd ];
 
   postPatch = ''
     ln -srfv lib/libv4l2_nvargus.so lib/libv4l/plugins/nv/libv4l2_nvargus.so

@@ -10,14 +10,6 @@
 , ...
 }:
 let
-  patchedBsp = applyPatches {
-    name = "patchedBsp";
-    src = bspSrc;
-    patches = [
-      ./Makefile.diff
-    ];
-  };
-
   mkCopyProjectCommand = name: project: ''
     mkdir -p "$out/${name}"
     cp --no-preserve=all -vr "${project}"/. "$out/${name}"
@@ -30,7 +22,6 @@ let
       src = gitRepos.nvidia-oot;
       patches = [
         ./0001-Fix-conftest-use-with-gcc15.patch
-        ./0002-Fix-header-guard-in-halfrf_ops_rtl8852c.h.patch
         ./0001-crypto-tegra-Disable-softirqs-before-finalizing-requ.patch
         ./0001-Lower-priority-of-tegra-se-crypto.patch
       ];
@@ -51,8 +42,8 @@ let
       # Copy the Makefile
       ''
         mkdir -p "$out"
-        cp "${patchedBsp}/source/Makefile" "$out/Makefile"
-        cp "${patchedBsp}/source/kernel_src_build_env.sh" "$out/kernel_src_build_env.sh"
+        cp "${bspSrc}/source/Makefile" "$out/Makefile"
+        cp "${bspSrc}/source/kernel_src_build_env.sh" "$out/kernel_src_build_env.sh"
       ''
       # copy the projects
       + lib.strings.concatMapAttrsStringSep "\n" mkCopyProjectCommand l4t-oot-projects
