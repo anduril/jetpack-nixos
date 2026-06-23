@@ -103,7 +103,7 @@ in
           type = types.int;
           default = 0;
           description = ''
-            CFG_TA_LOG_LEVEL passed to the MS TPM 2.0 reference TA build.
+            CFG_TEE_TA_LOG_LEVEL passed to the MS TPM 2.0 reference TA build.
             Independent from
             hardware.nvidia-jetpack.firmware.optee.taLogLevel.
           '';
