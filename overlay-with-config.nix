@@ -86,7 +86,7 @@ final: prev: (
       msTpm20RefTa = prevJetpack.msTpm20RefTa.overrideAttrs (prevAttrs: {
         patches = prevAttrs.patches or [ ] ++ cfg.firmware.optee.patches;
         makeFlags = prevAttrs.makeFlags or [ ]
-          ++ [ "CFG_TA_LOG_LEVEL=${toString cfg.firmware.optee.ftpm.taLogLevel}" ]
+          ++ [ "CFG_TEE_TA_LOG_LEVEL=${toString cfg.firmware.optee.ftpm.taLogLevel}" ]
           ++ lib.optional cfg.firmware.optee.ftpm.measuredBoot "CFG_TA_MEASURED_BOOT=y";
       });
 
