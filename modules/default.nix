@@ -25,6 +25,7 @@ let
     message = "Jetpack ${majorVersion} only supports som families: ${lib.strings.concatStringsSep " " soms} (or generic). Configured som: ${cfg.som}.";
   };
 
+  jetpackOlder = lib.versionOlder cfg.majorVersion;
   jetpackAtLeast = lib.versionAtLeast cfg.majorVersion;
 in
 {
@@ -290,6 +291,8 @@ in
         "af_alg"
         "algif_skcipher"
       ];
+
+      boot.initrd.systemd.tpm2.enable = lib.mkIf (jetpackOlder "7") (lib.mkDefault false);
 
       boot.kernelModules = if (jetpackAtLeast "7") then [ "nvidia-uvm" ] else [ "nvgpu" ];
 
