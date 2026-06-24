@@ -1,6 +1,6 @@
 {
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.11";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-26.05";
 
     cuda-legacy = {
       url = "github:nixos-cuda/cuda-legacy";
@@ -27,6 +27,7 @@
         hardware.enableAllHardware = lib.mkForce false;
 
         hardware.nvidia-jetpack.enable = true;
+        boot.zfs.forceImportRoot = false;
       };
       aarch64_config = {
         nixpkgs = {
@@ -83,6 +84,7 @@
           fileSystems."/".fsType = "tmpfs";
           boot.loader.grub.enable = false;
           boot.loader.systemd-boot.enable = false;
+          boot.zfs.forceImportRoot = false;
         }
       ];
 
@@ -160,7 +162,6 @@
         x86_64-linux =
           let
             flashScripts = lib.mapAttrs' (n: c: lib.nameValuePair "flash-${n}" c.config.system.build.flashScript) supportedNixOSCrossConfigurations;
-            initrdFlashScripts = lib.mapAttrs' (n: c: lib.nameValuePair "initrd-flash-${n}" c.config.system.build.initrdFlashScript) supportedNixOSCrossConfigurations;
           in
           {
             iso_minimal = self.nixosConfigurations.installer_minimal_cross.config.system.build.isoImage;
