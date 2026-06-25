@@ -327,6 +327,29 @@ To make `jetpack-nixos`'s CUDA package set the default, provide Nixpkgs with thi
 final: _: { inherit (final.nvidia-jetpack) cudaPackages; }
 ```
 
+## Development
+
+The flake exposes a nix development shell, so working on the codebase needs no setup beyond Nix with flakes enabled.
+
+```shell
+$ nix develop   # shell with treefmt, helpful dev tools, and cachix
+$ nix fmt       # format the repo via ./treefmt.nix
+```
+
+### Cross-building aarch64 outputs from x86_64
+
+Most flake outputs (ISOs, flash scripts, NixOS configurations) target `aarch64-linux`. If you are on an `x86_64-linux` host then you can cross compile packages by enable `aarch64-linux` emulation. This probably will also cause builds to take longer as they have to be ran via QEMU.
+
+On a NixOS host, add the following to your configuration. On non-NixOS Linux, install `qemu-user-static` and register the handlers via your distro's binfmt service (e.g. `systemd-binfmt.service`). On other hosts and systems, you will have to find the equivlant.
+
+```nix
+{ lib, pkgs, ... }: {
+  boot.binfmt.emulatedSystems = lib.mkIf pkgs.stdenv.hostPlatform.isx86_64 [
+    "aarch64-linux"
+  ];
+}
+```
+
 ## Additional Links
 
 Much of this is inspired by the great work done by [OpenEmbedded for Tegra](https://github.com/OE4T).
