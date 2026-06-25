@@ -31,7 +31,10 @@ buildLinux (args // {
 
   # Using applyPatches here since it's not obvious how to append an extra
   # postPatch. This is not very efficient.
-  src = gitRepos."kernel/kernel-jammy-src";
+  src = applyPatches {
+    src = gitRepos."kernel/kernel-jammy-src";
+    postPatch = builtins.readFile ../fix-module-signing.sh;
+  };
   autoModules = false;
   features = { }; # TODO: Why is this needed in nixpkgs master (but not NixOS 22.05)?
 
