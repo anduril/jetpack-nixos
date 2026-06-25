@@ -218,6 +218,11 @@ in
         in
         mkIf cfg.supplicant.enable {
           description = "Userspace supplicant for OPTEE-OS";
+          unitConfig.DefaultDependencies = false;
+          after = [ "local-fs.target" "modprobe@optee.service" ];
+          wants = [ "modprobe@optee.service" ];
+          before = [ "shutdown.target" ];
+          conflicts = [ "shutdown.target" ];
           serviceConfig = {
             # tee-supplicant is patched to call sd_notify(READY=1); without
             # NOTIFY_SOCKET this is a harmless no-op for non-systemd users.
@@ -297,13 +302,21 @@ in
         in
         {
           description = "Load fTPM driver after TEE supplicant";
+          unitConfig.DefaultDependencies = false;
           after = [
             "tee-supplicant.service"
             "local-fs.target"
             "systemd-modules-load.service"
           ];
+          before = [
+            "tpm2.target"
+            "systemd-tpm2-setup-early.service"
+            "systemd-tpm2-setup.service"
+            "shutdown.target"
+          ];
+          conflicts = [ "shutdown.target" ];
           requires = [ "tee-supplicant.service" ];
-          wantedBy = [ "multi-user.target" ];
+          wantedBy = [ "tpm2.target" ];
           serviceConfig = {
             Type = "oneshot";
             RemainAfterExit = true;
@@ -312,6 +325,7 @@ in
             StateDirectory = "optee/ftpm";
           };
         };
+
     })
   ]);
 }
