@@ -260,21 +260,9 @@ from Jetson Linux.
 
 The NixOS module uses these sets by default.
 
-On JetPack 6+, however, you may use a mainline package set instead.
+On JetPack 6+, however, you may use a mainline kernel instead.
+You can disable Nvidia's provided vendor kernel by setting `hardware.nvidia-jetpack.kernel.useVendorProvided = false;`.
 Consult the [Bring Your Own Kernel](https://docs.nvidia.com/jetson/archives/r36.4.4/DeveloperGuide/SD/Kernel/BringYourOwnKernel.html) documentation for more details.
-
-When using a custom package set in the NixOS configuration, the out-of-tree
-modules must be added using the provided overlay.
-
-e.g. (using the `pkgs.nvidia-jetpack.kernelPackages` set)
-
-```nix
-{ pkgs, ... }:
-
-{
-  config.boot.kernelPackages = pkgs.nvidia-jetpack.kernelPackages.extend pkgs.nvidia-jetpack.kernelPackagesOverlay
-}
-```
 
 ## Configuring CUDA for Nixpkgs
 
