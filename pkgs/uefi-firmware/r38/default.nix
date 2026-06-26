@@ -15,6 +15,12 @@
   # The root certificate (in PEM format) for authenticating capsule updates. By
   # default, EDK2 authenticates using a test keypair commited upstream.
 , trustedPublicCertPemFile ? null
+  # When false, force-disable UEFI's fTPM stack via disable-ftpm.diff
+  # (upstream r38 BuildGeneral.conf implies DEFAULT_SECURITY_TPM_FIRMWARE, and
+  # UEFI hangs at boot if it cannot reach a fTPM TA). Set to true together with
+  # hardware.nvidia-jetpack.firmware.optee.ftpm.enable so the patch is skipped
+  # and UEFI uses the fTPM TA we embed into OP-TEE OS.
+, enableFTPM ? false
 , ...
 }@args:
 
@@ -82,8 +88,11 @@ let
       patches = [
         ./stuart-passthru-compiler-prefix.diff
         ./repeatability.diff
-
-        # UEFI firmware fail fails to boot unless we have a fTPM in OP-TEE. Disabling for now until we build/ship the fTPM TA.
+      ] ++ lib.optionals (!enableFTPM) [
+        # UEFI hangs at boot on r38 if it cannot reach a fTPM TA, and
+        # upstream BuildGeneral.conf implies DEFAULT_SECURITY_TPM_FIRMWARE.
+        # When fTPM is enabled, we ship the TA in tos.img and drop this
+        # patch so UEFI can talk to it.
         ./disable-ftpm.diff
       ] ++ lib.optionals (trustedPublicCertPemFile != null) [
         ./capsule-authentication.diff
