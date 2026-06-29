@@ -28,15 +28,15 @@ let
   };
   repos = {
     edk2 = {
-      sha256 = "sha256-qfKtBZSRyRlSxEuR4jPFWxMGAiuGteeubrvgwFyLZWY=";
+      sha256 = "sha256-3y56DRZwFri5K8S2wpYoACEyHlNJ3KMXAkme8UnIaU0=";
       fetchSubmodules = true;
     };
-    edk2-non-osi.sha256 = "sha256-iRsSFFy5UITD1O+ALyocUZkXUQSsIXyq1Ppc/onybU0=";
-    edk2-platforms.sha256 = "sha256-PsKxy/tiRl2/qcL/JQNXbUPsnWekAQ+4b+NiccSRGa4=";
+    edk2-non-osi.sha256 = "sha256-6yuvVvmGn4yaEksbbvGDX1ZcKpdWBKnwaNjLGvgAWyk=";
+    edk2-platforms.sha256 = "sha256-7SGml17A47+wZNn4Z9vZHjDYTAcxIyG6De9vU4U8QR8=";
     edk2-infineon.sha256 = "sha256-47UJfEd4ViTenx5dvy2G75NFSgmcsyIWpN0Lv1QlvA8=";
-    edk2-redfish-client.sha256 = "sha256-EUWi5z+1sz2zMZM6x/sqE2NvdHRkQwQOcotsUwELsBY=";
-    edk2-nvidia.sha256 = "sha256-sALmw1KURAe1CdvjW/QcPuOzvPNEwpmk7vNpvii+a70=";
-    edk2-nvidia-non-osi.sha256 = "sha256-LIgut03qDx/wRVb2adbo41s+psfI/NIx7GnjOxzGeF4=";
+    edk2-redfish-client.sha256 = "sha256-Tq6dZu90T10FBVMYjYolm2WfAZc/cQe8dNuKXrK3RbE=";
+    edk2-nvidia.sha256 = "sha256-fR7RB1kRnPX1yf6HWliLQhNPBmg8CGaumzPPaUPDQak=";
+    edk2-nvidia-non-osi.sha256 = "sha256-xdIcdgmvFZgF2R8sjDVIrW8w2XLeDhI8kGpoW8gdNgE=";
   };
 
   fetchRepo = name: value: fetchFromGitHub (defaultOrigin // { inherit name; repo = name; } // value);
@@ -58,18 +58,6 @@ let
           name = "fix-cross-compilation-antlr-dlg.patch";
           url = "https://github.com/tianocore/edk2/commit/a34ff4a8f69a7b8a52b9b299153a8fac702c7df1.patch";
           hash = "sha256-u+niqwjuLV5tNPykW4xhb7PW2XvUmXhx5uvftG1UIbU=";
-        })
-
-        # MdePkg/BaseFdtLib: fix build with gcc 15
-        (fetchpatch {
-          url = "https://github.com/tianocore/edk2/commit/c0796335d3c6362b563844410499ff241d42ac63.patch";
-          sha256 = "sha256-F6wTh8xl+79AZmhhTTmeg7Cu7O2tFlh2JGQ5sYEfZ/o=";
-        })
-
-        # BaseTools/Pccts: set C standard
-        (fetchpatch {
-          url = "https://github.com/tianocore/edk2/commit/e063f8b8a53861043b9872cc35b08a3dc03b0942.patch";
-          sha256 = "sha256-KYkH0gBjdu12CDdwxMw0Un1Y7nwShuuhxoah9JDX/eg=";
         })
 
         ./remove-gcc-prefix-checks.diff

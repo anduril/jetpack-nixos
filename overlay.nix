@@ -57,13 +57,13 @@ in
 
   nvidia-jetpack7 = import ./mk-overlay.nix
     {
-      jetpackMajorMinorPatchVersion = "7.1";
-      l4tMajorMinorPatchVersion = "38.4.0";
-      cudaMajorMinorPatchVersion = "13.0.2";
+      jetpackMajorMinorPatchVersion = "7.2";
+      l4tMajorMinorPatchVersion = "39.2.0";
+      cudaMajorMinorPatchVersion = "13.2.1";
 
-      cudaDriverMajorMinorVersion = "580.00";
+      cudaDriverMajorMinorVersion = "595.78";
 
-      bspHash = "sha256-a7DdB4bw/p+9DLzEi84zt3jwGXLN/N9db3Osi0b5D2c=";
+      bspHash = "sha256-FiZibNgn3g41C4gCAzudplPGmyKQrM7bnl0B9JYH4Jk=";
       bspPatches = [ ./pkgs/r38-bsp.patch ];
     }
     final
@@ -146,10 +146,9 @@ in
       tensorrt = final._cuda.manifests.tensorrt."10.7.0";
     };
   });
-  cudaPackages_13_0 = prev.cudaPackages_13_0.override (prevArgs: {
+  cudaPackages_13_2 = prev.cudaPackages_13_2.override (prevArgs: {
     manifests = prevArgs.manifests // {
-      # Orin isn't supported on JetPack 7 at the moment so use the newest version available.
-      tensorrt = final._cuda.manifests.tensorrt."10.14.1";
+      tensorrt = final._cuda.manifests.tensorrt."10.16.1";
     };
   });
 

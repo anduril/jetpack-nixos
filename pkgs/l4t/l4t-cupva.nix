@@ -11,7 +11,7 @@ let
   cupvaMajorMinorVersion = lib.getAttr (lib.versions.major l4tMajorMinorPatchVersion) {
     "35" = "2.3";
     "36" = "2.5";
-    "38" = "2.6";
+    "39" = "2.6";
   };
 in
 buildFromDebs {

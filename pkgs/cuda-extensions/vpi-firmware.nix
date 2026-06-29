@@ -11,7 +11,7 @@ let
   majorVersion = lib.getAttr (lib.versions.major l4tMajorMinorPatchVersion) {
     "35" = "2";
     "36" = "3";
-    "38" = "4";
+    "39" = "4";
   };
 in
 runCommand "vpi${majorVersion}-firmware" { nativeBuildInputs = [ dpkg ]; } ''

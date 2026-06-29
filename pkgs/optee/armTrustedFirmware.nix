@@ -3,6 +3,7 @@
 , gitRepos
 , lib
 , l4tAtLeast
+, l4tOlder
 , openssl
 , dtc
 , buildPackages
@@ -12,7 +13,7 @@ stdenv.mkDerivation (finalAttrs:
 let
   socSpecialization = gitRepos ? "tegra/optee-src/atf_${finalAttrs.socType}";
   src = if socSpecialization then gitRepos."tegra/optee-src/atf_${finalAttrs.socType}" else gitRepos."tegra/optee-src/atf";
-  srcDir = if socSpecialization then "arm-trusted-firmware.${finalAttrs.socType}" else "arm-trusted-firmware";
+  srcDir = if (l4tAtLeast "38") then "arm-trusted-firmware.${finalAttrs.socType}" else "arm-trusted-firmware";
 
   l4tMajorVersion = lib.versions.major l4tMajorMinorPatchVersion;
 in
@@ -25,7 +26,7 @@ in
   socType =
     if l4tMajorVersion == "35" then "t194"
     else if l4tMajorVersion == "36" then "t234"
-    else if l4tMajorVersion == "38" then "t264"
+    else if l4tMajorVersion == "39" then "t264"
     else throw "Unknown SoC type";
 
   # openssl is used to build fiptool
@@ -44,10 +45,6 @@ in
     "PLAT=tegra"
     "TARGET_SOC=${finalAttrs.socType}"
     "V=0"
-    # binutils 2.39 regression
-    # `warning: /build/source/build/rk3399/release/bl31/bl31.elf has a LOAD segment with RWX permissions`
-    # See also: https://developer.trustedfirmware.org/T996
-    "LDFLAGS=-no-warn-rwx-segments"
     "OPENSSL_DIR=${lib.getLib buildPackages.openssl}"
   ] ++ lib.optionals (finalAttrs.socType == "t194" || finalAttrs.socType == "t234") [
     "SPD=opteed"
@@ -56,9 +53,21 @@ in
     "CTX_INCLUDE_EL2_REGS=1"
     "SPD=spmd"
     "SP_LAYOUT_FILE=${src}/${srcDir}/secure_partition/sp_layout.json"
-  ] ++ lib.optionals ((lib.versions.major l4tMajorMinorPatchVersion) == "36" && finalAttrs.socType != "t194") [
+  ] ++ lib.optionals (l4tAtLeast "36" && finalAttrs.socType == "t234") [
     "BRANCH_PROTECTION=3"
     "ARM_ARCH_MINOR=3"
+  ] ++ lib.optionals (l4tOlder "39") [
+    # binutils 2.39 regression
+    # `warning: /build/source/build/rk3399/release/bl31/bl31.elf has a LOAD segment with RWX permissions`
+    # See also: https://developer.trustedfirmware.org/T996
+    "LDFLAGS=-no-warn-rwx-segments"
+  ] ++ lib.optionals (l4tAtLeast "39" && finalAttrs.socType == "t234") [
+    # Make the new toolchain guessing (from 2.11+) happy
+    "CC=${stdenv.cc.targetPrefix}cc"
+    "LD=${stdenv.cc.targetPrefix}cc"
+    "AS=${stdenv.cc.targetPrefix}cc"
+    "OC=${stdenv.cc.targetPrefix}objcopy"
+    "OD=${stdenv.cc.targetPrefix}objdump"
   ];
 
   buildFlags = [ "all" ] ++ lib.optional (l4tAtLeast "38") "fiptool";

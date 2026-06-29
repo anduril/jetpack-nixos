@@ -1,4 +1,4 @@
-# See also: nvidia-l4t-init/opt/nvidia/nv-l4t-bootloader-config.sh
+# See also: nvidia-l4t-(init|bootloader-utils)/opt/nvidia/nv-l4t-bootloader-config.sh
 # and meta-tegra recipes-bsp/tools/setup-nv-boot-control
 
 generate_compat_spec() {
@@ -71,12 +71,42 @@ generate_compat_spec() {
 
   # Thor AGX
   3834)
-    if [[ "${boardsku}" == "0008" ]]; then
-      if [[ "${fab}" -gt 400 ]]; then
-        fab="401"
-      else
+    if [ "${boardsku}" = "0008" ]; then
+      # Strip the known prefix and compare the numeric remainder against a
+      # per-prefix threshold. fab becomes 401 when the revision is at or beyond
+      # numeric > 400, EB >= 9, TS >= 5, or RC >= 2; otherwise 000.
+      # (Avoids bash's [[ =~ ]] which busybox ash does not support.)
+      local fabnum fabthreshold
+      case "${fab}" in
+      EB*)
+        fabnum=${fab#EB}
+        fabthreshold=9
+        ;;
+      TS*)
+        fabnum=${fab#TS}
+        fabthreshold=5
+        ;;
+      RC*)
+        fabnum=${fab#RC}
+        fabthreshold=2
+        ;;
+      *)
+        fabnum=${fab}
+        fabthreshold=401
+        ;;
+      esac
+      case "${fabnum}" in
+      '' | *[!0-9]*)
         fab="000"
-      fi
+        ;;
+      *)
+        if [ "${fabnum}" -ge "${fabthreshold}" ]; then
+          fab="401"
+        else
+          fab="000"
+        fi
+        ;;
+      esac
     else
       fab=""
     fi
