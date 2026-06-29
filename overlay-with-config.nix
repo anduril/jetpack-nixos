@@ -64,6 +64,12 @@ final: prev: (
             })).bup;
           in
           builtins.hashString "sha256" "${cursedBup}";
+      } // lib.optionalAttrs (prevJetpack.l4tAtLeast "38") {
+        # r38-only: when true, skip the disable-ftpm.diff patch so UEFI uses
+        # the fTPM TA we embedded in tos.img. r35/r36 builders don't accept
+        # this argument (their fn args don't include enableFTPM), so we only
+        # pass it on r38+.
+        enableFTPM = cfg.firmware.optee.ftpm.enable;
       } // lib.optionalAttrs cfg.firmware.uefi.capsuleAuthentication.enable {
         inherit (cfg.firmware.uefi.capsuleAuthentication) trustedPublicCertPemFile;
       });
@@ -84,11 +90,28 @@ final: prev: (
       armTrustedFirmware = prevJetpack.armTrustedFirmware.overrideAttrs {
         inherit (finalJetpack) socType;
       };
+
+      msTpm20RefTa = prevJetpack.msTpm20RefTa.overrideAttrs (prevAttrs: {
+        patches = prevAttrs.patches or [ ] ++ cfg.firmware.optee.patches;
+        makeFlags = prevAttrs.makeFlags or [ ]
+          ++ [ "CFG_TEE_TA_LOG_LEVEL=${toString cfg.firmware.optee.ftpm.taLogLevel}" ]
+          ++ lib.optional cfg.firmware.optee.ftpm.measuredBoot "CFG_TA_MEASURED_BOOT=y";
+      });
+
       optee-os = prevJetpack.optee-os.overrideAttrs (prevAttrs: {
         inherit (finalJetpack) socType;
         inherit (cfg.firmware.optee) taPublicKeyFile coreLogLevel taLogLevel;
         patches = prevAttrs.patches or [ ] ++ cfg.firmware.optee.patches;
         makeFlags = prevAttrs.makeFlags or [ ] ++ cfg.firmware.optee.extraMakeFlags;
+        enableFTPM = cfg.firmware.optee.ftpm.enable;
+        measuredBoot = cfg.firmware.optee.ftpm.measuredBoot;
+        unsecureInjectEPS = cfg.firmware.optee.ftpm.unsecureInjectEPS.enable;
+        ftpmHelperTa =
+          if cfg.firmware.optee.ftpm.enable
+          then finalJetpack.ftpmHelperTa else null;
+        msTpm20RefTa =
+          if cfg.firmware.optee.ftpm.enable
+          then finalJetpack.msTpm20RefTa else null;
       });
       opteeClient = prevJetpack.opteeClient.overrideAttrs (prevAttrs: {
         patches = prevAttrs.patches or [ ] ++ cfg.firmware.optee.patches;

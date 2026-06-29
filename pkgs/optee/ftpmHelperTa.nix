@@ -1,0 +1,37 @@
+{ lib
+, stdenv
+, taDevKit
+, opteeClient
+, l4tMajorMinorPatchVersion
+, l4tAtLeast
+, buildPackages
+, gitRepos
+}:
+stdenv.mkDerivation {
+  pname = "ftpm-helper-ta";
+  version = l4tMajorMinorPatchVersion;
+  src = gitRepos."tegra/optee-src/nv-optee";
+  patches = [
+    ./0001-ftpm-helper-no-install-makefile.patch
+  ] ++ lib.optionals (l4tAtLeast "36") [
+    ./0002-ftpm-helper-skip-prov-mode-for-inject-eps.patch
+  ];
+  nativeBuildInputs = [ (buildPackages.python3.withPackages (p: [ p.cryptography ])) ];
+  enableParallelBuilding = true;
+  makeFlags = [
+    "-C optee/samples/ftpm-helper"
+    "CROSS_COMPILE=${stdenv.cc.targetPrefix}"
+    "TA_DEV_KIT_DIR=${taDevKit}/export-ta_arm64"
+    "OPTEE_CLIENT_EXPORT=${opteeClient}"
+    "O=$(PWD)/out"
+  ];
+  installPhase = ''
+    runHook preInstall
+
+    install -Dm755 -t $out/bin out/ca/ftpm-helper/nvftpm-helper-app
+    install -Dm755 -t $out out/early_ta/ftpm-helper/*.stripped.elf
+
+    runHook postInstall
+  '';
+  meta.platforms = [ "aarch64-linux" ];
+}
