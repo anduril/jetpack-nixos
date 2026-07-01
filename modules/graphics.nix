@@ -177,7 +177,7 @@ in
         })
       ];
     })
-    (lib.mkIf (checkValidSoms [ "thor" ]) {
+    (lib.mkIf (lib.hasPrefix "thor" cfg.som && jetpackAtLeast "7") {
       boot.kernelModules = [ "nvidia-uvm" ];
       boot.blacklistedKernelModules = [ "nvgpu" ];
 
