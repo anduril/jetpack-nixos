@@ -43,8 +43,9 @@ let
 in
 {
   config = lib.mkIf cfg.enable (lib.mkMerge [{
-    # Turn on nvpmodel if we have a config for it.
-    services.nvpmodel.enable = mkDefault true;
+    # Generic installer-style configs do not identify a concrete SoM, and
+    # some Jetson packages behind nvpmodel require one during evaluation.
+    services.nvpmodel.enable = mkIf (cfg.som != "generic") (mkDefault true);
 
     # Set fan control service if we have a config for it
     services.nvfancontrol.configFile = mkIf (nvfancontrolConf ? "${cfg.som}") (mkDefault nvfancontrolConf.${cfg.som});
