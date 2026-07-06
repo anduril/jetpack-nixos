@@ -166,9 +166,9 @@ in
       # `cudaPackages.pkgs.cudaPackages.debs` will not -- the extension provided to `overrideScope` is not threaded
       # through!
       # For now, we just conditionally apply extensions.
-      # Replace CUDA packages from manifests with our own, which are built from debian installers, if we're using
-      # CUDA 11.4.
+      # Replace CUDA packages from manifests with our own, which are built from debian installers.
       (import ./cuda-packages-11-4-extension.nix { inherit (final) lib; inherit system; })
+      (import ./cuda-packages-12-6-extension.nix { inherit (final) lib; inherit system; })
     ];
   });
 }

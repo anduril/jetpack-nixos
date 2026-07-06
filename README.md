@@ -325,6 +325,54 @@ To make `jetpack-nixos`'s CUDA package set the default, provide Nixpkgs with thi
 final: _: { inherit (final.nvidia-jetpack) cudaPackages; }
 ```
 
+### JetPack 6 native ML (CUDA 12.6 compute libraries)
+
+JetPack 6 systems should use `cudaPackages_12_6` (not the default `cudaPackages_11_4`). On `aarch64-linux`, the overlay replaces upstream CUDA redistributables with Jetson debs from `sourceinfo/r36.5-debs.json` — the same `debWrapBuildRedist` pattern used for CUDA 11.4 on JetPack 5.
+
+This wires `libcublas`, `cudnn`, `libcufft`, `cuda_nvrtc`, `libnvjitlink`, `cuda_cupti`, and related libraries into the Nix store so native Python ML packages (e.g. PyTorch) can load CUDA dependencies without containers.
+
+**Verify on an Orin (JetPack 6):**
+
+```shell
+# After enabling the jetpack-nixos overlay and cudaPackages_12_6:
+nix eval .#legacyPackages.aarch64-linux.cudaPackages_12_6.libcublas.name
+# Should NOT be cuda11.4-libcublas-*
+
+nix build .#legacyPackages.aarch64-linux.cudaPackages_12_6.libcublas
+```
+
+**devShell sketch** (see `examples/jp6-ml-devshell/flake.nix`):
+
+```nix
+{
+  inputs.jetpack-nixos.url = "github:anduril/jetpack-nixos";
+  outputs = { jetpack-nixos, nixpkgs, ... }: {
+    devShells.aarch64-linux.default = let
+      pkgs = import nixpkgs {
+        system = "aarch64-linux";
+        config = {
+          allowUnfree = true;
+          cudaSupport = true;
+          cudaCapabilities = [ "8.7" ];
+        };
+        overlays = [
+          jetpack-nixos.overlays.default
+          (final: _: { cudaPackages = final.cudaPackages_12_6; })
+        ];
+      };
+    in pkgs.mkShell {
+      packages = with pkgs.cudaPackages; [
+        libcublas cudnn libcufft cuda_cudart cuda_nvrtc libnvjitlink
+      ];
+    };
+  };
+}
+```
+
+PyTorch wheels may still expect libraries under `site-packages/nvidia/*/lib/`; symlink or set `LD_LIBRARY_PATH` to the `cudaPackages` outputs until wheel layout helpers land.
+
+Known gaps: `nccl` and `libcusparseLt` are not in the Jetson deb manifest and may require follow-up packaging from NVIDIA's SBSA apt repo.
+
 ## Additional Links
 
 Much of this is inspired by the great work done by [OpenEmbedded for Tegra](https://github.com/OE4T).
