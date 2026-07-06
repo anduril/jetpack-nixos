@@ -467,6 +467,7 @@ in
             "${initrdSupplicantPlugins}"
             "${pkgs.kmod}/bin/modprobe"
             "${pkgs.nvidia-jetpack.ftpmHelperTa}/bin/nvftpm-helper-app"
+            "${initrdStartScript}"
           ] ++ lib.optionals cfg.ftpm.unsecureInjectEPS.enable [
             "${pkgs.coreutils}/bin/dd"
             "${pkgs.xxd}/bin/xxd"
