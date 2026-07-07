@@ -526,6 +526,11 @@ in
               Type = "oneshot";
               RemainAfterExit = true;
               ExecStart = initrdStartScript;
+              # Unload module during switch-root cleanup so /dev/tpm0
+              # disappears. Prevents stale session from being probed by
+              # udev/systemd-tpm2-setup before the normal ftpm-driver
+              # can establish a fresh session post-switch-root.
+              ExecStop = "${pkgs.kmod}/bin/modprobe -r tpm_ftpm_tee";
             };
           };
         };
