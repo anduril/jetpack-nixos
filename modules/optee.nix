@@ -342,6 +342,18 @@ in
           ${pkgs.kmod}/bin/modprobe tpm_ftpm_tee
         '';
 
+        # Used when earlyBoot is enabled: cycle the module to close the
+        # stale TEE session from the initrd supplicant and open a fresh one
+        # with the post-switch-root supplicant (cf. OP-TEE issue #5766).
+        reloadScript = pkgs.writeShellScript "ftpm-driver-reload" ''
+          set -euo pipefail
+
+          echo "Reloading tpm_ftpm_tee (fresh session after switch-root)..."
+          ${pkgs.kmod}/bin/modprobe -r tpm_ftpm_tee
+          sleep 1
+          ${pkgs.kmod}/bin/modprobe tpm_ftpm_tee
+        '';
+
         stopScript = pkgs.writeShellScript "ftpm-driver-unload" ''
           set -euo pipefail
 
@@ -385,9 +397,10 @@ in
           serviceConfig = {
             Type = "oneshot";
             RemainAfterExit = true;
-            # In earlyBoot, module is already loaded from initrd — modprobe
-            # is idempotent and returns 0 for already-loaded modules.
-            ExecStart = startScript;
+            ExecStart =
+              if cfg.supplicant.earlyBoot.enable
+              then reloadScript
+              else startScript;
             ExecStop = stopScript;
             StateDirectory = "optee/ftpm";
           };
