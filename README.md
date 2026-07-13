@@ -325,14 +325,44 @@ So, the above configuration allows building CUDA-accelerated packages (through `
 
 ### Re-using `jetpack-nixos`'s CUDA package set
 
-While our overlay exposes a CUDA package set through `pkgs.nvidia-jetpack.cudaPackages`, packages like OpenCV and PyTorch don't know to look there.
-Worse yet, even if we overrode the CUDA package sets they recieved, we would need to do the same for all their transitive dependencies!
+> [!NOTE]
+>
+> **NixOS module users:** When `hardware.nvidia-jetpack.enable = true`, the module sets `pkgs.cudaPackages` from the JetPack major version's CUDA release (`cudaPackages_${major}` — JetPack 5 → CUDA 11.x, JetPack 6 → CUDA 12.x, JetPack 7 → CUDA 13.x). You do **not** need the overlays below in `configuration.nix`.
+>
+> The jetpack-nixos overlay alone keeps the upstream default (`cudaPackages_11` / 11.4). For JetPack 6 ML work **outside** a NixOS configuration (dev shells, one-off builds), import Nixpkgs with the overlay **and** pin `cudaPackages_12_6` explicitly.
 
-To make `jetpack-nixos`'s CUDA package set the default, provide Nixpkgs with this overlay:
+| Context | JetPack 5 (Xavier / Orin) | JetPack 6 (Orin) |
+| ------- | --------------------------- | ---------------- |
+| Overlay alone (default `cudaPackages`) | Jetson debs via `cudaPackages_11_4` override | Still CUDA 11.4 default — pin `_12_6` for JP6 |
+| NixOS module enabled | Auto-selected `cudaPackages_${major}` | Auto-selected `cudaPackages_${major}` |
+| Standalone JP6 ML / Orin | Prefer `cudaPackages_11_4` | Pin `cudaPackages_12_6` (see below) |
+
+Example standalone import for JetPack 6 on Orin (`aarch64-linux`):
+
+```nix
+pkgs = import nixpkgs {
+  system = "aarch64-linux";
+  config = {
+    allowUnfree = true;
+    cudaSupport = true;
+    cudaCapabilities = [ "8.7" ];
+  };
+  overlays = [
+    jetpack-nixos.overlays.default
+    (final: _: { cudaPackages = final.cudaPackages_12_6; })
+  ];
+};
+```
+
+Xavier additionally needs `cudaCapabilities = [ "7.2" ]` (or both `"7.2"` and `"8.7"` if targeting mixed fleets).
+
+For advanced cases where packages like OpenCV or PyTorch must resolve CUDA through `pkgs.nvidia-jetpack.cudaPackages` instead of upstream defaults, use:
 
 ```nix
 final: _: { inherit (final.nvidia-jetpack) cudaPackages; }
 ```
+
+This overlay is **not** required when the NixOS module is enabled — the module sets `pkgs.cudaPackages` to match the configured JetPack major version.
 
 ## Additional Links
 
