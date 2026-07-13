@@ -318,24 +318,34 @@ So, the above configuration allows building CUDA-accelerated packages (through `
 
 > [!NOTE]
 >
-> **NixOS module users:** When `hardware.nvidia-jetpack.enable = true`, the module automatically selects the CUDA package set that matches your JetPack major version (JetPack 5 → `cudaPackages_11_4`, JetPack 6 → `cudaPackages_12_6`, JetPack 7 → its matching release). You do **not** need the manual overlay below in `configuration.nix` — it is only for standalone Nixpkgs imports (dev shells, one-off builds, non-NixOS workflows).
+> **NixOS module users:** When `hardware.nvidia-jetpack.enable = true`, the module sets `pkgs.cudaPackages` from the JetPack major version's CUDA release (`cudaPackages_${major}` — JetPack 5 → CUDA 11.x, JetPack 6 → CUDA 12.x, JetPack 7 → CUDA 13.x). You do **not** need the overlays below in `configuration.nix`.
+>
+> The jetpack-nixos overlay alone keeps the upstream default (`cudaPackages_11` / 11.4). For JetPack 6 ML work **outside** a NixOS configuration (dev shells, one-off builds), import Nixpkgs with the overlay **and** pin `cudaPackages_12_6` explicitly.
 
-| Context | JetPack 5 (Xavier / Orin) | JetPack 6+ (Orin / Thor) |
-| ------- | --------------------------- | ------------------------ |
-| Default upstream `pkgs.cudaPackages` | `cudaPackages_11_4` | `cudaPackages_11_4` (x86 default) |
-| After `jetpack-nixos` overlay on `aarch64-linux` | Jetson debs via `cudaPackages_11_4` override | Jetson libraries via `cudaPackages_12_6` |
-| With NixOS module enabled | Auto-selected from `nvidia-jetpack${majorVersion}.cudaMajorMinorVersion` | Same — no manual `cudaPackages` pin required |
+| Context | JetPack 5 (Xavier / Orin) | JetPack 6 (Orin) |
+| ------- | --------------------------- | ---------------- |
+| Overlay alone (default `cudaPackages`) | Jetson debs via `cudaPackages_11_4` override | Still CUDA 11.4 default — pin `_12_6` for JP6 |
+| NixOS module enabled | Auto-selected `cudaPackages_${major}` | Auto-selected `cudaPackages_${major}` |
+| Standalone JP6 ML / Orin | Prefer `cudaPackages_11_4` | Pin `cudaPackages_12_6` (see below) |
 
-When building **outside** a NixOS configuration (e.g. a dev shell on an Orin), pin the JetPack 6 package set explicitly:
+Example standalone import for JetPack 6 on Orin (`aarch64-linux`):
 
 ```nix
-overlays = [
-  jetpack-nixos.overlays.default
-  (final: _: { cudaPackages = final.cudaPackages_12_6; })
-];
+pkgs = import nixpkgs {
+  system = "aarch64-linux";
+  config = {
+    allowUnfree = true;
+    cudaSupport = true;
+    cudaCapabilities = [ "8.7" ];
+  };
+  overlays = [
+    jetpack-nixos.overlays.default
+    (final: _: { cudaPackages = final.cudaPackages_12_6; })
+  ];
+};
 ```
 
-See `examples/jp6-ml-devshell/flake.nix` for a complete dev shell and smoke script.
+Xavier additionally needs `cudaCapabilities = [ "7.2" ]` (or both `"7.2"` and `"8.7"` if targeting mixed fleets).
 
 For advanced cases where packages like OpenCV or PyTorch must resolve CUDA through `pkgs.nvidia-jetpack.cudaPackages` instead of upstream defaults, use:
 
@@ -343,19 +353,7 @@ For advanced cases where packages like OpenCV or PyTorch must resolve CUDA throu
 final: _: { inherit (final.nvidia-jetpack) cudaPackages; }
 ```
 
-This overlay is **not** required when the NixOS module is enabled — the module applies equivalent wiring via `overlay-with-config.nix`.
-
-### JetPack 6 ML dev shell (CUDA 12.6)
-
-On Orin (`aarch64-linux`), JetPack 6 workloads should use `cudaPackages_12_6`, not the upstream default `cudaPackages_11_4`.
-
-```shell
-cd examples/jp6-ml-devshell
-nix develop   # on aarch64-linux
-nix run .#smoke-eval
-```
-
-PyTorch wheels may expect libraries under `site-packages/nvidia/*/lib/`; set `LD_LIBRARY_PATH` to the `cudaPackages` lib outputs or symlink until wheel layout helpers land.
+This overlay is **not** required when the NixOS module is enabled — the module sets `pkgs.cudaPackages` to match the configured JetPack major version.
 
 ## Additional Links
 
