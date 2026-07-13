@@ -72,11 +72,19 @@ When prompted, press ESC to enter the UEFI firmware menu.
 In the "Boot Manager", select the correct USB device and boot directly into it.
 
 Follow the [NixOS manual](https://nixos.org/manual/nixos/stable/index.html#sec-installation) for installation instructions, using the instructions specific to UEFI devices.
-Include the following in your `configuration.nix` before installing:
+
+We recommend using flakes (see below). If you are not using flakes, `modules/default.nix` is a function — not a NixOS module — and must be imported with the jetpack overlay:
+
 ```nix
+let
+  jetpackSrc = builtins.fetchTarball "https://github.com/anduril/jetpack-nixos/archive/master.tar.gz";
+  jetpackOverlay = import "${jetpackSrc}/overlay.nix";
+in
 {
+  nixpkgs.overlays = [ jetpackOverlay ];
+
   imports = [
-    (builtins.fetchTarball "https://github.com/anduril/jetpack-nixos/archive/master.tar.gz" + "/modules/default.nix")
+    (import "${jetpackSrc}/modules/default.nix" jetpackOverlay)
   ];
 
   hardware.nvidia-jetpack.enable = true;
@@ -87,6 +95,7 @@ Include the following in your `configuration.nix` before installing:
   hardware.graphics.enable = true;
 }
 ```
+
 #### If you prefer using flakes do this instead:
 For your `flake.nix`, include the following:
 ```nix
