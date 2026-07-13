@@ -11,7 +11,6 @@ import sys
 
 from debian.debian_support import Version
 
-
 BASE_URL = "https://repo.download.nvidia.com/jetson"
 
 
