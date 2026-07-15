@@ -258,6 +258,15 @@ in
         }
         {
           assertion = !cfg.supplicant.earlyBoot.enable
+            || config.boot.initrd.systemd.enable;
+          message = ''
+            supplicant.earlyBoot requires boot.initrd.systemd.enable = true.
+            The current earlyBoot implementation for LUKS support requires
+            systemd in the initrd.
+          '';
+        }
+        {
+          assertion = !cfg.supplicant.earlyBoot.enable
             || config.fileSystems ? "/boot";
           message = ''
             supplicant.earlyBoot requires fileSystems."/boot" to be
