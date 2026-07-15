@@ -154,15 +154,9 @@ in
           '';
         };
 
-        measuredBoot = mkOption {
-          type = types.bool;
-          default = false;
-          description = ''
-            Enable measured-boot support. Sets CFG_TA_MEASURED_BOOT in the
-            MS TPM 2.0 reference TA build and CFG_CORE_TPM_EVENT_LOG in
-            OP-TEE OS.
-          '';
-        };
+        # Sets CFG_TA_MEASURED_BOOT in the MS TPM 2.0 reference TA build
+        # and CFG_CORE_TPM_EVENT_LOG in OP-TEE OS.
+        measuredBoot = mkEnableOption "measured-boot support" // { default = true; };
 
         taLogLevel = mkOption {
           type = types.int;
