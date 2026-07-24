@@ -34,6 +34,13 @@
 }:
 
 let
+  python3WithDeps = (python3.withPackages (p: with p; [
+    pyyaml
+    pip
+    python-pkcs11
+    cryptography
+  ]));
+
   flash-tools = stdenv.mkDerivation {
     pname = "flash-tools";
     version = l4tMajorMinorPatchVersion;
@@ -42,7 +49,7 @@ let
 
     nativeBuildInputs = [ makeWrapper ];
     buildInputs = [
-      (python3.withPackages (p: with p; [ pyyaml ]))
+      python3WithDeps
       perl
     ];
 
@@ -135,7 +142,7 @@ let
       cpio
       bintools-unwrapped
       findutils
-      python3
+      python3WithDeps
       util-linux
       dosfstools
       bc

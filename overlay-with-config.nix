@@ -269,47 +269,66 @@ final: prev: (
           ${cfg.firmware.uefi.capsuleAuthentication.preSignCommands final.buildPackages}
           bash ${final.pkgsBuildBuild.nvidia-jetpack.flash-tools}/generate_capsule/l4t_generate_soc_capsule.sh \
         '' + (lib.optionalString cfg.firmware.uefi.capsuleAuthentication.enable ''
-          --trusted-public-cert ${cfg.firmware.uefi.capsuleAuthentication.trustedPublicCertPemFile} \
-          --other-public-cert ${cfg.firmware.uefi.capsuleAuthentication.otherPublicCertPemFile} \
-          --signer-private-cert ${cfg.firmware.uefi.capsuleAuthentication.signerPrivateCertPemFile} \
+          --trusted-public-cert ${lib.escapeShellArg "${cfg.firmware.uefi.capsuleAuthentication.trustedPublicCertPemFile}"} \
+          --other-public-cert ${lib.escapeShellArg "${cfg.firmware.uefi.capsuleAuthentication.otherPublicCertPemFile}"} \
+          --signer-private-cert ${lib.escapeShellArg "${cfg.firmware.uefi.capsuleAuthentication.signerPrivateCertPemFile}"} \
         '') + ''
           -i ${finalJetpack.bup}/bl_only_payload \
           -o $out \
           ${finalJetpack.socType}
         '');
 
-      signedFirmware = final.runCommand "signed-${cfg.name}-${finalJetpack.l4tMajorMinorPatchVersion}"
-        { inherit (cfg.firmware.secureBoot) requiredSystemFeatures; }
-        (finalJetpack.mkFlashScript final.pkgsBuildBuild.nvidia-jetpack.flash-tools {
-          flashCommands = ''
-            ${cfg.firmware.secureBoot.preSignCommands final}
-          '' + lib.concatMapStringsSep "\n"
-            (v: with v; ''
-              BOARDID=${boardid} BOARDSKU=${boardsku} FAB=${fab} BOARDREV=${boardrev} FUSELEVEL=${fuselevel} CHIPREV=${chiprev} ${lib.optionalString (chipsku != null) "CHIP_SKU=${chipsku}"} ${lib.optionalString (ramcode != null) "RAMCODE=${ramcode}"} ./flash.sh ${lib.optionalString (cfg.flashScriptOverrides.partitionTemplate != null) "-c flash.xml"} --no-root-check --no-flash --sign ${builtins.toString cfg.flashScriptOverrides.flashArgs}
+      signedFirmware =
+        let
+          signedDir = if cfg.firmware.secureBoot.sbkFile != null then "enc_signed" else "signed";
+        in
+        final.runCommand "signed-${cfg.name}-${finalJetpack.l4tMajorMinorPatchVersion}"
+          { inherit (cfg.firmware.secureBoot) requiredSystemFeatures; }
+          (finalJetpack.mkFlashScript final.pkgsBuildBuild.nvidia-jetpack.flash-tools {
+            flashCommands = ''
+              ${cfg.firmware.secureBoot.preSignCommands final}
+            '' + lib.concatMapStringsSep "\n"
+              (v: with v;
+              (lib.concatStringsSep " " [
+                "BOARDID=${boardid}"
+                "BOARDSKU=${boardsku}"
+                "FAB=${fab}"
+                "BOARDREV=${boardrev}"
+                "FUSELEVEL=${fuselevel}"
+                "CHIPREV=${chiprev}"
+                (lib.optionalString (chipsku != null) "CHIP_SKU=${chipsku}")
+                (lib.optionalString (ramcode != null) "RAMCODE=${ramcode}")
+                "./flash.sh"
+                (lib.optionalString (cfg.flashScriptOverrides.partitionTemplate != null) "-c flash.xml")
+                "--no-root-check"
+                "--no-flash"
+                "--sign"
+                "${builtins.toString cfg.flashScriptOverrides.flashArgs}"
+              ]) + "\n" +
+              ''
+                outdir=$out/${boardid}-${fab}-${boardsku}-${boardrev}-${if fuselevel == "fuselevel_production" then "1" else "0"}-${chiprev}--
+                mkdir -p $outdir
 
-              outdir=$out/${boardid}-${fab}-${boardsku}-${boardrev}-${if fuselevel == "fuselevel_production" then "1" else "0"}-${chiprev}--
-              mkdir -p $outdir
+                cp -v bootloader/${signedDir}/flash.idx $outdir/
 
-              cp -v bootloader/signed/flash.idx $outdir/
-
-              # Copy files referenced by flash.idx
-              while IFS=", " read -r partnumber partloc start_location partsize partfile partattrs partsha; do
-                if [[ "$partfile" != "" ]]; then
-                  if [[ -f "bootloader/signed/$partfile" ]]; then
-                    cp -v "bootloader/signed/$partfile" $outdir/
-                  elif [[ -f "bootloader/$partfile" ]]; then
-                    cp -v "bootloader/$partfile" $outdir/
-                  else
-                    echo "Unable to find $partfile"
-                    exit 1
+                # Copy files referenced by flash.idx
+                while IFS=", " read -r partnumber partloc start_location partsize partfile partattrs partsha; do
+                  if [[ "$partfile" != "" ]]; then
+                    if [[ -f "bootloader/${signedDir}/$partfile" ]]; then
+                      cp -v "bootloader/${signedDir}/$partfile" $outdir/
+                    elif [[ -f "bootloader/$partfile" ]]; then
+                      cp -v "bootloader/$partfile" $outdir/
+                    else
+                      echo "Unable to find $partfile"
+                      exit 1
+                    fi
                   fi
-                fi
-              done < bootloader/signed/flash.idx
+                done < bootloader/${signedDir}/flash.idx
 
-              rm -rf bootloader/signed
-            '')
-            cfg.firmware.variants;
-        });
+                rm -rf bootloader/${signedDir}
+              '')
+              cfg.firmware.variants;
+          });
 
       # Use the flash-tools produced by mkFlashScript, we need whatever changes
       # the script made, as well as the flashcmd.txt from it

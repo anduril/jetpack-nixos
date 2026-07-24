@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # See also: nvidia-l4t-(init|bootloader-utils)/opt/nvidia/nv-l4t-bootloader-config.sh
 # and meta-tegra recipes-bsp/tools/setup-nv-boot-control
 

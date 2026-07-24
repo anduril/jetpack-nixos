@@ -81,7 +81,11 @@ let
           ${cfg.firmware.secureBoot.preSignCommands buildPackages}
           # See l4t_uefi_sign_image.sh from BSP, or tools/README_uefi_secureboot.txt
           # This is not good
-          bash ./l4t_uefi_sign_image.sh --image ./kernel/Image --cert ${cfg.firmware.uefi.secureBoot.signer.cert} --key ${cfg.firmware.uefi.secureBoot.signer.key} --mode nosplit
+          bash ./l4t_uefi_sign_image.sh \
+            --image ./kernel/Image \
+            --cert ${lib.escapeShellArg "${cfg.firmware.uefi.secureBoot.signer.cert}"} \
+            --key ${lib.escapeShellArg "${cfg.firmware.uefi.secureBoot.signer.key}"} \
+            --mode nosplit
         )
       '';
 
@@ -100,7 +104,11 @@ let
           cd bootloader
           ${cfg.firmware.secureBoot.preSignCommands buildPackages}
           # See l4t_uefi_sign_image.sh from BSP, or tools/README_uefi_secureboot.txt
-          bash ../l4t_uefi_sign_image.sh --image boot.img --cert ${cfg.firmware.uefi.secureBoot.signer.cert} --key ${cfg.firmware.uefi.secureBoot.signer.key} --mode append
+          bash ../l4t_uefi_sign_image.sh \
+            --image boot.img \
+            --cert ${lib.escapeShellArg "${cfg.firmware.uefi.secureBoot.signer.cert}"} \
+            --key ${lib.escapeShellArg "${cfg.firmware.uefi.secureBoot.signer.key}"} \
+            --mode append
         )
       '' + lib.optionalString (!useFlashCmd && cfg.firmware.secureBoot.pkcFile != null) ''
         (
