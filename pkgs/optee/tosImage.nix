@@ -62,7 +62,7 @@ lib.makeOverridable
   }
   )
 {
-  earlyTaPaths = lib.optionals (socType == "t194" || socType == "t234") [
+  earlyTaPaths = [
     "${nvLuksSrv}/b83d14a8-7128-49df-9624-35f14f65ca6c.stripped.elf"
     "${cpuBlPayloadDec}/0e35e2c9-b329-4ad9-a2f5-8ca9bbbd7713.stripped.elf"
     "${hwKeyAgent}/82154947-c1bc-4bdf-b89d-04f93c0ea97c.stripped.elf"
