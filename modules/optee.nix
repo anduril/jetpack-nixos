@@ -371,6 +371,13 @@ in
         # tpm_ftpm_tee must load after tee-supplicant is up.
         boot.blacklistedKernelModules = [ "tpm_ftpm_tee" ];
 
+        # r38.4's ms-tpm-20-ref update made RSA keygen constant-time, so it now
+        # takes ~12s (measured on tpm2_createek) with the CPU stuck in secure
+        # world -- past the 10s hard lockup default. Set via kernelParams (not
+        # boot.kernel.sysctl) since keygen also happens outside provisioning
+        # (tpm2_createak, systemd-cryptenroll) and needs to hold from boot.
+        boot.kernelParams = lib.optional (l4tAtLeast "38.4") "watchdog_thresh=30";
+
         boot.kernelPatches = [{
           name = "fTPM_tee";
           patch = null;
