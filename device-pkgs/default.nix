@@ -146,7 +146,10 @@ let
       inherit lib l4tAtLeast;
       inherit (nvidia-jetpack) flash-tools socFamily;
       flashCommands = ''
-        ./odmfuse.sh -i ${chipId} "$@" ${builtins.toString cfg.flashScriptOverrides.fuseArgs}
+        (
+          ${cfg.firmware.secureBoot.preSignCommands buildPackages}
+          ./odmfuse.sh -i ${chipId} "$@" ${builtins.toString cfg.flashScriptOverrides.fuseArgs}
+        )
       '';
 
       # Fuse script needs device tree files, which aren't already present for
