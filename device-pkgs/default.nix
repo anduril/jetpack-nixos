@@ -147,8 +147,11 @@ let
       inherit (nvidia-jetpack) flash-tools socFamily;
       flashCommands = ''
         (
-          ${cfg.firmware.secureBoot.preSignCommands buildPackages}
-          ./odmfuse.sh -i ${chipId} "$@" ${builtins.toString cfg.flashScriptOverrides.fuseArgs}
+          if [ "''${JP_FUSE_PRESIGN:-}" = "1" ]; then
+            true # Noop in case of empty commands.
+            ${cfg.firmware.secureBoot.preSignCommands buildPackages}
+          fi
+          ./odmfuse.sh -i ${chipId} "$@" ${toString cfg.flashScriptOverrides.fuseArgs}
         )
       '';
 
