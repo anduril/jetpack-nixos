@@ -408,6 +408,12 @@ in
             StateDirectory = "optee/ftpm";
           };
         };
+
+        # tpm2-abrmd must wait for ftpm-driver to provide /dev/tpm0
+        systemd.services.tpm2-abrmd = lib.mkIf config.security.tpm2.abrmd.enable {
+          after = [ "ftpm-driver.service" ];
+          requires = [ "ftpm-driver.service" ];
+        };
       }
     ))
 
