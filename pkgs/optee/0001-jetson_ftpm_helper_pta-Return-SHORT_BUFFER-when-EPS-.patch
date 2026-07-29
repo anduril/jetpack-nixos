@@ -1,0 +1,54 @@
+From 9c6495e90fcb39cb9e632aacecda539255488f29 Mon Sep 17 00:00:00 2001
+From: dperezzoghbi <dperezzoghbi@anduril.com>
+Date: Wed, 29 Jul 2026 15:28:50 -0700
+Subject: [PATCH] jetson_ftpm_helper_pta: Return SHORT_BUFFER when EPS buf too
+ small
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+get_prop_endorsement_seed() silently truncated the EPS to whatever
+buffer size the caller passed, returning TEE_SUCCESS with a partial
+copy and *blen reflecting the request rather than the true property
+size. This violates the GP TEE Internal Core API requirement that
+SHORT_BUFFER be returned with *blen set to the full required size
+when the output buffer is insufficient.
+
+The practical consequence: TEE_GetPropertyAsString() probes the
+property size with a minimal internal buffer (clamped to
+sizeof(TEE_Identity) = 20 bytes), receives a truncated 20-byte
+"value" with TEE_SUCCESS, and base64-encodes that to a required
+length of 29 — inconsistent with the 89 bytes reported on a full
+read. xtest regression_1006 detects this inconsistency.
+
+Fix by returning TEE_ERROR_SHORT_BUFFER with *blen = sizeof(eps)
+when the caller's buffer is smaller than the full EPS, matching
+the GP spec requirement. The only legitimate consumer,
+_plat__GetEPS(), passes a buffer large enough for its requested
+Size, so this change is safe for that caller.
+---
+ optee/optee_os/core/pta/tegra/jetson_ftpm_helper_pta.c | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/optee/optee_os/core/pta/tegra/jetson_ftpm_helper_pta.c b/optee/optee_os/core/pta/tegra/jetson_ftpm_helper_pta.c
+index 42b7886d..af9f9314 100644
+--- a/optee/optee_os/core/pta/tegra/jetson_ftpm_helper_pta.c
++++ b/optee/optee_os/core/pta/tegra/jetson_ftpm_helper_pta.c
+@@ -463,10 +463,11 @@ out:
+ 	if (rc != TEE_SUCCESS)
+ 		return rc;
+ 
+-	if (*blen < sizeof(eps))
+-		eps_len = *blen;
+-	else
++	if (*blen < sizeof(eps)) {
+ 		*blen = sizeof(eps);
++		return TEE_ERROR_SHORT_BUFFER;
++	}
++	*blen = sizeof(eps);
+ 
+ 	return copy_to_user(buf, eps, eps_len);
+ }
+-- 
+2.51.2
+

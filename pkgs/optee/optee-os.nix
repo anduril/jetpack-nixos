@@ -55,6 +55,7 @@ in
   patches = [
     ./remove-force-log-level.diff
     ./0003-Add-pre-sign-hook.patch
+    ./0001-jetson_ftpm_helper_pta-Return-SHORT_BUFFER-when-EPS-.patch
   ];
 
   nativeBuildInputs = [
