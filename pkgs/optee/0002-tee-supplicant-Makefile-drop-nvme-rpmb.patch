@@ -1,0 +1,10 @@
+--- a/optee/optee_client/tee-supplicant/Makefile
++++ b/optee/optee_client/tee-supplicant/Makefile
+@@ -18,7 +18,6 @@
+ 		   teec_ta_load.c \
+ 		   tee_supp_fs.c \
+ 		   rpmb.c \
+-		   nvme_rpmb.c \
+ 		   handle.c
+ 
+ ifeq ($(CFG_GP_SOCKETS),y)

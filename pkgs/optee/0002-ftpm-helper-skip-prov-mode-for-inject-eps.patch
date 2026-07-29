@@ -1,0 +1,45 @@
+From 70c68469b2bb6765fb396fe6f5ffb80766dfec7b Mon Sep 17 00:00:00 2001
+From: dperezzoghbi <dperezzoghbi@anduril.com>
+Date: Wed, 6 May 2026 20:14:28 -0700
+Subject: [PATCH] ftpm-helper: skip prov_mode query for inject_eps
+
+The ca_query_prov_mode() call gates all CA commands behind a PTA
+is_ready check. On devices where BootSecurityInfo fuse bits 11/13
+are not set, the fTPM DT node is never enabled by MB2, causing
+ftpm_helper_dt_init() to fail and is_ready to remain false.
+
+The inject_eps PTA command itself has no is_ready guard -- it
+unconditionally writes to the external_eps buffer. Skip the entire
+prov_mode query and validation when inject_eps is the requested
+operation to avoid spurious error output and allow EPS injection
+on unprovisioned devices.
+---
+ optee/samples/ftpm-helper/host/ftpm_helper_ca.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/optee/samples/ftpm-helper/host/ftpm_helper_ca.c b/optee/samples/ftpm-helper/host/ftpm_helper_ca.c
+index 1395527..80b8c61 100644
+--- a/optee/samples/ftpm-helper/host/ftpm_helper_ca.c
++++ b/optee/samples/ftpm-helper/host/ftpm_helper_ca.c
+@@ -683,6 +683,10 @@ int main(int argc, char *argv[])
+ 	if(prepare_tee_session(&ca_sess))
+ 		goto err_out;
+ 
++	/* inject_eps works regardless of provisioning state */
++	if (argus.ftpm_helper_options & FTPM_HELPER_INJECT_EPS)
++		goto skip_prov_mode;
++
+ 	ca_sess.prov_mode = FTPM_PROV_MODE_UNKNOWN;
+ 	ca_query_prov_mode();
+ 
+@@ -707,6 +711,7 @@ int main(int argc, char *argv[])
+ 		goto err_out;
+ 	}
+ 
++skip_prov_mode:
+ 	handle_ftpm_helper_options(&ca_sess);
+ 
+ err_out:
+-- 
+2.51.2
+

@@ -16,7 +16,11 @@ stdenv.mkDerivation {
   version = l4tMajorMinorPatchVersion;
 
   src = gitRepos."tegra/optee-src/nv-optee";
-  patches = [ ./0001-GCC-15-compile-fix.patch ];
+  patches = [ ./0001-GCC-15-compile-fix.patch ]
+    ++ (if l4tAtLeast "39" then
+    [ ./0002-build-tpm_log_test-TA-when-CFG_CORE_TPM_EVENT_LOG-is-set.patch ]
+  else
+    [ ./0003-build-tpm_log_test-TA-when-CFG_CORE_TPM_EVENT_LOG-is-set-pre-gmake.patch ]);
 
   # Multiple outputs: xtest binary, TAs, and plugins
   outputs = [
