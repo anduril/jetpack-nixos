@@ -10,6 +10,7 @@ let
     ;
 
   cfg = config.hardware.nvidia-jetpack.firmware.optee;
+  cfgFw = config.hardware.nvidia-jetpack.firmware;
 
   inherit (pkgs.nvidia-jetpack) l4tAtLeast;
 
@@ -413,6 +414,67 @@ in
         systemd.services.tpm2-abrmd = lib.mkIf config.security.tpm2.abrmd.enable {
           after = [ "ftpm-driver.service" ];
           requires = [ "ftpm-driver.service" ];
+        };
+
+        # Provision fTPM EK certs from EKB into NV memory on first boot (fused devices only).
+        systemd.services.ftpm-device-provision = lib.mkIf (cfgFw.eksFile != null) {
+          description = "Provision fTPM EK certificates from EKB";
+          after = [ "ftpm-driver.service" ];
+          requires = [ "ftpm-driver.service" ];
+          before = [ "tpm2.target" "shutdown.target" ];
+          conflicts = [ "shutdown.target" ];
+          wantedBy = [ "tpm2.target" ];
+          unitConfig.DefaultDependencies = false;
+          serviceConfig = {
+            Type = "oneshot";
+            RemainAfterExit = true;
+          };
+          environment.TPM2TOOLS_TCTI = "device:/dev/tpmrm0";
+          path = [
+            pkgs.tpm2-tools
+            pkgs.openssl
+            pkgs.diffutils
+            pkgs.nvidia-jetpack.ftpmHelperTa
+            pkgs.nvidia-jetpack.ftpmDeviceProvisioning
+          ];
+          script = ''
+            set -euo pipefail
+
+            # Commit marker; NVIDIA's cert handles are written midway so can't serve this role.
+            PROVISIONED_HANDLE="0x01800100"
+            OWNER_PW="owner"
+
+            if tpm2_nvreadpublic "$PROVISIONED_HANDLE" &>/dev/null; then
+              echo "[ftpm-provision] Already provisioned. Skipping."
+              exit 0
+            fi
+
+            echo "[ftpm-provision] First boot — running fTPM provisioning..."
+
+            WORKDIR=$(mktemp -d)
+            trap 'rm -rf "$WORKDIR"' EXIT
+
+            on_failure() {
+              echo "[ftpm-provision] FAILED — clearing TPM so the next boot retries cleanly" >&2
+              tpm2_clear || \
+                echo "[ftpm-provision] WARNING: tpm2_clear failed; TPM may need manual recovery" >&2
+            }
+            trap on_failure ERR
+
+            RSA_CERT="$WORKDIR/rsa_ek_cert.der"
+            EC_CERT="$WORKDIR/ec_ek_cert.der"
+
+            nvftpm-helper-app -a "$RSA_CERT" -b "$EC_CERT"
+            ftpm-device-provision -r "$RSA_CERT" -e "$EC_CERT" -p "$OWNER_PW"
+
+            # systemd's TPM2 SRK setup and tpm2-tools expect no auth set.
+            tpm2_changeauth -c o -p "$OWNER_PW"
+            tpm2_changeauth -c e -p "$OWNER_PW"
+
+            tpm2_nvdefine "$PROVISIONED_HANDLE" -C o -s 1 -a "ownerread|ownerwrite"
+
+            echo "[ftpm-provision] Done."
+          '';
         };
       }
     ))
