@@ -59,7 +59,10 @@ def main():
             data[relpath] = fetch_git(giturl, tag)
 
         with open(filename, "w") as fd:
-            fd.write(json.dumps(data, sort_keys=True, indent=2, separators=(",", ": ")))
+            print(
+                json.dumps(data, sort_keys=True, indent=2, separators=(",", ": ")),
+                file=fd,
+            )
 
 
 if __name__ == "__main__":
