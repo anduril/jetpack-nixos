@@ -55,19 +55,47 @@ in
     final
     prev;
 
-  nvidia-jetpack7 = import ./mk-overlay.nix
-    {
-      jetpackMajorMinorPatchVersion = "7.2";
+  # "JetPack 7 and 7.1 is r38.x, and uhh JetPack 7.2 is r39. Isn't it great?"
+  # - Anonymous
+  nvidia-jetpack7 =
+    let
       l4tMajorMinorPatchVersion = "39.2.0";
-      cudaMajorMinorPatchVersion = "13.2.1";
+      hostOverlayFskpTools = final.fetchzip {
+        url = final.lib.concatStrings [
+          "https://developer.nvidia.com/downloads/embedded/l4t/"
+          "r${final.lib.versions.major l4tMajorMinorPatchVersion}"
+          "_release_v${final.lib.versions.minor l4tMajorMinorPatchVersion}."
+          "${final.lib.versions.patch l4tMajorMinorPatchVersion}/release/"
+          "host_overlay_fskp_tools_R${l4tMajorMinorPatchVersion}_aarch64.tbz2"
+        ];
+        sha256 = "sha256-JNCIr7TEVLPwaI6HptjsnKlLhyA7b9t3vCJ2ApyAzCM=";
+        stripRoot = false;
+      };
+    in
+    import ./mk-overlay.nix
+      {
+        jetpackMajorMinorPatchVersion = "7.2";
+        inherit l4tMajorMinorPatchVersion;
+        cudaMajorMinorPatchVersion = "13.2.1";
 
-      cudaDriverMajorMinorVersion = "595.78";
+        cudaDriverMajorMinorVersion = "595.78";
 
-      bspHash = "sha256-FiZibNgn3g41C4gCAzudplPGmyKQrM7bnl0B9JYH4Jk=";
-      bspPatches = [ ./pkgs/r38-bsp.patch ];
-    }
-    final
-    prev;
+        bspHash = "sha256-FiZibNgn3g41C4gCAzudplPGmyKQrM7bnl0B9JYH4Jk=";
+        bspPrePatch = ''
+          cp --no-preserve=all -r ${hostOverlayFskpTools}/Linux_for_Tegra/. ./
+          find ${hostOverlayFskpTools}/Linux_for_Tegra/. -type f -perm -u+x -printf '%P\0' \
+            | xargs -0 -I{} chmod +x "./{}"
+
+          # Remove NVIDIA's bundled pyusb so we use nix's version. See `fskp_helper_t264.py`.
+          find l4t/tools/flashtools -type d -name pyusb -path '*/external/pyusb' -exec rm -rf {} +
+        '';
+        bspPatches = [
+          ./pkgs/r38-bsp.patch
+          ./pkgs/r39-bsp-pkc-list-fixes.patch
+        ];
+      }
+      final
+      prev;
 
   # Due to the interplay between JetPack releases and supported CUDA versions, the choice of CUDA version drives the
   # version of nvidia-jetpack made the default to avoid the need to maintain tedious overlays and ensures the two stay

@@ -1,0 +1,159 @@
+From 92724738c23a49cd23eb6b7df361bbcbc25deb89 Mon Sep 17 00:00:00 2001
+From: Steven Sloboda <ssloboda@anduril.com>
+Date: Sat, 1 Aug 2026 10:45:20 -0700
+Subject: [PATCH] Patches for r39.2.0 jetpack-nixos support.
+
+PKC keylist files are now expected to have "signed" and "reference"
+copies in the nix store alongside the normal keylist. The nvidia
+tooling wants to make copies of the PKC list file relative the the PKC
+list file (which is in the read only nix store) and it uses a function
+shared with other parts of the codebase to do that. A ugly, but simple
+and effective workaround is to provide those copies up front but sanity
+check that the script doesn't expect the contents to be different when
+it would make the copy.
+---
+ bootloader/tegrasign_v3_internal.py | 52 +++++++++++++++++++++++------
+ 1 file changed, 42 insertions(+), 10 deletions(-)
+
+diff --git a/bootloader/tegrasign_v3_internal.py b/bootloader/tegrasign_v3_internal.py
+index f5d88dd..bbd3e50 100644
+--- a/bootloader/tegrasign_v3_internal.py
++++ b/bootloader/tegrasign_v3_internal.py
+@@ -1241,22 +1241,54 @@ def is_key_list(filelistname, p_key, verbose):
+         else:
+             xml_str = comment + ElementTree.tostring(root)
+ 
+-        # Generate *_signed.xml
++        def xml_is_equivalent(xml_file, expected_xml_root) -> bool:
++            def _norm(s):
++                # Treat whitespace-only text as absent so pretty-printer differences (indent depth,
++                # newlines) don't cause a spurious mismatch. Real text content (even if padded)
++                # still compares.
++                if s is None:
++                    return None
++                stripped = s.strip()
++                return stripped or None
++
++            def _canonicalize(elem):
++                # Compare recursively as (tag, sorted attribs, normalized text, normalized tail,
++                # children). Attribute order and pretty-print whitespace are ignored; substantive
++                # text/tail content is not. Comments are already dropped by ElementTree.parse() so
++                # they don't affect the comparison.
++                return (elem.tag,
++                        tuple(sorted(elem.attrib.items())),
++                        _norm(elem.text),
++                        _norm(elem.tail),
++                        tuple(_canonicalize(child) for child in elem))
++
++            if not os.path.isfile(xml_file):
++                return False
++            xml_root = ElementTree.parse(xml_file).getroot()
++            return _canonicalize(xml_root) == _canonicalize(expected_xml_root)
++
++        # Generate *_signed.xml, unless an XML-structurally-equivalent file already exists on disk.
+         xml_file = filelistname.replace('.xml', '_signed.xml')
+-        xml_fh = open_file(xml_file, 'w')
+-        write_file(xml_fh, xml_str)
+-        xml_fh.close()
++        if xml_is_equivalent(xml_file, root):
++            info_print(f"Skipping redundant copy of \"signed\" {filelistname}")
++        else:
++            with open(xml_file, 'w') as xml_fh:
++                write_file(xml_fh, xml_str)
+         p_key.pcp.signed_xml_file = xml_file
+ 
+-        # Copy the signed XML file for reference
++        # Copy the signed XML file for reference, unless an XML-structurally-equivalent file
++        # already exists on disk.
+         if verbose == True:
+             if xml_file and os.path.isfile(xml_file):
+                 ref_xml_file = xml_file.replace('_signed.xml', '_signed_ref.xml')
+-                try:
+-                    shutil.copy2(xml_file, ref_xml_file)
+-                    info_print('Created reference copy: %s' % ref_xml_file)
+-                except Exception as e:
+-                    info_print('Warning: Failed to create reference copy of %s: %s' % (xml_file, e))
++                if xml_is_equivalent(ref_xml_file, root):
++                    info_print(f"Skipping redundant copy of \"reference\" {xml_file}")
++                else:
++                    try:
++                        shutil.copy2(xml_file, ref_xml_file)
++                        info_print('Created reference copy: %s' % ref_xml_file)
++                    except Exception as e:
++                        info_print('Warning: Failed to create reference copy of %s: %s' % (xml_file, e))
+ 
+         # Restore the active key label for L4T HSM
+         # This is the key label for the key in HSM for signing
+
+diff --git a/l4t/tools/flashtools/flash/tegrasign_v3_internal.py b/l4t/tools/flashtools/flash/tegrasign_v3_internal.py
+index f5d88dd..bbd3e50 100755
+--- a/l4t/tools/flashtools/flash/tegrasign_v3_internal.py
++++ b/l4t/tools/flashtools/flash/tegrasign_v3_internal.py
+@@ -1241,22 +1241,54 @@ def is_key_list(filelistname, p_key, verbose):
+         else:
+             xml_str = comment + ElementTree.tostring(root)
+ 
+-        # Generate *_signed.xml
++        def xml_is_equivalent(xml_file, expected_xml_root) -> bool:
++            def _norm(s):
++                # Treat whitespace-only text as absent so pretty-printer differences (indent depth,
++                # newlines) don't cause a spurious mismatch. Real text content (even if padded)
++                # still compares.
++                if s is None:
++                    return None
++                stripped = s.strip()
++                return stripped or None
++
++            def _canonicalize(elem):
++                # Compare recursively as (tag, sorted attribs, normalized text, normalized tail,
++                # children). Attribute order and pretty-print whitespace are ignored; substantive
++                # text/tail content is not. Comments are already dropped by ElementTree.parse() so
++                # they don't affect the comparison.
++                return (elem.tag,
++                        tuple(sorted(elem.attrib.items())),
++                        _norm(elem.text),
++                        _norm(elem.tail),
++                        tuple(_canonicalize(child) for child in elem))
++
++            if not os.path.isfile(xml_file):
++                return False
++            xml_root = ElementTree.parse(xml_file).getroot()
++            return _canonicalize(xml_root) == _canonicalize(expected_xml_root)
++
++        # Generate *_signed.xml, unless an XML-structurally-equivalent file already exists on disk.
+         xml_file = filelistname.replace('.xml', '_signed.xml')
+-        xml_fh = open_file(xml_file, 'w')
+-        write_file(xml_fh, xml_str)
+-        xml_fh.close()
++        if xml_is_equivalent(xml_file, root):
++            info_print(f"Skipping redundant copy of \"signed\" {filelistname}")
++        else:
++            with open(xml_file, 'w') as xml_fh:
++                write_file(xml_fh, xml_str)
+         p_key.pcp.signed_xml_file = xml_file
+ 
+-        # Copy the signed XML file for reference
++        # Copy the signed XML file for reference, unless an XML-structurally-equivalent file
++        # already exists on disk.
+         if verbose == True:
+             if xml_file and os.path.isfile(xml_file):
+                 ref_xml_file = xml_file.replace('_signed.xml', '_signed_ref.xml')
+-                try:
+-                    shutil.copy2(xml_file, ref_xml_file)
+-                    info_print('Created reference copy: %s' % ref_xml_file)
+-                except Exception as e:
+-                    info_print('Warning: Failed to create reference copy of %s: %s' % (xml_file, e))
++                if xml_is_equivalent(ref_xml_file, root):
++                    info_print(f"Skipping redundant copy of \"reference\" {xml_file}")
++                else:
++                    try:
++                        shutil.copy2(xml_file, ref_xml_file)
++                        info_print('Created reference copy: %s' % ref_xml_file)
++                    except Exception as e:
++                        info_print('Warning: Failed to create reference copy of %s: %s' % (xml_file, e))
+ 
+         # Restore the active key label for L4T HSM
+         # This is the key label for the key in HSM for signing
+-- 
+2.34.1
+

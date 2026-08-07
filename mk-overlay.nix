@@ -8,7 +8,8 @@
 , cudaDriverMajorMinorVersion
 , bspHash
 , bspPatches ? [ ]
-, bspPostPatch ? [ ]
+, bspPrePatch ? ""
+, bspPostPatch ? ""
 }:
 final: _:
 let
@@ -70,6 +71,7 @@ makeScope final.newScope (self: {
       mv Linux_for_Tegra $out
     '';
     patches = bspPatches;
+    prePatch = bspPrePatch;
     postPatch = bspPostPatch;
   };
 

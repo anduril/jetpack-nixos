@@ -39,6 +39,10 @@ let
     pip
     python-pkcs11
     cryptography
+    # TODO do we really want to pull in libusb for all flash-script style scripts?
+    # Needed in JetPack 7 to replace NVIDIA's circa 2016 bundled pyusb/libusb1
+    libusb1
+    pyusb
   ]));
 
   flash-tools = stdenv.mkDerivation {
@@ -126,6 +130,10 @@ let
       runHook postInstall
     '';
 
+    # TODO I think these should be pulled in via `runtimeInputs = flashtools.passthru.flashDeps`
+    # rather than hacking them into the text of the flash-script style scripts. Hacking in via
+    # `PATH` also isn't correct for libraries.
+    #
     # Stuff to put into PATH for flash.sh
     # wrapProgram doesn't work here because it refers to the wrapped program by
     # absolute path, and flash-script copies the entire flash-tools dir before
@@ -149,6 +157,7 @@ let
       openssl
       sbsigntool # In l4t_uefi_sign_image.sh, which is needed by RCM flashing
       xmlstarlet # Needed in JetPack 7
+      libxml2 # Needed in JetPack 7
 
       # Needed by bootloader/tegraflash_impl_t234.py
       gcc
