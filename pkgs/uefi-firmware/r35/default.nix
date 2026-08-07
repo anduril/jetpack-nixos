@@ -35,6 +35,10 @@
 }:
 
 let
+  # NVIDIA did not publish r35.6.5 tags for the EDK2 repos used by JP5.1.7.
+  # Keep the firmware sources pinned to the latest available r35 tag.
+  edk2ReleaseTag = "r35.6.4";
+
   # TODO: Move this generation out of uefi-firmware.nix, because this .nix
   # file is callPackage'd using an aarch64 version of nixpkgs, and we don't
   # want to have to recompilie imagemagick
@@ -52,7 +56,7 @@ let
     src = fetchFromGitHub {
       owner = "NVIDIA";
       repo = "edk2";
-      rev = "r${l4tMajorMinorPatchVersion}";
+      rev = edk2ReleaseTag;
       fetchSubmodules = true;
       sha256 = "sha256-4SGqdNOHPqZXxG8XYj8Md6CsxiO9bwecty57u/2xfwU=";
     };
@@ -74,14 +78,14 @@ let
   edk2-platforms = fetchFromGitHub {
     owner = "NVIDIA";
     repo = "edk2-platforms";
-    rev = "r${l4tMajorMinorPatchVersion}";
+    rev = edk2ReleaseTag;
     sha256 = "sha256-PjAJEbbswOLYupMg/xEqkAOJuAC8SxNsQlb9YBswRfo=";
   };
 
   edk2-non-osi = fetchFromGitHub {
     owner = "NVIDIA";
     repo = "edk2-non-osi";
-    rev = "r${l4tMajorMinorPatchVersion}";
+    rev = edk2ReleaseTag;
     sha256 = "sha256-EPtI63jYhEIo4uVTH3lUt9NC/lK5vPVacUAc5qgmz9M=";
   };
 
@@ -89,7 +93,7 @@ let
     src = fetchFromGitHub {
       owner = "NVIDIA";
       repo = "edk2-nvidia";
-      rev = "r${l4tMajorMinorPatchVersion}";
+      rev = edk2ReleaseTag;
       sha256 = "sha256-X4l0yf0Z181reSG8Y9sF9Kqmil56qBZc3fdWynXbZ50=";
     };
     patches = [
@@ -137,7 +141,7 @@ let
   edk2-nvidia-non-osi = fetchFromGitHub {
     owner = "NVIDIA";
     repo = "edk2-nvidia-non-osi";
-    rev = "r${l4tMajorMinorPatchVersion}";
+    rev = edk2ReleaseTag;
     sha256 = "sha256-LUpYaldctQz1/dAsybQjxjSRQN/EkgxxhbsJsRMkhwI=";
   };
 
