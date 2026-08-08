@@ -180,6 +180,17 @@ in
             example = "/run/keys/jetson/xavier_pkc.pem";
           };
 
+          pkcList = mkOption {
+            type = types.nullOr types.package;
+            default = null;
+            description = ''
+              Package containing NVIDIA's PKC list xml file containing the PKCs used to sign
+              firmware and in the board's combination PKC hash. Setting this value automatically
+              populates pkcFile. Use the `mkPkcList` helper function to create a pkc list file with
+              the quirks required for the nix build.
+            '';
+          };
+
           sbkFile = mkOption {
             type = types.nullOr (types.oneOf [ types.path types.str ]);
             default = null;
@@ -207,6 +218,63 @@ in
               building NVIDIA's flash scripts for x86_64-linux), you should
               define this option to be a function that accepts the `pkgs`
               package-set if you need to access something from it.
+            '';
+          };
+        };
+
+        fskp = {
+          enable = lib.mkEnableOption "Enable Factory Secure Key Provisioning Support";
+
+          fuseBlob = mkOption {
+            type = types.attrTag {
+              insecureClearText = mkEnableOption ''
+                DO NOT USE in an untrusted factory. Fuse blob is not encrypted. Useful for dev/test.
+              '';
+              encrypted = mkOption {
+                type = types.submodule {
+                  options = {
+                    fskpKey = mkOption {
+                      type = types.nullOr types.path;
+                      description = ''
+                        Sandbox exception path to the decrypted per-OEM fuse-blob-wrapping key from
+                        NVIDIA.
+                      '';
+                    };
+                    selector = mkOption {
+                      type = types.str;
+                      description = "Context selector string from NVIDIA's fskp_select.txt.";
+                    };
+                  };
+                };
+              };
+            };
+          };
+
+          fuseArgs = mkOption {
+            type = types.listOf types.str;
+            default = [ ];
+            description = ''
+              Extra arguments appended to the `fskp_fuseburn.py` invocation in fskpFuseScript.
+            '';
+          };
+
+          boardSpecFile = mkOption {
+            type = types.oneOf [ lib.types.path types.str ];
+            default = "${cfg.som}-board-spec.txt";
+            description = ''
+              Path to the board-spec.txt file passed to `fskp_fuseburn.py` via `--board-spec`.
+              Defaults can be found in the bsp repo at `tools/flashtools/fuseburn/*-board-spec.txt`.
+            '';
+          };
+
+          boardConfigFilename = mkOption {
+            internal = true;
+            type = types.str;
+            default = "${cfg.flashScriptOverrides.configFileName}.conf";
+            description = ''
+              Basename of the top-level board .conf file at the flash-tools (bsp) root, passed to
+              `fskp_fuseburn.py` via `-B` (e.g. "jetson-agx-thor-devkit.conf"). These conf files are
+              internally coupled to the bsp repo struture so it cannot be a `types.path`.
             '';
           };
         };
@@ -360,12 +428,20 @@ in
     hardware.nvidia-jetpack.flashScript = lib.warn "hardware.nvidia-jetpack.flashScript is deprecated, use config.system.build.flashScript" config.system.build.flashScript;
     hardware.nvidia-jetpack.devicePkgs = (lib.mapAttrs (_: lib.warn "hardware.nvidia-jetpack.devicePkgs is deprecated, use pkgs.nvidia-jetpack") pkgs.nvidia-jetpack);
 
-    system.build = {
-      jetsonDevicePkgs = (lib.mapAttrs (_: lib.warn "system.build.jetsonDevicePkgs is deprecated, use pkgs.nvidia-jetpack") pkgs.nvidia-jetpack);
+    system.build = lib.mkMerge [
+      {
+        jetsonDevicePkgs = (lib.mapAttrs (_: lib.warn "system.build.jetsonDevicePkgs is deprecated, use pkgs.nvidia-jetpack") pkgs.nvidia-jetpack);
 
-      # Left here for compatibility
-      inherit (pkgs.nvidia-jetpack) uefiCapsuleUpdate flashScript initrdFlashScript legacyFlashScript fuseScript signedFirmware;
-    };
+        # Left here for compatibility
+        inherit (pkgs.nvidia-jetpack) uefiCapsuleUpdate flashScript initrdFlashScript legacyFlashScript fuseScript signedFirmware;
+
+      }
+      (lib.optionalAttrs cfg.firmware.fskp.enable { inherit (pkgs.nvidia-jetpack) fskpFuseScript; })
+    ];
+
+    hardware.nvidia-jetpack.firmware.secureBoot.pkcFile =
+      lib.mkIf (cfg.firmware.secureBoot.pkcList != null)
+        "${cfg.firmware.secureBoot.pkcList}/pkc_keylist.xml";
 
     hardware.nvidia-jetpack.flashScriptOverrides.flashArgs = lib.mkAfter (
       lib.optional (cfg.firmware.secureBoot.pkcFile != null) "-u ${lib.escapeShellArg "${cfg.firmware.secureBoot.pkcFile}"}" ++
@@ -392,6 +468,17 @@ in
       (lib.optional cfg.firmware.uefi.secureBoot.enrollDefaultKeys uefiDefaultKeysDtbo);
 
     hardware.nvidia-jetpack.flashScriptOverrides.fuseArgs = lib.mkAfter [ cfg.flashScriptOverrides.configFileName ];
+
+    assertions = [
+      {
+        assertion = !cfg.firmware.fskp.enable || (cfg.som != null && lib.hasPrefix "thor-" cfg.som);
+        message = "FSKP support currently limited to Thor-family boards";
+      }
+      {
+        assertion = (cfg.firmware.fskp.enable && (cfg.firmware.fskp.fuseBlob ? insecureClearText) -> cfg.firmware.fskp.fuseBlob.insecureClearText);
+        message = "Do not set fskp.fuseBlob.insecureClearText in order to use an encrypted blob";
+      }
+    ];
 
     # These are from l4t_generate_soc_bup.sh, plus some additional ones found in the wild.
     hardware.nvidia-jetpack.firmware.variants =

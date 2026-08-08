@@ -34,6 +34,10 @@ final: prev: (
         else if lib.hasPrefix "xavier-" cfg.som then "0x19"
         else throw "Unknown SoC type";
 
+      pkcListChipId =
+        if lib.hasPrefix "thor-" cfg.som then "0x260"
+        else throw "Unknown SoC type";
+
       gpuDriver =
         if cfg.som == null then null
         else if lib.hasPrefix "thor-" cfg.som then "openrm"
@@ -358,6 +362,71 @@ final: prev: (
       flash-tools-flashcmd = finalJetpack.callPackage ./device-pkgs/flash-tools-flashcmd.nix {
         inherit cfg;
       };
+
+      # Generates `pkgs.nvidia-jetpack.pkcList` which contains the required PKC list xml files.
+      #
+      # XXX Note that the private key pems are copied to the nix store! You will need to write your
+      # own helper function if you want to use sandbox exception paths for the keys!
+      #
+      # Note that the "signed" and "reference" copies of the PKC keylist are created in this
+      # package because `tegrasign_v3_internal.py` wants to make copies of the keylist file but the
+      # keylist file lives in the read only nix store. The bsp patch ensures that the build will
+      # fail if there is an unexpected diff between the copy and the expected.
+      mkPkcList =
+        {
+          # Directory containing per-slot private-key PEMs. Filenames must follow the convention
+          # `<keyType>_<keyNum>.pem` per the Jetson developer guide examples.
+          privateKeyDir
+        , # PKC slot index [0..15] used to sign BCT and boot images.
+          activeKeyIndex
+        , # Number of keys to include in the PKC keylist, from 1..N. Only the included keys are
+          # used to produce the `pkcListComboHash` package which contains the fuse value.
+          numKeys
+        , # Key type identifier from the Jetson developer guide. Examples include `rsa3k` for
+          # RSA-3072, `ecp256` / `ecp521` for ECDSA, `ed25519`, `xmss`.
+          keyType
+        ,
+        }:
+        prev.runCommand "pkc-list-${cfg.name}" { } (
+          lib.concatStringsSep "\n" [
+            ''
+              mkdir -p $out
+            ''
+            (lib.concatStringsSep "\n" (
+              lib.forEach (lib.range 0 (numKeys - 1)) (keyId: ''
+                cp "${privateKeyDir}/${keyType}_${toString keyId}.pem" $out/
+              '')
+            ))
+            ''
+              cat > $out/pkc_keylist.xml <<EOF
+              <?xml version="1.0"?>
+              <entry_list>
+                <bct
+                  active_index="${toString activeKeyIndex}"
+                  chip_id="${finalJetpack.pkcListChipId}"
+                  pcp_file="active_key.pcp"
+                  pcps_file="active_key.pcps"
+                  pcps_hash_file="active_key.pcps.hash"
+                />
+            ''
+            (lib.concatStringsSep "\n" (lib.forEach (lib.range 0 (numKeys - 1)) (keyId: ''
+              <entry
+                key_id="${toString keyId}"
+                mode="pkc"
+                key="${placeholder "out"}/${keyType}_${toString keyId}.pem"
+                pub_file="${keyType}_${toString keyId}.pub"
+                hash_file="${keyType}_${toString keyId}.pub.hash"
+              />
+            '')))
+            ''
+              </entry_list>
+              EOF
+
+              cp $out/pkc_keylist.xml $out/pkc_keylist_signed.xml
+              cp $out/pkc_keylist.xml $out/pkc_keylist_signed_ref.xml
+            ''
+          ]
+        );
     } // flashTools);
   }
 )

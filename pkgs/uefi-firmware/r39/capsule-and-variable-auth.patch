@@ -1,0 +1,207 @@
+From b820932e554fefd5e476b9056883a3c30bd2b3c0 Mon Sep 17 00:00:00 2001
+From: Steven Sloboda <ssloboda@anduril.com>
+Date: Sun, 2 Aug 2026 15:38:29 -0700
+Subject: [PATCH] Bake in cert for capsule auth and variable auth.
+
+---
+ Platform/NVIDIA/NVIDIA.common.dsc.inc                       | 2 ++
+ Platform/NVIDIA/Tegra/DefConfigs/t238_android.defconfig     | 4 ++++
+ Platform/NVIDIA/Tegra/DefConfigs/t23x_android.defconfig     | 4 ++++
+ Platform/NVIDIA/Tegra/DefConfigs/t23x_general.defconfig     | 4 ++++
+ Platform/NVIDIA/Tegra/DefConfigs/t23x_general_igx.defconfig | 4 ++++
+ Platform/NVIDIA/Tegra/DefConfigs/t23x_minimal.defconfig     | 4 ++++
+ Platform/NVIDIA/Tegra/DefConfigs/t23x_simple_emmc.defconfig | 4 ++++
+ Platform/NVIDIA/Tegra/DefConfigs/t23x_simple_pcie.defconfig | 4 ++++
+ Platform/NVIDIA/Tegra/DefConfigs/t24x_datacenter.defconfig  | 4 ++++
+ Platform/NVIDIA/Tegra/DefConfigs/t26x_android.defconfig     | 4 ++++
+ Platform/NVIDIA/Tegra/DefConfigs/t26x_general.defconfig     | 4 ++++
+ Platform/NVIDIA/Tegra/DefConfigs/t26x_general_igx.defconfig | 4 ++++
+ Platform/NVIDIA/Tegra/DefConfigs/t26x_minimal.defconfig     | 4 ++++
+ Platform/NVIDIA/Tegra/DefConfigs/t26x_simple_pcie.defconfig | 4 ++++
+ Platform/NVIDIA/Tegra/DefConfigs/t26x_simple_ufs.defconfig  | 4 ++++
+ 15 files changed, 58 insertions(+)
+
+diff --git a/Platform/NVIDIA/NVIDIA.common.dsc.inc b/Platform/NVIDIA/NVIDIA.common.dsc.inc
+index d863a1e1..c58f6b69 100644
+--- a/Platform/NVIDIA/NVIDIA.common.dsc.inc
++++ b/Platform/NVIDIA/NVIDIA.common.dsc.inc
+@@ -1083,6 +1083,8 @@ CONFIG_FMP_CERTIFICATES_DTB_MAX_SIZE=0
+ 
+   gEfiMdeModulePkgTokenSpaceGuid.PcdFindLoadOptionIgnoreDescription|TRUE
+ 
++  !include PublicCapsuleKey.cer.gEfiSecurityPkgTokenSpaceGuid.PcdPkcs7CertBuffer.inc
++
+ [PcdsDynamicDefault]
+   #
+   # Enable emulated variable NV mode in variable driver.
+diff --git a/Platform/NVIDIA/Tegra/DefConfigs/t238_android.defconfig b/Platform/NVIDIA/Tegra/DefConfigs/t238_android.defconfig
+index 634c331d..f8e90cbb 100644
+--- a/Platform/NVIDIA/Tegra/DefConfigs/t238_android.defconfig
++++ b/Platform/NVIDIA/Tegra/DefConfigs/t238_android.defconfig
+@@ -7,3 +7,7 @@ CONFIG_PLATFORM_GUID="6ca3b63f-7ec5-48b6-bc2f-00d1b3456bab"
+ # CONFIG_DISPLAY_BOOT_INFO is not set
+ CONFIG_DEBUG_SERIAL_PORT_TCU_TX_MAILBOX=0x0A9C8000
+ CONFIG_FMP_SYSTEM_IMAGE_TYPE_ID="fb6b995a-2a94-4345-a41a-cc3a2aaeb1a9"
++
++# CONFIG_FMP_CERTIFICATES_EDK2_TEST_FILE is not set
++CONFIG_FMP_CERTIFICATES_PRODUCTION_FILE=y
++CONFIG_FMP_CERTIFICATES_PRODUCTION_FILE_PATH="PublicCapsuleKey.cer.gFmpDevicePkgTokenSpaceGuid.PcdFmpDevicePkcs7CertBufferXdr.inc"
+diff --git a/Platform/NVIDIA/Tegra/DefConfigs/t23x_android.defconfig b/Platform/NVIDIA/Tegra/DefConfigs/t23x_android.defconfig
+index 7ba43728..870382fc 100644
+--- a/Platform/NVIDIA/Tegra/DefConfigs/t23x_android.defconfig
++++ b/Platform/NVIDIA/Tegra/DefConfigs/t23x_android.defconfig
+@@ -6,3 +6,7 @@ CONFIG_BUILD_ANDROID=y
+ CONFIG_PLATFORM_GUID="c193fdd8-7109-47a7-bf0e-02a94962d787"
+ # CONFIG_DISPLAY_BOOT_INFO is not set
+ CONFIG_FMP_SYSTEM_IMAGE_TYPE_ID="bee27e77-d09c-47fe-a87d-f61a34b7e0b0"
++
++# CONFIG_FMP_CERTIFICATES_EDK2_TEST_FILE is not set
++CONFIG_FMP_CERTIFICATES_PRODUCTION_FILE=y
++CONFIG_FMP_CERTIFICATES_PRODUCTION_FILE_PATH="PublicCapsuleKey.cer.gFmpDevicePkgTokenSpaceGuid.PcdFmpDevicePkcs7CertBufferXdr.inc"
+diff --git a/Platform/NVIDIA/Tegra/DefConfigs/t23x_general.defconfig b/Platform/NVIDIA/Tegra/DefConfigs/t23x_general.defconfig
+index 15d963f1..143c4026 100644
+--- a/Platform/NVIDIA/Tegra/DefConfigs/t23x_general.defconfig
++++ b/Platform/NVIDIA/Tegra/DefConfigs/t23x_general.defconfig
+@@ -5,3 +5,7 @@ CONFIG_SOC_T23X=y
+ CONFIG_BUILD_GENERAL=y
+ CONFIG_PLATFORM_GUID="49a79a15-8f69-4be7-a30c-a172f44abce7"
+ CONFIG_FMP_SYSTEM_IMAGE_TYPE_ID="bf0d4599-20d4-414e-b2c5-3595b1cda402"
++
++# CONFIG_FMP_CERTIFICATES_EDK2_TEST_FILE is not set
++CONFIG_FMP_CERTIFICATES_PRODUCTION_FILE=y
++CONFIG_FMP_CERTIFICATES_PRODUCTION_FILE_PATH="PublicCapsuleKey.cer.gFmpDevicePkgTokenSpaceGuid.PcdFmpDevicePkcs7CertBufferXdr.inc"
+diff --git a/Platform/NVIDIA/Tegra/DefConfigs/t23x_general_igx.defconfig b/Platform/NVIDIA/Tegra/DefConfigs/t23x_general_igx.defconfig
+index 5b0d9338..dad8bd1b 100644
+--- a/Platform/NVIDIA/Tegra/DefConfigs/t23x_general_igx.defconfig
++++ b/Platform/NVIDIA/Tegra/DefConfigs/t23x_general_igx.defconfig
+@@ -9,3 +9,7 @@ CONFIG_ASPEED_2600_DISPLAY=y
+ CONFIG_IPMI_BMC=y
+ CONFIG_REDFISH=y
+ CONFIG_FMP_SYSTEM_IMAGE_TYPE_ID="db21ea33-80c8-4906-971a-49c0b3f7d1d0"
++
++# CONFIG_FMP_CERTIFICATES_EDK2_TEST_FILE is not set
++CONFIG_FMP_CERTIFICATES_PRODUCTION_FILE=y
++CONFIG_FMP_CERTIFICATES_PRODUCTION_FILE_PATH="PublicCapsuleKey.cer.gFmpDevicePkgTokenSpaceGuid.PcdFmpDevicePkcs7CertBufferXdr.inc"
+diff --git a/Platform/NVIDIA/Tegra/DefConfigs/t23x_minimal.defconfig b/Platform/NVIDIA/Tegra/DefConfigs/t23x_minimal.defconfig
+index 3d634e0d..fdea58e2 100644
+--- a/Platform/NVIDIA/Tegra/DefConfigs/t23x_minimal.defconfig
++++ b/Platform/NVIDIA/Tegra/DefConfigs/t23x_minimal.defconfig
+@@ -4,3 +4,7 @@
+ CONFIG_SOC_T23X=y
+ CONFIG_BUILD_MINIMAL=y
+ CONFIG_PLATFORM_GUID="f98bcf32-fd20-4ba9-ada4-e0406947ca3c"
++
++# CONFIG_FMP_CERTIFICATES_EDK2_TEST_FILE is not set
++CONFIG_FMP_CERTIFICATES_PRODUCTION_FILE=y
++CONFIG_FMP_CERTIFICATES_PRODUCTION_FILE_PATH="PublicCapsuleKey.cer.gFmpDevicePkgTokenSpaceGuid.PcdFmpDevicePkcs7CertBufferXdr.inc"
+diff --git a/Platform/NVIDIA/Tegra/DefConfigs/t23x_simple_emmc.defconfig b/Platform/NVIDIA/Tegra/DefConfigs/t23x_simple_emmc.defconfig
+index 489d9af6..4c8cd989 100644
+--- a/Platform/NVIDIA/Tegra/DefConfigs/t23x_simple_emmc.defconfig
++++ b/Platform/NVIDIA/Tegra/DefConfigs/t23x_simple_emmc.defconfig
+@@ -7,3 +7,7 @@ CONFIG_PLATFORM_GUID="ccb0c2f9-27c6-4a98-ac19-fe9429b59e7d"
+ CONFIG_EMMC=y
+ CONFIG_BOOT_DEFAULT_TIMEOUT=0
+ CONFIG_FMP_SYSTEM_IMAGE_TYPE_ID="5cdb9398-9a1f-44a4-986b-bbd034590537"
++
++# CONFIG_FMP_CERTIFICATES_EDK2_TEST_FILE is not set
++CONFIG_FMP_CERTIFICATES_PRODUCTION_FILE=y
++CONFIG_FMP_CERTIFICATES_PRODUCTION_FILE_PATH="PublicCapsuleKey.cer.gFmpDevicePkgTokenSpaceGuid.PcdFmpDevicePkcs7CertBufferXdr.inc"
+diff --git a/Platform/NVIDIA/Tegra/DefConfigs/t23x_simple_pcie.defconfig b/Platform/NVIDIA/Tegra/DefConfigs/t23x_simple_pcie.defconfig
+index 6f662f91..292e04bc 100644
+--- a/Platform/NVIDIA/Tegra/DefConfigs/t23x_simple_pcie.defconfig
++++ b/Platform/NVIDIA/Tegra/DefConfigs/t23x_simple_pcie.defconfig
+@@ -8,3 +8,7 @@ CONFIG_PCIE=y
+ CONFIG_NVME=y
+ CONFIG_BOOT_DEFAULT_TIMEOUT=0
+ CONFIG_FMP_SYSTEM_IMAGE_TYPE_ID="aeb40576-5d97-4d60-a138-93788792bf34"
++
++# CONFIG_FMP_CERTIFICATES_EDK2_TEST_FILE is not set
++CONFIG_FMP_CERTIFICATES_PRODUCTION_FILE=y
++CONFIG_FMP_CERTIFICATES_PRODUCTION_FILE_PATH="PublicCapsuleKey.cer.gFmpDevicePkgTokenSpaceGuid.PcdFmpDevicePkcs7CertBufferXdr.inc"
+diff --git a/Platform/NVIDIA/Tegra/DefConfigs/t24x_datacenter.defconfig b/Platform/NVIDIA/Tegra/DefConfigs/t24x_datacenter.defconfig
+index ab57eeae..9473d190 100644
+--- a/Platform/NVIDIA/Tegra/DefConfigs/t24x_datacenter.defconfig
++++ b/Platform/NVIDIA/Tegra/DefConfigs/t24x_datacenter.defconfig
+@@ -5,3 +5,7 @@ CONFIG_SOC_T24X=y
+ CONFIG_BUILD_DATACENTER=y
+ CONFIG_PLATFORM_GUID="9aef2e52-dead-4f63-b895-3a504a3e63c4"
+ CONFIG_FMP_SYSTEM_IMAGE_TYPE_ID="8655e5cf-297b-4213-84d5-b6817203a432"
++
++# CONFIG_FMP_CERTIFICATES_EDK2_TEST_FILE is not set
++CONFIG_FMP_CERTIFICATES_PRODUCTION_FILE=y
++CONFIG_FMP_CERTIFICATES_PRODUCTION_FILE_PATH="PublicCapsuleKey.cer.gFmpDevicePkgTokenSpaceGuid.PcdFmpDevicePkcs7CertBufferXdr.inc"
+diff --git a/Platform/NVIDIA/Tegra/DefConfigs/t26x_android.defconfig b/Platform/NVIDIA/Tegra/DefConfigs/t26x_android.defconfig
+index c0386ac9..03b56a4a 100644
+--- a/Platform/NVIDIA/Tegra/DefConfigs/t26x_android.defconfig
++++ b/Platform/NVIDIA/Tegra/DefConfigs/t26x_android.defconfig
+@@ -4,3 +4,7 @@
+ CONFIG_SOC_T26X=y
+ CONFIG_BUILD_ANDROID=y
+ CONFIG_FMP_SYSTEM_IMAGE_TYPE_ID="3c834404-d2d7-4912-8c1c-6e850b5f2824"
++
++# CONFIG_FMP_CERTIFICATES_EDK2_TEST_FILE is not set
++CONFIG_FMP_CERTIFICATES_PRODUCTION_FILE=y
++CONFIG_FMP_CERTIFICATES_PRODUCTION_FILE_PATH="PublicCapsuleKey.cer.gFmpDevicePkgTokenSpaceGuid.PcdFmpDevicePkcs7CertBufferXdr.inc"
+diff --git a/Platform/NVIDIA/Tegra/DefConfigs/t26x_general.defconfig b/Platform/NVIDIA/Tegra/DefConfigs/t26x_general.defconfig
+index 46137b3c..e409316c 100644
+--- a/Platform/NVIDIA/Tegra/DefConfigs/t26x_general.defconfig
++++ b/Platform/NVIDIA/Tegra/DefConfigs/t26x_general.defconfig
+@@ -5,3 +5,7 @@ CONFIG_SOC_T26X=y
+ CONFIG_BUILD_GENERAL=y
+ CONFIG_PLATFORM_GUID="b175f7b7-0cb0-446e-b338-0e0d0f688de8"
+ CONFIG_FMP_SYSTEM_IMAGE_TYPE_ID="3c834404-d2d7-4912-8c1c-6e850b5f2824"
++
++# CONFIG_FMP_CERTIFICATES_EDK2_TEST_FILE is not set
++CONFIG_FMP_CERTIFICATES_PRODUCTION_FILE=y
++CONFIG_FMP_CERTIFICATES_PRODUCTION_FILE_PATH="PublicCapsuleKey.cer.gFmpDevicePkgTokenSpaceGuid.PcdFmpDevicePkcs7CertBufferXdr.inc"
+diff --git a/Platform/NVIDIA/Tegra/DefConfigs/t26x_general_igx.defconfig b/Platform/NVIDIA/Tegra/DefConfigs/t26x_general_igx.defconfig
+index 6d92c841..3ba28eee 100644
+--- a/Platform/NVIDIA/Tegra/DefConfigs/t26x_general_igx.defconfig
++++ b/Platform/NVIDIA/Tegra/DefConfigs/t26x_general_igx.defconfig
+@@ -9,3 +9,7 @@ CONFIG_ASPEED_2600_DISPLAY=y
+ CONFIG_IPMI_BMC=y
+ CONFIG_REDFISH=y
+ CONFIG_FMP_SYSTEM_IMAGE_TYPE_ID="cbf069ce-116a-4215-9951-66565d283089"
++
++# CONFIG_FMP_CERTIFICATES_EDK2_TEST_FILE is not set
++CONFIG_FMP_CERTIFICATES_PRODUCTION_FILE=y
++CONFIG_FMP_CERTIFICATES_PRODUCTION_FILE_PATH="PublicCapsuleKey.cer.gFmpDevicePkgTokenSpaceGuid.PcdFmpDevicePkcs7CertBufferXdr.inc"
+diff --git a/Platform/NVIDIA/Tegra/DefConfigs/t26x_minimal.defconfig b/Platform/NVIDIA/Tegra/DefConfigs/t26x_minimal.defconfig
+index 81f75105..bb7fe2de 100644
+--- a/Platform/NVIDIA/Tegra/DefConfigs/t26x_minimal.defconfig
++++ b/Platform/NVIDIA/Tegra/DefConfigs/t26x_minimal.defconfig
+@@ -7,3 +7,7 @@ CONFIG_PLATFORM_GUID="df0e10d8-aeac-451d-a2d7-ef1e58dc59d9"
+ CONFIG_PCIE=y
+ CONFIG_NVME=y
+ CONFIG_UFS=y
++
++# CONFIG_FMP_CERTIFICATES_EDK2_TEST_FILE is not set
++CONFIG_FMP_CERTIFICATES_PRODUCTION_FILE=y
++CONFIG_FMP_CERTIFICATES_PRODUCTION_FILE_PATH="PublicCapsuleKey.cer.gFmpDevicePkgTokenSpaceGuid.PcdFmpDevicePkcs7CertBufferXdr.inc"
+diff --git a/Platform/NVIDIA/Tegra/DefConfigs/t26x_simple_pcie.defconfig b/Platform/NVIDIA/Tegra/DefConfigs/t26x_simple_pcie.defconfig
+index cfd874ae..74d99986 100644
+--- a/Platform/NVIDIA/Tegra/DefConfigs/t26x_simple_pcie.defconfig
++++ b/Platform/NVIDIA/Tegra/DefConfigs/t26x_simple_pcie.defconfig
+@@ -8,3 +8,7 @@ CONFIG_PCIE=y
+ CONFIG_NVME=y
+ CONFIG_BOOT_DEFAULT_TIMEOUT=0
+ CONFIG_FMP_SYSTEM_IMAGE_TYPE_ID="fc63b2f1-314e-4155-94dc-c47b3b94fda5"
++
++# CONFIG_FMP_CERTIFICATES_EDK2_TEST_FILE is not set
++CONFIG_FMP_CERTIFICATES_PRODUCTION_FILE=y
++CONFIG_FMP_CERTIFICATES_PRODUCTION_FILE_PATH="PublicCapsuleKey.cer.gFmpDevicePkgTokenSpaceGuid.PcdFmpDevicePkcs7CertBufferXdr.inc"
+diff --git a/Platform/NVIDIA/Tegra/DefConfigs/t26x_simple_ufs.defconfig b/Platform/NVIDIA/Tegra/DefConfigs/t26x_simple_ufs.defconfig
+index 1980acd2..1733c749 100644
+--- a/Platform/NVIDIA/Tegra/DefConfigs/t26x_simple_ufs.defconfig
++++ b/Platform/NVIDIA/Tegra/DefConfigs/t26x_simple_ufs.defconfig
+@@ -7,3 +7,7 @@ CONFIG_PLATFORM_GUID="f6c2d20a-1e0f-417a-938a-542cf882697a"
+ CONFIG_UFS=y
+ CONFIG_BOOT_DEFAULT_TIMEOUT=0
+ CONFIG_FMP_SYSTEM_IMAGE_TYPE_ID="2b7f8709-aa4c-4c6f-9671-9e97513f480c"
++
++# CONFIG_FMP_CERTIFICATES_EDK2_TEST_FILE is not set
++CONFIG_FMP_CERTIFICATES_PRODUCTION_FILE=y
++CONFIG_FMP_CERTIFICATES_PRODUCTION_FILE_PATH="PublicCapsuleKey.cer.gFmpDevicePkgTokenSpaceGuid.PcdFmpDevicePkcs7CertBufferXdr.inc"
+-- 
+2.34.1
+

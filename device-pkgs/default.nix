@@ -8,8 +8,10 @@
 { lib
 , dtc
 , gcc
+, libusb1
 , nvidia-jetpack
 , writeShellApplication
+, runCommand
 , buildPackages
 , writeText
 , deviceTree
@@ -161,5 +163,57 @@ let
     };
     meta.platforms = [ "x86_64-linux" ];
   };
+
+  fskpFuseScript = writeShellApplication {
+    name = "fskp-fuse-${cfg.name}";
+    # TODO Seems like we really should be pulling in flash-tools deps as follows:
+    # runtimeInputs = flash-tools.passthru.flashDeps;
+    text = import ./flash-script.nix {
+      inherit lib l4tAtLeast;
+      inherit (nvidia-jetpack) flash-tools socFamily;
+      flashCommands = ''
+        (
+          cd l4t/tools/flashtools/fuseburn
+          ./fskp_fuseburn.py \
+            --board-spec ${lib.escapeShellArg "${cfg.firmware.fskp.boardSpecFile}"} \
+            -B ${lib.escapeShellArg "../../../../${cfg.firmware.fskp.boardConfigFilename}"} \
+            -c ${chipId} \
+            ${if cfg.firmware.fskp.fuseBlob ? encrypted then
+              lib.concatStringsSep " " [
+                "-k ${lib.escapeShellArg "${cfg.firmware.fskp.fuseBlob.encrypted.key}"}"
+                "-i ${lib.escapeShellArg "${cfg.firmware.fskp.fuseBlob.encrypted.selector}"}"
+              ]
+            else
+              "--skipfskpkey"
+            } \
+            ${toString cfg.firmware.fskp.fuseArgs} \
+            "$@"
+        )
+      '';
+      dtbsDir = config.hardware.deviceTree.package;
+    };
+    meta.platforms = [ "x86_64-linux" ];
+  };
+
+  # PKC combination hash that is to be fused into the `PublicKeyHash` fuse on boards that use the
+  # combination hash, e.g., Thor. The output file contains the hash value in hex that you can copy
+  # paste into `fuse.xml`.
+  pkcListComboHash = runCommand "pkc-list-combo-hash.hex"
+    { nativeBuildInputs = nvidia-jetpack.flash-tools.flashDeps; }
+    ''
+      cp -r ${nvidia-jetpack.flash-tools}/. .
+      chmod -R u+w .
+
+      ./bootloader/tegrasign_v3.py \
+        --key ${lib.escapeShellArg "${cfg.firmware.secureBoot.pkcFile}"} \
+        --pubkeyhash nv_combo.pcp nv_combo.pcps.hash \
+        --sha sha512
+
+      printf '0x%s\n' "$(xxd -p -c 64 nv_combo.pcps.hash)" > $out
+    '';
 in
-{ inherit initrdFlashScript legacyFlashScript fuseScript rcmBoot; flashScript = initrdFlashScript; }
+{
+  inherit initrdFlashScript legacyFlashScript fuseScript rcmBoot pkcListComboHash;
+  flashScript = initrdFlashScript;
+}
+  // (lib.optionalAttrs cfg.firmware.fskp.enable { inherit fskpFuseScript; })

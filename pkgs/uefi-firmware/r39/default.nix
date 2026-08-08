@@ -83,7 +83,7 @@ let
         # patch so UEFI can talk to it.
         ./disable-ftpm.diff
       ] ++ lib.optionals (trustedPublicCertPemFile != null) [
-        ./capsule-authentication.diff
+        ./capsule-and-variable-auth.patch
       ];
     };
   };
