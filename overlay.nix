@@ -198,3 +198,16 @@ in
     ];
   });
 }
+  // prev.lib.optionalAttrs
+  (
+    prev.stdenv.hostPlatform.system == "aarch64-linux"
+    && prev.stdenv.hostPlatform.isGnu
+    && !prev.stdenv.hostPlatform.isStatic
+  )
+  {
+    # On Jetson, libv4l uses the NVIDIA implementations of libv4l2 and libv4lconvert.
+    libv4l = import ./pkgs/l4t/l4t-v4l.nix {
+      inherit (final.nvidia-jetpack) l4t-multimedia;
+      upstreamLibv4l = prev.libv4l;
+    };
+  }
