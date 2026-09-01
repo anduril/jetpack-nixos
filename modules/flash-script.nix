@@ -50,6 +50,15 @@ in
             default = cfg.firmware.uefi.debugMode;
           };
 
+          printErrorLevel = mkOption {
+            type = types.nullOr (types.strMatching "^(0[xX])?[0-9a-fA-F]+$");
+            default = if cfg.firmware.uefi.errorLevelInfo then "0x8000004F" else null;
+            defaultText = "if config.hardware.nvidia-jetpack.firmware.uefi.errorLevelInfo then \"0x8000004F\" else null";
+            description = ''
+              Bitmask for PcdDebugPrintErrorLevel. See https://github.com/tianocore/edk2/blob/master/MdePkg/Include/Library/DebugLib.h#L36 for bitfield members.
+            '';
+          };
+
           edk2NvidiaPatches = mkOption {
             type = types.listOf types.path;
             description = ''

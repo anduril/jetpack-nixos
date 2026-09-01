@@ -54,10 +54,13 @@ final: prev: (
 
       uefi-firmware = prevJetpack.uefi-firmware.override ({
         bootLogo = cfg.firmware.uefi.logo;
-        debugMode = cfg.firmware.uefi.debugMode;
-        errorLevelInfo = cfg.firmware.uefi.errorLevelInfo;
-        edk2NvidiaPatches = cfg.firmware.uefi.edk2NvidiaPatches;
-        edk2UefiPatches = cfg.firmware.uefi.edk2UefiPatches;
+        inherit (cfg.firmware.uefi)
+          debugMode
+          errorLevelInfo
+          printErrorLevel
+          edk2NvidiaPatches
+          edk2UefiPatches
+          ;
         inherit (finalJetpack) socFamily;
 
         # A hash of something that represents everything that goes into the
@@ -88,13 +91,18 @@ final: prev: (
         inherit (cfg.firmware.uefi.capsuleAuthentication) trustedPublicCertPemFile;
       });
 
-      jetsonStandaloneMMOptee = prevJetpack.jetsonStandaloneMMOptee.override {
-        debugMode = cfg.firmware.uefi.debugMode;
-        errorLevelInfo = cfg.firmware.uefi.errorLevelInfo;
-        edk2NvidiaPatches = cfg.firmware.uefi.edk2NvidiaPatches;
-        edk2UefiPatches = cfg.firmware.uefi.edk2UefiPatches;
+      jetsonStandaloneMMOptee = prevJetpack.jetsonStandaloneMMOptee.override
+        {
+          inherit (cfg.firmware.uefi)
+            debugMode
+            errorLevelInfo
+            printErrorLevel
+            edk2NvidiaPatches
+            edk2UefiPatches
+            ;
+          inherit (finalJetpack) socFamily;
+        } // lib.optionalAttrs (prevJetpack.l4tAtLeast "36") {
         extraPackages = cfg.firmware.uefi.standaloneMMExtraPackages;
-        inherit (finalJetpack) socFamily;
       };
 
       flash-tools = prevJetpack.flash-tools.overrideAttrs ({ patches ? [ ], postPatch ? "", ... }: {

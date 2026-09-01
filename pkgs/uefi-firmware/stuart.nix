@@ -22,6 +22,7 @@
 , debugMode ? false
   # Enables a bunch more info messages
 , errorLevelInfo ? debugMode
+, printErrorLevel ? if errorLevelInfo then "0x8000004F" else null
   # The root certificate (in PEM format) for authenticating capsule updates. By
   # default, EDK2 authenticates using a test keypair commited upstream.
 , trustedPublicCertPemFile ? null
@@ -154,8 +155,8 @@ lib.extendMkDerivation {
       postPatch = ''
         find . -name \*_ext_dep.yaml -delete
         patchShebangs .
-      '' + lib.optionalString errorLevelInfo ''
-        sed -i 's#PcdDebugPrintErrorLevel|.*#PcdDebugPrintErrorLevel|0x8000004F#' edk2-nvidia/Platform/NVIDIA/NVIDIA.common.dsc.inc
+      '' + lib.optionalString (printErrorLevel != null) ''
+        sed -i 's#PcdDebugPrintErrorLevel|.*#PcdDebugPrintErrorLevel|${printErrorLevel}#' edk2-nvidia/Platform/NVIDIA/*.common.dsc.inc
       '' + lib.optionalString (bootLogo != null) ''
         cp ${bootLogoVariants}/logo1080.bmp edk2-nvidia/Silicon/NVIDIA/Drivers/Logo/nvidiagray1080.bmp
         cp ${bootLogoVariants}/logo720.bmp edk2-nvidia/Silicon/NVIDIA/Drivers/Logo/nvidiagray720.bmp
