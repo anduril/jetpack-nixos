@@ -130,6 +130,7 @@ makeScope final.newScope (self: {
 
   patchgpt = self.callPackage ./pkgs/patchgpt { };
   patchfv = self.callPackage ./pkgs/patchfv { };
+  diffblocks = self.callPackage ./pkgs/diffblocks { };
 
   samples = makeScope self.newScope (finalSamples: {
     callPackages = callPackagesWith (self // finalSamples);
