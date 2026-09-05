@@ -163,7 +163,7 @@ final: prev: (
           jetpack-init = prev.writeScript "init" ''
             #!${prev.pkgsStatic.busybox}/bin/sh
             export PATH=${prev.pkgsStatic.busybox}/bin
-            mkdir -p /proc /dev /sys
+            mkdir -p /proc /dev /sys /tmp
             mount -t proc proc -o nosuid,nodev,noexec /proc
             mount -t devtmpfs none -o nosuid /dev
             mount -t sysfs sysfs -o nosuid,nodev,noexec /sys
@@ -216,7 +216,19 @@ final: prev: (
               ttyGS=/dev/ttyGS$(cat $gadget/functions/acm.usb0/port_num)
               if [ -e $ttyGS ]; then
                 exec &> >(tee $ttyGS) <$ttyGS
+
+                echo "Press enter within 10s to open a console session before flashing..."
+                if read -t 10 -r _; then
+                  echo "Console session started. Type 'exit' to continue flashing."
+                  ${prev.pkgsStatic.busybox}/bin/sh
+                  echo "Pre-flash console session ended."
+                fi
               fi
+            fi
+
+            if [ -e /tmp/pre-flash-hook.sh ]; then
+              echo "Sourcing /tmp/pre-flash-hook.sh"
+              . /tmp/pre-flash-hook.sh
             fi
 
             # `signedFirmware` must be built on x86_64, so we make a
