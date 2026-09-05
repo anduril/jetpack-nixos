@@ -9,9 +9,18 @@ source @ota_helpers_func@
 
 signed_images=$1
 
+# The whole initrd rootfs is an in-memory tmpfs, so this is just claiming a
+# scratch directory in it (no separate mount needed).
+mkdir -p /tmp
+
 matching_boardspec=
 current_step=1
 steps=
+
+diff_granularity=1
+erase_size=
+total_size=
+work=
 
 report_step() {
   echo "Step $current_step/$steps... $*"
@@ -72,9 +81,13 @@ program_spi_partition() {
       return 1
     fi
   fi
-  report_step "Writing $part_file (size=$file_size) to $partname (offset=$part_offset)"
+  if [ -n "${FAST_FLASH:-}" ]; then
+    report_step "Staging $part_file (size=$file_size) into golden image for $partname (offset=$part_offset)"
+  else
+    report_step "Writing $part_file (size=$file_size) to $partname (offset=$part_offset)"
+  fi
   if [[ "$file_size" != 0 ]]; then
-    if ! mtd_debug write /dev/mtd0 "$part_offset" "$file_size" "$part_file"; then
+    if ! spi_write "$part_offset" "$file_size" "$part_file"; then
       return 1
     fi
   fi
@@ -92,7 +105,7 @@ program_spi_partition() {
     local i=1
     while [[ "$i" -lt "$copycount" ]]; do
       echo "Writing $part_file to BCT+$i (offset=$curr_offset)"
-      if ! mtd_debug write /dev/mtd0 "$curr_offset" "$file_size" "$part_file"; then
+      if ! spi_write "$curr_offset" "$file_size" "$part_file"; then
         return 1
       fi
       i=$((i + 1))
@@ -150,6 +163,23 @@ program_mmcboot_partition() {
   return 0
 }
 
+# Write partition content to the QSPI device. Under FAST_FLASH, redirect
+# the write into the golden image (built by fast_flash_init) instead of
+# the real device, so program_spi_partition's placement logic (including
+# BCT copies and secondary_gpt repositioning) is exercised identically
+# whether writing to the golden image or the real device.
+spi_write() {
+  local part_offset="$1"
+  local file_size="$2"
+  local part_file="$3"
+
+  if [ -n "${FAST_FLASH:-}" ]; then
+    dd if="$part_file" of="$work/golden" bs=4096 seek="$part_offset" oflag=seek_bytes conv=notrunc >/dev/null
+  else
+    mtd_debug write /dev/mtd0 "$part_offset" "$file_size" "$part_file"
+  fi
+}
+
 disk_size() {
   devnum="$1"
   instnum="$2"
@@ -164,6 +194,46 @@ disk_size() {
     echo "$(($(cat /sys/block/mmcblk0/size) * $(cat /sys/block/mmcblk0/queue/hw_sector_size)))"
   else
     echo ""
+  fi
+}
+
+# Compare the golden image against the device's actual contents at
+# erase-block granularity, and program only the ranges that differ.
+diff_and_program_spi() {
+  local block_size write_block bytes ranges_file range_start count
+
+  block_size=$((erase_size * diff_granularity))
+  ranges_file=$(mktemp)
+
+  diffblocks "$work/start" "$work/golden" "$block_size" >"$ranges_file"
+
+  while read -r range_start count; do
+    write_block=$range_start
+    bytes=$((count * block_size))
+    dd "skip=$write_block" "bs=$block_size" "count=$count" "if=$work/golden" "of=$work/blk_write" 2>/dev/null
+    flash_erase /dev/mtd0 "$((write_block * block_size))" "$count"
+    mtd_debug write /dev/mtd0 "$((write_block * block_size))" "$bytes" "$work/blk_write"
+    echo "Wrote $bytes bytes: $(printf "%08x - %08x" "$((write_block * block_size))" "$(((range_start + count) * block_size))")"
+  done <"$ranges_file"
+
+  rm -f "$ranges_file"
+}
+
+fast_flash_init() {
+  if [ ! -e /dev/mtd0 ]; then
+    echo "ERR: SPI boot device, but mtd0 device does not exist" >&2
+    return 1
+  fi
+
+  total_size=$(cat /sys/class/mtd/mtd0/size)
+  erase_size=$(cat /sys/class/mtd/mtd0/erasesize)
+  work=$(mktemp -d)
+
+  head -c "$total_size" /dev/zero | tr '\000' '\377' >"$work/golden"
+
+  if ! mtd_debug read /dev/mtd0 0 "$total_size" "$work/start"; then
+    echo "Failed to read /dev/mtd0" >&2
+    return 1
   fi
 }
 
@@ -201,8 +271,16 @@ erase_bootdev() {
       echo "ERR: SPI boot device, but mtd0 device does not exist" >&2
       return 1
     fi
-    report_step "Erasing /dev/mtd0, this may take a while without any output..."
-    flash_erase /dev/mtd0 0 0
+    if [ -n "${FAST_FLASH:-}" ]; then
+      echo "Skipping full erase of /dev/mtd0 (FAST_FLASH)"
+      if ! fast_flash_init; then
+        echo "Failed to init fast flash."
+        return 1
+      fi
+    else
+      report_step "Erasing /dev/mtd0, this may take a while without any output..."
+      flash_erase /dev/mtd0 0 0
+    fi
   else
     echo "ERR: unknown boot device type: $BOOTDEV_TYPE" >&2
     return 1
@@ -267,6 +345,11 @@ write_partitions() {
       fi
     fi
   done <flash.idx
+
+  if [ -n "${FAST_FLASH:-}" ]; then
+    report_step "Performing fast flash."
+    diff_and_program_spi
+  fi
 }
 
 find_matching_spec
