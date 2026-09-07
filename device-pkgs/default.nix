@@ -184,7 +184,7 @@ let
             -c ${chipId} \
             ${if cfg.firmware.fskp.fuseBlob ? encrypted then
               lib.concatStringsSep " " [
-                "-k ${lib.escapeShellArg "${cfg.firmware.fskp.fuseBlob.encrypted.key}"}"
+                "-k ${lib.escapeShellArg "${cfg.firmware.fskp.fuseBlob.encrypted.fskpKey}"}"
                 "-i ${lib.escapeShellArg "${cfg.firmware.fskp.fuseBlob.encrypted.selector}"}"
               ]
             else
