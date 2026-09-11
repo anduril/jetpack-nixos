@@ -164,55 +164,57 @@ let
     meta.platforms = [ "x86_64-linux" ];
   };
 
-  fskpFuseScript = writeShellApplication {
-    name = "fskp-fuse-${cfg.name}";
-    # TODO Seems like we really should be pulling in flash-tools deps as follows:
-    # runtimeInputs = flash-tools.passthru.flashDeps;
-    text = import ./flash-script.nix {
-      inherit lib l4tAtLeast;
-      inherit (nvidia-jetpack) flash-tools socFamily;
-      flashCommands = ''
-        (
-          # `convert.sh` needs the correct bsp root dir when using non-standard board config files.
-          LDK_DIR="$(realpath .)"
-          export LDK_DIR
+  fskpFuseScript =
+    assert lib.assertMsg (cfg.firmware.fskp.fuseBlob ? insecureClearText -> cfg.firmware.fskp.fuseBlob.insecureClearText) "Do not set fskp.fuseBlob.insecureClearText in order to use an encrypted blob";
+    writeShellApplication {
+      name = "fskp-fuse-${cfg.name}";
+      # TODO Seems like we really should be pulling in flash-tools deps as follows:
+      # runtimeInputs = flash-tools.passthru.flashDeps;
+      text = import ./flash-script.nix {
+        inherit lib l4tAtLeast;
+        inherit (nvidia-jetpack) flash-tools socFamily;
+        flashCommands = ''
+          (
+            # `convert.sh` needs the correct bsp root dir when using non-standard board config files.
+            LDK_DIR="$(realpath .)"
+            export LDK_DIR
 
-          cd tools/flashtools/fuseburn
-          ./fskp_fuseburn.py \
-            --board-spec ${lib.escapeShellArg "${cfg.firmware.fskp.boardSpecFile}"} \
-            -B ${lib.escapeShellArg "../../../${cfg.firmware.fskp.boardConfigFilename}"} \
-            -c ${chipId} \
-            ${if cfg.firmware.fskp.fuseBlob ? encrypted then
-              lib.concatStringsSep " " [
-                "-k ${lib.escapeShellArg "${cfg.firmware.fskp.fuseBlob.encrypted.fskpKey}"}"
-                "-i ${lib.escapeShellArg "${cfg.firmware.fskp.fuseBlob.encrypted.selector}"}"
-              ]
-            else
-              "--skipfskpkey"
-            } \
-            ${toString cfg.firmware.fskp.fuseArgs} \
-            "$@"
-        )
+            cd tools/flashtools/fuseburn
+            ./fskp_fuseburn.py \
+              --board-spec ${lib.escapeShellArg "${cfg.firmware.fskp.boardSpecFile}"} \
+              -B ${lib.escapeShellArg "../../../${cfg.firmware.fskp.boardConfigFilename}"} \
+              -c ${chipId} \
+              ${if cfg.firmware.fskp.fuseBlob ? encrypted then
+                lib.concatStringsSep " " [
+                  "-k ${lib.escapeShellArg "${cfg.firmware.fskp.fuseBlob.encrypted.fskpKey}"}"
+                  "-i ${lib.escapeShellArg "${cfg.firmware.fskp.fuseBlob.encrypted.selector}"}"
+                ]
+              else
+                "--skipfskpkey"
+              } \
+              ${toString cfg.firmware.fskp.fuseArgs} \
+              "$@"
+          )
+        '';
+        dtbsDir = config.hardware.deviceTree.package;
+      };
+      # Board config file must be located in the BSP due to assumptions about relative paths and
+      # sourcing other files from it.
+      derivationArgs.postCheck = ''
+        if ! [[ \
+          -e "$(realpath ${lib.escapeShellArg "${nvidia-jetpack.flash-tools}/tools/flashtools/fuseburn/${cfg.firmware.fskp.boardSpecFile}"})" || \
+          -e ${lib.escapeShellArg "${cfg.firmware.fskp.boardSpecFile}"} \
+        ]]; then
+          echo "ERROR: board spec file ${lib.escapeShellArg "${cfg.firmware.fskp.boardSpecFile}"} not found" >&2
+          exit 1
+        fi
+        if ! [ -e "$(realpath ${lib.escapeShellArg "${nvidia-jetpack.flash-tools}/${cfg.firmware.fskp.boardConfigFilename}"})" ]; then
+          echo "ERROR: board config file ${lib.escapeShellArg "${cfg.firmware.fskp.boardConfigFilename}"} not found relative to BSP root dir" >&2
+          exit 1
+        fi
       '';
-      dtbsDir = config.hardware.deviceTree.package;
+      meta.platforms = [ "x86_64-linux" ];
     };
-    # Board config file must be located in the BSP due to assumptions about relative paths and
-    # sourcing other files from it.
-    derivationArgs.postCheck = ''
-      if ! [[ \
-        -e "$(realpath ${lib.escapeShellArg "${nvidia-jetpack.flash-tools}/tools/flashtools/fuseburn/${cfg.firmware.fskp.boardSpecFile}"})" || \
-        -e ${lib.escapeShellArg "${cfg.firmware.fskp.boardSpecFile}"} \
-      ]]; then
-        echo "ERROR: board spec file ${lib.escapeShellArg "${cfg.firmware.fskp.boardSpecFile}"} not found" >&2
-        exit 1
-      fi
-      if ! [ -e "$(realpath ${lib.escapeShellArg "${nvidia-jetpack.flash-tools}/${cfg.firmware.fskp.boardConfigFilename}"})" ]; then
-        echo "ERROR: board config file ${lib.escapeShellArg "${cfg.firmware.fskp.boardConfigFilename}"} not found relative to BSP root dir" >&2
-        exit 1
-      fi
-    '';
-    meta.platforms = [ "x86_64-linux" ];
-  };
 
   # PKC combination hash that is to be fused into the `PublicKeyHash` fuse on boards that use the
   # combination hash, e.g., Thor. The output file contains the hash value in hex that you can copy
