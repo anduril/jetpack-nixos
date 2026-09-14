@@ -31,13 +31,13 @@ let
   edk2-pytool-extensions = buildPythonPackage
     rec {
       pname = "edk2-pytool-extensions";
-      version = "0.29.4";
+      version = "0.29.8";
       pyproject = true;
 
       src = fetchPypi {
         pname = "edk2_pytool_extensions";
         inherit version;
-        hash = "sha256-qHLLHjFKnfgn4aO6n+CxhEqwyR7MaHYOfZxJCDhR13s=";
+        hash = "sha256-mAZNqT4D2BCoGilZwL+NjhJUEjIZrVxmjsJfJPrg+Lo=";
       };
       build-system = [ setuptools-scm ];
 
