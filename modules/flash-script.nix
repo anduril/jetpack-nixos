@@ -476,10 +476,6 @@ in
         message = "FSKP support currently limited to Jetpack 7+ boards";
       }
       {
-        assertion = (cfg.firmware.fskp.enable && (cfg.firmware.fskp.fuseBlob ? insecureClearText) -> cfg.firmware.fskp.fuseBlob.insecureClearText);
-        message = "Do not set fskp.fuseBlob.insecureClearText in order to use an encrypted blob";
-      }
-      {
         assertion = cfg.firmware.uefi.edk2ExtraPackages != [ ] -> pkgs.nvidia-jetpack.l4tAtLeast "36";
         message = "hardware.nvidia-jetpack.firmware.uefi.edk2ExtraPackages requires L4T r36 or newer; the r35 UEFI firmware builder does not accept extra package trees.";
       }
