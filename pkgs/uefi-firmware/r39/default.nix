@@ -113,7 +113,10 @@ let
   uefi-firmware = runCommand "${unstamped-firmware.pname}-${unstamped-firmware.version}-stamped"
     {
       nativeBuildInputs = [ python3 buildPackages.nvidia-jetpack.patchfv ];
-      passthru = { inherit biosVersion; };
+      passthru = {
+        inherit biosVersion;
+        inherit (unstamped-firmware.passthru) srcs;
+      };
     } ''
     mkdir -p $out
     cp -r ${unstamped-firmware}/* $out

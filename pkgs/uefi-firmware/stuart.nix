@@ -205,6 +205,15 @@ lib.extendMkDerivation {
         runHook postInstall
       '';
 
+      passthru = {
+        srcs = lib.listToAttrs (map
+          (src: {
+            inherit (src) name;
+            value = src;
+          })
+          finalAttrs.srcs);
+      };
+
       meta = meta // { platforms = [ "aarch64-linux" ]; };
     };
 }
