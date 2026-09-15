@@ -75,6 +75,15 @@ in
             default = [ ];
           };
 
+          standaloneMMExtraPackages = mkOption {
+            type = types.listOf types.package;
+            description = ''
+              Extra edk2 package trees for the UEFI build but for StandaloneMM. Each derivation is
+              unpacked under its name and prepended to PACKAGES_PATH. Requires L4T r36 or newer.
+            '';
+            default = [ ];
+          };
+
           secureBoot = {
             enrollDefaultKeys = lib.mkEnableOption "enroll default UEFI keys";
             defaultPkEslFile = mkOption {
