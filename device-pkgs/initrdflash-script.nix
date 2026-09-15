@@ -123,11 +123,7 @@ let
     # --log-strip -> Strip control characters and escape sequences
     # --mute -> Mute tio messages
     spawn -noecho "${lib.getExe tio}" --log-strip --mute "$modem"
-    if {[info exists ::env(NO_TIMEOUT)]} {
-      set timeout -1
-    } else {
-      set timeout ${builtins.toString cfg.flashScriptOverrides.initrdFlashCompletionTimeoutSeconds}
-    }
+    set timeout ${builtins.toString cfg.flashScriptOverrides.initrdFlashCompletionTimeoutSeconds}
     set failed 0
     expect {
       "Flashing platform firmware successful" {
@@ -141,27 +137,9 @@ let
       "Entering console" {
         interact {
           # \003 is Ctrl-C
-          \003 { exit 1 }
+          \003   exit 1
+          ~~
         }
-      }
-      "Press enter within 10s to open a console session before flashing..." {
-        send "\r"
-        if {[info exists ::env(INTERACTIVE_PRE_FLASH)]} {
-          interact {
-            # \003 is Ctrl-C
-            \003 { exit 1 }
-            eof {
-              send "exit\r"
-              return
-            }
-            -o {Pre-flash console session ended.} {
-              return
-            }
-          }
-        } else {
-          send "exit\r"
-        }
-        exp_continue
       }
       timeout {
         if {$failed == 1} {
@@ -179,23 +157,6 @@ let
   '';
 in
 ''
-  while [[ $# -gt 0 ]]; do
-    case "$1" in
-      --interactive-pre-flash)
-        export INTERACTIVE_PRE_FLASH=1
-        shift
-        ;;
-      --no-timeout)
-        export NO_TIMEOUT=1
-        shift
-        ;;
-      *)
-        echo "Unknown argument: $1" >&2
-        exit 1
-        ;;
-    esac
-  done
-
   ${rcmScript}
 
   echo
