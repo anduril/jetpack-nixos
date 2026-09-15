@@ -49,39 +49,42 @@
         hardware.nvidia-jetpack.majorVersion = "7";
       };
 
-      supportedConfigurations = lib.listToAttrs (map
-        (c: {
-          name = c.som + lib.optionalString (c.super or false) "-super" + "-${c.carrierBoard}" + lib.optionalString (c ? majorVersion) "-jp${c.majorVersion}";
-          value = c;
-        }) [
-        { som = "orin-agx"; carrierBoard = "devkit"; }
-        { som = "orin-agx"; carrierBoard = "devkit"; majorVersion = "5"; }
-        { som = "orin-agx"; carrierBoard = "devkit"; majorVersion = "7"; }
-        { som = "orin-agx"; carrierBoard = "devkit"; super = true; majorVersion = "7"; }
-        { som = "orin-agx-industrial"; carrierBoard = "devkit"; majorVersion = "5"; }
-        { som = "orin-agx-industrial"; carrierBoard = "devkit"; }
-        { som = "orin-agx-industrial"; carrierBoard = "devkit"; majorVersion = "7"; }
-        { som = "orin-nx"; carrierBoard = "devkit"; }
-        { som = "orin-nx"; carrierBoard = "devkit"; majorVersion = "5"; }
-        { som = "orin-nx"; carrierBoard = "devkit"; majorVersion = "7"; }
-        { som = "orin-nx"; carrierBoard = "devkit"; super = true; }
-        { som = "orin-nx"; carrierBoard = "devkit"; super = true; majorVersion = "5"; }
-        { som = "orin-nx"; carrierBoard = "devkit"; super = true; majorVersion = "7"; }
-        { som = "orin-nx"; carrierBoard = "xavierNxDevkit"; }
-        { som = "orin-nx"; carrierBoard = "xavierNxDevkit"; majorVersion = "5"; }
-        { som = "orin-nano"; carrierBoard = "devkit"; }
-        { som = "orin-nano"; carrierBoard = "devkit"; majorVersion = "5"; }
-        { som = "orin-nano"; carrierBoard = "devkit"; majorVersion = "7"; }
-        { som = "orin-nano"; carrierBoard = "devkit"; super = true; }
-        { som = "orin-nano"; carrierBoard = "devkit"; super = true; majorVersion = "5"; }
-        { som = "orin-nano"; carrierBoard = "devkit"; super = true; majorVersion = "7"; }
-        { som = "thor-agx"; carrierBoard = "devkit"; }
-        { som = "thor-agx-t4000"; carrierBoard = "devkit"; }
-        { som = "xavier-agx"; carrierBoard = "devkit"; }
-        { som = "xavier-agx-industrial"; carrierBoard = "devkit"; } # TODO: Entirely untested
-        { som = "xavier-nx"; carrierBoard = "devkit"; }
-        { som = "xavier-nx-emmc"; carrierBoard = "devkit"; }
-      ]);
+      supportedConfigurations = lib.filterAttrs
+        # Orin JP7 only supports >=26.05
+        (_: { som, majorVersion ? "", ... }: lib.versionAtLeast lib.trivial.version "26.05" && lib.hasPrefix "orin" som && majorVersion == "7")
+        (lib.listToAttrs (map
+          (c: {
+            name = c.som + lib.optionalString (c.super or false) "-super" + "-${c.carrierBoard}" + lib.optionalString (c ? majorVersion) "-jp${c.majorVersion}";
+            value = c;
+          }) [
+          { som = "orin-agx"; carrierBoard = "devkit"; }
+          { som = "orin-agx"; carrierBoard = "devkit"; majorVersion = "5"; }
+          { som = "orin-agx"; carrierBoard = "devkit"; majorVersion = "7"; }
+          { som = "orin-agx"; carrierBoard = "devkit"; super = true; majorVersion = "7"; }
+          { som = "orin-agx-industrial"; carrierBoard = "devkit"; majorVersion = "5"; }
+          { som = "orin-agx-industrial"; carrierBoard = "devkit"; }
+          { som = "orin-agx-industrial"; carrierBoard = "devkit"; majorVersion = "7"; }
+          { som = "orin-nx"; carrierBoard = "devkit"; }
+          { som = "orin-nx"; carrierBoard = "devkit"; majorVersion = "5"; }
+          { som = "orin-nx"; carrierBoard = "devkit"; majorVersion = "7"; }
+          { som = "orin-nx"; carrierBoard = "devkit"; super = true; }
+          { som = "orin-nx"; carrierBoard = "devkit"; super = true; majorVersion = "5"; }
+          { som = "orin-nx"; carrierBoard = "devkit"; super = true; majorVersion = "7"; }
+          { som = "orin-nx"; carrierBoard = "xavierNxDevkit"; }
+          { som = "orin-nx"; carrierBoard = "xavierNxDevkit"; majorVersion = "5"; }
+          { som = "orin-nano"; carrierBoard = "devkit"; }
+          { som = "orin-nano"; carrierBoard = "devkit"; majorVersion = "5"; }
+          { som = "orin-nano"; carrierBoard = "devkit"; majorVersion = "7"; }
+          { som = "orin-nano"; carrierBoard = "devkit"; super = true; }
+          { som = "orin-nano"; carrierBoard = "devkit"; super = true; majorVersion = "5"; }
+          { som = "orin-nano"; carrierBoard = "devkit"; super = true; majorVersion = "7"; }
+          { som = "thor-agx"; carrierBoard = "devkit"; }
+          { som = "thor-agx-t4000"; carrierBoard = "devkit"; }
+          { som = "xavier-agx"; carrierBoard = "devkit"; }
+          { som = "xavier-agx-industrial"; carrierBoard = "devkit"; } # TODO: Entirely untested
+          { som = "xavier-nx"; carrierBoard = "devkit"; }
+          { som = "xavier-nx-emmc"; carrierBoard = "devkit"; }
+        ]));
 
       commonModules = [
         self.nixosModules.default
