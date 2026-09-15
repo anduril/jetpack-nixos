@@ -85,15 +85,18 @@
 
       commonModules = [
         self.nixosModules.default
-        {
+        ({ lib, ... }: {
           nixpkgs.config.allowUnfree = true;
           hardware.graphics.enable = true;
+          # Prevents a warning from being emitted, providing a nicer UX for
+          # users, plus we don't care to actually have this fixed here.
+          system.stateVersion = lib.trivial.release;
           # Just set these options to make the toplevel system evaluate without assertion errors
           fileSystems."/".fsType = "tmpfs";
           boot.loader.grub.enable = false;
           boot.loader.systemd-boot.enable = false;
           boot.zfs.forceImportRoot = false;
-        }
+        })
       ];
 
       supportedNixOSConfigurations = lib.mapAttrs
