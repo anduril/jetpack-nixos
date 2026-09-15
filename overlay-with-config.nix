@@ -93,6 +93,7 @@ final: prev: (
         errorLevelInfo = cfg.firmware.uefi.errorLevelInfo;
         edk2NvidiaPatches = cfg.firmware.uefi.edk2NvidiaPatches;
         edk2UefiPatches = cfg.firmware.uefi.edk2UefiPatches;
+        extraPackages = cfg.firmware.uefi.edk2ExtraPackages;
         inherit (finalJetpack) socFamily;
       };
 
