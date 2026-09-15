@@ -174,6 +174,8 @@ makeScope final.newScope (self: {
   containerDeps = self.callPackage ./pkgs/containers/deps.nix { };
   nvidia-ctk = warnOnInstantiate "nvidia-jetpack.nvidia-ctk has been removed, use pkgs.nvidia-container-toolkit" final.nvidia-container-toolkit;
 
+  fiptool = self.callPackage ./pkgs/fiptool { };
+
   # TODO(jared): deprecate this
   devicePkgsFromNixosConfig = config: config.system.build.jetsonDevicePkgs;
 
