@@ -194,7 +194,17 @@ diff_and_program_spi() {
   block_size=$((erase_size * diff_granularity))
   ranges_file=$(mktemp)
 
-  diffblocks "$work/start" "$work/golden" "$block_size" >"$ranges_file"
+  # Mask off the first block, as we handle it ourselves for fault tolerance.
+  diffblocks \
+    <(
+      dd if=/dev/zero bs="$block_size" count=1
+      dd if="$work/start" bs="$block_size" skip=1
+    ) \
+    <(
+      dd if=/dev/zero bs="$block_size" count=1
+      dd if="$work/golden" bs="$block_size" skip=1
+    ) \
+    "$block_size" >"$ranges_file"
 
   total_write_blocks=0
   while read -r _ count; do
@@ -211,6 +221,8 @@ diff_and_program_spi() {
     mtd_debug write /dev/mtd0 0 "$total_size" "$work/golden"
   else
     written_blocks=0
+    # Erase first block, keeping an invalid BCT until the end.
+    flash_erase /dev/mtd0 0 1
     while read -r range_start count; do
       write_block="$((range_start * block_size))"
       bytes="$((count * block_size))"
@@ -220,6 +232,9 @@ diff_and_program_spi() {
       written_blocks="$((written_blocks + count))"
       echo "Wrote $bytes bytes at offset $write_block ($((written_blocks * 100 / total_write_blocks))% of fast flash complete)"
     done <"$ranges_file"
+    # Manually write the first block in the final step.
+    dd "bs=$block_size" "count=1" "if=$work/golden" "of=$work/blk_write" 2>/dev/null
+    mtd_debug write /dev/mtd0 0 "$block_size" "$work/blk_write"
   fi
 
   rm -f "$ranges_file"
