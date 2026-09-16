@@ -81,13 +81,11 @@ program_spi_partition() {
       return 1
     fi
   fi
-  if [ -n "${FAST_FLASH:-}" ]; then
-    report_step "Staging $part_file (size=$file_size) into golden image for $partname (offset=$part_offset)"
-  else
-    report_step "Writing $part_file (size=$file_size) to $partname (offset=$part_offset)"
-  fi
+
+  report_step "Staging $part_file (size=$file_size) into golden image for $partname (offset=$part_offset)"
+
   if [[ "$file_size" != 0 ]]; then
-    if ! spi_write "$part_offset" "$file_size" "$part_file"; then
+    if ! write_golden "$part_offset" "$part_file"; then
       return 1
     fi
   fi
@@ -105,7 +103,7 @@ program_spi_partition() {
     local i=1
     while [[ "$i" -lt "$copycount" ]]; do
       echo "Writing $part_file to BCT+$i (offset=$curr_offset)"
-      if ! spi_write "$curr_offset" "$file_size" "$part_file"; then
+      if ! write_golden "$curr_offset" "$part_file"; then
         return 1
       fi
       i=$((i + 1))
@@ -163,21 +161,11 @@ program_mmcboot_partition() {
   return 0
 }
 
-# Write partition content to the QSPI device. Under FAST_FLASH, redirect
-# the write into the golden image (built by fast_flash_init) instead of
-# the real device, so program_spi_partition's placement logic (including
-# BCT copies and secondary_gpt repositioning) is exercised identically
-# whether writing to the golden image or the real device.
-spi_write() {
+write_golden() {
   local part_offset="$1"
-  local file_size="$2"
-  local part_file="$3"
+  local part_file="$2"
 
-  if [ -n "${FAST_FLASH:-}" ]; then
-    dd if="$part_file" of="$work/golden" bs=4096 seek="$part_offset" oflag=seek_bytes conv=notrunc >/dev/null
-  else
-    mtd_debug write /dev/mtd0 "$part_offset" "$file_size" "$part_file"
-  fi
+  dd if="$part_file" of="$work/golden" bs=4096 seek="$part_offset" oflag=seek_bytes conv=notrunc >/dev/null
 }
 
 disk_size() {
@@ -267,19 +255,9 @@ erase_bootdev() {
     echo "Erasing /dev/mmcblk0boot1"
     blkdiscard -f /dev/mmcblk0boot1
   elif [ "$BOOTDEV_TYPE" = "spi" ]; then
-    if [ ! -e /dev/mtd0 ]; then
-      echo "ERR: SPI boot device, but mtd0 device does not exist" >&2
+    if ! fast_flash_init; then
+      echo "Failed to init fast flash."
       return 1
-    fi
-    if [ -n "${FAST_FLASH:-}" ]; then
-      echo "Skipping full erase of /dev/mtd0 (FAST_FLASH)"
-      if ! fast_flash_init; then
-        echo "Failed to init fast flash."
-        return 1
-      fi
-    else
-      report_step "Erasing /dev/mtd0, this may take a while without any output..."
-      flash_erase /dev/mtd0 0 0
     fi
   else
     echo "ERR: unknown boot device type: $BOOTDEV_TYPE" >&2
@@ -346,10 +324,8 @@ write_partitions() {
     fi
   done <flash.idx
 
-  if [ -n "${FAST_FLASH:-}" ]; then
-    report_step "Performing fast flash."
-    diff_and_program_spi
-  fi
+  report_step "Performing fast flash."
+  diff_and_program_spi
 }
 
 find_matching_spec
