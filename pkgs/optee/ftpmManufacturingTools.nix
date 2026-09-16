@@ -42,10 +42,12 @@ stdenvNoCC.mkDerivation (finalAttrs: {
   dontUnpack = true;
   nativeBuildInputs = [ makeWrapper ];
 
-  # Override hooks (via overrideAttrs) to replace NVIDIA's EK CSR generator
-  # and/or CA simulator with site-specific implementations.
+  # Override hooks (via overrideAttrs) to replace NVIDIA's EK CSR generator,
+  # CA simulator, and/or (JP7 only) CA signing class with site-specific
+  # implementations. See ./ftpmManufacturingTools-overrides.md.
   vendored_ftpm_manufacturer_gen_ek_csr = null;
   vendored_ftpm_manufacturer_ca_simulator = null;
+  vendored_ftpm_ca_class = null;
 
   # NVIDIA's tools assume they're run from their own source directory:
   # odm_ekb_gen.py/oem_ekb_gen.py chdir to their own location before doing
@@ -115,6 +117,15 @@ stdenvNoCC.mkDerivation (finalAttrs: {
 
     ${installOverride "ftpm_manufacturer_gen_ek_csr.sh" finalAttrs.vendored_ftpm_manufacturer_gen_ek_csr}
     ${installOverride "ftpm_manufacturer_ca_simulator.sh" finalAttrs.vendored_ftpm_manufacturer_ca_simulator}
+
+    ${lib.optionalString ((warnIfWrongVersion "vendored_ftpm_ca_class" (l4tAtLeast "39") finalAttrs.vendored_ftpm_ca_class) != null) ''
+      install -m 644 ${lib.escapeShellArg "${finalAttrs.vendored_ftpm_ca_class}"} $out/libexec/ftpm/lib/custom_ca.py
+      substituteInPlace $out/libexec/ftpm/odm_ekb_gen.py \
+        --replace-fail \
+          'from lib.ca_signing import SimulatorCA, ca_sign_ek_csrs, ca_sign_sid_csr' \
+          'from lib.ca_signing import ca_sign_ek_csrs, ca_sign_sid_csr
+    from lib.custom_ca import CustomCA as SimulatorCA'
+    ''}
 
     patchShebangs $out/libexec/ftpm
 
