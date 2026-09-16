@@ -47,12 +47,14 @@ let
       name = "edk2-nvidia";
       src = srcs.edk2-nvidia;
       patches = edk2NvidiaPatches;
+      # Add --binary flag to handle CRLF better
       patchFlags = [ "-p1" "--binary" ];
     };
     edk2 = applyPatches {
       name = "edk2";
       src = srcs.edk2;
       patches = edk2UefiPatches;
+      # Add --binary flag to handle CRLF better
       patchFlags = [ "-p1" "--binary" ];
     };
   };
