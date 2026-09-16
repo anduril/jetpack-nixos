@@ -189,7 +189,7 @@ disk_size() {
 # Compare the golden image against the device's actual contents at
 # erase-block granularity, and program only the ranges that differ.
 diff_and_program_spi() {
-  local block_size write_block bytes ranges_file range_start count total_write_blocks
+  local block_size write_block bytes ranges_file range_start count total_write_blocks written_blocks
 
   block_size=$((erase_size * diff_granularity))
   ranges_file=$(mktemp)
@@ -210,12 +210,15 @@ diff_and_program_spi() {
     echo "Erase finished. Writing entire image to the device."
     mtd_debug write /dev/mtd0 0 "$total_size" "$work/golden"
   else
+    written_blocks=0
     while read -r range_start count; do
       write_block="$((range_start * block_size))"
       bytes="$((count * block_size))"
       dd "skip=$range_start" "bs=$block_size" "count=$count" "if=$work/golden" "of=$work/blk_write" 2>/dev/null
       flash_erase /dev/mtd0 "$write_block" "$count"
       mtd_debug write /dev/mtd0 "$write_block" "$bytes" "$work/blk_write"
+      written_blocks="$((written_blocks + count))"
+      echo "Wrote $bytes bytes at offset $write_block ($((written_blocks * 100 / total_write_blocks))% of fast flash complete)"
     done <"$ranges_file"
   fi
 
