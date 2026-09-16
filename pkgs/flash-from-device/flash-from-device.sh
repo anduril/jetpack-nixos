@@ -222,6 +222,27 @@ diff_and_program_spi() {
   rm -f "$ranges_file"
 }
 
+validate_spi_partition() {
+  local final golden
+
+  if ! mtd_debug read /dev/mtd0 0 "$total_size" "$work/final"; then
+    echo "Failed to read /dev/mtd0" >&2
+    return 1
+  fi
+
+  final=$(sha256sum -b "$work/final" | awk '{ print $1 }')
+  golden=$(sha256sum -b "$work/golden" | awk '{ print $1 }')
+
+  if [[ "$final" == "$golden" ]]; then
+    echo "Validated /dev/mtd0 is correct. SHA256: $final"
+  else
+    echo "Error occured during flashing /dev/mtd0."
+    echo "Expected SHA256: $golden"
+    echo "Measured SHA256: $final"
+    return 1
+  fi
+}
+
 fast_flash_init() {
   if [ ! -e /dev/mtd0 ]; then
     echo "ERR: SPI boot device, but mtd0 device does not exist" >&2
@@ -341,6 +362,7 @@ write_partitions() {
 
   report_step "Performing fast flash."
   diff_and_program_spi
+  validate_spi_partition
 }
 
 find_matching_spec
