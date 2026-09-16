@@ -21,6 +21,7 @@ diff_granularity=1
 erase_size=
 total_size=
 work=
+fast_flash_threshold_percentage=40
 
 report_step() {
   echo "Step $current_step/$steps... $*"
@@ -188,21 +189,35 @@ disk_size() {
 # Compare the golden image against the device's actual contents at
 # erase-block granularity, and program only the ranges that differ.
 diff_and_program_spi() {
-  local block_size write_block bytes ranges_file range_start count
+  local block_size write_block bytes ranges_file range_start count total_write_blocks
 
   block_size=$((erase_size * diff_granularity))
   ranges_file=$(mktemp)
 
   diffblocks "$work/start" "$work/golden" "$block_size" >"$ranges_file"
 
-  while read -r range_start count; do
-    write_block=$range_start
-    bytes=$((count * block_size))
-    dd "skip=$write_block" "bs=$block_size" "count=$count" "if=$work/golden" "of=$work/blk_write" 2>/dev/null
-    flash_erase /dev/mtd0 "$((write_block * block_size))" "$count"
-    mtd_debug write /dev/mtd0 "$((write_block * block_size))" "$bytes" "$work/blk_write"
-    echo "Wrote $bytes bytes: $(printf "%08x - %08x" "$((write_block * block_size))" "$(((range_start + count) * block_size))")"
+  total_write_blocks=0
+  while read -r _ count; do
+    total_write_blocks="$((total_write_blocks+count))"
   done <"$ranges_file"
+
+  # Special case, flash_erase /dev/mtd 0 0 is faster than individual block erases.
+  # Threshold might need some tuning, but I think 50% is about right.
+  if [ "$((total_write_blocks * block_size))" -ge "$((fast_flash_threshold_percentage * total_size / 100))" ]; then
+    echo "Performing full erase + write as total write size exceeded fast flashing threshold."
+    echo "This will erase the whole mtd device without any output."
+    flash_erase /dev/mtd0 0 0
+    echo "Erase finished. Writing entire image to the device."
+    mtd_debug write /dev/mtd0 0 "$total_size" "$work/golden"
+  else
+    while read -r range_start count; do
+      write_block="$((range_start*block_size))"
+      bytes="$((count*block_size))"
+      dd "skip=$range_start" "bs=$block_size" "count=$count" "if=$work/golden" "of=$work/blk_write" 2>/dev/null
+      flash_erase /dev/mtd0 "$write_block" "$count"
+      mtd_debug write /dev/mtd0 "$write_block" "$bytes" "$work/blk_write"
+    done <"$ranges_file"
+  fi
 
   rm -f "$ranges_file"
 }
