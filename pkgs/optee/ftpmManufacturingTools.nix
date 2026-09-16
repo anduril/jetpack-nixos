@@ -30,13 +30,22 @@ let
     openssl
     coreutils
   ];
+
+  installOverride = name: path: lib.optionalString (path != null) ''
+    install -m 755 ${lib.escapeShellArg "${path}"} $out/libexec/ftpm/${name}
+  '';
 in
-stdenvNoCC.mkDerivation {
+stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "ftpm-manufacturing-tools";
   version = l4tMajorMinorPatchVersion;
 
   dontUnpack = true;
   nativeBuildInputs = [ makeWrapper ];
+
+  # Override hooks (via overrideAttrs) to replace NVIDIA's EK CSR generator
+  # and/or CA simulator with site-specific implementations.
+  vendored_ftpm_manufacturer_gen_ek_csr = null;
+  vendored_ftpm_manufacturer_ca_simulator = null;
 
   # NVIDIA's tools assume they're run from their own source directory:
   # odm_ekb_gen.py/oem_ekb_gen.py chdir to their own location before doing
@@ -104,6 +113,9 @@ stdenvNoCC.mkDerivation {
           'CA_SIM_PYTHON_SCRIPT="'"$out"'/libexec/ftpm/ftpm_manufacturer_ca_sign_sid_csr.py"'
     fi
 
+    ${installOverride "ftpm_manufacturer_gen_ek_csr.sh" finalAttrs.vendored_ftpm_manufacturer_gen_ek_csr}
+    ${installOverride "ftpm_manufacturer_ca_simulator.sh" finalAttrs.vendored_ftpm_manufacturer_ca_simulator}
+
     patchShebangs $out/libexec/ftpm
 
     makeWrapper ${pythonEnv}/bin/python3 $out/bin/ftpm-odm-ekb-gen \
@@ -134,4 +146,4 @@ stdenvNoCC.mkDerivation {
     description = "NVIDIA fTPM ODM/OEM manufacturing tools (KDK and EKB generation, EK CSR generation, CA simulator)";
     platforms = lib.platforms.linux;
   };
-}
+})
