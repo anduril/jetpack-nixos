@@ -47,6 +47,13 @@ let
       name = "edk2-nvidia";
       src = srcs.edk2-nvidia;
       patches = edk2NvidiaPatches;
+      patchFlags = [ "-p1" "--binary" ];
+    };
+    edk2 = applyPatches {
+      name = "edk2";
+      src = srcs.edk2;
+      patches = edk2UefiPatches;
+      patchFlags = [ "-p1" "--binary" ];
     };
   };
 
@@ -140,11 +147,9 @@ lib.extendMkDerivation {
         "fortify"
       ];
 
-      patches = edk2UefiPatches ++ patches;
+      patches = patches;
 
-      patchPhase = ''
-        runHook prePatch
-
+      postPatch = ''
         find . -name \*_ext_dep.yaml -delete
         patchShebangs .
       '' + lib.optionalString errorLevelInfo ''
@@ -153,8 +158,6 @@ lib.extendMkDerivation {
         cp ${bootLogoVariants}/logo1080.bmp edk2-nvidia/Silicon/NVIDIA/Drivers/Logo/nvidiagray1080.bmp
         cp ${bootLogoVariants}/logo720.bmp edk2-nvidia/Silicon/NVIDIA/Drivers/Logo/nvidiagray720.bmp
         cp ${bootLogoVariants}/logo480.bmp edk2-nvidia/Silicon/NVIDIA/Drivers/Logo/nvidiagray480.bmp
-
-        runHook postPatch
       '';
 
       configurePhase = ''
