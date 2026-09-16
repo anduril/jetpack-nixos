@@ -230,6 +230,8 @@ let
           '';
 
           patches = edk2UefiPatches ++ patches;
+          # Add --binary flag to handle CRLF better
+          patchFlags = [ "-p1" "--binary" ];
 
           passthru.srcs = {
             edk2 = finalAttrs.src;

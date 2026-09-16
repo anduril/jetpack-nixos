@@ -33,7 +33,7 @@ let
 
     src = ./.;
 
-    patchPhase = ''
+    postPatch = ''
       substituteInPlace dlopenoverride.c \
           --replace-fail \
             '@oldpaths@' \
