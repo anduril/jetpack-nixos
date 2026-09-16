@@ -216,12 +216,12 @@ diff_and_program_spi() {
   else
     written_blocks=0
     # Erase first block, keeping an invalid BCT until the end.
-    flash_erase /dev/mtd0 0 1
+    flash_erase /dev/mtd0 0 "$diff_granularity"
     while read -r range_start count; do
       write_block="$((range_start*block_size))"
       bytes="$((count*block_size))"
       dd "skip=$range_start" "bs=$block_size" "count=$count" "if=$work/golden" "of=$work/blk_write" 2>/dev/null
-      flash_erase /dev/mtd0 "$write_block" "$count"
+      flash_erase /dev/mtd0 "$write_block" "$((count * diff_granularity))"
       mtd_debug write /dev/mtd0 "$write_block" "$bytes" "$work/blk_write"
       written_blocks="$((written_blocks+count))"
       echo "Wrote $bytes bytes at offset $write_block ($((written_blocks * 100 / total_write_blocks))% of fast flash complete)"
