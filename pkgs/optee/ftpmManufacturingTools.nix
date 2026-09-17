@@ -139,8 +139,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
       substituteInPlace $out/libexec/ftpm/odm_ekb_gen.py \
         --replace-fail \
           'from lib.ca_signing import SimulatorCA, ca_sign_ek_csrs, ca_sign_sid_csr' \
-          'from lib.ca_signing import ca_sign_ek_csrs, ca_sign_sid_csr
-    from lib.custom_ca import CustomCA as SimulatorCA'
+          '${"from lib.ca_signing import ca_sign_ek_csrs, ca_sign_sid_csr\nfrom lib.custom_ca import CustomCA as SimulatorCA"}'
     ''}
 
     patchShebangs $out/libexec/ftpm
