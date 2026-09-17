@@ -20,7 +20,7 @@ script contract (args, expected input/output file naming under
 ```nix
 ftpmManufacturingTools.overrideAttrs (_: _: {
   vendored_ftpm_manufacturer_ca_simulator = pkgs.writeShellScript "ca-sign-shim" ''
-    exec ${pythonEnv}/bin/python3 ${./scripts}/ftpm_ca_sign_shim.py "$@"
+    exec ${pkgs.python3}/bin/python3 ${./scripts}/ftpm_ca_sign_shim.py "$@"
   '';
 });
 ```
@@ -28,7 +28,11 @@ ftpmManufacturingTools.overrideAttrs (_: _: {
 A multi-file implementation (e.g. a Python entrypoint importing a shared
 helper module) doesn't need multi-file support from this hook: bundle the
 directory with `${./scripts}` inside the wrapper above, and the whole
-directory lands in the store together so the sibling import resolves.
+directory lands in the store together so the sibling import resolves. This
+works because the wrapper `exec`s the entrypoint, so Python puts the
+entrypoint's own directory (now inside the store bundle) on `sys.path[0]`
+automatically. This trick does NOT apply to `vendored_ftpm_ca_class` below
+-- see that section for why.
 
 ## `vendored_ftpm_ca_class`
 
@@ -44,6 +48,38 @@ defining a class named exactly `CustomCA` that subclasses `CAInterface`
 (see `lib/ca_signing.py` in the built package, or the interface summary
 below), and it's installed as `lib/custom_ca.py` and substituted in place
 of `SimulatorCA` at import time.
+
+Unlike the JP5/JP6 hooks above, this file is *imported*
+(`from lib.custom_ca import CustomCA`) rather than executed, so it can't
+rely on `sys.path[0]` to find a sibling helper module -- there's no
+wrapper script to `exec` it and put its directory on the path. If your
+class needs its own helper module, bake the helper's store path into your
+file at build time and `sys.path.insert()` it before importing, e.g. with
+`pkgs.substitute`:
+
+```nix
+let
+  customCa = pkgs.substitute {
+    src = ./custom_ca.py.in;
+    substitutions = [ "--subst-var-by" "helperDir" "${./scripts}" ];
+  };
+in
+ftpmManufacturingTools.overrideAttrs (_: _: {
+  vendored_ftpm_ca_class = customCa;
+});
+```
+
+```python
+# custom_ca.py.in
+import sys
+sys.path.insert(0, "@helperDir@")
+import my_helper_module
+
+from lib.ca_signing import SimulatorCA
+
+class CustomCA(SimulatorCA):
+    ...
+```
 
 `CAInterface` requires six methods:
 
