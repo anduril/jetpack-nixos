@@ -79,16 +79,22 @@ stdenvNoCC.mkDerivation (finalAttrs: {
         'os.getcwd()' \
       --replace-fail \
         'os.chdir(wd)' \
-        'pass' \
-      --replace-warn \
-        'cmd_gen_ek_csr = "./ftpm_manufacturer_gen_ek_csr.sh"' \
-        'cmd_gen_ek_csr = "'"$out"'/libexec/ftpm/ftpm_manufacturer_gen_ek_csr.sh"' \
-      --replace-warn \
-        'cmd_gen_ek_certs = "./ftpm_manufacturer_ca_simulator.sh"' \
-        'cmd_gen_ek_certs = "'"$out"'/libexec/ftpm/ftpm_manufacturer_ca_simulator.sh"' \
-      --replace-warn \
-        'cmd_sign_sid_csr = "./ftpm_manufacturer_ca_sign_sid_csr.sh"' \
-        'cmd_sign_sid_csr = "'"$out"'/libexec/ftpm/ftpm_manufacturer_ca_sign_sid_csr.sh"'
+        'pass'
+    ${lib.optionalString (l4tOlder "39") ''
+      substituteInPlace $out/libexec/ftpm/odm_ekb_gen.py \
+        --replace-fail \
+          'cmd_gen_ek_csr = "./ftpm_manufacturer_gen_ek_csr.sh"' \
+          'cmd_gen_ek_csr = "'"$out"'/libexec/ftpm/ftpm_manufacturer_gen_ek_csr.sh"' \
+        --replace-fail \
+          'cmd_gen_ek_certs = "./ftpm_manufacturer_ca_simulator.sh"' \
+          'cmd_gen_ek_certs = "'"$out"'/libexec/ftpm/ftpm_manufacturer_ca_simulator.sh"'
+    ''}
+    ${lib.optionalString (l4tAtLeast "36" && l4tOlder "39") ''
+      substituteInPlace $out/libexec/ftpm/odm_ekb_gen.py \
+        --replace-fail \
+          'cmd_sign_sid_csr = "./ftpm_manufacturer_ca_sign_sid_csr.sh"' \
+          'cmd_sign_sid_csr = "'"$out"'/libexec/ftpm/ftpm_manufacturer_ca_sign_sid_csr.sh"'
+    ''}
     substituteInPlace $out/libexec/ftpm/oem_ekb_gen.py \
       --replace-fail \
         'os.path.dirname(os.path.abspath(__file__))' \
