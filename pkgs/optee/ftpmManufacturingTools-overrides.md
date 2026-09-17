@@ -4,6 +4,10 @@
 site-specific CA/CSR logic can be substituted for NVIDIA's stub
 implementations without patching the vendored source.
 
+Which hooks apply depends on the l4t version (JP5/JP6 vs. JP7 -- see below);
+setting a hook that doesn't apply to the version being built is a no-op with
+an evaluation warning, not a build failure.
+
 ## `vendored_ftpm_manufacturer_gen_ek_csr` / `vendored_ftpm_manufacturer_ca_simulator`
 
 JP5/JP6 only. Each takes a single script (shell, or a `writeShellScript`
