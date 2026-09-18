@@ -51,7 +51,7 @@
 
       supportedConfigurations = lib.filterAttrs
         # Orin JP7 only supports >=26.05
-        (_: { som, majorVersion ? "", ... }: lib.versionAtLeast lib.trivial.version "26.05" && lib.hasPrefix "orin" som && majorVersion == "7")
+        (_: { som, majorVersion ? "", ... }: (lib.hasPrefix "orin" som && majorVersion == "7") -> lib.versionAtLeast lib.trivial.release "26.05")
         (lib.listToAttrs (map
           (c: {
             name = c.som + lib.optionalString (c.super or false) "-super" + "-${c.carrierBoard}" + lib.optionalString (c ? majorVersion) "-jp${c.majorVersion}";
