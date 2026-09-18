@@ -26,6 +26,7 @@
   edk2UefiPatches ? [ ]
 , debugMode ? false
 , errorLevelInfo ? debugMode
+, printErrorLevel ? if errorLevelInfo then "0x8000004F" else null
 , socFamily ? null # used in r38+, not needed here.
 , # Enables a bunch more info messages
 
@@ -129,8 +130,8 @@ let
 
       ./add-extra-oui-for-mgbe-phy.diff
     ] ++ edk2NvidiaPatches;
-    postPatch = lib.optionalString errorLevelInfo ''
-      sed -i 's#PcdDebugPrintErrorLevel|.*#PcdDebugPrintErrorLevel|0x8000004F#' Platform/NVIDIA/NVIDIA.common.dsc.inc
+    postPatch = lib.optionalString (printErrorLevel != null) ''
+      sed -i 's#PcdDebugPrintErrorLevel|.*#PcdDebugPrintErrorLevel|${printErrorLevel}#' Platform/NVIDIA/*.common.dsc.inc
     '' + lib.optionalString (bootLogo != null) ''
       cp ${bootLogoVariants}/logo1080.bmp Silicon/NVIDIA/Assets/nvidiagray1080.bmp
       cp ${bootLogoVariants}/logo720.bmp Silicon/NVIDIA/Assets/nvidiagray720.bmp
