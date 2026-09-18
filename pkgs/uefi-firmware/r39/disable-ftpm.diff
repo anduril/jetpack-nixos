@@ -11,3 +11,27 @@ index 476e38ca..d1e68159 100644
    imply SECURITY_UEFI_MENU_USER_AUTH
    imply DEFAULT_SECURITY_MM_OPTEE if SOC_T23X
    imply DEFAULT_SECURITY_MM_FFA if SOC_T26X
+diff --git a/Platform/NVIDIA/KconfigIncludes/BuildMinimal.conf b/Platform/NVIDIA/KconfigIncludes/BuildMinimal.conf
+--- a/Platform/NVIDIA/KconfigIncludes/BuildMinimal.conf
++++ b/Platform/NVIDIA/KconfigIncludes/BuildMinimal.conf
+@@ -12,7 +12,7 @@
+   help
+     "A minimal build for fixed boot systems with no configuration and no firmware storage"
+   #Default features
+-  imply DEFAULT_SECURITY_TPM_FIRMWARE
++  imply DEFAULT_SECURITY_TPM_NONE
+   imply SECURITY_PHYSICAL_PRESENCE
+   imply SECURITY_UEFI_SECURE_BOOT
+   imply VARIABLE_EMULATED
+diff --git a/Platform/NVIDIA/KconfigIncludes/BuildSimple.conf b/Platform/NVIDIA/KconfigIncludes/BuildSimple.conf
+--- a/Platform/NVIDIA/KconfigIncludes/BuildSimple.conf
++++ b/Platform/NVIDIA/KconfigIncludes/BuildSimple.conf
+@@ -12,7 +12,7 @@
+     A simple build optimal for embedded devives, with the minimum features enabled
+     no boot devices are included and will need to be selected for the platform
+   #Default features
+-  imply DEFAULT_SECURITY_TPM_FIRMWARE
++  imply DEFAULT_SECURITY_TPM_NONE
+   imply DEFAULT_SECURITY_MM_OPTEE if SOC_T23X
+   imply DEFAULT_SECURITY_MM_FFA if SOC_T26X
+   imply SECURITY_PHYSICAL_PRESENCE
