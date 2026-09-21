@@ -194,17 +194,8 @@ diff_and_program_spi() {
   block_size=$((erase_size * diff_granularity))
   ranges_file=$(mktemp)
 
-  # Mask off the first block, as we handle it ourselves for fault tolerance.
-  diffblocks \
-    <(
-      dd if=/dev/zero bs="$block_size" count=1
-      dd if="$work/start" bs="$block_size" skip=1
-    ) \
-    <(
-      dd if=/dev/zero bs="$block_size" count=1
-      dd if="$work/golden" bs="$block_size" skip=1
-    ) \
-    "$block_size" >"$ranges_file"
+  # Skip the first block, as we handle it ourselves for fault tolerance.
+  diffblocks "a=$work/start" "b=$work/golden" "bs=$block_size" a-skip=1 b-skip=1 >"$ranges_file"
 
   total_write_blocks=0
   while read -r _ count; do
@@ -224,6 +215,9 @@ diff_and_program_spi() {
     # Erase first block, keeping an invalid BCT until the end.
     flash_erase /dev/mtd0 0 "$diff_granularity"
     while read -r range_start count; do
+      # diffblocks counts blocks from the a-skip/b-skip point, so add
+      # back the skipped block to get an absolute block index.
+      range_start="$((range_start + 1))"
       write_block="$((range_start * block_size))"
       bytes="$((count * block_size))"
       dd "skip=$range_start" "bs=$block_size" "count=$count" "if=$work/golden" "of=$work/blk_write" 2>/dev/null
