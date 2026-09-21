@@ -17,6 +17,11 @@ fn show_help() {
     eprintln!("coalesced ranges of differing blocks to stdout, one");
     eprintln!("\"start_block count\" pair per line.");
     eprintln!();
+    eprintln!("If one file reaches EOF before the other, every remaining block is");
+    eprintln!("reported as differing -- a short file is never treated as matching.");
+    eprintln!("A source that never reaches EOF (e.g. /dev/zero) requires count=");
+    eprintln!("to bound the comparison, or diffblocks will run forever.");
+    eprintln!();
     eprintln!("  a=A_FILE     first file to compare");
     eprintln!("  b=B_FILE     second file to compare");
     eprintln!("  bs=SIZE      block size to compare at, in bytes (default 512)");
@@ -92,13 +97,16 @@ fn main() -> io::Result<()> {
             break;
         }
 
-        let n = read_exact_or_eof(&mut a, &mut a_buf)?;
-        read_exact_or_eof(&mut b, &mut b_buf)?;
-        if n == 0 {
+        let n_a = read_exact_or_eof(&mut a, &mut a_buf)?;
+        let n_b = read_exact_or_eof(&mut b, &mut b_buf)?;
+        if n_a == 0 && n_b == 0 {
             break;
         }
 
-        if a_buf[..n] != b_buf[..n] {
+        // Comparing slices of different lengths is never equal, so a
+        // short read on one side (that file ran out of bytes first) is
+        // always a difference -- never masked by stale buffer content.
+        if a_buf[..n_a] != b_buf[..n_b] {
             match range_start {
                 Some(_) => range_len += 1,
                 None => {
