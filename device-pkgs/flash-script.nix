@@ -14,6 +14,8 @@
   uefi-firmware ? null
 , # Optional package containing tos.img to replace prebuilt version
   tosImage ? null
+, # Optional package containing hafnium.bin to replace prebuilt version
+  hafnium ? null
 , # Optional EKS file containing encrypted keyblob
   eksFile ? null
 , # Additional DTB overlays to use during device flashing
@@ -73,6 +75,9 @@ in
   ''}
   ${lib.optionalString (eksFile != null) ''
   cp ${eksFile} bootloader/eks_${socType}.img
+  ''}
+  ${lib.optionalString (hafnium != null) ''
+  cp ${hafnium}/hafnium_${socType}.fip bootloader/hafnium_${socType}.fip
   ''}
 
   ${preFlashCommands}
