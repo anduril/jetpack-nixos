@@ -9,9 +9,19 @@ source @ota_helpers_func@
 
 signed_images=$1
 
+# The whole initrd rootfs is an in-memory tmpfs, so this is just claiming a
+# scratch directory in it (no separate mount needed).
+mkdir -p /tmp
+
 matching_boardspec=
 current_step=1
 steps=
+
+diff_granularity=1
+erase_size=
+total_size=
+work=
+fast_flash_threshold_percentage=40
 
 report_step() {
   echo "Step $current_step/$steps... $*"
@@ -72,9 +82,11 @@ program_spi_partition() {
       return 1
     fi
   fi
-  report_step "Writing $part_file (size=$file_size) to $partname (offset=$part_offset)"
+
+  report_step "Staging $part_file (size=$file_size) into golden image for $partname (offset=$part_offset)"
+
   if [[ "$file_size" != 0 ]]; then
-    if ! mtd_debug write /dev/mtd0 "$part_offset" "$file_size" "$part_file"; then
+    if ! write_golden "$part_offset" "$part_file"; then
       return 1
     fi
   fi
@@ -92,7 +104,7 @@ program_spi_partition() {
     local i=1
     while [[ "$i" -lt "$copycount" ]]; do
       echo "Writing $part_file to BCT+$i (offset=$curr_offset)"
-      if ! mtd_debug write /dev/mtd0 "$curr_offset" "$file_size" "$part_file"; then
+      if ! write_golden "$curr_offset" "$part_file"; then
         return 1
       fi
       i=$((i + 1))
@@ -150,6 +162,13 @@ program_mmcboot_partition() {
   return 0
 }
 
+write_golden() {
+  local part_offset="$1"
+  local part_file="$2"
+
+  dd if="$part_file" of="$work/golden" bs=4096 seek="$part_offset" oflag=seek_bytes conv=notrunc >/dev/null
+}
+
 disk_size() {
   devnum="$1"
   instnum="$2"
@@ -164,6 +183,93 @@ disk_size() {
     echo "$(($(cat /sys/block/mmcblk0/size) * $(cat /sys/block/mmcblk0/queue/hw_sector_size)))"
   else
     echo ""
+  fi
+}
+
+# Compare the golden image against the device's actual contents at
+# erase-block granularity, and program only the ranges that differ.
+diff_and_program_spi() {
+  local block_size write_block bytes ranges_file range_start count total_write_blocks written_blocks
+
+  block_size=$((erase_size * diff_granularity))
+  ranges_file=$(mktemp)
+
+  # Skip the first block, as we handle it ourselves for fault tolerance.
+  diffblocks "a=$work/start" "b=$work/golden" "bs=$block_size" a-skip=1 b-skip=1 >"$ranges_file"
+
+  total_write_blocks=0
+  while read -r _ count; do
+    total_write_blocks="$((total_write_blocks + count))"
+  done <"$ranges_file"
+
+  # Special case, flash_erase /dev/mtd 0 0 is faster than individual block erases.
+  # Threshold might need some tuning, but I think 50% is about right.
+  if [ "$((total_write_blocks * block_size))" -ge "$((fast_flash_threshold_percentage * total_size / 100))" ]; then
+    echo "Performing full erase + write as total write size exceeded fast flashing threshold."
+    echo "This will erase the whole mtd device without any output."
+    flash_erase /dev/mtd0 0 0
+    echo "Erase finished. Writing entire image to the device."
+    mtd_debug write /dev/mtd0 0 "$total_size" "$work/golden"
+  else
+    written_blocks=0
+    # Erase first block, keeping an invalid BCT until the end.
+    flash_erase /dev/mtd0 0 "$diff_granularity"
+    while read -r range_start count; do
+      # diffblocks counts blocks from the a-skip/b-skip point, so add
+      # back the skipped block to get an absolute block index.
+      range_start="$((range_start + 1))"
+      write_block="$((range_start * block_size))"
+      bytes="$((count * block_size))"
+      dd "skip=$range_start" "bs=$block_size" "count=$count" "if=$work/golden" "of=$work/blk_write" 2>/dev/null
+      flash_erase /dev/mtd0 "$write_block" "$((count * diff_granularity))"
+      mtd_debug write /dev/mtd0 "$write_block" "$bytes" "$work/blk_write"
+      written_blocks="$((written_blocks + count))"
+      echo "Wrote $bytes bytes at offset $write_block ($((written_blocks * 100 / total_write_blocks))% of fast flash complete)"
+    done <"$ranges_file"
+    # Manually write the first block in the final step.
+    dd "bs=$block_size" "count=1" "if=$work/golden" "of=$work/blk_write" 2>/dev/null
+    mtd_debug write /dev/mtd0 0 "$block_size" "$work/blk_write"
+  fi
+
+  rm -f "$ranges_file"
+}
+
+validate_spi_partition() {
+  local final golden
+
+  if ! mtd_debug read /dev/mtd0 0 "$total_size" "$work/final"; then
+    echo "Failed to read /dev/mtd0" >&2
+    return 1
+  fi
+
+  final=$(sha256sum -b "$work/final" | awk '{ print $1 }')
+  golden=$(sha256sum -b "$work/golden" | awk '{ print $1 }')
+
+  if [[ "$final" == "$golden" ]]; then
+    echo "Validated /dev/mtd0 is correct. SHA256: $final"
+  else
+    echo "Error occured during flashing /dev/mtd0."
+    echo "Expected SHA256: $golden"
+    echo "Measured SHA256: $final"
+    return 1
+  fi
+}
+
+fast_flash_init() {
+  if [ ! -e /dev/mtd0 ]; then
+    echo "ERR: SPI boot device, but mtd0 device does not exist" >&2
+    return 1
+  fi
+
+  total_size=$(cat /sys/class/mtd/mtd0/size)
+  erase_size=$(cat /sys/class/mtd/mtd0/erasesize)
+  work=$(mktemp -d)
+
+  head -c "$total_size" /dev/zero | tr '\000' '\377' >"$work/golden"
+
+  if ! mtd_debug read /dev/mtd0 0 "$total_size" "$work/start"; then
+    echo "Failed to read /dev/mtd0" >&2
+    return 1
   fi
 }
 
@@ -197,12 +303,10 @@ erase_bootdev() {
     echo "Erasing /dev/mmcblk0boot1"
     blkdiscard -f /dev/mmcblk0boot1
   elif [ "$BOOTDEV_TYPE" = "spi" ]; then
-    if [ ! -e /dev/mtd0 ]; then
-      echo "ERR: SPI boot device, but mtd0 device does not exist" >&2
+    if ! fast_flash_init; then
+      echo "Failed to init fast flash."
       return 1
     fi
-    report_step "Erasing /dev/mtd0, this may take a while without any output..."
-    flash_erase /dev/mtd0 0 0
   else
     echo "ERR: unknown boot device type: $BOOTDEV_TYPE" >&2
     return 1
@@ -267,6 +371,10 @@ write_partitions() {
       fi
     fi
   done <flash.idx
+
+  report_step "Performing fast flash."
+  diff_and_program_spi
+  validate_spi_partition
 }
 
 find_matching_spec
