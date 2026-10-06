@@ -1,0 +1,54 @@
+From d6dd137f2fdadb3eda35bcb2f2a0764ee14d8b5a Mon Sep 17 00:00:00 2001
+From: Peter Boettcher <pboettcher@anduril.com>
+Date: Tue, 6 Oct 2026 12:57:44 -0400
+Subject: [PATCH 2/3] nvethernet: add SIOCGHWTSTAMP support
+
+issue: facing an unsupported ioctl error while
+launching the ptp4l, since get timestamp configuration
+support is not there.
+
+fix: add get timestamp configuration ioctl support
+
+Bug 5274698
+Bug 5287071
+
+Change-Id: I9254b041d4d3b9dc2cddebc14dc6100ed1b76807
+Signed-off-by: Narayan Reddy <narayanr@nvidia.com>
+
+[ Backported from linux-nv-oot commit 38227b2177ae4f23e5e0a0ed59bb180837f95d71,
+  which is present on the rel-38 / JetPack 7 line but was never backported to
+  rel-36. Depends on the cached pdata->ptp_config added by the preceding patch.
+
+  The original also amends an ioctl list in a doc comment in
+  ether_callback_export.h. rel-36 has no such file -- its export header is
+  ether_export.h and carries no such list -- so that hunk is dropped. ]
+
+Signed-off-by: Peter Boettcher <pboettcher@anduril.com>
+---
+ drivers/net/ethernet/nvidia/nvethernet/ether_linux.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/ethernet/nvidia/nvethernet/ether_linux.c b/drivers/net/ethernet/nvidia/nvethernet/ether_linux.c
+index aae8157..0cff29f 100644
+--- a/drivers/net/ethernet/nvidia/nvethernet/ether_linux.c
++++ b/drivers/net/ethernet/nvidia/nvethernet/ether_linux.c
+@@ -3885,6 +3885,7 @@ static int ether_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
+ 	int ret = -EOPNOTSUPP;
+ 	struct ether_priv_data *pdata;
+ 	struct mii_ioctl_data *mii_data;
++	struct hwtstamp_config *config;
+ 
+ 	if (!dev || !rq) {
+ 		pr_err("%s: Invalid arg\n", __func__);
+@@ -3953,7 +3954,10 @@ static int ether_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
+ 	case SIOCSHWTSTAMP:
+ 		ret = ether_handle_hwtstamp_ioctl(pdata, rq);
+ 		break;
+-
++	case SIOCGHWTSTAMP:
++		config = &pdata->ptp_config;
++		ret = copy_to_user(rq->ifr_data, config, sizeof(*config)) ? -EFAULT : 0;
++		break;
+ 	default:
+ 		netdev_err(dev, "%s: Unsupported ioctl %d\n",
+ 			   __func__, cmd);

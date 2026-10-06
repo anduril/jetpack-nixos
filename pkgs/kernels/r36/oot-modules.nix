@@ -31,6 +31,12 @@ let
         ./patches/nvidia-oot/0005-Fix-header-guard-in-halfrf_ops_rtl8852c.h.patch
         ./patches/nvidia-oot/0001-crypto-tegra-Disable-softirqs-before-finalizing-requ.patch
         ./patches/nvidia-oot/0001-Lower-priority-of-tegra-se-crypto.patch
+        # PTP: stop SIOCSHWTSTAMP moving the PHC. The first two are backports
+        # from the rel-38 / JetPack 7 line, which never reached rel-36; the
+        # third has no upstream equivalent. See the patch headers.
+        ./patches/nvidia-oot/0006-nvethernet-Skip-PHC-update-if-no-config-change.patch
+        ./patches/nvidia-oot/0007-nvethernet-add-SIOCGHWTSTAMP-support.patch
+        ./patches/nvidia-oot/0008-nvethernet-don-t-reseed-the-PHC-when-timestamping-is-already-running.patch
       ];
     };
     nvgpu = gitRepos.nvgpu;
