@@ -218,7 +218,7 @@ in
         ])
       ];
     })
-    (lib.mkIf (lib.hasPrefix cfg.som "thor-agx") {
+    (lib.mkIf (lib.hasPrefix "thor-agx" cfg.som) {
       hardware.firmware = [
         (extractLinuxFirmware "xusb-firmware" ([ "nvidia/tegra186/xusb.bin" ] ++ lib.optionals
           (config.hardware.bluetooth.enable
