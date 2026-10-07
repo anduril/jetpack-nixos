@@ -82,7 +82,7 @@ makeScope final.newScope (self: {
   # Here for convenience, to see what is in upstream Jetpack
   unpackedDebs = final.runCommand "unpackedDebs-${l4tMajorMinorPatchVersion}" { nativeBuildInputs = [ final.buildPackages.dpkg ]; } ''
     mkdir -p $out
-    ${concatMapAttrsStringSep "\n" (repo: debs: (concatMapAttrsStringSep "\n" (n: p: "echo Unpacking ${n}; dpkg -x ${p.src} $out/${n}") debs)) self.debs}
+    ${concatMapAttrsStringSep "\n" (repo: debs: (concatMapAttrsStringSep "\n" (n: p: "echo Unpacking ${n}; mkdir -p $out/${n}; dpkg --fsys-tarfile ${p.src} | tar -xf - -C $out/${n}") debs)) self.debs}
   '';
 
   # Also just for convenience,
