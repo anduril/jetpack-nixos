@@ -372,9 +372,11 @@ write_partitions() {
     fi
   done <flash.idx
 
-  report_step "Performing fast flash."
-  diff_and_program_spi
-  validate_spi_partition
+  if [ -n "$work" ]; then
+    report_step "Performing fast flash."
+    diff_and_program_spi
+    validate_spi_partition
+  fi
 }
 
 find_matching_spec
