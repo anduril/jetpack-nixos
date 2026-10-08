@@ -23,7 +23,7 @@ in
     if l4tMajorVersion == "35" then "t194"
     else if l4tMajorVersion == "36" then "t234"
     else if l4tMajorVersion == "39" then "t264"
-    else throw "Unknown SoC type";
+    else throw "Unsupported SoC type: ${l4tMajorVersion}";
 
   # openssl is used to build fiptool
   buildInputs = with buildPackages; lib.optionals (l4tAtLeast "38") [ openssl ];
