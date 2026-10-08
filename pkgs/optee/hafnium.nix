@@ -14,7 +14,7 @@ stdenv.mkDerivation (finalAttrs: {
 
   socType =
     if l4tMajorVersion == "39" then "t264"
-    else throw "Unknown SoC type: ${l4tMajorVersion}";
+    else throw "Unsupported SoC type: ${l4tMajorVersion}";
 
   src = gitRepos."tegra/hafnium-src/hafnium";
 
