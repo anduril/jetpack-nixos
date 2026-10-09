@@ -1,0 +1,55 @@
+From 43fd9f69a26127e40bb43630f600c74c772ac656 Mon Sep 17 00:00:00 2001
+From: Peter Boettcher <pboettcher@anduril.com>
+Date: Tue, 6 Oct 2026 13:00:32 -0400
+Subject: [PATCH 2/3] nvethernet: add SIOCGHWTSTAMP support
+
+issue: facing an unsupported ioctl error while
+launching the ptp4l, since get timestamp configuration
+support is not there.
+
+fix: add get timestamp configuration ioctl support
+
+Bug 5274698
+Bug 5287071
+
+Change-Id: I9254b041d4d3b9dc2cddebc14dc6100ed1b76807
+Signed-off-by: Narayan Reddy <narayanr@nvidia.com>
+
+[ Backported to the in-tree r35 copy of this driver from linux-nv-oot commit
+  38227b2177ae4f23e5e0a0ed59bb180837f95d71. Depends on the cached
+  pdata->ptp_config added by the preceding patch.
+
+  The original also amends an ioctl list in a doc comment in
+  ether_callback_export.h, which r35 does not have; that hunk is dropped. The
+  config pointer is declared alongside r35's existing inline-initialised pdata
+  and mii_data rather than in the separate declaration block rel-38 has. ]
+
+Signed-off-by: Peter Boettcher <pboettcher@anduril.com>
+---
+ nvidia/drivers/net/ethernet/nvidia/nvethernet/ether_linux.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/nvidia/drivers/net/ethernet/nvidia/nvethernet/ether_linux.c b/nvidia/drivers/net/ethernet/nvidia/nvethernet/ether_linux.c
+index 426712f..1ef2988 100644
+--- a/nvidia/drivers/net/ethernet/nvidia/nvethernet/ether_linux.c
++++ b/nvidia/drivers/net/ethernet/nvidia/nvethernet/ether_linux.c
+@@ -3814,6 +3814,7 @@ static int ether_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
+ 	int ret = -EOPNOTSUPP;
+ 	struct ether_priv_data *pdata = netdev_priv(dev);
+ 	struct mii_ioctl_data *mii_data = if_mii(rq);
++	struct hwtstamp_config *config;
+ 
+ 	if (!dev || !rq) {
+ 		dev_err(pdata->dev, "%s: Invalid arg\n", __func__);
+@@ -3879,7 +3880,10 @@ static int ether_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
+ 	case SIOCSHWTSTAMP:
+ 		ret = ether_handle_hwtstamp_ioctl(pdata, rq);
+ 		break;
+-
++	case SIOCGHWTSTAMP:
++		config = &pdata->ptp_config;
++		ret = copy_to_user(rq->ifr_data, config, sizeof(*config)) ? -EFAULT : 0;
++		break;
+ 	default:
+ 		netdev_dbg(dev, "%s: Unsupported ioctl %d\n",
+ 			   __func__, cmd);

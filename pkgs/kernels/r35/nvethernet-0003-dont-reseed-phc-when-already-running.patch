@@ -1,0 +1,130 @@
+From 88bf36a557721b96cda4cc9d2bce12afa9ecf0df Mon Sep 17 00:00:00 2001
+From: Peter Boettcher <pboettcher@anduril.com>
+Date: Tue, 6 Oct 2026 13:00:57 -0400
+Subject: [PATCH 3/3] nvethernet: don't reseed the PHC when timestamping is
+ already running
+
+SIOCSHWTSTAMP is a request to configure *timestamping*; it must not move
+the clock. The preceding backport stops the common case, where ptp4l
+re-issues an identical configuration from port_initialize() on every
+recovery from FAULTY, by skipping the reprogramming entirely. A request
+that genuinely changes the filters still falls through to
+OSI_CMD_CONFIG_PTP, which unconditionally writes ptp_config.sec/nsec into
+the MAC systime (osi_ptp_configuration() -> hw_set_systime_to_mac(), with
+hw_config_addend() resetting the frequency addend on the way).
+
+Since ktime_get_real_ts64() is UTC while a PTP stack keeps the PHC on the
+grandmaster's timescale, which is TAI, that reseed steps the PHC by
+exactly the TAI-UTC offset. ptp4l and phc2sys then observe a genuine 37s
+error and, if either has a step threshold configured, step - phc2sys
+taking CLOCK_REALTIME with it.
+
+Stage the current PHC value instead when timestamping is already
+running, so the write-back is a no-op and phase survives. Seeding from
+the system clock is kept for the enable-from-stopped case, where the
+counter holds nothing meaningful: the hw_init path stages sec = nsec = 0,
+and ether_early_ptp_init() only runs for the PTP m2m roles, so on a
+normal boot the first SIOCSHWTSTAMP is the only thing that gives the PHC
+a usable value.
+
+This mirrors how igb splits igb_ptp_hwtstamp_set(), which configures
+filters only, from igb_ptp_reset(), which seeds the counter from
+ktime_get_real().
+
+Note that the frequency addend is still reset on a genuine filter
+change, so a PTP servo has to re-converge frequency; only phase is
+preserved. Fixing that needs a change inside nvethernetrm.
+
+Not upstream: rel-38 carries the two preceding patches but still
+reseeds unconditionally here, so JetPack 7 has this half of the problem
+too.
+
+Signed-off-by: Peter Boettcher <pboettcher@anduril.com>
+---
+ .../net/ethernet/nvidia/nvethernet/ptp.c      | 56 +++++++++++++++++--
+ 1 file changed, 50 insertions(+), 6 deletions(-)
+
+diff --git a/nvidia/drivers/net/ethernet/nvidia/nvethernet/ptp.c b/nvidia/drivers/net/ethernet/nvidia/nvethernet/ptp.c
+index 41df998..486f5f1 100644
+--- a/nvidia/drivers/net/ethernet/nvidia/nvethernet/ptp.c
++++ b/nvidia/drivers/net/ethernet/nvidia/nvethernet/ptp.c
+@@ -411,6 +411,9 @@ int ether_handle_hwtstamp_ioctl(struct ether_priv_data *pdata,
+ 	struct osi_ioctl ioctl_data = {};
+ 	struct hwtstamp_config config;
+ 	unsigned int hwts_rx_en = 1;
++	bool ptp_was_enabled;
++	unsigned int sec, nsec;
++	unsigned long flags;
+ 	int ret;
+ #if KERNEL_VERSION(5, 4, 0) > LINUX_VERSION_CODE
+ 	struct timespec now;
+@@ -441,6 +444,13 @@ int ether_handle_hwtstamp_ioctl(struct ether_priv_data *pdata,
+ 		goto skip;
+ 	}
+ 
++	/* Whether timestamping is already running, taken from the previously
++	 * programmed configuration. Decides below whether the PHC needs
++	 * seeding or must be left alone.
++	 */
++	ptp_was_enabled = (pdata->ptp_config.tx_type != HWTSTAMP_TX_OFF) ||
++			  (pdata->ptp_config.rx_filter != HWTSTAMP_FILTER_NONE);
++
+ 	switch (config.tx_type) {
+ 	case HWTSTAMP_TX_OFF:
+ 		pdata->hwts_tx_en = OSI_DISABLE;
+@@ -579,15 +589,49 @@ int ether_handle_hwtstamp_ioctl(struct ether_priv_data *pdata,
+ 		/* Store default PTP clock frequency, so that we
+ 		 * can make use of it for coarse correction */
+ 		osi_core->ptp_config.ptp_clock = pdata->ptp_ref_clock_speed;
+-		/* initialize system time */
++
++		/* Seed the PHC.
++		 *
++		 * OSI_CMD_CONFIG_PTP unconditionally writes ptp_config.sec/nsec
++		 * into the MAC systime, so what is staged here decides where
++		 * the PHC ends up.
++		 *
++		 * Only seed from the system clock when timestamping is being
++		 * turned on from a stopped state; that is the one case where
++		 * the counter holds nothing meaningful and a rough value is
++		 * better than none.
++		 *
++		 * When timestamping is already running the PHC is owned by
++		 * userspace and must be preserved: a PTP stack will have it
++		 * disciplined to the grandmaster's timescale, which is TAI, not
++		 * the UTC that CLOCK_REALTIME reports. Seeding it here would
++		 * step the PHC by exactly the TAI-UTC offset, and the ptp4l and
++		 * phc2sys servos would then drag CLOCK_REALTIME along with it.
++		 * Stage the current PHC value instead so the write-back is a
++		 * no-op and phase survives.
++		 */
++		if (ptp_was_enabled) {
++			raw_spin_lock_irqsave(&pdata->ptp_lock, flags);
++			ret = osi_dma_get_systime_from_mac(osi_dma, &sec, &nsec);
++			raw_spin_unlock_irqrestore(&pdata->ptp_lock, flags);
++			if (ret < 0) {
++				dev_err(pdata->dev,
++					"Failed to read systime from MAC\n");
++				return -EFAULT;
++			}
++			osi_core->ptp_config.sec = sec;
++			osi_core->ptp_config.nsec = nsec;
++		} else {
++			/* initialize system time */
+ #if KERNEL_VERSION(5, 4, 0) > LINUX_VERSION_CODE
+-		getnstimeofday(&now);
++			getnstimeofday(&now);
+ #else
+-		ktime_get_real_ts64(&now);
++			ktime_get_real_ts64(&now);
+ #endif
+-		/* Store sec and nsec */
+-		osi_core->ptp_config.sec = now.tv_sec;
+-		osi_core->ptp_config.nsec = now.tv_nsec;
++			/* Store sec and nsec */
++			osi_core->ptp_config.sec = now.tv_sec;
++			osi_core->ptp_config.nsec = now.tv_nsec;
++		}
+ 		/* one nsec accuracy */
+ 		osi_core->ptp_config.one_nsec_accuracy = OSI_ENABLE;
+ 		/* Enable the PTP configuration */
