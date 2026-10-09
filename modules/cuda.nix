@@ -9,8 +9,6 @@ let
     ;
 
   cfg = config.hardware.nvidia-jetpack;
-
-  thor2505 = (lib.hasPrefix "thor" cfg.som) && (lib.versionOlder lib.trivial.version "25.11");
 in
 {
   options = {
@@ -54,13 +52,7 @@ in
           assertion = cfg.majorVersion == "7" -> cudaAtLeast "13.0";
           message = "JetPack NixOS 7 supports CUDA 13.0 (natively): `pkgs.cudaPackages` has version ${cudaMajorMinorVersion}.";
         }
-        {
-          assertion = !(thor2505 && (config.hardware.nvidia-jetpack.configureCuda || pkgs.config.cudaSupport));
-          message = "CUDA 13 support is not available in NixOS 25.05. Please disable CUDA.";
-        }
       ];
-
-    hardware.nvidia-jetpack.configureCuda = lib.mkIf thor2505 (lib.mkForce false);
 
     # Advertise support for CUDA.
     nixpkgs.config = mkIf cfg.configureCuda (mkBefore {
