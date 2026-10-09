@@ -143,6 +143,22 @@ buildLinux (args // {
       name = "kbuild: Also install dtbos in make dtbs_install";
       patch = ./0001-kbuild-Also-install-dtbos-in-make-dtbs_install.patch;
     }
+
+    # JP5 counterpart of the JP6 nvidia-oot fix in PR #569 (c00066e).
+    # Keep the PHC on its userspace-selected timescale across SIOCSHWTSTAMP.
+    # Order matters: the getter and running-clock fix build on the first patch.
+    {
+      name = "nvethernet-skip-phc-update-if-no-config-change";
+      patch = ./nvethernet-0001-skip-phc-update-if-no-config-change.patch;
+    }
+    {
+      name = "nvethernet-add-SIOCGHWTSTAMP-support";
+      patch = ./nvethernet-0002-add-SIOCGHWTSTAMP-support.patch;
+    }
+    {
+      name = "nvethernet-dont-reseed-phc-when-already-running";
+      patch = ./nvethernet-0003-dont-reseed-phc-when-already-running.patch;
+    }
   ] ++ kernelPatches;
 
   structuredExtraConfig = with lib.kernel; {

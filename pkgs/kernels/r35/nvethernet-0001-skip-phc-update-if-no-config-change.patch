@@ -1,0 +1,107 @@
+From 89a0ecc2e09a6432eeb028004e469fb58fc47343 Mon Sep 17 00:00:00 2001
+From: Peter Boettcher <pboettcher@anduril.com>
+Date: Tue, 6 Oct 2026 13:00:10 -0400
+Subject: [PATCH 1/3] nvethernet: Skip PHC update if no config change
+
+Issue: Restarting of PTP daemon updates
+the current system time in MAC registers.
+
+Fix: Configure PTP registers only if PTP daemon
+sends updated configuration. If the configuration
+is same continue with earlier registers update.
+System time will be set in the MAC registers at
+the time of ptp_early_init and the 1st ptp
+daemon ioctl to set HW configuration.
+
+Bug 4259584
+
+Change-Id: Ied0eec498cfd4283b71797abf3b272d19998064f
+Signed-off-by: Rakesh Goyal <rgoyal@nvidia.com>
+
+[ Backported to the in-tree r35 copy of this driver from linux-nv-oot commit
+  8ca3fa5c517b0513c5f5f15164e27db8b87c1ccf (itself a cherry-pick of
+  e774e69777d92a7136ec6c61571e677bfbde6ebf). nvethernet moved out of tree in
+  r36, so this is a cross-repo backport; neither this fix nor the SIOCGHWTSTAMP
+  one that follows exists anywhere in linux-nvidia r35 history.
+
+  Deviations from the original:
+
+  - The original writes sizeof(sizeof(struct hwtstamp_config)) in both memset
+    calls. That is 8 rather than 12 on LP64, so it clears flags and tx_type but
+    leaves rx_filter stale, and a subsequent identical SIOCSHWTSTAMP could then
+    be skipped without the hardware having been reprogrammed. Corrected to
+    sizeof(struct hwtstamp_config). The defect is still present upstream in
+    rel-38 and in the shipped r39.2.1 release; gcc -Wall -Wextra does not warn
+    on it.
+  - Comments added on the two memset call sites. ]
+
+Signed-off-by: Peter Boettcher <pboettcher@anduril.com>
+---
+ .../drivers/net/ethernet/nvidia/nvethernet/ether_linux.c  | 8 ++++++++
+ .../drivers/net/ethernet/nvidia/nvethernet/ether_linux.h  | 2 ++
+ nvidia/drivers/net/ethernet/nvidia/nvethernet/ptp.c       | 6 ++++++
+ 3 files changed, 16 insertions(+)
+
+diff --git a/nvidia/drivers/net/ethernet/nvidia/nvethernet/ether_linux.c b/nvidia/drivers/net/ethernet/nvidia/nvethernet/ether_linux.c
+index 90c81e0..426712f 100644
+--- a/nvidia/drivers/net/ethernet/nvidia/nvethernet/ether_linux.c
++++ b/nvidia/drivers/net/ethernet/nvidia/nvethernet/ether_linux.c
+@@ -2971,6 +2971,11 @@ static int ether_close(struct net_device *ndev)
+ 	/* Reset MAC loopback variable */
+ 	pdata->mac_loopback_mode = OSI_DISABLE;
+ 
++	/* The HW timestamping configuration does not survive the interface
++	 * going down, so forget it; the next SIOCSHWTSTAMP must reprogram.
++	 */
++	memset(&pdata->ptp_config, 0, sizeof(struct hwtstamp_config));
++
+ 	return 0;
+ }
+ 
+@@ -6876,6 +6881,9 @@ static int ether_suspend_noirq(struct device *dev)
+ 	if (osi_core->mac == OSI_MAC_HW_MGBE)
+ 		pm_runtime_put_sync(pdata->dev);
+ 
++	/* Likewise across suspend/resume. */
++	memset(&pdata->ptp_config, 0, sizeof(struct hwtstamp_config));
++
+ 	return 0;
+ }
+ 
+diff --git a/nvidia/drivers/net/ethernet/nvidia/nvethernet/ether_linux.h b/nvidia/drivers/net/ethernet/nvidia/nvethernet/ether_linux.h
+index 51f4b4b..9fa6f16 100644
+--- a/nvidia/drivers/net/ethernet/nvidia/nvethernet/ether_linux.h
++++ b/nvidia/drivers/net/ethernet/nvidia/nvethernet/ether_linux.h
+@@ -631,6 +631,8 @@ struct ether_priv_data {
+ 	struct tasklet_struct lane_restart_task;
+ 	/** xtra sw error counters */
+ 	struct ether_xtra_stat_counters xstats;
++	/** PTP configuration passed by application */
++	struct hwtstamp_config ptp_config;
+ };
+ 
+ /**
+diff --git a/nvidia/drivers/net/ethernet/nvidia/nvethernet/ptp.c b/nvidia/drivers/net/ethernet/nvidia/nvethernet/ptp.c
+index ecf7fe6..41df998 100644
+--- a/nvidia/drivers/net/ethernet/nvidia/nvethernet/ptp.c
++++ b/nvidia/drivers/net/ethernet/nvidia/nvethernet/ptp.c
+@@ -437,6 +437,10 @@ int ether_handle_hwtstamp_ioctl(struct ether_priv_data *pdata,
+ 		return -EINVAL;
+ 	}
+ 
++	if (memcmp(&config, &pdata->ptp_config, sizeof(struct hwtstamp_config)) == 0) {
++		goto skip;
++	}
++
+ 	switch (config.tx_type) {
+ 	case HWTSTAMP_TX_OFF:
+ 		pdata->hwts_tx_en = OSI_DISABLE;
+@@ -601,6 +605,8 @@ int ether_handle_hwtstamp_ioctl(struct ether_priv_data *pdata,
+ 		ether_config_slot_function(pdata, OSI_ENABLE);
+ 	}
+ 
++	memcpy(&pdata->ptp_config, &config, sizeof(struct hwtstamp_config));
++skip:
+ 	return (copy_to_user(ifr->ifr_data, &config,
+ 			     sizeof(struct hwtstamp_config))) ? -EFAULT : 0;
+ }
