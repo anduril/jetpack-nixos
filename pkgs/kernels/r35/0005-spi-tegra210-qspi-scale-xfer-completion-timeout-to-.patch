@@ -1,0 +1,93 @@
+From cdcd2c4243e5492b8c9f9c73f4e3f4b5b9669723 Mon Sep 17 00:00:00 2001
+From: x <x@x>
+Date: Tue, 13 Oct 2026 19:59:39 +0000
+Subject: [PATCH] spi: tegra210-qspi: scale xfer completion timeout to transfer
+ size
+
+QSPI_DMA_TIMEOUT is a flat 10 second timeout armed once per
+spi_transfer, but large transfers are serviced as a sequence of DMA
+bursts under that one window. Some boards' QSPI bus negotiates slow
+enough that real transfers can exceed the window and spuriously time
+out, even though every burst completed fine.
+
+Compute the expected transfer time from the transfer's length,
+negotiated speed, and bus width, apply a safety factor, and add the
+original flat timeout back as a floor.
+
+The per-DMA-channel tx_dma_complete/rx_dma_complete waits in the IRQ
+handler are left untouched; those bound a single burst, not the
+whole transfer.
+---
+ drivers/spi/spi-tegra210-qspi.c | 28 ++++++++++++++++++++++++++--
+ 1 file changed, 26 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/spi/spi-tegra210-qspi.c b/drivers/spi/spi-tegra210-qspi.c
+index fb61677..a66dabc 100644
+--- a/drivers/spi/spi-tegra210-qspi.c
++++ b/drivers/spi/spi-tegra210-qspi.c
+@@ -23,6 +23,7 @@
+ #include <linux/interrupt.h>
+ #include <linux/io.h>
+ #include <linux/kernel.h>
++#include <linux/math64.h>
+ #include <linux/module.h>
+ #include <linux/of.h>
+ #include <linux/of_device.h>
+@@ -166,6 +167,7 @@
+ 
+ #define QSPI_DMA_TIMEOUT			(msecs_to_jiffies(10000))
+ #define DEFAULT_SPI_DMA_BUF_LEN			(64 * 1024)
++#define TRANSFER_SAFETY_FACTOR			2
+ #define TX_FIFO_EMPTY_COUNT_MAX			SPI_TX_FIFO_EMPTY_COUNT(0x40)
+ #define RX_FIFO_FULL_COUNT_ZERO			SPI_RX_FIFO_FULL_COUNT(0)
+ /*
+@@ -978,6 +980,28 @@ static int tegra_qspi_setup(struct spi_device *spi)
+ 	return 0;
+ }
+ 
++/* Scale the completion timeout to the transfer's size and bus speed. */
++static unsigned long tegra_qspi_xfer_timeout(struct spi_transfer *xfer)
++{
++	u64 transfer_ms = 0;
++
++	if (WARN_ON_ONCE(!xfer->speed_hz))
++		return QSPI_DMA_TIMEOUT;
++
++	/* Only the active direction's nbits is meaningful. */
++	if (xfer->tx_buf && xfer->tx_nbits)
++		transfer_ms += DIV_ROUND_UP_ULL((u64)xfer->len * 8 * 1000ULL,
++						 (u64)xfer->speed_hz * xfer->tx_nbits);
++
++	if (xfer->rx_buf && xfer->rx_nbits)
++		transfer_ms += DIV_ROUND_UP_ULL((u64)xfer->len * 8 * 1000ULL,
++						 (u64)xfer->speed_hz * xfer->rx_nbits);
++
++	transfer_ms *= TRANSFER_SAFETY_FACTOR;
++
++	return msecs_to_jiffies(transfer_ms) + QSPI_DMA_TIMEOUT;
++}
++
+ static int tegra_qspi_combined_sequence_transfer(struct tegra_qspi_data *tqspi,
+ 						 struct spi_message *msg)
+ {
+@@ -1057,7 +1081,7 @@ static int tegra_qspi_combined_sequence_transfer(struct tegra_qspi_data *tqspi,
+ 			is_first_msg = false;
+ 			ret = wait_for_completion_timeout
+ 					(&tqspi->xfer_completion,
+-					QSPI_DMA_TIMEOUT);
++					tegra_qspi_xfer_timeout(xfer));
+ 
+ 			if (WARN_ON(ret == 0)) {
+ 				dev_err(tqspi->dev, "QSPI Transfer failed with timeout: %d\n",
+@@ -1136,7 +1160,7 @@ static int tegra_qspi_non_combined_sequence_transfer
+ 		}
+ 		is_first_msg = false;
+ 		ret = wait_for_completion_timeout(&tqspi->xfer_completion,
+-						  QSPI_DMA_TIMEOUT);
++						  tegra_qspi_xfer_timeout(xfer));
+ 		if (WARN_ON(ret == 0)) {
+ 			dev_err(tqspi->dev, "QSPI Transfer failed with timeout\n");
+ 			if (tqspi->is_curr_dma_xfer &&
+-- 
+2.54.0
+
