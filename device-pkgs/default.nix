@@ -68,7 +68,7 @@ let
     meta.platforms = [ "x86_64-linux" ];
   };
 
-  # Produces a script that boots a given kernel, initrd, and cmdline using the RCM boot method
+  # Produces a script that boots a given kernel, initrd, and cmdline using the RCM boot method.
   mkRcmBootScript = { kernelPath, initrdPath, kernelCmdline, ... }@args: mkFlashScriptAuto (
     builtins.removeAttrs args [ "kernelPath" "initrdPath" "kernelCmdline" ] // {
       preFlashCommands = ''
@@ -234,7 +234,7 @@ let
     '';
 in
 {
-  inherit initrdFlashScript legacyFlashScript fuseScript rcmBoot pkcListComboHash;
+  inherit initrdFlashScript legacyFlashScript fuseScript rcmBoot pkcListComboHash mkRcmBootScript;
   flashScript = initrdFlashScript;
 }
   // (lib.optionalAttrs cfg.firmware.fskp.enable { inherit fskpFuseScript; })
