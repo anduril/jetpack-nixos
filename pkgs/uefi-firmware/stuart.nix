@@ -126,12 +126,15 @@ lib.extendMkDerivation {
       strictDeps = true;
 
       env = {
-        # NVIDIA's PrePI performs C function calls before stack has been set up.
-        # https://github.com/NVIDIA/edk2-nvidia/blob/r38.2/Silicon/NVIDIA/Library/TegraPlatformInfoLib/AArch64/TegraPlatformInfo.S#L61
-        # https://github.com/NVIDIA/edk2-nvidia/blob/r38.2/Silicon/NVIDIA/Library/TegraPlatformInfoLib/TegraPlatformInfoLib.c#L24
-        # nixos/nixpkgs#399014 enables `-fno-omit-frame-pointer` by default which
-        # causes PrePI to try to derefence uninitalized stack pointer.
-        NIX_CFLAGS_COMPILE = "-fomit-frame-pointer";
+        NIX_CFLAGS_COMPILE = (env.NIX_CFLAGS_COMPILE or "")
+          # NVIDIA's PrePI performs C function calls before stack has been set up.
+          # https://github.com/NVIDIA/edk2-nvidia/blob/r38.2/Silicon/NVIDIA/Library/TegraPlatformInfoLib/AArch64/TegraPlatformInfo.S#L61
+          # https://github.com/NVIDIA/edk2-nvidia/blob/r38.2/Silicon/NVIDIA/Library/TegraPlatformInfoLib/TegraPlatformInfoLib.c#L24
+          # nixos/nixpkgs#399014 enables `-fno-omit-frame-pointer` by default which
+          # causes PrePI to try to derefence uninitalized stack pointer.
+          # Callers' NIX_CFLAGS_COMPILE is appended rather than replacing this.
+          + " -fomit-frame-pointer"
+          + lib.optionalString (lib.versionAtLeast stdenv.cc.version "16") " -Wno-error=discarded-qualifiers -Wno-error=unused-but-set-variable";
 
         # stuart (nvidia extensions) really wants CROSS_COMPILER_PREFIX to look like this
         CROSS_COMPILER_PREFIX = "${stdenv.cc}/bin/${stdenv.cc.targetPrefix}";

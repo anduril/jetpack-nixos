@@ -162,6 +162,9 @@ let
     '';
 
     depsBuildBuild = prev.depsBuildBuild ++ [ libuuid ];
+    env = (prev.env or { }) // {
+      NIX_CFLAGS_COMPILE = (prev.env.NIX_CFLAGS_COMPILE or "") + lib.optionalString (lib.versionAtLeast stdenv.cc.version "16") " -Wno-error=unused-but-set-variable -Wno-error=discarded-qualifiers";
+    };
   });
 
   pythonEnv = buildPackages.python312.withPackages (ps: [ ps.tkinter ]);
@@ -207,6 +210,9 @@ let
 
             # Workaround for ../Silicon/NVIDIA/Drivers/EqosDeviceDxe/nvethernetrm/osi/core/osi_hal.c:1428: undefined reference to `__aarch64_ldadd4_sync'
             "-mno-outline-atomics"
+          ] ++ lib.optionals (lib.versionAtLeast stdenv.cc.version "16") [
+            "-Wno-error=unused-but-set-variable"
+            "-Wno-error=discarded-qualifiers"
           ];
 
           ${"GCC5_${targetArch}_PREFIX"} = stdenv.cc.targetPrefix;

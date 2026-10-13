@@ -6,6 +6,7 @@
 , argsOverride ? { }
 , buildLinux
 , gitRepos
+, stdenv
 , ...
 }@args:
 buildLinux (args // {
@@ -36,6 +37,8 @@ buildLinux (args // {
   };
   autoModules = false;
   features = { }; # TODO: Why is this needed in nixpkgs master (but not NixOS 22.05)?
+
+  extraMakeFlags = lib.optionals (lib.versionAtLeast stdenv.cc.version "16") [ "EXTRA_WARNINGS=-Wno-error=discarded-qualifiers" ];
 
   kernelPatches = [
     {
