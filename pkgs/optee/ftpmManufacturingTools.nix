@@ -6,6 +6,8 @@
 , coreutils
 , gitRepos
 , l4tMajorMinorPatchVersion
+, l4tAtLeast
+, l4tOlder
 }:
 let
   nvOpteeSrc = gitRepos."tegra/optee-src/nv-optee";
@@ -30,13 +32,32 @@ let
     openssl
     coreutils
   ];
+
+  installOverride = name: path: lib.optionalString (path != null) ''
+    install -m 755 ${lib.escapeShellArg "${path}"} $out/libexec/ftpm/${name}
+  '';
+
+  # JP7 (l4t 39+) dropped the ftpm_manufacturer_*.sh script hooks in favor
+  # of the CA-class hook; see ./ftpmManufacturingTools-overrides.md.
+  warnIfWrongVersion = name: applicable: path:
+    if path != null && !applicable then
+      lib.warn "${name} has no effect on l4t ${l4tMajorMinorPatchVersion}; ignoring" null
+    else
+      path;
 in
-stdenvNoCC.mkDerivation {
+stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "ftpm-manufacturing-tools";
   version = l4tMajorMinorPatchVersion;
 
   dontUnpack = true;
   nativeBuildInputs = [ makeWrapper ];
+
+  # Override hooks (via overrideAttrs) to replace NVIDIA's EK CSR generator,
+  # CA simulator, and/or (JP7 only) CA signing class with site-specific
+  # implementations. See ./ftpmManufacturingTools-overrides.md.
+  vendored_ftpm_manufacturer_gen_ek_csr = null;
+  vendored_ftpm_manufacturer_ca_simulator = null;
+  vendored_ftpm_ca_class = null;
 
   # NVIDIA's tools assume they're run from their own source directory:
   # odm_ekb_gen.py/oem_ekb_gen.py chdir to their own location before doing
@@ -58,16 +79,22 @@ stdenvNoCC.mkDerivation {
         'os.getcwd()' \
       --replace-fail \
         'os.chdir(wd)' \
-        'pass' \
-      --replace-warn \
-        'cmd_gen_ek_csr = "./ftpm_manufacturer_gen_ek_csr.sh"' \
-        'cmd_gen_ek_csr = "'"$out"'/libexec/ftpm/ftpm_manufacturer_gen_ek_csr.sh"' \
-      --replace-warn \
-        'cmd_gen_ek_certs = "./ftpm_manufacturer_ca_simulator.sh"' \
-        'cmd_gen_ek_certs = "'"$out"'/libexec/ftpm/ftpm_manufacturer_ca_simulator.sh"' \
-      --replace-warn \
-        'cmd_sign_sid_csr = "./ftpm_manufacturer_ca_sign_sid_csr.sh"' \
-        'cmd_sign_sid_csr = "'"$out"'/libexec/ftpm/ftpm_manufacturer_ca_sign_sid_csr.sh"'
+        'pass'
+    ${lib.optionalString (l4tOlder "39") ''
+      substituteInPlace $out/libexec/ftpm/odm_ekb_gen.py \
+        --replace-fail \
+          'cmd_gen_ek_csr = "./ftpm_manufacturer_gen_ek_csr.sh"' \
+          'cmd_gen_ek_csr = "'"$out"'/libexec/ftpm/ftpm_manufacturer_gen_ek_csr.sh"' \
+        --replace-fail \
+          'cmd_gen_ek_certs = "./ftpm_manufacturer_ca_simulator.sh"' \
+          'cmd_gen_ek_certs = "'"$out"'/libexec/ftpm/ftpm_manufacturer_ca_simulator.sh"'
+    ''}
+    ${lib.optionalString (l4tAtLeast "36" && l4tOlder "39") ''
+      substituteInPlace $out/libexec/ftpm/odm_ekb_gen.py \
+        --replace-fail \
+          'cmd_sign_sid_csr = "./ftpm_manufacturer_ca_sign_sid_csr.sh"' \
+          'cmd_sign_sid_csr = "'"$out"'/libexec/ftpm/ftpm_manufacturer_ca_sign_sid_csr.sh"'
+    ''}
     substituteInPlace $out/libexec/ftpm/oem_ekb_gen.py \
       --replace-fail \
         'os.path.dirname(os.path.abspath(__file__))' \
@@ -104,6 +131,17 @@ stdenvNoCC.mkDerivation {
           'CA_SIM_PYTHON_SCRIPT="'"$out"'/libexec/ftpm/ftpm_manufacturer_ca_sign_sid_csr.py"'
     fi
 
+    ${installOverride "ftpm_manufacturer_gen_ek_csr.sh" (warnIfWrongVersion "vendored_ftpm_manufacturer_gen_ek_csr" (l4tOlder "39") finalAttrs.vendored_ftpm_manufacturer_gen_ek_csr)}
+    ${installOverride "ftpm_manufacturer_ca_simulator.sh" (warnIfWrongVersion "vendored_ftpm_manufacturer_ca_simulator" (l4tOlder "39") finalAttrs.vendored_ftpm_manufacturer_ca_simulator)}
+
+    ${lib.optionalString ((warnIfWrongVersion "vendored_ftpm_ca_class" (l4tAtLeast "39") finalAttrs.vendored_ftpm_ca_class) != null) ''
+      install -m 644 ${lib.escapeShellArg "${finalAttrs.vendored_ftpm_ca_class}"} $out/libexec/ftpm/lib/custom_ca.py
+      substituteInPlace $out/libexec/ftpm/odm_ekb_gen.py \
+        --replace-fail \
+          'from lib.ca_signing import SimulatorCA, ca_sign_ek_csrs, ca_sign_sid_csr' \
+          '${"from lib.ca_signing import ca_sign_ek_csrs, ca_sign_sid_csr\nfrom lib.custom_ca import CustomCA as SimulatorCA"}'
+    ''}
+
     patchShebangs $out/libexec/ftpm
 
     makeWrapper ${pythonEnv}/bin/python3 $out/bin/ftpm-odm-ekb-gen \
@@ -134,4 +172,4 @@ stdenvNoCC.mkDerivation {
     description = "NVIDIA fTPM ODM/OEM manufacturing tools (KDK and EKB generation, EK CSR generation, CA simulator)";
     platforms = lib.platforms.linux;
   };
-}
+})
