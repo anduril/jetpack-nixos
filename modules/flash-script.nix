@@ -137,11 +137,20 @@ in
           lowestSupportedVersion = mkOption {
             type = types.nullOr (types.strMatching "^[0-9]+\\.[0-9]+\\.[0-9]+$");
             default = null;
-            example = "35.0.0";
+            example = "35.5.0";
             description = ''
-              L4T version flashed as the UEFI FMP lowest supported version.
-              Capsule updates below it are refused. `null` keeps the BSP
-              default, the flashed L4T version.
+              L4T version used as the UEFI FMP lowest supported version, both
+              when flashing and in capsule updates built from this
+              configuration. The firmware refuses capsule updates below it.
+              `null` keeps the BSP default, the flashed L4T version.
+
+              A capsule update built without this option sets the floor to its
+              own version. The floor only ratchets upwards after that.
+
+              Note, a downgrade may not boot. A capsule downgrade persists the
+              UEFI variable store and QSPI state. Older firmware may fail
+              integrity checks on it. In these cases, a hard reflash is
+              required to downgrade safely.
             '';
           };
 
