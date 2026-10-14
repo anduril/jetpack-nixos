@@ -395,8 +395,8 @@ in
 
       # jetson_clocks doesn't lock codec engine devfreq governors, so they can
       # run below max_freq under load. Match by suffix: paths vary by SoC.
-      systemd.services.jetson_clocks_codec_devfreq = mkIf cfg.maxClock {
-        enable = true;
+      systemd.services.jetson_clocks_codec_devfreq = {
+        enable = cfg.maxClock;
         description = "Lock video codec engine devfreq governors to performance";
         serviceConfig = {
           Type = "oneshot";
