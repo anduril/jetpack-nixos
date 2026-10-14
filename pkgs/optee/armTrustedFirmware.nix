@@ -23,6 +23,8 @@ in
 
   inherit src;
 
+  NIX_CFLAGS_COMPILE = lib.optionalString (lib.versionAtLeast stdenv.cc.version "16") "-Wno-error=unused-but-set-variable";
+
   socType =
     if l4tMajorVersion == "35" then "t194"
     else if l4tMajorVersion == "36" then "t234"
