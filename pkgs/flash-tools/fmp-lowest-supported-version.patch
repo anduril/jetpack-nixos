@@ -1,0 +1,14 @@
+diff --git a/flash.sh b/flash.sh
+--- a/flash.sh
++++ b/flash.sh
+@@ -1979,7 +1979,7 @@
+ 	local a_node=
+ 
+-	# Update current BSP version to "uefi/fmp-lowest-supported-version" in L4TConfiguration.dtbo
+-	a_node=$( printf "= <0x%02x%02x%02x%02x>;" \
+-		$(( (BSP_BRANCH>>8)&0xFF )) $(( BSP_BRANCH&0xFF )) $(( BSP_MAJOR&0xFF )) $(( BSP_MINOR&0xFF )) )
++	# Update FMP_LOWEST_SUPPORTED_VERSION, or the current BSP version if unset, to "uefi/fmp-lowest-supported-version" in L4TConfiguration.dtbo
++	a_node=$( printf "= <0x%08x>;" \
++		"${FMP_LOWEST_SUPPORTED_VERSION:-$(( ((BSP_BRANCH&0xFFFF)<<16) | ((BSP_MAJOR&0xFF)<<8) | (BSP_MINOR&0xFF) ))}" )
+ 	update_overlay_dtb "${L4T_CONF_DTBO}" "fmp-lowest-supported-version" "${a_node}" "uefi"
+ 

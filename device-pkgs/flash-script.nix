@@ -18,6 +18,8 @@
   eksFile ? null
 , # Additional DTB overlays to use during device flashing
   additionalDtbOverlays ? [ ]
+, # Optional L4T version (e.g. "35.0.0") to flash as the UEFI FMP lowest supported version
+  lowestSupportedVersion ? null
 , flash-tools
 }:
 let
@@ -45,6 +47,10 @@ in
   export NO_ROOTFS=1
   export NO_RECOVERY_IMG=1
   export NO_ESP_IMG=1
+  ${lib.optionalString (lowestSupportedVersion != null) (
+    let v = map lib.toInt (lib.splitVersion lowestSupportedVersion); in
+    "export FMP_LOWEST_SUPPORTED_VERSION=${toString ((builtins.elemAt v 0) * 65536 + (builtins.elemAt v 1) * 256 + (builtins.elemAt v 2))}"
+  )}
 
   export ADDITIONAL_DTB_OVERLAY=''${ADDITIONAL_DTB_OVERLAY:+$ADDITIONAL_DTB_OVERLAY,}${lib.concatStringsSep "," additionalDtbOverlays}
 

@@ -259,6 +259,7 @@ final: prev: (
       mkFlashScript = flash-tools: args: import ./device-pkgs/flash-script.nix ({
         inherit lib flash-tools;
         inherit (cfg.firmware) eksFile;
+        inherit (cfg.firmware.uefi) lowestSupportedVersion;
         inherit (cfg.flashScriptOverrides) flashArgs partitionTemplate preFlashCommands postFlashCommands;
         inherit (finalJetpack) tosImage socType socFamily uefi-firmware l4tAtLeast;
 

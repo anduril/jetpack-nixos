@@ -134,6 +134,17 @@ in
             };
           };
 
+          lowestSupportedVersion = mkOption {
+            type = types.nullOr (types.strMatching "^[0-9]+\\.[0-9]+\\.[0-9]+$");
+            default = null;
+            example = "35.0.0";
+            description = ''
+              L4T version flashed as the UEFI FMP lowest supported version.
+              Capsule updates below it are refused. `null` keeps the BSP
+              default, the flashed L4T version.
+            '';
+          };
+
           capsuleAuthentication = {
             enable = mkEnableOption "capsule update authentication";
 
@@ -492,6 +503,10 @@ in
       {
         assertion = !cfg.firmware.fskp.enable || (lib.versionAtLeast cfg.majorVersion "7");
         message = "FSKP support currently limited to Jetpack 7+ boards";
+      }
+      {
+        assertion = cfg.firmware.uefi.lowestSupportedVersion != null -> !(lib.versionOlder pkgs.nvidia-jetpack.l4tMajorMinorPatchVersion cfg.firmware.uefi.lowestSupportedVersion);
+        message = "hardware.nvidia-jetpack.firmware.uefi.lowestSupportedVersion (${toString cfg.firmware.uefi.lowestSupportedVersion}) must not exceed the flashed L4T version (${pkgs.nvidia-jetpack.l4tMajorMinorPatchVersion}).";
       }
       {
         assertion = cfg.firmware.uefi.edk2ExtraPackages != [ ] -> pkgs.nvidia-jetpack.l4tAtLeast "36";
