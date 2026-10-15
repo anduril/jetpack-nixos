@@ -37,6 +37,9 @@ let
         ./patches/nvidia-oot/0006-nvethernet-Skip-PHC-update-if-no-config-change.patch
         ./patches/nvidia-oot/0007-nvethernet-add-SIOCGHWTSTAMP-support.patch
         ./patches/nvidia-oot/0008-nvethernet-don-t-reseed-the-PHC-when-timestamping-is-already-running.patch
+        # Some boards hit QSPI_DMA_TIMEOUT's flat 1s limit on large transfers.
+        # Scale the timeout to the transfer's size and negotiated speed.
+        ./patches/nvidia-oot/0009-spi-tegra210-quad-scale-xfer-completion-timeout-to-.patch
       ];
     };
     nvgpu = gitRepos.nvgpu;

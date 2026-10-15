@@ -159,6 +159,19 @@ buildLinux (args // {
       name = "nvethernet-dont-reseed-phc-when-already-running";
       patch = ./nvethernet-0003-dont-reseed-phc-when-already-running.patch;
     }
+
+    # Some boards hit QSPI_DMA_TIMEOUT's flat limit on large transfers.
+    # Scale the timeout to the transfer's size and negotiated speed.
+    # Orin (t234) built-in driver.
+    {
+      name = "spi: tegra23x-qspi: scale xfer completion timeout to transfer size";
+      patch = ./0004-spi-tegra23x-qspi-scale-xfer-completion-timeout-to-.patch;
+    }
+    # Same fix, Xavier (t194) spi_tegra210_qspi module.
+    {
+      name = "spi: tegra210-qspi: scale xfer completion timeout to transfer size";
+      patch = ./0005-spi-tegra210-qspi-scale-xfer-completion-timeout-to-.patch;
+    }
   ] ++ kernelPatches;
 
   structuredExtraConfig = with lib.kernel; {
