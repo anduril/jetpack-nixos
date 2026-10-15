@@ -399,6 +399,26 @@ in
         wantedBy = [ "multi-user.target" ];
       };
 
+      # jetson_clocks doesn't lock codec engine devfreq governors, so they can
+      # run below max_freq under load. Match by suffix: paths vary by SoC.
+      systemd.services.jetson_clocks_codec_devfreq = {
+        enable = cfg.maxClock;
+        description = "Lock video codec engine devfreq governors to performance";
+        serviceConfig = {
+          Type = "oneshot";
+          ExecStart = pkgs.writeShellScript "jetson-clocks-codec-devfreq" ''
+            set -eu
+            for dev in /sys/class/devfreq/*.nvenc /sys/class/devfreq/*.nvdec /sys/class/devfreq/*.vic /sys/class/devfreq/*.nvjpg /sys/class/devfreq/*.ofa; do
+              [ -e "$dev/governor" ] || continue
+              grep -qw performance "$dev/available_governors" || continue
+              echo performance > "$dev/governor"
+            done
+          '';
+        };
+        after = [ "jetson_clocks.service" ];
+        wantedBy = [ "multi-user.target" ];
+      };
+
       environment.systemPackages = with pkgs.nvidia-jetpack; [
         l4t-tools
         otaUtils # Tools for UEFI capsule updates
