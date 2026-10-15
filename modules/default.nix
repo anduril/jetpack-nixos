@@ -381,6 +381,11 @@ in
         '')
       ];
 
+      # Groups referenced by 90-tegra-devices.rules. On L4T, nvfb-udev.sh creates
+      # debug (r35/r36 only; r39 still references it) and nvidia-l4t-init's
+      # postinst creates trusty and crypto, which only the r35 rules use.
+      users.groups = { debug = { }; } // lib.optionalAttrs (jetpackOlder "6") { trusty = { }; crypto = { }; };
+
       # Used by libjetsonpower.so, which is used by nvfancontrol at least.
       environment.etc."nvpower/libjetsonpower".source = "${pkgs.nvidia-jetpack.l4t-tools}/etc/nvpower/libjetsonpower";
 
