@@ -222,6 +222,12 @@ in
           "console=tty0" # Output to HDMI/DP. May need fbcon=map:0 as well
           "console=ttyTCU0,115200" # Provides console on "Tegra Combined UART" (TCU)
         ])
+        # NVIDIA's UEFI drives the display, so efifb would claim fb0. tegradc
+        # requires dc0 to get fb0, and its probe failure leaves a dangling
+        # framebuffer that crashes the kernel when udev reads it.
+        (lib.optionals (lib.hasPrefix "xavier" cfg.som) [
+          "video=efifb:off"
+        ])
         (lib.optionals (checkValidSoms [ "thor" ]) [
           "console=tty0"
           "console=ttyUTC0,115200"
