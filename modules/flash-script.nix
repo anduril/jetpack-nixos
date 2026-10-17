@@ -213,6 +213,19 @@ in
           };
         };
 
+        useFlasherPkgsForL4tTools = mkOption {
+          type = types.bool;
+          default = false;
+          description = ''
+            Build `signedFirmware` and `bup`, which run NVIDIA's L4T tools,
+            with `flasherPkgs` (x86_64-linux by default) instead of the
+            device's own build platform. On aarch64 the i386 tools run
+            emulated, several times slower than on x86_64. Enable this if you
+            have an x86_64 builder. Enabling it changes the UEFI version
+            stamp, so devices apply one capsule update.
+          '';
+        };
+
         eksFile = mkOption {
           type = types.nullOr types.path;
           default = null;
