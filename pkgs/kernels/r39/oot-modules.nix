@@ -24,6 +24,9 @@ let
         ./0001-Fix-conftest-use-with-gcc15.patch
         ./0001-crypto-tegra-Disable-softirqs-before-finalizing-requ.patch
         ./0001-Lower-priority-of-tegra-se-crypto.patch
+        # Some boards hit QSPI_DMA_TIMEOUT's flat 1s limit on large transfers.
+        # Scale the timeout to the transfer's size and negotiated speed.
+        ./0002-spi-tegra210-quad-scale-xfer-completion-timeout-to-.patch
       ];
     };
     nvethernetrm = applyPatches {
