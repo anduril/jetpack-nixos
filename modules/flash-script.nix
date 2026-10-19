@@ -134,6 +134,26 @@ in
             };
           };
 
+          lowestSupportedVersion = mkOption {
+            type = types.nullOr (types.strMatching "^[0-9]+\\.[0-9]+\\.[0-9]+$");
+            default = null;
+            example = "35.5.0";
+            description = ''
+              L4T version used as the UEFI FMP lowest supported version, both
+              when flashing and in capsule updates built from this
+              configuration. The firmware refuses capsule updates below it.
+              `null` keeps the BSP default, the flashed L4T version.
+
+              A capsule update built without this option sets the floor to its
+              own version. The floor only ratchets upwards after that.
+
+              Note, a downgrade may not boot. A capsule downgrade persists the
+              UEFI variable store and QSPI state. Older firmware may fail
+              integrity checks on it. In these cases, a hard reflash is
+              required to downgrade safely.
+            '';
+          };
+
           capsuleAuthentication = {
             enable = mkEnableOption "capsule update authentication";
 
@@ -492,6 +512,10 @@ in
       {
         assertion = !cfg.firmware.fskp.enable || (lib.versionAtLeast cfg.majorVersion "7");
         message = "FSKP support currently limited to Jetpack 7+ boards";
+      }
+      {
+        assertion = cfg.firmware.uefi.lowestSupportedVersion != null -> !(lib.versionOlder pkgs.nvidia-jetpack.l4tMajorMinorPatchVersion cfg.firmware.uefi.lowestSupportedVersion);
+        message = "hardware.nvidia-jetpack.firmware.uefi.lowestSupportedVersion (${toString cfg.firmware.uefi.lowestSupportedVersion}) must not exceed the flashed L4T version (${pkgs.nvidia-jetpack.l4tMajorMinorPatchVersion}).";
       }
       {
         assertion = cfg.firmware.uefi.edk2ExtraPackages != [ ] -> pkgs.nvidia-jetpack.l4tAtLeast "36";

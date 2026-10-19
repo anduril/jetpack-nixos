@@ -9,6 +9,11 @@ final: prev: (
 
     jetpackAtLeast = lib.versionAtLeast cfg.majorVersion;
 
+    # L4T version packed the way flash.sh and l4t_generate_soc_capsule.sh encode it.
+    fmpLowestSupportedVersion = lib.mapNullable
+      (v: let p = map lib.toInt (lib.splitVersion v); in (builtins.elemAt p 0) * 65536 + (builtins.elemAt p 1) * 256 + (builtins.elemAt p 2))
+      cfg.firmware.uefi.lowestSupportedVersion;
+
     flashTools = cfg.flasherPkgs.callPackages (import ./device-pkgs { inherit config; pkgs = final; }) { };
   in
   {
@@ -259,6 +264,7 @@ final: prev: (
       mkFlashScript = flash-tools: args: import ./device-pkgs/flash-script.nix ({
         inherit lib flash-tools;
         inherit (cfg.firmware) eksFile;
+        inherit fmpLowestSupportedVersion;
         inherit (cfg.flashScriptOverrides) flashArgs partitionTemplate preFlashCommands postFlashCommands;
         inherit (finalJetpack) tosImage socType socFamily uefi-firmware l4tAtLeast;
 
@@ -311,6 +317,7 @@ final: prev: (
         }
         (''
           ${cfg.firmware.uefi.capsuleAuthentication.preSignCommands final.buildPackages}
+          ${lib.optionalString (fmpLowestSupportedVersion != null) "export FMP_LOWEST_SUPPORTED_VERSION=${toString fmpLowestSupportedVersion}"}
           bash ${final.pkgsBuildBuild.nvidia-jetpack.flash-tools}/generate_capsule/l4t_generate_soc_capsule.sh \
         '' + (lib.optionalString cfg.firmware.uefi.capsuleAuthentication.enable ''
           --trusted-public-cert ${lib.escapeShellArg "${cfg.firmware.uefi.capsuleAuthentication.trustedPublicCertPemFile}"} \

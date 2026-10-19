@@ -56,7 +56,10 @@ let
       perl
     ];
 
-    patches = [ ./flash-tools-r${lib.versions.major l4tMajorMinorPatchVersion}.patch ];
+    patches = [
+      ./flash-tools-r${lib.versions.major l4tMajorMinorPatchVersion}.patch
+      ./fmp-lowest-supported-version.patch
+    ];
 
     postPatch = ''
       # Needed in Jetpack 5
