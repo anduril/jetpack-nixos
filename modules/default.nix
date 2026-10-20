@@ -284,9 +284,6 @@ in
           };
         });
 
-      # NVIDIA's nvmainline OOT config skips rtl8852ce (rtw89 is in-tree), but it is in the initrd list below.
-      boot.initrd.allowMissingModules = lib.mkIf cfg.kernel.mainline true;
-
       boot.kernelParams = [
         # Needed on Orin at least, but upstream has it for both
         "nvidia.rm_firmware_active=all"
@@ -326,7 +323,7 @@ in
         "r8126"
         "r8168"
         "tegra_vnet"
-        "rtl8852ce"
+        (if cfg.kernel.mainline then "rtw89_8852ce" else "rtl8852ce")
         "oak_pci"
       ] ++ lib.optionals (pkgs.nvidia-jetpack.l4tAtLeast "38" && cfg.kernel.hypervisorSupport) [
         # Hypervisor guest virtual storage
