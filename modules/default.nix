@@ -335,13 +335,8 @@ in
       boot.initrd.luks.cryptoModules = lib.mkDefault [
         "aes"
         "aes_generic"
-        "cbc"
-        "xts"
-        "sha1"
         "sha256"
         "sha512"
-        "af_alg"
-        "algif_skcipher"
       ];
 
       boot.initrd.systemd.tpm2.enable = lib.mkIf (jetpackOlder "7") (lib.mkDefault false);
