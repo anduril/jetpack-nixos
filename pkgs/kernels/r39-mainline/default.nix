@@ -26,6 +26,9 @@
 }@args:
 assert lib.assertMsg (lib.versionAtLeast baseLinuxPackages.kernel.version "6.9")
   "r39-mainline requires a baseLinuxPackages kernel >= 6.9 (got ${baseLinuxPackages.kernel.version})";
+let
+  common = import ../r39/common-config.nix { inherit lib; };
+in
 buildLinux ((removeAttrs args [ "baseLinuxPackages" "linuxKernel" ]) // {
   inherit (baseLinuxPackages.kernel) src version modDirVersion;
   extraMeta.branch = lib.versions.majorMinor baseLinuxPackages.kernel.version;
@@ -38,31 +41,20 @@ buildLinux ((removeAttrs args [ "baseLinuxPackages" "linuxKernel" ]) // {
   autoModules = false;
   features = { };
 
-  kernelPatches = baseLinuxPackages.kernel.kernelPatches ++ [
+  kernelPatches = baseLinuxPackages.kernel.kernelPatches ++ common.kernelPatches ++ [
     {
-      # Same as r39; see the comment in ../r39/common-config.nix.
-      name = "Hack-to-select-VIDEOBUF2_DMA_CONTIG";
-      patch = ../r39/0002-Hack-to-select-VIDEOBUF2_DMA_CONTIG.patch;
-    }
-    {
-      # Required by the guide before building, not set in mainline's defconfig.
-      name = "bring-your-own-kernel-config";
+      name = "jetpack-mainline";
       patch = null;
       structuredExtraConfig = with lib.kernel; {
+        # Required by the Bring Your Own Kernel guide before building, not set in mainline's defconfig.
         ARM64_PMEM = yes;
-      };
-    }
-    {
-      name = "pstore";
-      patch = null;
-      structuredExtraConfig = with lib.kernel; {
-        # conflicts with efi_pstore builtin default
+        # Conflicts with the efi_pstore builtin default.
         PSTORE_RAM = no;
       };
     }
   ] ++ kernelPatches;
 
-  structuredExtraConfig = (import ../r39/common-config.nix { inherit lib; })
+  structuredExtraConfig = common.structuredExtraConfig
   // (import ../common-arch.nix { inherit lib; })
   // lib.optionalAttrs realtime (with lib.kernel; {
     PREEMPT_VOLUNTARY = lib.mkForce no;
