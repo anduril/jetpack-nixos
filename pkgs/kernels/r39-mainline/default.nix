@@ -50,6 +50,11 @@ buildLinux ((removeAttrs args [ "baseLinuxPackages" "linuxKernel" ]) // {
         ARM64_PMEM = yes;
         # Conflicts with the efi_pstore builtin default.
         PSTORE_RAM = no;
+        # NVIDIA's nvmainline OOT config skips rtl8852ce, so the in-tree rtw89 driver is used
+        # instead (rtw89_8852ce is in the initrd module list). Not built with autoModules = false.
+        RTW89 = module;
+        RTW89_PCI = module;
+        RTW89_8852CE = module;
       };
     }
   ] ++ kernelPatches;
