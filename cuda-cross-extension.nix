@@ -44,6 +44,10 @@ let
 
   isJetsonBuildPackageSet = requestedJetsonCudaCapabilities != [ ] && !hostPlatform.isAarch64;
 
+  # True for the package set which runs on the Jetson when cross-compiling for one.
+  isJetsonCrossHostPackageSet =
+    requestedJetsonCudaCapabilities != [ ] && hostPlatform.isAarch64 && !pkgs.stdenv.buildPlatform.isAarch64;
+
   # Construct upstream's backendStdenv without requesting any CUDA capabilities, which passes the assertions. Then
   # restore the requested capabilities, so flags and manifest selection are consistent with the Jetson's package set.
   # NOTE: This mirrors the computation of these attributes in upstream's backendStdenv.
@@ -119,7 +123,7 @@ optionalAttrs isJetsonBuildPackageSet
   {
     inherit backendStdenv;
   }
-  // optionalAttrs (isJetsonBuildPackageSet && targetPlatform.isAarch64) {
+// optionalAttrs (isJetsonBuildPackageSet && targetPlatform.isAarch64) {
   cuda_nvcc =
     let
       cuda_nvcc = prevCudaPackages.cuda_nvcc.override { backendStdenv = targetBackendStdenv; };
@@ -127,4 +131,15 @@ optionalAttrs isJetsonBuildPackageSet
     retargetCudaNvcc (if cudaMajorMinorVersion == "11.4" then setCudaNvcc_11_4_Source cuda_nvcc else cuda_nvcc);
 
   setupCudaHook = prevCudaPackages.setupCudaHook.override { backendStdenv = targetBackendStdenv; };
+}
+  // optionalAttrs isJetsonCrossHostPackageSet {
+  # Upstream's cudnn interpolates `patchelf` into its postFixup, which refers to the Jetson's patchelf when
+  # cross-compiling; use the build platform's instead.
+  # NOTE: Replace the path rather than overriding the argument, since JetPack 5's cudnn is wrapped by debWrapBuildRedist.
+  cudnn = prevCudaPackages.cudnn.overrideAttrs (prevAttrs: {
+    postFixup = lib.replaceStrings
+      [ (lib.getExe pkgs.patchelf) ]
+      [ (lib.getExe pkgs.buildPackages.patchelf) ]
+      prevAttrs.postFixup or "";
+  });
 }
