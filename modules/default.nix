@@ -134,7 +134,7 @@ in
         default = false;
         type = types.bool;
         description = ''
-          Use the mainline kernel (pkgs.linuxPackages_latest.kernel) instead of NVIDIA's
+          Use a mainline kernel (see pkgs/kernels/r39-mainline) instead of NVIDIA's
           downstream kernel. NVIDIA-specific drivers come from the out-of-tree modules.
           Only supported on JetPack 7.
         '';
