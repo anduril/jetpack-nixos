@@ -32,7 +32,17 @@ buildLinux ((removeAttrs args [ "baseKernel" "linuxPackages_6_18" ]) // {
   defconfig = "defconfig";
   ignoreConfigErrors = true;
 
+  # Same as r39: don't build every driver as a module, the shared ../r39/common-config.nix
+  # lists what NixOS and the OOT modules need.
+  autoModules = false;
+  features = { };
+
   kernelPatches = baseKernel.kernelPatches ++ [
+    {
+      # Same as r39; see the comment in ../r39/common-config.nix.
+      name = "Hack-to-select-VIDEOBUF2_DMA_CONTIG";
+      patch = ../r39/0002-Hack-to-select-VIDEOBUF2_DMA_CONTIG.patch;
+    }
     {
       # Required by the guide before building, not set in mainline's defconfig.
       name = "bring-your-own-kernel-config";
@@ -42,27 +52,23 @@ buildLinux ((removeAttrs args [ "baseKernel" "linuxPackages_6_18" ]) // {
       };
     }
     {
-      name = "erofs";
+      name = "pstore";
       patch = null;
       structuredExtraConfig = with lib.kernel; {
-        EROFS_FS = yes;
-        MMC_SDHCI_PCI = module;
         # conflicts with efi_pstore builtin default
         PSTORE_RAM = no;
       };
     }
   ] ++ kernelPatches;
 
-  structuredExtraConfig = with lib.kernel; {
-    # Same as r39: nvidia's driver fails with the 32M default from common-config.nix.
-    CMA_SIZE_MBYTES = lib.mkForce (freeform "64");
-
+  structuredExtraConfig = (import ../r39/common-config.nix { inherit lib; })
+  // (import ../common-arch.nix { inherit lib; })
+  // lib.optionalAttrs realtime (with lib.kernel; {
+    PREEMPT_VOLUNTARY = lib.mkForce no;
+    PREEMPT_RT = yes;
+  }) // (with lib.kernel; {
     # nvidia-oot (configs/Makefile.config.nvmainline) builds its own spi-tegra210-quad;
     # drop the in-tree one so the module names don't collide.
     SPI_TEGRA210_QUAD = no;
-  } // (import ../common-arch.nix { inherit lib; })
-  // lib.optionalAttrs realtime {
-    PREEMPT_VOLUNTARY = lib.mkForce no;
-    PREEMPT_RT = yes;
-  } // structuredExtraConfig;
+  }) // structuredExtraConfig;
 } // argsOverride)
