@@ -66,15 +66,20 @@ let
       };
     });
 
-  # The backend compiler of the CUDA package set of the same version which runs on the Jetson.
-  targetBackendStdenv =
-    (getAttr (_cuda.lib.mkVersionedName "cudaPackages" cudaMajorMinorVersion) pkgs.targetPackages).backendStdenv;
+  # The CUDA package set of the same version which runs on the Jetson.
+  targetCudaPackages = getAttr (_cuda.lib.mkVersionedName "cudaPackages" cudaMajorMinorVersion) pkgs.targetPackages;
+  targetBackendStdenv = targetCudaPackages.backendStdenv;
 
   # NVCC accepts the path to a host compiler executable in place of a directory, which lets us use the cross-compiler's
   # prefixed binaries. NVCC uses the host compiler for both C and C++, so we point it at the C++ compiler.
   targetHostCompiler = "${targetBackendStdenv.cc}/bin/${targetBackendStdenv.cc.targetPrefix}c++";
 
   retargetCudaNvcc = drv: drv.overrideAttrs (prevAttrs: {
+    # NVCC provides headers required by host code which includes the CUDA runtime headers (e.g., crt/host_config.h).
+    # When NVCC is in nativeBuildInputs, these are only visible to NVCC itself, so propagate the Jetson's NVCC to
+    # consumers' buildInputs, making its headers available to the host compiler.
+    depsTargetTargetPropagated = prevAttrs.depsTargetTargetPropagated or [ ] ++ [ targetCudaPackages.cuda_nvcc ];
+
     postInstall = prevAttrs.postInstall or "" + ''
       nixLog "setting compiler-bindir to ${targetHostCompiler} in nvcc.profile"
       substituteInPlace "''${!outputBin:?}/bin/nvcc.profile" \
