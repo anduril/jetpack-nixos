@@ -9,6 +9,9 @@
 , stdenv
 , ...
 }@args:
+let
+  common = import ./common-config.nix { inherit lib; };
+in
 buildLinux (args // {
   # See Makefile in kernel source root for VERSION/PATCHLEVEL/SUBLEVEL.
   version = "6.8.12";
@@ -40,18 +43,14 @@ buildLinux (args // {
 
   extraMakeFlags = lib.optionals (lib.versionAtLeast stdenv.cc.version "16") [ "EXTRA_WARNINGS=-Wno-error=discarded-qualifiers" ];
 
-  kernelPatches = [
+  kernelPatches = common.kernelPatches ++ [
     {
       name = "usb: host: Export xhci_irq";
       patch = ./0001-usb-host-Export-xhci_irq.patch;
     }
-    {
-      name = "Hack-to-select-VIDEOBUF2_DMA_CONTIG";
-      patch = ./0002-Hack-to-select-VIDEOBUF2_DMA_CONTIG.patch;
-    }
   ] ++ kernelPatches;
 
-  structuredExtraConfig = (import ./common-config.nix { inherit lib; })
+  structuredExtraConfig = common.structuredExtraConfig
   // (import ../common-arch.nix { inherit lib; })
   // lib.optionalAttrs realtime (with lib.kernel; {
     PREEMPT_VOLUNTARY = lib.mkForce no; # Disable the one set in common-config.nix
