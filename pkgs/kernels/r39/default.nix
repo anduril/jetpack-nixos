@@ -49,6 +49,15 @@ buildLinux (args // {
       name = "Hack-to-select-VIDEOBUF2_DMA_CONTIG";
       patch = ./0002-Hack-to-select-VIDEOBUF2_DMA_CONTIG.patch;
     }
+    {
+      name = "erofs";
+      patch = null;
+      structuredExtraConfig = with lib.kernel; {
+        EROFS_FS = yes;
+        # The baremetal initrd lists sdhci_pci; Tegra's defconfig lacks it.
+        MMC_SDHCI_PCI = module;
+      };
+    }
   ] ++ kernelPatches;
 
   structuredExtraConfig = with lib.kernel; {
