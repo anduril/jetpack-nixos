@@ -48,7 +48,7 @@ buildLinux ((removeAttrs args [ "baseKernel" "linuxPackages_6_18" ]) // {
         EROFS_FS = yes;
         MMC_SDHCI_PCI = module;
         # conflicts with efi_pstore builtin default
-        CONFIG_PSTORE_RAM = no;
+        PSTORE_RAM = no;
       };
     }
   ] ++ kernelPatches;
