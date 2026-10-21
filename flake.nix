@@ -149,24 +149,7 @@
           modules = [ aarch64_cross_config installer_minimal_config jetpack7_config ];
         };
       }
-      // supportedNixOSConfigurations
-      // {
-        # Mainline kernel (see pkgs/kernels/r39-mainline). Native build only.
-        orin-nx-devkit-jp7-mainline = nixpkgs.lib.nixosSystem {
-          modules = commonModules ++ [
-            aarch64_config
-            {
-              hardware.nvidia-jetpack = {
-                enable = true;
-                som = "orin-nx";
-                carrierBoard = "devkit";
-                majorVersion = "7";
-                kernel.mainline = true;
-              };
-            }
-          ];
-        };
-      };
+      // supportedNixOSConfigurations;
 
       nixosModules.default = import ./modules/default.nix self.overlays.default;
 
