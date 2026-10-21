@@ -8,14 +8,15 @@
 # The "upstream patches" table in the guide lists two commits that were only in
 # linux-next when it was written (92a511a568e4 and 8ddfc01ace51, simplefb
 # power-domains / memory-region support). Both were merged in v6.8, so they are
-# already part of any sensible baseKernel and are not applied here.
+# already part of any sensible baseLinuxPackages and are not applied here.
 #
-# baseKernel defaults to 6.18 LTS rather than linuxPackages_latest: nvidia-oot is
+# baseLinuxPackages (the kernel package set to build from) defaults to 6.18 LTS rather
+# than linuxPackages_latest: nvidia-oot is
 # written for 6.8 and does not compile against 7.x (ASoC pcm_construct, dma_fence.lock,
 # of_gpio.h, drm_atomic_private_obj_init, ...). 6.18 builds with the patches in ../r39.
 { lib
-, baseKernel ? linuxPackages_6_18.kernel
-, linuxPackages_6_18
+, linuxKernel
+, baseLinuxPackages ? linuxKernel.packages.linux_6_18
 , realtime ? false
 , kernelPatches ? [ ]
 , structuredExtraConfig ? { }
@@ -23,11 +24,11 @@
 , buildLinux
 , ...
 }@args:
-assert lib.assertMsg (lib.versionAtLeast baseKernel.version "6.9")
-  "r39-mainline requires a baseKernel >= 6.9 (got ${baseKernel.version})";
-buildLinux ((removeAttrs args [ "baseKernel" "linuxPackages_6_18" ]) // {
-  inherit (baseKernel) src version modDirVersion;
-  extraMeta.branch = lib.versions.majorMinor baseKernel.version;
+assert lib.assertMsg (lib.versionAtLeast baseLinuxPackages.kernel.version "6.9")
+  "r39-mainline requires a baseLinuxPackages kernel >= 6.9 (got ${baseLinuxPackages.kernel.version})";
+buildLinux ((removeAttrs args [ "baseLinuxPackages" "linuxKernel" ]) // {
+  inherit (baseLinuxPackages.kernel) src version modDirVersion;
+  extraMeta.branch = lib.versions.majorMinor baseLinuxPackages.kernel.version;
 
   defconfig = "defconfig";
   ignoreConfigErrors = true;
@@ -37,7 +38,7 @@ buildLinux ((removeAttrs args [ "baseKernel" "linuxPackages_6_18" ]) // {
   autoModules = false;
   features = { };
 
-  kernelPatches = baseKernel.kernelPatches ++ [
+  kernelPatches = baseLinuxPackages.kernel.kernelPatches ++ [
     {
       # Same as r39; see the comment in ../r39/common-config.nix.
       name = "Hack-to-select-VIDEOBUF2_DMA_CONTIG";
