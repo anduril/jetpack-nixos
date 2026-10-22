@@ -407,6 +407,8 @@ in
             "tee-supplicant.service"
             "local-fs.target"
             "systemd-modules-load.service"
+            "systemd-boot-random-seed.service"
+            "setup-jetson-efi-variables.service"
           ];
           before = [
             "tpm2.target"
