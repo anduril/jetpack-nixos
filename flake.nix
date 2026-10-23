@@ -198,6 +198,7 @@
       };
 
       checks = forAllSystems ({ pkgs, system, ... }: {
+        firmwareMeasurements = self.legacyPackages.${system}.firmwareMeasurements;
         formatting = pkgs.stdenv.mkDerivation {
           name = "repo-formatting";
           src = self;
