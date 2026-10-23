@@ -118,6 +118,28 @@ in
         description = "Enable PREEMPT_RT patches";
       };
 
+      kernel.hypervisorSupport = mkOption {
+        default = false;
+        type = types.bool;
+        description = ''
+          Build the out-of-tree hypervisor-guest modules (tegra_vblk, tegra_hv_vblk_oops,
+          tegra_oops_nvlog, tegra-hv-vse-safety, tegra-hv-xhci, ivc-cdev, ...) and load the
+          virtual storage modules in the initrd. Only needed when running as a guest of
+          NVIDIA's hypervisor; bare-metal systems should leave this off.
+          Only has an effect on JetPack 7, and requires NVIDIA's downstream kernel.
+        '';
+      };
+
+      kernel.mainline = mkOption {
+        default = false;
+        type = types.bool;
+        description = ''
+          Use a mainline kernel (see pkgs/kernels/r39-mainline) instead of NVIDIA's
+          downstream kernel. NVIDIA-specific drivers come from the out-of-tree modules.
+          Only supported on JetPack 7.
+        '';
+      };
+
 
       flasherPkgs = mkOption {
         type = options.nixpkgs.pkgs.type;
@@ -157,6 +179,18 @@ in
   config = mkIf cfg.enable (lib.mkMerge [
     {
       assertions = [
+        {
+          assertion = cfg.kernel.mainline -> cfg.majorVersion == "7";
+          message = "hardware.nvidia-jetpack.kernel.mainline is only supported on JetPack 7.";
+        }
+        {
+          assertion = cfg.kernel.mainline -> !cfg.kernel.hypervisorSupport;
+          message = ''
+            hardware.nvidia-jetpack.kernel.hypervisorSupport requires NVIDIA's downstream kernel
+            (it provides the tegra_hv_ivc_* symbols); it cannot be combined with
+            hardware.nvidia-jetpack.kernel.mainline.
+          '';
+        }
         {
           # NixOS provides two main ways to feed a package set into a config:
           # 1. The options nixpkgs.hostPlatform/nixpkgs.buildPlatform, which are
@@ -236,10 +270,19 @@ in
       ];
 
       boot.kernelPackages =
-        (if cfg.kernel.realtime then
-          pkgs.nvidia-jetpack.rtkernelPackages
+        let
+          jp = pkgs.nvidia-jetpack;
+        in
+        (if cfg.kernel.mainline then
+          (if cfg.kernel.realtime then jp.rtkernelMainlinePackages else jp.kernelMainlinePackages).extend jp.kernelMainlinePackagesOverlay
         else
-          pkgs.nvidia-jetpack.kernelPackages).extend pkgs.nvidia-jetpack.kernelPackagesOverlay;
+          (if cfg.kernel.realtime then jp.rtkernelPackages else jp.kernelPackages).extend jp.kernelPackagesOverlay)
+        # Only the JetPack 7 (r39) OOT modules know about hypervisorSupport.
+        .extend (_: prev: lib.optionalAttrs (jetpackAtLeast "7") {
+          nvidia-oot-modules = prev.nvidia-oot-modules.override {
+            inherit (cfg.kernel) hypervisorSupport;
+          };
+        });
 
       boot.kernelParams = [
         # Needed on Orin at least, but upstream has it for both
@@ -273,8 +316,6 @@ in
         "nvme-core"
         "tegra-bpmp-thermal"
         "pwm-tegra"
-        "tegra_vblk"
-        "tegra_hv_vblk_oops"
         "ufs-tegra"
         "nvpps"
         "pcie-tegra264"
@@ -282,21 +323,20 @@ in
         "r8126"
         "r8168"
         "tegra_vnet"
-        "rtl8852ce"
+        (if cfg.kernel.mainline then "rtw89_8852ce" else "rtl8852ce")
         "oak_pci"
+      ] ++ lib.optionals (pkgs.nvidia-jetpack.l4tAtLeast "38" && cfg.kernel.hypervisorSupport) [
+        # Hypervisor guest virtual storage
+        "tegra_vblk"
+        "tegra_hv_vblk_oops"
       ];
 
       # See upstream default for this option, removes any modules that aren't enabled in JetPack kernel
       boot.initrd.luks.cryptoModules = lib.mkDefault [
         "aes"
         "aes_generic"
-        "cbc"
-        "xts"
-        "sha1"
         "sha256"
         "sha512"
-        "af_alg"
-        "algif_skcipher"
       ];
 
       boot.initrd.systemd.tpm2.enable = lib.mkIf (jetpackOlder "7") (lib.mkDefault false);

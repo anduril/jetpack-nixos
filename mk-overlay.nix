@@ -156,6 +156,18 @@ makeScope final.newScope (self: {
   rtkernel = self.callPackage ./pkgs/kernels/r${l4tMajorVersion} { kernelPatches = [ ]; realtime = true; };
   rtkernelPackages = final.linuxPackagesFor self.rtkernel;
 
+  # JetPack 7 only: mainline kernel (see pkgs/kernels/r39-mainline). The OOT
+  # modules are built with NVIDIA's `nvmainline` kernel config.
+  kernelMainline = self.callPackage ./pkgs/kernels/r39-mainline { kernelPatches = [ ]; };
+  kernelMainlinePackages = final.linuxPackagesFor self.kernelMainline;
+  rtkernelMainline = self.callPackage ./pkgs/kernels/r39-mainline { kernelPatches = [ ]; realtime = true; };
+  rtkernelMainlinePackages = final.linuxPackagesFor self.rtkernelMainline;
+  kernelMainlinePackagesOverlay = final: prev:
+    let base = self.kernelPackagesOverlay final prev; in
+    base // {
+      nvidia-oot-modules = base.nvidia-oot-modules.override { kernelName = "nvmainline"; };
+    };
+
   nxJetsonBenchmarks = self.callPackage ./pkgs/jetson-benchmarks {
     targetSom = "nx";
   };

@@ -9,6 +9,9 @@
 , stdenv
 , ...
 }@args:
+let
+  common = import ./common-config.nix { inherit lib; };
+in
 buildLinux (args // {
   # See Makefile in kernel source root for VERSION/PATCHLEVEL/SUBLEVEL.
   version = "6.8.12";
@@ -40,86 +43,16 @@ buildLinux (args // {
 
   extraMakeFlags = lib.optionals (lib.versionAtLeast stdenv.cc.version "16") [ "EXTRA_WARNINGS=-Wno-error=discarded-qualifiers" ];
 
-  kernelPatches = [
+  kernelPatches = common.kernelPatches ++ [
     {
       name = "usb: host: Export xhci_irq";
       patch = ./0001-usb-host-Export-xhci_irq.patch;
     }
-    {
-      name = "Hack-to-select-VIDEOBUF2_DMA_CONTIG";
-      patch = ./0002-Hack-to-select-VIDEOBUF2_DMA_CONTIG.patch;
-    }
   ] ++ kernelPatches;
 
-  structuredExtraConfig = with lib.kernel; {
-    # Override the default CMA_SIZE_MBYTES=32M setting in common-config.nix with the default from tegra_defconfig
-    # Otherwise, nvidia's driver craps out
-    CMA_SIZE_MBYTES = lib.mkForce (freeform "64");
-
-    ### So nat.service and firewall work ###
-    NF_TABLES = module; # This one should probably be in common-config.nix
-    # this NFT_NAT is not actually being set. when build with enableCommonConfig = false;
-    # and not ignoreConfigErrors = true; it will fail with error about unused option
-    # unused means that it wanted to set it as a module, but make oldconfig didn't ask it about that option,
-    # so it didn't get a chance to set it.
-    NFT_NAT = module;
-    NFT_MASQ = module;
-    NFT_REJECT = module;
-    NFT_COMPAT = module;
-    NFT_LOG = module;
-    NFT_COUNTER = module;
-
-    # search for "ip46tables" in nixpkgs and find all the -m options.
-    # Enable the corresponding Kconfigs
-    # TODO: nixpkgs should turn these on themselves.
-    NETFILTER_XT_MATCH_PKTTYPE = module;
-    NETFILTER_XT_MATCH_COMMENT = module;
-    NETFILTER_XT_MATCH_CONNTRACK = module;
-    NETFILTER_XT_MATCH_LIMIT = module;
-    NETFILTER_XT_MATCH_MARK = module;
-    NETFILTER_XT_MATCH_MULTIPORT = module;
-
-    IP_NF_MATCH_RPFILTER = module;
-
-    # IPv6 is enabled by default and without some of these `firewall.service` will explode.
-    IP6_NF_MATCH_AH = module;
-    IP6_NF_MATCH_EUI64 = module;
-    IP6_NF_MATCH_FRAG = module;
-    IP6_NF_MATCH_OPTS = module;
-    IP6_NF_MATCH_HL = module;
-    IP6_NF_MATCH_IPV6HEADER = module;
-    IP6_NF_MATCH_MH = module;
-    IP6_NF_MATCH_RPFILTER = module;
-    IP6_NF_MATCH_RT = module;
-    IP6_NF_MATCH_SRH = module;
-
-    # Needed since mdadm stuff is currently unconditionally included in the initrd
-    # This will hopefully get changed, see: https://github.com/NixOS/nixpkgs/pull/183314
-    MD_LINEAR = module;
-    MD_RAID0 = module;
-    MD_RAID1 = module;
-    MD_RAID10 = module;
-    MD_RAID456 = module;
-
-    # Needed for booting from USB
-    USB_UAS = module;
-
-    FW_LOADER_COMPRESS_XZ = yes;
-    FW_LOADER_COMPRESS_ZSTD = yes;
-
-    # Restore default LSM from security/Kconfig. Undoes Nvidia downstream changes.
-    LSM = freeform "landlock,lockdown,yama,loadpin,safesetid,integrity,selinux,smack,tomoyo,apparmor,bpf";
-
-    # drivers/media/platform/tegra/camera/vi/channel.c from
-    # linux-oot-modules has ifdefs for
-    # CONFIG_VIDEOBUF2_DMA_CONTIG, but actually requires it to
-    # function.
-    # Otherwise it hits a WARN_ON() and outputs
-    # > tegra-capture-vi: failed to initialize VB2 queue
-    VIDEOBUF2_DMA_CONTIG = yes;
-
-  } // (import ../common-arch.nix { inherit lib; })
-  // lib.optionalAttrs realtime {
+  structuredExtraConfig = common.structuredExtraConfig
+  // (import ../common-arch.nix { inherit lib; })
+  // lib.optionalAttrs realtime (with lib.kernel; {
     PREEMPT_VOLUNTARY = lib.mkForce no; # Disable the one set in common-config.nix
     # These are the options enabled/disabled by source/generic_rt_build.sh (this file comes after source/source_sync.sh)
     PREEMPT_RT = yes;
@@ -131,6 +64,6 @@ buildLinux (args // {
     CPU_FREQ_GOV_INTERACTIVE = no;
     CPU_FREQ_TIMES = no;
     FAIR_GROUP_SCHED = no;
-  } // structuredExtraConfig;
+  }) // structuredExtraConfig;
 
 } // argsOverride)
