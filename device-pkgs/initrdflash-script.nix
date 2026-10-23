@@ -1,4 +1,12 @@
 { mkRcmBootScript
+, mkRcmBootArgs
+, mkFlashCmdTools
+, useFlashCmd
+, writeShellApplication
+, buildPackages
+, nvidia-jetpack
+, socType
+, signedFirmware
 , config
 , flashInitrd
 , lib
@@ -94,9 +102,11 @@ let
     dtsFile = forceXusbPeripheralDts;
   };
 
-  rcmScript = mkRcmBootScript {
+  rcmBootArgs = {
     kernelPath = "${config.system.build.kernel}/${config.system.boot.loader.kernelFile}";
-    initrdPath = "${flashInitrd}/initrd";
+    initrdPath =
+      if useFlashCmd then "${flashInitrd}/initrd"
+      else "${builtins.placeholder "out"}/libexec/initrd";
     kernelCmdline = lib.concatStringsSep " " ([
       "sdhci_tegra.en_boot_part_access=1"
       "clk_ignore_unused"
@@ -118,6 +128,12 @@ let
     # using RCM boot, only the boot mode named "boot.img" is used (see https://gist.github.com/jmbaur/1ca79436e69eadc0a38ec0b43b16cb2f#file-flash-sh-L1675).
     additionalDtbOverlays = (lib.filter (path: (path.name or "") != "DefaultBootOrder.dtbo") cfg.flashScriptOverrides.additionalDtbOverlays) ++ [ forceXusbPeripheralDtbo ];
   };
+
+  rcmScript = mkRcmBootScript (rcmBootArgs // lib.optionalAttrs useFlashCmd {
+    flashTools = "${builtins.placeholder "out"}/libexec/rcm";
+  });
+  preparedRcm = mkFlashCmdTools (mkRcmBootArgs rcmBootArgs);
+  payload = if useFlashCmd then "libexec/rcm/bootloader/boot.img" else "libexec/initrd";
 
   expectScript = writeText "expect-initrd-flash" ''
     set modem /dev/serial/by-id/${serialPortId}
@@ -161,32 +177,64 @@ let
     }
   '';
 in
-''
-  ${rcmScript}
+(writeShellApplication {
+  name = "initrd-flash-${cfg.name}";
+  text = ''
+    (
+      cd "${builtins.placeholder "out"}"
+      ${lib.getExe' buildPackages.coreutils "sha256sum"} \
+        --check --status share/jetpack/flash-payload.sha256
+    )
+    ${rcmScript}
 
-  echo
-  echo "Jetson device should now be flashing and will reboot when complete."
+    echo
+    echo "Jetson device should now be flashing and will reboot when complete."
 
-  # TODO(eberman): maybe stop assuming /dev/serial/by-id is present
-  # It'll be populated with udev, so most Linux systems will work fine
-  echo -n "Waiting up to ${builtins.toString cfg.flashScriptOverrides.initrdFlashSerialEnumerateTimeoutSeconds}s for Jetson device to appear via USB"
+    # TODO(eberman): maybe stop assuming /dev/serial/by-id is present
+    # It'll be populated with udev, so most Linux systems will work fine
+    echo -n "Waiting up to ${builtins.toString cfg.flashScriptOverrides.initrdFlashSerialEnumerateTimeoutSeconds}s for Jetson device to appear via USB"
 
-  counter=0
-  until [[ -e /dev/serial/by-id/${serialPortId} || $counter -gt ${builtins.toString (cfg.flashScriptOverrides.initrdFlashSerialEnumerateTimeoutSeconds * 2)} ]] ; do
-    echo -n "."
-    sleep 0.5
-    ((++counter))
-  done
-  echo
+    counter=0
+    until [[ -e /dev/serial/by-id/${serialPortId} || $counter -gt ${builtins.toString (cfg.flashScriptOverrides.initrdFlashSerialEnumerateTimeoutSeconds * 2)} ]] ; do
+      echo -n "."
+      sleep 0.5
+      ((++counter))
+    done
+    echo
 
-  if [ ! -e /dev/serial/by-id/${serialPortId} ] ; then
-    echo "Jetson device not detected, please monitor the serial port or wait 5-15 minutes"
-    exit 2
-  fi
+    if [ ! -e /dev/serial/by-id/${serialPortId} ] ; then
+      echo "Jetson device not detected, please monitor the serial port or wait 5-15 minutes"
+      exit 2
+    fi
 
-  if ! ${lib.getExe expect} -f ${expectScript} ; then
-    echo "Flashing may have failed"
-    exit 1
-  fi
-  echo "Device reported flashing succeeded. Device should be rebooting."
-''
+    if ! ${lib.getExe expect} -f ${expectScript} ; then
+      echo "Flashing may have failed"
+      exit 1
+    fi
+    echo "Device reported flashing succeeded. Device should be rebooting."
+  '';
+  meta.platforms = [ "x86_64-linux" ];
+  meta.outputsToInstall = [ "out" ];
+}).overrideAttrs (prev: {
+  outputs = [ "out" "pcr" ];
+  buildCommand = prev.buildCommand + ''
+    mkdir -p "$out/libexec" "$out/share/jetpack" "$pcr"
+    ${if useFlashCmd then ''
+      mkdir -p "$out/libexec/rcm"
+      cp -r ${preparedRcm}/. "$out/libexec/rcm/"
+    '' else ''
+      cp ${flashInitrd}/initrd "$out/libexec/initrd"
+    ''}
+    # The signed directory is only an archive lookup key, not another input.
+    ${lib.getExe nvidia-jetpack.firmwareMeasurements} \
+      ${socType} initrdFlashScript "$out/${payload}" "$out/${payload}" \
+      --signed-directory ${builtins.unsafeDiscardStringContext (toString signedFirmware)} \
+      > "$pcr/measurements.json"
+    cp "$pcr/measurements.json" "$out/share/jetpack/measurements.json"
+    (
+      cd "$out"
+      ${lib.getExe' buildPackages.coreutils "sha256sum"} ${payload} \
+        > share/jetpack/flash-payload.sha256
+    )
+  '';
+})
