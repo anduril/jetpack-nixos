@@ -79,8 +79,17 @@ in
 
     systemd.services.setup-jetson-efi-variables = lib.mkIf (cfg.flashScriptOverrides.targetBoard != null) {
       description = "Setup Jetson OTA UEFI variables";
-      wantedBy = [ "multi-user.target" ];
-      after = [ "opt-nvidia-esp.mount" ];
+      unitConfig.DefaultDependencies = false;
+      wantedBy = [ "sysinit.target" ];
+      after = [
+        "local-fs.target"
+        "systemd-modules-load.service"
+        "modprobe@optee.service"
+        "opt-nvidia-esp.mount"
+      ];
+      wants = [ "modprobe@optee.service" ];
+      before = [ "sysinit.target" "shutdown.target" ];
+      conflicts = [ "shutdown.target" ];
       serviceConfig.Type = "oneshot";
       serviceConfig.ExecStart = "${pkgs.nvidia-jetpack.otaUtils}/bin/ota-setup-efivars ${cfg.flashScriptOverrides.targetBoard}";
     };

@@ -312,6 +312,8 @@ final: prev: (
       # NOTE: providing null public certs here will use the test certs in the EDK2 repo
       uefiCapsuleUpdate = prev.runCommand "uefi-${cfg.name}-${finalJetpack.l4tMajorMinorPatchVersion}.Cap"
         {
+          outputs = [ "out" "pcr" ];
+          meta.outputsToInstall = [ "out" ];
           nativeBuildInputs = [ prev.buildPackages.python3 prev.buildPackages.openssl ];
           inherit (cfg.firmware.uefi.capsuleAuthentication) requiredSystemFeatures;
         }
@@ -327,6 +329,10 @@ final: prev: (
           -i ${finalJetpack.bup}/bl_only_payload \
           -o $out \
           ${finalJetpack.socType}
+          mkdir -p "$pcr"
+          ${lib.getExe final.pkgsBuildBuild.nvidia-jetpack.firmwareMeasurements} \
+            ${finalJetpack.socType} uefiCapsuleUpdate "$out" ${finalJetpack.bup}/bl_only_payload \
+            > "$pcr/measurements.json"
         '');
 
       signedFirmware =
