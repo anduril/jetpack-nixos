@@ -228,7 +228,6 @@ final: prev: (
           inherit (cfg.firmware.uefi.capsuleAuthentication) requiredSystemFeatures;
         }
         (''
-          cp ${finalJetpack.bup}/bl_only_payload "$TMPDIR/bl_only_payload"
           ${cfg.firmware.uefi.capsuleAuthentication.preSignCommands final.buildPackages}
           ${lib.optionalString (fmpLowestSupportedVersion != null) "export FMP_LOWEST_SUPPORTED_VERSION=${toString fmpLowestSupportedVersion}"}
           bash ${final.pkgsBuildBuild.nvidia-jetpack.flash-tools}/generate_capsule/l4t_generate_soc_capsule.sh \
@@ -237,12 +236,12 @@ final: prev: (
           --other-public-cert ${lib.escapeShellArg "${cfg.firmware.uefi.capsuleAuthentication.otherPublicCertPemFile}"} \
           --signer-private-cert ${lib.escapeShellArg "${cfg.firmware.uefi.capsuleAuthentication.signerPrivateCertPemFile}"} \
         '') + ''
-          -i "$TMPDIR/bl_only_payload" \
+          -i ${finalJetpack.bup}/bl_only_payload \
           -o $out \
           ${finalJetpack.socType}
           mkdir -p "$pcr"
           ${lib.getExe final.pkgsBuildBuild.nvidia-jetpack.firmwareMeasurements} \
-            ${finalJetpack.socType} uefiCapsuleUpdate "$out" "$TMPDIR/bl_only_payload" \
+            ${finalJetpack.socType} uefiCapsuleUpdate "$out" ${finalJetpack.bup}/bl_only_payload \
             > "$pcr/measurements.json"
         '');
 
