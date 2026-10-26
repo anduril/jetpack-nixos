@@ -57,6 +57,8 @@ final: prev: (
         expectedBiosVersion = if (cfg.som != "generic") then finalJetpack.uefi-firmware.biosVersion else "Unknown";
       };
 
+      hafnium = if finalJetpack.socType == "t264" then prev.nvidia-jetpack.hafnium else null;
+
       uefi-firmware = prevJetpack.uefi-firmware.override ({
         bootLogo = cfg.firmware.uefi.logo;
         inherit (cfg.firmware.uefi)
@@ -267,7 +269,7 @@ final: prev: (
         inherit (cfg.firmware) eksFile;
         inherit fmpLowestSupportedVersion;
         inherit (cfg.flashScriptOverrides) flashArgs partitionTemplate preFlashCommands postFlashCommands;
-        inherit (finalJetpack) tosImage socType socFamily uefi-firmware l4tAtLeast;
+        inherit (finalJetpack) tosImage socType socFamily uefi-firmware l4tAtLeast hafnium;
 
         additionalDtbOverlays = args.additionalDtbOverlays or cfg.flashScriptOverrides.additionalDtbOverlays;
         dtbsDir = config.hardware.deviceTree.package;
