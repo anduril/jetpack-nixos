@@ -175,7 +175,8 @@ final: prev: (
             ln -s /proc/self/fd /dev/ # for >(...) support
 
             for mod in ${lib.escapeShellArgs modules}; do
-              modprobe -v "$mod"
+              # BusyBox modprobe cannot decompress Zstd-compressed modules.
+              ${lib.getExe' final.pkgsStatic.kmod "modprobe"} -v "$mod"
             done
 
             mount -t configfs none /sys/kernel/config
