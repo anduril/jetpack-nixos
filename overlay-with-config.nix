@@ -174,8 +174,9 @@ final: prev: (
             mount -t sysfs sysfs -o nosuid,nodev,noexec /sys
             ln -s /proc/self/fd /dev/ # for >(...) support
 
-            for mod in ${builtins.toString modules}; do
-              modprobe -v $mod
+            for mod in ${lib.escapeShellArgs modules}; do
+              # BusyBox modprobe cannot decompress Zstd-compressed modules.
+              ${lib.getExe' final.pkgsStatic.kmod "modprobe"} -v "$mod"
             done
 
             mount -t configfs none /sys/kernel/config
