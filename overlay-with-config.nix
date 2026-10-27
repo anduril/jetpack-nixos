@@ -155,6 +155,7 @@ final: prev: (
         extraModules = cfg.flashScriptOverrides.additionalInitrdFlashModules;
         inherit (finalJetpack) flashFromDevice signedFirmware;
         extraConfig = {
+          imports = [ cfg.flashScriptOverrides.additionalInitrdFlashNixosModules ];
           boot = {
             inherit (config.boot) kernelPackages extraModulePackages;
             initrd.systemd.emergencyAccess = cfg.firmware.secureBoot.pkcFile == null;
