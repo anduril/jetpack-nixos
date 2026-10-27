@@ -321,7 +321,7 @@ in
         "pcie-tegra264"
         "nvethernet"
         "r8126"
-        "r8168"
+        (if cfg.kernel.mainline then "r8169" else "r8168")
         "tegra_vnet"
         (if cfg.kernel.mainline then "rtw89_8852ce" else "rtl8852ce")
         "oak_pci"

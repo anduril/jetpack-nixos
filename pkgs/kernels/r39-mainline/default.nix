@@ -50,6 +50,8 @@ buildLinux ((removeAttrs args [ "baseLinuxPackages" "linuxKernel" ]) // {
         ARM64_PMEM = yes;
         # Conflicts with the efi_pstore builtin default.
         PSTORE_RAM = no;
+        # NVIDIA's r8168 is a stub on kernels >= 6.9; use r8169 for Ethernet.
+        R8169 = module;
         # NVIDIA's nvmainline OOT config skips rtl8852ce, so the in-tree rtw89 driver is used
         # instead (rtw89_8852ce is in the initrd module list). Not built with autoModules = false.
         RTW89 = module;
