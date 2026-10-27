@@ -2,7 +2,7 @@
 , bspSrc
 , buildPackages
 , gitRepos
-, hypervisorSupport ? true
+, hypervisorGuestSupport ? false
 , kernel
 , kernelName ? "noble"
 , l4tMajorMinorPatchVersion
@@ -31,7 +31,7 @@ let
         ./0002-spi-tegra210-quad-scale-xfer-completion-timeout-to-.patch
       ]
       # Needs NV_OOT_TEGRA_HV_SKIP_BUILD=y, which both configs/Makefile.config.{noble,nvmainline} set.
-      ++ lib.optional (!hypervisorSupport) ./0001-Skip-hypervisor-guest-modules.patch
+      ++ lib.optional (!hypervisorGuestSupport) ./0001-Skip-hypervisor-guest-modules.patch
       # Mainline has no tegra_hv_ivc_* implementation; bare-metal modules (tegra-drm) still reference it.
       ++ lib.optional (kernelName == "nvmainline") ./0002-tegra_hv-dummy-export-bare-metal-IVC-stubs.patch;
     };
@@ -93,10 +93,10 @@ stdenv.mkDerivation (finalAttrs: {
     "kernel_name=${kernelName}"
     "system_type=l4t"
   ]
-  # configs/Makefile.config.nvmainline assumes NVIDIA's kernel, which already has the IVC
-  # extensions (tegra_ivc_can_read/read/write/...) that the camera RTCPU, etc. use. Vanilla
-  # mainline does not, so build nvidia-oot's own ivc_ext instead of the dummy.
-  ++ lib.optionals (kernelName == "nvmainline") [
+    # configs/Makefile.config.nvmainline assumes NVIDIA's kernel, which already has the IVC
+    # extensions (tegra_ivc_can_read/read/write/...) that the camera RTCPU, etc. use. Vanilla
+    # mainline does not, so build nvidia-oot's own ivc_ext instead of the dummy.
+    ++ lib.optionals (kernelName == "nvmainline") [
     "NV_OOT_IVC_EXT_SKIP_BUILD=n"
   ];
 

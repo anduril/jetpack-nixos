@@ -118,7 +118,7 @@ in
         description = "Enable PREEMPT_RT patches";
       };
 
-      kernel.hypervisorSupport = mkOption {
+      kernel.hypervisorGuestSupport = mkOption {
         default = false;
         type = types.bool;
         description = ''
@@ -184,9 +184,9 @@ in
           message = "hardware.nvidia-jetpack.kernel.mainline is only supported on JetPack 7.";
         }
         {
-          assertion = cfg.kernel.mainline -> !cfg.kernel.hypervisorSupport;
+          assertion = cfg.kernel.mainline -> !cfg.kernel.hypervisorGuestSupport;
           message = ''
-            hardware.nvidia-jetpack.kernel.hypervisorSupport requires NVIDIA's downstream kernel
+            hardware.nvidia-jetpack.kernel.hypervisorGuestSupport requires NVIDIA's downstream kernel
             (it provides the tegra_hv_ivc_* symbols); it cannot be combined with
             hardware.nvidia-jetpack.kernel.mainline.
           '';
@@ -277,10 +277,10 @@ in
           (if cfg.kernel.realtime then jp.rtkernelMainlinePackages else jp.kernelMainlinePackages).extend jp.kernelMainlinePackagesOverlay
         else
           (if cfg.kernel.realtime then jp.rtkernelPackages else jp.kernelPackages).extend jp.kernelPackagesOverlay)
-        # Only the JetPack 7 (r39) OOT modules know about hypervisorSupport.
+        # Only JetPack 7 supports the hypervisor guest modules.
         .extend (_: prev: lib.optionalAttrs (jetpackAtLeast "7") {
           nvidia-oot-modules = prev.nvidia-oot-modules.override {
-            inherit (cfg.kernel) hypervisorSupport;
+            inherit (cfg.kernel) hypervisorGuestSupport;
           };
         });
 
@@ -325,7 +325,7 @@ in
         "tegra_vnet"
         (if cfg.kernel.mainline then "rtw89_8852ce" else "rtl8852ce")
         "oak_pci"
-      ] ++ lib.optionals (pkgs.nvidia-jetpack.l4tAtLeast "38" && cfg.kernel.hypervisorSupport) [
+      ] ++ lib.optionals (pkgs.nvidia-jetpack.l4tAtLeast "38" && cfg.kernel.hypervisorGuestSupport) [
         # Hypervisor guest virtual storage
         "tegra_vblk"
         "tegra_hv_vblk_oops"

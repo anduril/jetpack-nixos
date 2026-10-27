@@ -62,8 +62,8 @@ buildLinux ((removeAttrs args [ "baseLinuxPackages" "linuxKernel" ]) // {
   ] ++ kernelPatches;
 
   structuredExtraConfig = common.structuredExtraConfig
-  // (import ../common-arch.nix { inherit lib; })
-  // lib.optionalAttrs realtime (with lib.kernel; {
+    // (import ../common-arch.nix { inherit lib; })
+    // lib.optionalAttrs realtime (with lib.kernel; {
     PREEMPT_VOLUNTARY = lib.mkForce no;
     PREEMPT_RT = yes;
   }) // (with lib.kernel; {
