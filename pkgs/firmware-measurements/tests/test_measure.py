@@ -199,6 +199,43 @@ class InitrdTests(unittest.TestCase):
 
 
 class BupTests(unittest.TestCase):
+    def test_board_spec_wildcards_and_field_counts(self):
+        specific = BOARD_A.replace("0003--", "0003-A.0-")
+        self.assertTrue(measure.board_specs_match(BOARD_A, specific))
+        self.assertTrue(measure.board_specs_match(specific, BOARD_A))
+        self.assertFalse(measure.board_specs_match(BOARD_A, BOARD_B))
+        self.assertFalse(measure.board_specs_match(BOARD_A, BOARD_A + "-"))
+
+    def test_first_matching_board_entry(self):
+        specific = BOARD_A.replace("0003--", "0003-A.0-")
+        board_entries = [
+            ("tos", image(b"TOSB", 2), BOARD_A, 2),
+            ("tos", image(b"TOSB", 9), specific, 2),
+        ]
+        for ordered in (board_entries, list(reversed(board_entries))):
+            with self.subTest(first=ordered[0][2]):
+                entries = [
+                    ("mb2", image(b"MB2B", 1), BOARD_A, 0),
+                    ("tos", image(b"TOSB", 3), "", 0),
+                    *ordered,
+                    ("uefi", image(b"CPBL", 4), "", 0),
+                ]
+                result = measure.bup_images(bup(entries), "t234")
+                expected = ordered[0][1][0x1460:0x14A0]
+                self.assertEqual(result[BOARD_A][b"TOSB"], expected)
+                self.assertEqual(result[specific][b"TOSB"], expected)
+
+    def test_wildcard_image_for_specific_metadata(self):
+        specific = BOARD_A.replace("0003--", "0003-A.0-")
+        entries = [
+            ("mb2", image(b"MB2B", 1), BOARD_A, 0),
+            ("mb1", b"not a PCR0 image", specific, 2),
+            ("tos", image(b"TOSB", 2), "", 0),
+            ("uefi", image(b"CPBL", 3), "", 0),
+        ]
+        result = measure.bup_images(bup(entries), "t234")
+        self.assertEqual(result[BOARD_A], result[specific])
+
     def test_common_images_and_specific_override(self):
         entries = [
             ("mb2", image(b"MB2B", 1), BOARD_A, 0),
@@ -222,6 +259,55 @@ class BupTests(unittest.TestCase):
         self.assertEqual(set(result), {"common-1", "common-2"})
         self.assertNotEqual(result["common-1"], result["common-2"])
 
+    def test_all_common_single_fuse_mode(self):
+        for platform in measure.FIRMWARE_ORDER:
+            for mode in (1, 2):
+                for shared in (False, True):
+                    with self.subTest(platform=platform, mode=mode, shared=shared):
+                        entries = [
+                            (
+                                magic.decode(),
+                                image(magic, index + 1),
+                                "",
+                                0 if shared and index else mode,
+                            )
+                            for index, magic in enumerate(
+                                measure.FIRMWARE_ORDER[platform]
+                            )
+                        ]
+                        result = measure.bup_images(bup(entries), platform)
+                        self.assertEqual(set(result), {f"common-{mode}"})
+
+    def test_all_common_shared_fuse_mode(self):
+        entries = [
+            (magic.decode(), image(magic, 1), "", 0)
+            for magic in measure.FIRMWARE_ORDER["t234"]
+        ]
+        result = measure.bup_images(bup(entries), "t234")
+        self.assertEqual(set(result), {"common-1", "common-2"})
+        self.assertEqual(result["common-1"], result["common-2"])
+
+    def test_all_common_unmeasured_mode_restriction(self):
+        entries = [
+            (magic.decode(), image(magic, 1), "", 0)
+            for magic in measure.FIRMWARE_ORDER["t234"]
+        ]
+        result = measure.bup_images(
+            bup(entries + [("mb1", b"not a PCR0 image", "", 2)]), "t234"
+        )
+        self.assertEqual(set(result), {"common-2"})
+
+    def test_all_common_missing_images_and_incompatible_modes(self):
+        with self.assertRaisesRegex(ValueError, "Missing TOSB"):
+            measure.bup_images(bup([("mb2", image(b"MB2B", 1), "", 2)]), "t234")
+        entries = [
+            ("mb2", image(b"MB2B", 1), "", 1),
+            ("tos", image(b"TOSB", 2), "", 2),
+            ("uefi", image(b"CPBL", 3), "", 0),
+        ]
+        with self.assertRaisesRegex(ValueError, "No common BUP fuse mode"):
+            measure.bup_images(bup(entries), "t234")
+
     def test_shared_update_mode_and_production_metadata(self):
         entries = [
             ("mb2", image(b"MB2B", 1), BOARD_A, 0),
@@ -242,6 +328,16 @@ class BupTests(unittest.TestCase):
         ]
         result = measure.bup_images(bup(entries), "t234")
         self.assertEqual(result[BOARD_A][b"TOSB"], bytes([2]) * 64)
+
+    def test_select_before_filtering_measured_images(self):
+        entries = [
+            ("mb2", b"not a PCR0 image", BOARD_A, 0),
+            ("mb2", image(b"MB2B", 1), BOARD_A, 0),
+            ("tos", image(b"TOSB", 2), "", 0),
+            ("uefi", image(b"CPBL", 3), "", 0),
+        ]
+        with self.assertRaisesRegex(ValueError, "Missing MB2B"):
+            measure.bup_images(bup(entries), "t234")
 
     def test_conflicting_and_missing_images(self):
         entries = [

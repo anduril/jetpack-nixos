@@ -171,6 +171,15 @@ def boot_ramdisk(data):
     return data[offset : offset + size]
 
 
+def board_specs_match(left, right):
+    left_fields = left.split("-")
+    right_fields = right.split("-")
+    return len(left_fields) == len(right_fields) and all(
+        not left or not right or left == right
+        for left, right in zip(left_fields, right_fields)
+    )
+
+
 def bup_images(data, platform):
     if len(data) < BUP_HEADER.size:
         raise ValueError("Truncated BUP header")
@@ -201,8 +210,7 @@ def bup_images(data, platform):
         measured = signed_digest(
             data[offset : offset + min(size, HEADER_SIZE)], platform
         )
-        if measured is not None:
-            records.append((name, spec, mode, measured))
+        records.append((name, spec, mode, measured))
     targets = []
     for spec in sorted(specs):
         fields = spec.split("-")
@@ -210,19 +218,32 @@ def bup_images(data, platform):
             raise ValueError(f"Invalid BUP board specification: {spec}")
         targets.append((spec, spec, 2 if fields[4] == "1" else 1))
     if not targets:
-        targets = [(f"common-{mode}", "", mode) for mode in (1, 2)]
+        modes_by_name = {}
+        for name, _, mode, _ in records:
+            modes_by_name.setdefault(name, set()).update(
+                (1, 2) if mode == 0 else (mode,)
+            )
+        supported_modes = {1, 2}.intersection(*modes_by_name.values())
+        if not supported_modes:
+            raise ValueError("No common BUP fuse mode applies to every image")
+        targets = [(f"common-{mode}", "", mode) for mode in sorted(supported_modes)]
     variants = {}
     for key, spec, mode in targets:
         selected = {}
-        # Match FwPackageGetImageIndex: mode 0 applies to either fuse mode,
-        # and a full board-spec match takes precedence over a common entry.
+        # FwPackageGetImageIndex keeps the first wildcard board match,
+        # replacing a common fallback if one was selected earlier.
         for name, source, update_mode, measured in records:
-            if source not in ("", spec) or update_mode not in (0, mode):
+            if update_mode not in (0, mode) or (
+                source and not board_specs_match(source, spec)
+            ):
                 continue
-            if name not in selected or (source == spec and selected[name][0] != spec):
+            if name not in selected or (source and not selected[name][0]):
                 selected[name] = (source, measured)
         images = {}
-        for _, (magic, digest) in selected.values():
+        for _, measured in selected.values():
+            if measured is None:
+                continue
+            magic, digest = measured
             if magic in images and images[magic] != digest:
                 raise ValueError(f"Conflicting {magic.decode()} in BUP variant {key}")
             images[magic] = digest

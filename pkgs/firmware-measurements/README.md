@@ -22,8 +22,9 @@ The flasher measures persisted firmware inside its bundled recovery initrd,
 not the temporary RCM firmware. Its JSON is also available at
 `out/share/jetpack/measurements.json`. Capsule measurements use the same BUP
 snapshot passed to capsule encoding. Capsule variants use BUP board
-specifications, or `common-1`/`common-2` for common-only payloads; flash
-variants use directory names.
+specifications, matching empty fields as wildcards in BUP entry order.
+Common-only payloads use `common-1`/`common-2` only for fuse modes with an
+applicable entry for every image. Flash variants use directory names.
 
 PCR 0 predictions follow NVIDIA's `ftpm_gen_measurement_list.py` for Orin
 (`t234`) and Thor (`t264`). They assume measured boot and the normal firmware
