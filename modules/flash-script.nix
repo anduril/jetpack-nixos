@@ -426,6 +426,16 @@ in
           defaultText = lib.literalExpression "config.boot.initrd.availableKernelModules";
           description = "Additional kernel modules to be loaded during the initrd flashing method.";
         };
+
+        additionalInitrdFlashNixosModules = mkOption {
+          type = types.deferredModule;
+          default = { };
+          description = ''
+            Additional NixOS configuration imported into the initrd flashing environment.
+            Definitions from multiple modules are combined and can customize initrd services and other NixOS settings.
+          '';
+        };
+
         initrdFlashSerialEnumerateTimeoutSeconds = mkOption {
           type = types.ints.positive;
           default = 240;

@@ -100,6 +100,9 @@ let
     kernelCmdline = lib.concatStringsSep " " ([
       "sdhci_tegra.en_boot_part_access=1"
       "clk_ignore_unused"
+      "rd.systemd.unit=jetson-flash.target"
+      "rd.systemd.gpt_auto=no"
+      "noresume"
     ] ++ cfg.console.args);
     # During the initrd flash script, we upload two edk2 builds to the
     # board, one that is only used temporarily to boot into our
@@ -130,11 +133,13 @@ let
         exit
       }
       "Flashing platform firmware unsuccessful" {
-        set timeout 2
         set failed 1
         exp_continue
       }
-      "Entering console" {
+      "root account is locked" {
+        exit 1
+      }
+      -re {Press Enter for (system )?maintenance} {
         interact {
           # \003 is Ctrl-C
           \003   exit 1
