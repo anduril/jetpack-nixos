@@ -486,6 +486,7 @@ in
       boot.kernelPackages = lib.mkDefault pkgs.linuxPackages_6_18;
       boot.kernelPatches = import ../pkgs/kernels/r39-mainline {
         inherit lib;
+        inherit (pkgs) fetchpatch;
         inherit (config.boot.kernelPackages.kernel) version;
         inherit (cfg.kernel) realtime;
       };

@@ -1,13 +1,17 @@
 # Mainline patches for JetPack 7 / L4T r39:
 # https://docs.nvidia.com/jetson/archives/r39.2/DeveloperGuide/SD/Kernel/BringYourOwnKernel.html
 { lib
+, fetchpatch
 , version
 , realtime ? false
 }:
 let
   common = import ../r39/common-config.nix { inherit lib; mainline = true; };
 in
-common.kernelPatches ++ [
+common.kernelPatches
+++ lib.optionals (lib.versions.majorMinor version == "6.18")
+  (import ./tegra264-backports.nix { inherit fetchpatch; })
+++ [
   {
     name = "jetpack-mainline-arch";
     patch = null;
@@ -40,6 +44,8 @@ common.kernelPatches ++ [
     patch = null;
     structuredExtraConfig = common.structuredExtraConfig // (with lib.kernel; {
       ARM64_PMEM = yes;
+      ARM_FFA_TRANSPORT = yes;
+      DEVFREQ_GOV_PERFORMANCE = yes;
       # arm64's defconfig starts with modular DAX, limiting device-mapper to modules.
       BLK_DEV_DM = module;
       CRYPTO_ESSIV = module;
