@@ -49,6 +49,8 @@ common.kernelPatches ++ [
       PSTORE_RAM = no;
       # NVIDIA's r8168 is a stub on kernels >= 6.9.
       R8169 = module;
+      SERIAL_TEGRA_UTC = option yes;
+      SERIAL_TEGRA_UTC_CONSOLE = option yes;
       # NVIDIA's nvmainline configuration skips rtl8852ce.
       RTW89 = module;
       RTW89_PCI = module;
