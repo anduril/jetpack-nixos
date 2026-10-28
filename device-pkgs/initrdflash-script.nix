@@ -95,7 +95,7 @@ let
   };
 
   rcmScript = mkRcmBootScript {
-    kernelPath = "${config.system.build.kernel}/${config.system.boot.loader.kernelFile}";
+    kernelPath = "${flashInitrd.kernel}/${config.system.boot.loader.kernelFile}";
     initrdPath = "${flashInitrd}/initrd";
     kernelCmdline = lib.concatStringsSep " " ([
       "sdhci_tegra.en_boot_part_access=1"

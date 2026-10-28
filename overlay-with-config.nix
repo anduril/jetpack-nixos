@@ -1,5 +1,5 @@
 # device-specific packages that are influenced by the nixos config
-config:
+{ config, flashConfig }:
 
 final: prev: (
   let
@@ -153,12 +153,13 @@ final: prev: (
 
       flashInitrd =
         let
-          spiModules = if lib.versions.majorMinor config.system.build.kernel.version == "5.10" then [ "qspi_mtd" "spi_tegra210_qspi" "at24" "spi_nor" ] else [ "mtdblock" "spi_tegra210_quad" ];
-          usbModules = if lib.versions.majorMinor config.system.build.kernel.version == "5.10" then [ ] else [ "libcomposite" "udc-core" "tegra-xudc" "xhci-tegra" "u_serial" "usb_f_acm" ];
-          modules = spiModules ++ usbModules ++ cfg.flashScriptOverrides.additionalInitrdFlashModules;
+          kernel = flashConfig.system.build.kernel;
+          spiModules = if lib.versions.majorMinor kernel.version == "5.10" then [ "qspi_mtd" "spi_tegra210_qspi" "at24" "spi_nor" ] else [ "mtdblock" "spi_tegra210_quad" ];
+          usbModules = if lib.versions.majorMinor kernel.version == "5.10" then [ ] else [ "libcomposite" "udc-core" "tegra-xudc" "xhci-tegra" "u_serial" "usb_f_acm" ];
+          modules = spiModules ++ usbModules ++ flashConfig.hardware.nvidia-jetpack.flashScriptOverrides.additionalInitrdFlashModules;
           modulesClosure = prev.makeModulesClosure {
             rootModules = modules;
-            kernel = config.system.modulesTree;
+            kernel = flashConfig.system.modulesTree;
             firmware = config.hardware.firmware;
             allowMissing = false;
           };
@@ -250,7 +251,7 @@ final: prev: (
           ];
         }).overrideAttrs (prev: {
           passthru = prev.passthru // {
-            inherit manufacturer product serialnumber;
+            inherit manufacturer product serialnumber kernel;
           };
         });
 
