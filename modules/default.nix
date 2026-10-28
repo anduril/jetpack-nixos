@@ -1,7 +1,6 @@
 overlay:
 { options
 , config
-, extendModules
 , lib
 , pkgs
 , ...
@@ -17,24 +16,6 @@ let
     ;
 
   cfg = config.hardware.nvidia-jetpack;
-
-  # Linux 6.18 lacks Tegra264 XUDC/PHY support; it lives in NVIDIA's kernel,
-  # not the OOT modules. The flash initrd needs a matching vendor kernel
-  # and module list so its USB serial gadget can enumerate.
-  flashConfig =
-    if cfg.kernel.mainline then
-      (extendModules {
-        modules = [
-          ({ pkgs, ... }: {
-            hardware.nvidia-jetpack.kernel.mainline = lib.mkForce false;
-            boot.kernelPackages = lib.mkForce (
-              (if cfg.kernel.realtime then pkgs.nvidia-jetpack.rtkernelPackages else pkgs.nvidia-jetpack.kernelPackages).extend pkgs.nvidia-jetpack.kernelPackagesOverlay
-            );
-          })
-        ];
-      }).config
-    else
-      config;
 
   jetpackVersions = [ "5" "6" "7" ];
 
@@ -278,7 +259,7 @@ in
               (v: { name = "nvidia-jetpack${v}"; value = mkWarnJetpack v; })
               otherJetpacks)
         )
-        (import ../overlay-with-config.nix { inherit config flashConfig; })
+        (import ../overlay-with-config.nix config)
       ];
 
       hardware.nvidia-jetpack.console.args = lib.mkMerge [
