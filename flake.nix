@@ -198,6 +198,10 @@
       };
 
       checks = forAllSystems ({ pkgs, system, ... }: {
+        mainlineKernel = import ./pkgs/tests/mainline-kernel.nix {
+          inherit lib pkgs;
+          base = self.nixosConfigurations.thor-agx-devkit;
+        };
         formatting = pkgs.stdenv.mkDerivation {
           name = "repo-formatting";
           src = self;

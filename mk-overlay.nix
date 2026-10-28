@@ -182,10 +182,6 @@ makeScope final.newScope (self: {
   recurseForDerivations = true;
 }
 // final.lib.optionalAttrs (versions.major jetpackMajorMinorPatchVersion == "7") {
-  kernelMainline = self.callPackage ./pkgs/kernels/r39-mainline { kernelPatches = [ ]; };
-  kernelMainlinePackages = final.linuxPackagesFor self.kernelMainline;
-  rtkernelMainline = self.callPackage ./pkgs/kernels/r39-mainline { kernelPatches = [ ]; realtime = true; };
-  rtkernelMainlinePackages = final.linuxPackagesFor self.rtkernelMainline;
   kernelMainlinePackagesOverlay = final: prev:
     let base = self.kernelPackagesOverlay final prev; in
     base // {

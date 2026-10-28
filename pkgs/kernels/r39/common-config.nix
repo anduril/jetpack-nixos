@@ -1,9 +1,7 @@
-# Kernel patches and config shared by r39 (NVIDIA's kernel-noble) and r39-mainline.
-# Returns { kernelPatches, structuredExtraConfig }.
-#
-# Both build with autoModules = false, so anything NixOS or the OOT modules
-# need beyond the defconfig + nixpkgs' common-config.nix has to be listed here.
-{ lib }:
+# Kernel patches and config shared by r39 and r39-mainline.
+{ lib
+, mainline ? false
+}:
 {
   kernelPatches = [
     {
@@ -15,7 +13,8 @@
       # function.
       # Otherwise it hits a WARN_ON() and outputs
       # > tegra-capture-vi: failed to initialize VB2 queue
-      structuredExtraConfig.VIDEOBUF2_DMA_CONTIG = lib.kernel.yes;
+      structuredExtraConfig.VIDEOBUF2_DMA_CONTIG =
+        if mainline then lib.kernel.module else lib.kernel.yes;
     }
   ];
 
@@ -29,7 +28,7 @@
     MMC_SDHCI_PCI = module;
 
     ### So nat.service and firewall work ###
-    NF_TABLES = module; # This one should probably be in common-config.nix
+    NF_TABLES = module;
     # this NFT_NAT is not actually being set. when build with enableCommonConfig = false;
     # and not ignoreConfigErrors = true; it will fail with error about unused option
     # unused means that it wanted to set it as a module, but make oldconfig didn't ask it about that option,
@@ -39,7 +38,7 @@
     NFT_REJECT = module;
     NFT_COMPAT = module;
     NFT_LOG = module;
-    NFT_COUNTER = module;
+    NFT_COUNTER = option module;
 
     # search for "ip46tables" in nixpkgs and find all the -m options.
     # Enable the corresponding Kconfigs
@@ -82,8 +81,6 @@
     # Restore default LSM from security/Kconfig. Undoes Nvidia downstream changes.
     LSM = freeform "landlock,lockdown,yama,loadpin,safesetid,integrity,selinux,smack,tomoyo,apparmor,bpf";
     ### Already enabled by NVIDIA's defconfig (kernel-noble) ###
-    # These are listed here only so that r39 and r39-mainline end up consistent: mainline's
-    # defconfig doesn't enable them, and autoModules is off. Values match NVIDIA's.
 
     # Block / device-mapper
     BLK_DEV_DM = yes; # DM_CRYPT/DM_VERITY below can only be =y if the core is built in
