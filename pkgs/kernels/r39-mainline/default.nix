@@ -9,6 +9,33 @@ let
 in
 common.kernelPatches ++ [
   {
+    name = "jetpack-mainline-arch";
+    patch = null;
+    structuredExtraConfig =
+      (lib.mapAttrs
+        (_: value: lib.kernel.option value)
+        (import ../common-arch.nix { inherit lib; }))
+      // lib.genAttrs [
+        "DRM_VC4_HDMI_CEC"
+        "FSL_MC_UAPI_SUPPORT"
+        "MT798X_WMAC"
+        "NET_VENDOR_MEDIATEK"
+        "ROCKCHIP_DW_HDMI_QP"
+        "ROCKCHIP_DW_MIPI_DSI2"
+        "SUN8I_DE2_CCU"
+      ]
+        (_: lib.mkForce (lib.kernel.option lib.kernel.no));
+    # The ARM64 platform appends these legacy settings after structured config.
+    extraConfig = ''
+      ARCH_BCM2835? n
+      BCM2835_MBOX? n
+      BCM2835_WDT? n
+      RASPBERRYPI_FIRMWARE? n
+      RASPBERRYPI_POWER? n
+      SERIAL_8250_BCM2835AUX? n
+    '';
+  }
+  {
     name = "jetpack-mainline";
     patch = null;
     structuredExtraConfig = common.structuredExtraConfig // (with lib.kernel; {
