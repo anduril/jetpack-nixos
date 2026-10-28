@@ -1,0 +1,278 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Wayne Chang <waynec@nvidia.com>
+Date: Thu, 3 Sep 2026 15:45:37 +0800
+Subject: [PATCH 1/3] dt-bindings: usb: Add Tegra264 XUSB host support
+X-Source-Series: https://lore.kernel.org/all/20260903074539.613220-1-waynec@nvidia.com/
+
+Extend the Tegra234 XUSB host binding to cover Tegra264:
+
+- Add nvidia,tegra264-xusb compatible string
+- Document optional USB wake interrupts for Tegra264
+- Document Tegra264 PMC wake event to port mapping
+- List the up to five IOMMU specifiers for the additional XUSB host
+  stream IDs, since their order is now significant
+- Constrain interrupts and iommus counts for both Tegra234 and
+  Tegra264 via allOf conditionals, since each SoC wires up a fixed
+  number of wake interrupts and stream IDs
+
+Signed-off-by: Wayne Chang <waynec@nvidia.com>
+---
+ .../bindings/usb/nvidia,tegra234-xusb.yaml    | 72 ++++++++++++++++++-
+ 1 file changed, 70 insertions(+), 2 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/usb/nvidia,tegra234-xusb.yaml b/Documentation/devicetree/bindings/usb/nvidia,tegra234-xusb.yaml
+index db761dc..6729fe6 100644
+--- a/Documentation/devicetree/bindings/usb/nvidia,tegra234-xusb.yaml
++++ b/Documentation/devicetree/bindings/usb/nvidia,tegra234-xusb.yaml
+@@ -17,7 +17,9 @@ description: |
+ 
+ properties:
+   compatible:
+-    const: nvidia,tegra234-xusb
++    enum:
++      - nvidia,tegra234-xusb
++      - nvidia,tegra264-xusb
+ 
+   reg:
+     items:
+@@ -32,9 +34,45 @@ properties:
+       - const: bar2
+ 
+   interrupts:
++    minItems: 2
+     items:
+       - description: xHCI host interrupt
+       - description: mailbox interrupt
++      - description: USB wake event 0
++      - description: USB wake event 1
++      - description: USB wake event 2
++      - description: USB wake event 3
++      - description: USB wake event 4
++      - description: USB wake event 5
++      - description: USB wake event 6
++      - description: USB wake event 7
++    description: |
++      The first two interrupts are required for the USB host controller. The
++      remaining USB wake event interrupts are optional. Each USB wake event is
++      mapped to a USB port and the mapping can vary depending on the SoC
++      platform. The USB host controller can function even if no wake-up events
++      are defined. The USB wake event interrupts are handled by the Tegra PMC;
++      hence, the interrupt controller for these is the PMC and the interrupt
++      IDs correspond to the PMC wake event IDs.
++
++      Tegra234 PMC wake events:
++        PMC wake-up 76 for USB3 port 0 wakeup
++        PMC wake-up 77 for USB3 port 1 wakeup
++        PMC wake-up 78 for USB3 port 2 and port 3 wakeup
++        PMC wake-up 79 for USB2 port 0 wakeup
++        PMC wake-up 80 for USB2 port 1 wakeup
++        PMC wake-up 81 for USB2 port 2 wakeup
++        PMC wake-up 82 for USB2 port 3 wakeup
++
++      Tegra264 PMC wake events:
++        PMC wake-up 79 for USB3 port 0 wakeup
++        PMC wake-up 80 for USB3 port 1 wakeup
++        PMC wake-up 81 for USB3 port 2 wakeup
++        PMC wake-up 82 for USB3 port 3 wakeup
++        PMC wake-up 83 for USB2 port 0 wakeup
++        PMC wake-up 84 for USB2 port 1 wakeup
++        PMC wake-up 85 for USB2 port 2 wakeup
++        PMC wake-up 86 for USB2 port 3 wakeup
+ 
+   clocks:
+     items:
+@@ -71,7 +109,13 @@ properties:
+       - const: write
+ 
+   iommus:
+-    maxItems: 1
++    minItems: 1
++    items:
++      - description: XUSB host stream ID
++      - description: XUSB host stream ID for virtual function 1
++      - description: XUSB host stream ID for virtual function 2
++      - description: XUSB host stream ID for virtual function 3
++      - description: XUSB host stream ID for virtual function 4
+ 
+   nvidia,xusb-padctl:
+     $ref: /schemas/types.yaml#/definitions/phandle
+@@ -111,6 +155,30 @@ properties:
+ allOf:
+   - $ref: usb-xhci.yaml
+ 
++  - if:
++      properties:
++        compatible:
++          contains:
++            const: nvidia,tegra234-xusb
++    then:
++      properties:
++        interrupts:
++          maxItems: 9
++        iommus:
++          maxItems: 1
++
++  - if:
++      properties:
++        compatible:
++          contains:
++            const: nvidia,tegra264-xusb
++    then:
++      properties:
++        interrupts:
++          maxItems: 10
++        iommus:
++          minItems: 5
++
+ unevaluatedProperties: false
+ 
+ examples:
+-- 
+2.55.0
+
+
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Wayne Chang <waynec@nvidia.com>
+Date: Thu, 3 Sep 2026 15:45:38 +0800
+Subject: [PATCH 2/3] usb: host: xhci-tegra: Skip MBOX MSG_ENABLED on Tegra264
+X-Source-Series: https://lore.kernel.org/all/20260903074539.613220-1-waynec@nvidia.com/
+
+Tegra264 XUSB does not use the firmware mailbox handshake to enable
+controller messages (MBOX_CMD_MSG_ENABLED). Add a per-SoC flag and
+short-circuit __tegra_xusb_enable_firmware_messages() so both probe
+and resume avoid sending the command.
+
+Signed-off-by: Wayne Chang <waynec@nvidia.com>
+---
+ drivers/usb/host/xhci-tegra.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/drivers/usb/host/xhci-tegra.c b/drivers/usb/host/xhci-tegra.c
+index 4620c2e..dd2e91a 100644
+--- a/drivers/usb/host/xhci-tegra.c
++++ b/drivers/usb/host/xhci-tegra.c
+@@ -250,6 +250,7 @@ struct tegra_xusb_soc {
+ 	bool otg_set_port_power;
+ 
+ 	bool has_bar2;
++	bool enable_firmware_messages;
+ };
+ 
+ struct tegra_xusb_context {
+@@ -1253,6 +1254,9 @@ static int __tegra_xusb_enable_firmware_messages(struct tegra_xusb *tegra)
+ 	struct tegra_xusb_mbox_msg msg;
+ 	int err;
+ 
++	if (!tegra->soc->enable_firmware_messages)
++		return 0;
++
+ 	/* Enable firmware messages from controller. */
+ 	msg.cmd = MBOX_CMD_MSG_ENABLED;
+ 	msg.data = 0;
+@@ -2573,6 +2577,7 @@ static const struct tegra_xusb_soc tegra124_soc = {
+ 		.owner = 0xf0,
+ 		.smi_intr = XUSB_CFG_ARU_SMI_INTR,
+ 	},
++	.enable_firmware_messages = true,
+ };
+ MODULE_FIRMWARE("nvidia/tegra124/xusb.bin");
+ 
+@@ -2612,6 +2617,7 @@ static const struct tegra_xusb_soc tegra210_soc = {
+ 		.owner = 0xf0,
+ 		.smi_intr = XUSB_CFG_ARU_SMI_INTR,
+ 	},
++	.enable_firmware_messages = true,
+ };
+ MODULE_FIRMWARE("nvidia/tegra210/xusb.bin");
+ 
+@@ -2657,6 +2663,7 @@ static const struct tegra_xusb_soc tegra186_soc = {
+ 		.smi_intr = XUSB_CFG_ARU_SMI_INTR,
+ 	},
+ 	.lpm_support = true,
++	.enable_firmware_messages = true,
+ };
+ 
+ static const char * const tegra194_supply_names[] = {
+@@ -2691,6 +2698,7 @@ static const struct tegra_xusb_soc tegra194_soc = {
+ 		.smi_intr = XUSB_CFG_ARU_SMI_INTR,
+ 	},
+ 	.lpm_support = true,
++	.enable_firmware_messages = true,
+ };
+ MODULE_FIRMWARE("nvidia/tegra194/xusb.bin");
+ 
+@@ -2726,6 +2734,7 @@ static const struct tegra_xusb_soc tegra234_soc = {
+ 	},
+ 	.lpm_support = true,
+ 	.has_bar2 = true,
++	.enable_firmware_messages = true,
+ };
+ 
+ static const struct of_device_id tegra_xusb_of_match[] = {
+-- 
+2.55.0
+
+
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Wayne Chang <waynec@nvidia.com>
+Date: Thu, 3 Sep 2026 15:45:39 +0800
+Subject: [PATCH 3/3] usb: host: xhci-tegra: Add Tegra264 XHCI support
+X-Source-Series: https://lore.kernel.org/all/20260903074539.613220-1-waynec@nvidia.com/
+
+This change adds Tegra264 XUSB host mode controller support.
+The host controller is very similar to the existing Tegra234 XHCI,
+except the number of max_num_wakes.
+
+Signed-off-by: Wayne Chang <waynec@nvidia.com>
+---
+ drivers/usb/host/xhci-tegra.c | 28 ++++++++++++++++++++++++++++
+ 1 file changed, 28 insertions(+)
+
+diff --git a/drivers/usb/host/xhci-tegra.c b/drivers/usb/host/xhci-tegra.c
+index dd2e91a..41f2b0f 100644
+--- a/drivers/usb/host/xhci-tegra.c
++++ b/drivers/usb/host/xhci-tegra.c
+@@ -2737,12 +2737,40 @@ static const struct tegra_xusb_soc tegra234_soc = {
+ 	.enable_firmware_messages = true,
+ };
+ 
++static const struct tegra_xusb_soc tegra264_soc = {
++	.supply_names = tegra194_supply_names,
++	.num_supplies = ARRAY_SIZE(tegra194_supply_names),
++	.phy_types = tegra194_phy_types,
++	.num_types = ARRAY_SIZE(tegra194_phy_types),
++	.max_num_wakes = 8,
++	.context = &tegra186_xusb_context,
++	.ports = {
++		.usb3 = { .offset = 0, .count = 4, },
++		.usb2 = { .offset = 4, .count = 4, },
++	},
++	.scale_ss_clock = false,
++	.has_ipfs = false,
++	.otg_reset_sspi = false,
++	.ops = &tegra234_ops,
++	.mbox = {
++		.cmd = XUSB_BAR2_ARU_MBOX_CMD,
++		.data_in = XUSB_BAR2_ARU_MBOX_DATA_IN,
++		.data_out = XUSB_BAR2_ARU_MBOX_DATA_OUT,
++		.owner = XUSB_BAR2_ARU_MBOX_OWNER,
++		.smi_intr = XUSB_BAR2_ARU_SMI_INTR,
++	},
++	.lpm_support = true,
++	.has_bar2 = true,
++	.enable_firmware_messages = false,
++};
++
+ static const struct of_device_id tegra_xusb_of_match[] = {
+ 	{ .compatible = "nvidia,tegra124-xusb", .data = &tegra124_soc },
+ 	{ .compatible = "nvidia,tegra210-xusb", .data = &tegra210_soc },
+ 	{ .compatible = "nvidia,tegra186-xusb", .data = &tegra186_soc },
+ 	{ .compatible = "nvidia,tegra194-xusb", .data = &tegra194_soc },
+ 	{ .compatible = "nvidia,tegra234-xusb", .data = &tegra234_soc },
++	{ .compatible = "nvidia,tegra264-xusb", .data = &tegra264_soc },
+ 	{ },
+ };
+ MODULE_DEVICE_TABLE(of, tegra_xusb_of_match);
+-- 
+2.55.0
+

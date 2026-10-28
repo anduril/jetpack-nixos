@@ -70,4 +70,17 @@ map (patch: { name = patch.name; inherit patch; }) [
     url = "https://github.com/torvalds/linux/commit/b236b7973808195fd9c471492bee0041148b823e.patch";
     hash = "sha256-J7S/3fdhuMQQo2FaFEx7q13Lmtq/U+cZgXNPI5SX9KA=";
   })
+] ++ [
+  {
+    name = "tegra264-usb-phy";
+    patch = ./tegra264-usb-phy.mbox;
+  }
+  {
+    name = "tegra264-usb-host";
+    patch = ./tegra264-usb-host.mbox;
+  }
+  {
+    name = "tegra264-usb-device";
+    patch = ./tegra264-usb-device.mbox;
+  }
 ]
