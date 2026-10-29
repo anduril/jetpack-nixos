@@ -1,0 +1,14 @@
+diff --git i/drivers/i2c/busses/i2c-tegra.c w/drivers/i2c/busses/i2c-tegra.c
+index 07e16a3..57d9e6e 100644
+--- i/drivers/i2c/busses/i2c-tegra.c
++++ w/drivers/i2c/busses/i2c-tegra.c
+@@ -449,6 +449,9 @@ static int tegra_i2c_init_dma(struct tegra_i2c_dev *i2c_dev)
+ 	if (IS_VI(i2c_dev))
+ 		return 0;
+ 
++	if (!of_property_present(i2c_dev->dev->of_node, "dmas"))
++		return 0;
++
+ 	if (i2c_dev->hw->has_apb_dma) {
+ 		if (!IS_ENABLED(CONFIG_TEGRA20_APB_DMA)) {
+ 			dev_dbg(i2c_dev->dev, "APB DMA support not enabled\n");

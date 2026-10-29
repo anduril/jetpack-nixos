@@ -185,6 +185,7 @@ makeScope final.newScope (self: {
   kernelMainlinePackagesOverlay = final: prev:
     let base = self.kernelPackagesOverlay final prev; in
     base // {
+      devicetree = base.devicetree.override { mainline = true; };
       nvidia-oot-modules = base.nvidia-oot-modules.override { kernelName = "nvmainline"; };
     };
 }

@@ -72,6 +72,10 @@ map (patch: { name = patch.name; inherit patch; }) [
   })
 ] ++ [
   {
+    name = "tegra-i2c-optional-dma";
+    patch = ./tegra-i2c-optional-dma.patch;
+  }
+  {
     name = "tegra264-usb-phy";
     patch = ./tegra264-usb-phy.mbox;
   }
