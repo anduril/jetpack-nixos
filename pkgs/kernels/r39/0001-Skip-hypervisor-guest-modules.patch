@@ -1,0 +1,125 @@
+From: jetpack-nixos
+Subject: [PATCH] Skip hypervisor-guest modules when NV_OOT_TEGRA_HV_SKIP_BUILD=y
+
+The hypervisor-guest drivers (tegra_vblk, tegra_hv_vblk_oops, tegra_oops_nvlog,
+tegra-hv-vse-safety, tegra-nvvse-cryptodev, tegra-hv-xhci, userspace_ivc_mempool,
+tegra_hv_pm_ctl, tegra_hv_vcpu_yield, tegra_gr_comm, nv-virtio-console-poc,
+ivc sample server, tegra-virt-alt audio) only make sense when Linux runs as a
+guest of NVIDIA's hypervisor, and some need tegra_hv_ivc_*/is_tegra_hypervisor_mode
+symbols that only exist in the downstream kernel. Guard them with the existing
+NV_OOT_TEGRA_HV_SKIP_BUILD.
+---
+diff -ru a/drivers/crypto/Makefile b/drivers/crypto/Makefile
+--- a/drivers/crypto/Makefile
++++ b/drivers/crypto/Makefile
+@@ -2,8 +2,12 @@
+ # Copyright (c) 2022-2023, NVIDIA CORPORATION.  All rights reserved.
+ 
+ ifdef CONFIG_TEGRA_HOST1X
++ifneq ($(NV_OOT_TEGRA_HV_SKIP_BUILD),y)
+ obj-m += tegra-hv-vse-safety.o
++endif
++ifneq ($(NV_OOT_TEGRA_HV_SKIP_BUILD),y)
+ obj-m += tegra-nvvse-cryptodev.o
++endif
+ obj-m += nvvse/
+ ifdef CONFIG_CRYPTO_ENGINE
+ obj-m += tegra/
+diff -ru a/drivers/Makefile b/drivers/Makefile
+--- a/drivers/Makefile
++++ b/drivers/Makefile
+@@ -6,11 +6,17 @@
+ LINUXINCLUDE += -I$(srctree.nvidia-oot)/drivers/video/tegra/host/
+ LINUXINCLUDE += -I$(srctree.hwpm)/include
+ 
++ifneq ($(NV_OOT_TEGRA_HV_SKIP_BUILD),y)
+ obj-m += block/tegra_virt_storage/
++endif
+ ifdef CONFIG_PSTORE
++ifneq ($(NV_OOT_TEGRA_HV_SKIP_BUILD),y)
+ obj-m += block/tegra_oops_virt_storage/
++endif
++ifneq ($(NV_OOT_TEGRA_HV_SKIP_BUILD),y)
+ obj-m += block/tegra_oops_nvlog/
+ endif
++endif
+ ifdef CONFIG_BT
+ ifneq ($(NV_OOT_REALTEK_BTUSB_SKIP_BUILD),y)
+ obj-m += bluetooth/realtek/
+@@ -83,11 +89,15 @@
+ obj-m += video/tegra/
+ endif
+ obj-m += virt/tegra/
++ifneq ($(NV_OOT_TEGRA_HV_SKIP_BUILD),y)
+ obj-m += ivc_sample_server/
++endif
+ ifdef CONFIG_TEGRA_HOST1X
+ obj-m += media/
+ endif
++ifneq ($(NV_OOT_TEGRA_HV_SKIP_BUILD),y)
+ obj-m += nv-virtio/
++endif
+ obj-m += usb/
+ ifdef CONFIG_HID
+ ifeq ($(CONFIG_TEGRA_SYSTEM_TYPE_ACK),y)
+diff -ru a/drivers/platform/tegra/Makefile b/drivers/platform/tegra/Makefile
+--- a/drivers/platform/tegra/Makefile
++++ b/drivers/platform/tegra/Makefile
+@@ -23,8 +23,12 @@
+ obj-m += aon/
+ obj-m += tegra-uss-io-proxy.o
+ obj-m += nvadsp/
++ifneq ($(NV_OOT_TEGRA_HV_SKIP_BUILD),y)
+ obj-m += tegra-hv-xhci-debug.o
++endif
++ifneq ($(NV_OOT_TEGRA_HV_SKIP_BUILD),y)
+ obj-m += tegra-hv-xhci.o
++endif
+ ifdef CONFIG_TEGRA_HDMI_IN
+ obj-m += tegra-pcie-gpio-hotplug.o
+-endif
+\ No newline at end of file
++endif
+diff -ru a/drivers/video/tegra/Makefile b/drivers/video/tegra/Makefile
+--- a/drivers/video/tegra/Makefile
++++ b/drivers/video/tegra/Makefile
+@@ -14,5 +14,7 @@
+ obj-m += host/vi/
+ obj-m += host/isp/
+ endif
++ifneq ($(NV_OOT_TEGRA_HV_SKIP_BUILD),y)
+ obj-m += virt/
+ endif
++endif
+diff -ru a/drivers/virt/tegra/Makefile b/drivers/virt/tegra/Makefile
+--- a/drivers/virt/tegra/Makefile
++++ b/drivers/virt/tegra/Makefile
+@@ -10,11 +10,17 @@
+ obj-m		+= tegra_hv.o
+ tegra_hv-objs := tegra_hv_dummy.o
+ endif
++ifneq ($(NV_OOT_TEGRA_HV_SKIP_BUILD),y)
+ obj-m		+= tegra_hv_pm_ctl.o
++endif
+ ifneq ($(NV_OOT_HVC_SYSFS_SKIP_BUILD),y)
+ obj-m		+= hvc_sysfs.o
+ endif
+ obj-m		+= ivc-cdev.o
++ifneq ($(NV_OOT_TEGRA_HV_SKIP_BUILD),y)
+ obj-m		+= userspace_ivc_mempool.o
++endif
++ifneq ($(NV_OOT_TEGRA_HV_SKIP_BUILD),y)
+ obj-m		+= tegra_hv_vcpu_yield.o
++endif
+ 
+diff -ru a/Makefile b/Makefile
+--- a/Makefile
++++ b/Makefile
+@@ -49,5 +49,7 @@
+ ifdef CONFIG_SND_SOC
+ obj-m += sound/soc/tegra/
+ obj-m += sound/tegra-safety-audio/
++ifneq ($(NV_OOT_TEGRA_HV_SKIP_BUILD),y)
+ obj-m += sound/soc/tegra-virt-alt/
+ endif
++endif

@@ -1,0 +1,961 @@
+From git@z Thu Jan  1 00:00:00 1970
+Subject: [PATCH 1/9] dt-bindings: usb: Add Tegra238 XUSB host controller
+ support
+From: Jon Hunter <jonathanh@nvidia.com>
+Date: Mon, 21 Sep 2026 13:19:01 +0100
+Message-Id: <20260921-tegra-usb-v1-1-74a925a35d82@nvidia.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+Add a compatible string for the Tegra238 XUSB host controller. The
+Tegra238 XUSB host controller is similar to that found on the Tegra234
+device but only supports 3 PHYs compared to the 4 PHYs on the Tegra234.
+Hence, the binding is also updated to limit the number of PHYs that can
+be specified for the Tegra238 device.
+
+Signed-off-by: Jon Hunter <jonathanh@nvidia.com>
+---
+ .../bindings/usb/nvidia,tegra234-xusb.yaml           | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/usb/nvidia,tegra234-xusb.yaml b/Documentation/devicetree/bindings/usb/nvidia,tegra234-xusb.yaml
+index 3f56110be915..9d605db7e77f 100644
+--- a/Documentation/devicetree/bindings/usb/nvidia,tegra234-xusb.yaml
++++ b/Documentation/devicetree/bindings/usb/nvidia,tegra234-xusb.yaml
+@@ -19,6 +19,7 @@ properties:
+   compatible:
+     enum:
+       - nvidia,tegra234-xusb
++      - nvidia,tegra238-xusb
+       - nvidia,tegra264-xusb
+ 
+   reg:
+@@ -154,6 +155,25 @@ properties:
+ 
+ allOf:
+   - $ref: usb-xhci.yaml
++  - if:
++      properties:
++        compatible:
++          contains:
++            const: nvidia,tegra238-xusb
++    then:
++      properties:
++        phys:
++          maxItems: 6
++        phy-names:
++          maxItems: 6
++          items:
++            enum:
++              - usb2-0
++              - usb2-1
++              - usb2-2
++              - usb3-0
++              - usb3-1
++              - usb3-2
+ 
+   - if:
+       properties:
+
+-- 
+2.43.0
+
+
+
+From git@z Thu Jan  1 00:00:00 1970
+Subject: [PATCH 2/9] dt-bindings: usb: tegra-xudc: Add Tegra238 XUDC
+ support
+From: Jon Hunter <jonathanh@nvidia.com>
+Date: Mon, 21 Sep 2026 13:19:02 +0100
+Message-Id: <20260921-tegra-usb-v1-2-74a925a35d82@nvidia.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+Add a compatible string for the Tegra238 XUDC device. The Tegra238 XUDC
+is similar to that found on the Tegra234 device but only support 3 PHYs
+compared to the 4 PHYs on the Tegra234. The XUDC binding only defines
+which of the available PHYs is used by the XUDC controller and the Tegra
+XUSB pad controller binding [0] defines the PHYs that are available.
+
+[0] Documentation/devicetree/bindings/phy/nvidia,tegra194-xusb-padctl.yaml
+
+Signed-off-by: Jon Hunter <jonathanh@nvidia.com>
+---
+ Documentation/devicetree/bindings/usb/nvidia,tegra-xudc.yaml | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/usb/nvidia,tegra-xudc.yaml b/Documentation/devicetree/bindings/usb/nvidia,tegra-xudc.yaml
+index c6e661e8915c..a57ad8815d12 100644
+--- a/Documentation/devicetree/bindings/usb/nvidia,tegra-xudc.yaml
++++ b/Documentation/devicetree/bindings/usb/nvidia,tegra-xudc.yaml
+@@ -23,6 +23,7 @@ properties:
+           - nvidia,tegra186-xudc # For Tegra186
+           - nvidia,tegra194-xudc # For Tegra194
+           - nvidia,tegra234-xudc # For Tegra234
++          - nvidia,tegra238-xudc # For Tegra238
+ 
+   reg:
+     minItems: 2
+@@ -152,6 +153,7 @@ allOf:
+               - nvidia,tegra186-xudc
+               - nvidia,tegra194-xudc
+               - nvidia,tegra234-xudc
++              - nvidia,tegra238-xudc
+     then:
+       properties:
+         reg:
+@@ -170,6 +172,7 @@ allOf:
+             enum:
+               - nvidia,tegra194-xudc
+               - nvidia,tegra234-xudc
++              - nvidia,tegra238-xudc
+     then:
+       required:
+         - dma-coherent
+
+-- 
+2.43.0
+
+
+
+From git@z Thu Jan  1 00:00:00 1970
+Subject: [PATCH 3/9] dt-bindings: usb: tegra-xudc: Add Tegra264 XUDC
+ support
+From: Jon Hunter <jonathanh@nvidia.com>
+Date: Mon, 21 Sep 2026 13:19:03 +0100
+Message-Id: <20260921-tegra-usb-v1-3-74a925a35d82@nvidia.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+Add a compatible string for the Tegra264 XUDC device. The Tegra264 XUDC
+is similar to that found on the Tegra234 device supporting 4 PHYs,
+however, the register offsets for the Tegra264 device are different to
+previous Tegra devices.
+
+Signed-off-by: Jon Hunter <jonathanh@nvidia.com>
+---
+ Documentation/devicetree/bindings/usb/nvidia,tegra-xudc.yaml | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/usb/nvidia,tegra-xudc.yaml b/Documentation/devicetree/bindings/usb/nvidia,tegra-xudc.yaml
+index a57ad8815d12..672b7ba0d89d 100644
+--- a/Documentation/devicetree/bindings/usb/nvidia,tegra-xudc.yaml
++++ b/Documentation/devicetree/bindings/usb/nvidia,tegra-xudc.yaml
+@@ -24,6 +24,7 @@ properties:
+           - nvidia,tegra194-xudc # For Tegra194
+           - nvidia,tegra234-xudc # For Tegra234
+           - nvidia,tegra238-xudc # For Tegra238
++          - nvidia,tegra264-xudc # For Tegra264
+ 
+   reg:
+     minItems: 2
+@@ -154,6 +155,7 @@ allOf:
+               - nvidia,tegra194-xudc
+               - nvidia,tegra234-xudc
+               - nvidia,tegra238-xudc
++              - nvidia,tegra264-xudc
+     then:
+       properties:
+         reg:
+@@ -173,6 +175,7 @@ allOf:
+               - nvidia,tegra194-xudc
+               - nvidia,tegra234-xudc
+               - nvidia,tegra238-xudc
++              - nvidia,tegra264-xudc
+     then:
+       required:
+         - dma-coherent
+
+-- 
+2.43.0
+
+
+
+From git@z Thu Jan  1 00:00:00 1970
+Subject: [PATCH 4/9] usb: xhci: tegra: Add support for Tegra238
+From: Jon Hunter <jonathanh@nvidia.com>
+Date: Mon, 21 Sep 2026 13:19:04 +0100
+Message-Id: <20260921-tegra-usb-v1-4-74a925a35d82@nvidia.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+Add XHCI support for the Tegra238 SoC which is similar to the Tegra234
+XHCI but only supports 3 USB2/3 ports compared to the 4 USB2/3 ports on
+Tegra234.
+
+Signed-off-by: Jon Hunter <jonathanh@nvidia.com>
+---
+ drivers/usb/host/xhci-tegra.c | 32 ++++++++++++++++++++++++++++++++
+ 1 file changed, 32 insertions(+)
+
+diff --git a/drivers/usb/host/xhci-tegra.c b/drivers/usb/host/xhci-tegra.c
+index 50d733b2ad71..78ffe415ead4 100644
+--- a/drivers/usb/host/xhci-tegra.c
++++ b/drivers/usb/host/xhci-tegra.c
+@@ -2749,6 +2749,37 @@ static const struct tegra_xusb_soc tegra234_soc = {
+ 	.enable_firmware_messages = true,
+ };
+ 
++static const struct tegra_xusb_phy_type tegra238_phy_types[] = {
++	{ .name = "usb3", .num = 3, },
++	{ .name = "usb2", .num = 3, },
++};
++
++static const struct tegra_xusb_soc tegra238_soc = {
++	.supply_names = tegra194_supply_names,
++	.num_supplies = ARRAY_SIZE(tegra194_supply_names),
++	.phy_types = tegra238_phy_types,
++	.num_types = ARRAY_SIZE(tegra238_phy_types),
++	.context = &tegra186_xusb_context,
++	.ports = {
++		.usb3 = { .offset = 0, .count = 3, },
++		.usb2 = { .offset = 3, .count = 3, },
++	},
++	.scale_ss_clock = false,
++	.has_ipfs = false,
++	.otg_reset_sspi = false,
++	.ops = &tegra234_ops,
++	.mbox = {
++		.cmd = XUSB_BAR2_ARU_MBOX_CMD,
++		.data_in = XUSB_BAR2_ARU_MBOX_DATA_IN,
++		.data_out = XUSB_BAR2_ARU_MBOX_DATA_OUT,
++		.owner = XUSB_BAR2_ARU_MBOX_OWNER,
++		.smi_intr = XUSB_BAR2_ARU_SMI_INTR,
++	},
++	.lpm_support = true,
++	.has_bar2 = true,
++	.enable_firmware_messages = true,
++};
++
+ static const struct tegra_xusb_soc tegra264_soc = {
+ 	.supply_names = tegra194_supply_names,
+ 	.num_supplies = ARRAY_SIZE(tegra194_supply_names),
+@@ -2782,6 +2813,7 @@ static const struct of_device_id tegra_xusb_of_match[] = {
+ 	{ .compatible = "nvidia,tegra186-xusb", .data = &tegra186_soc },
+ 	{ .compatible = "nvidia,tegra194-xusb", .data = &tegra194_soc },
+ 	{ .compatible = "nvidia,tegra234-xusb", .data = &tegra234_soc },
++	{ .compatible = "nvidia,tegra238-xusb", .data = &tegra238_soc },
+ 	{ .compatible = "nvidia,tegra264-xusb", .data = &tegra264_soc },
+ 	{ },
+ };
+
+-- 
+2.43.0
+
+
+
+From git@z Thu Jan  1 00:00:00 1970
+Subject: [PATCH 5/9] usb: gadget: tegra-xudc: Fix CNT65 configuration
+From: Jon Hunter <jonathanh@nvidia.com>
+Date: Mon, 21 Sep 2026 13:19:05 +0100
+Message-Id: <20260921-tegra-usb-v1-5-74a925a35d82@nvidia.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+When configuring the SSPX_CORE_CNT65 register, the value is being
+incorrectly written back to the SSPX_CORE_CNT66 register. Fix this by
+ensuring the value intended for SSPX_CORE_CNT65 is written to this
+register.
+
+Fixes: 88607a821ffc ("usb: gadget: tegra-xudc: add port_speed_quirk")
+Signed-off-by: Jon Hunter <jonathanh@nvidia.com>
+---
+ drivers/usb/gadget/udc/tegra-xudc.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/usb/gadget/udc/tegra-xudc.c b/drivers/usb/gadget/udc/tegra-xudc.c
+index 5042c13f92be..02002221c1f2 100644
+--- a/drivers/usb/gadget/udc/tegra-xudc.c
++++ b/drivers/usb/gadget/udc/tegra-xudc.c
+@@ -642,7 +642,7 @@ static void tegra_xudc_limit_port_speed(struct tegra_xudc *xudc)
+ 	val = xudc_readl(xudc, SSPX_CORE_CNT65);
+ 	val &= ~(SSPX_CORE_CNT65_TX_SCD_END_TRPT_MID_MASK);
+ 	val |= SSPX_CORE_CNT65_TX_SCD_END_TRPT_MID(0x4B0);
+-	xudc_writel(xudc, val, SSPX_CORE_CNT66);
++	xudc_writel(xudc, val, SSPX_CORE_CNT65);
+ 
+ 	val = xudc_readl(xudc, SSPX_CORE_CNT66);
+ 	val &= ~(SSPX_CORE_CNT66_TX_SCD_BIT0_TRPT_MID_MASK);
+
+-- 
+2.43.0
+
+
+
+From git@z Thu Jan  1 00:00:00 1970
+Subject: [PATCH 6/9] usb: gadget: tegra-xudc: Add support for Tegra238
+From: Jon Hunter <jonathanh@nvidia.com>
+Date: Mon, 21 Sep 2026 13:19:06 +0100
+Message-Id: <20260921-tegra-usb-v1-6-74a925a35d82@nvidia.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+Add XUDC support for the Tegra238 SoC which is similar to Tegra234 XUDC
+but only supports 3 PHYs compared to the 4 PHYs on the Tegra234.
+
+Signed-off-by: Jon Hunter <jonathanh@nvidia.com>
+---
+ drivers/usb/gadget/udc/tegra-xudc.c | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
+
+diff --git a/drivers/usb/gadget/udc/tegra-xudc.c b/drivers/usb/gadget/udc/tegra-xudc.c
+index 02002221c1f2..0b88c1610f27 100644
+--- a/drivers/usb/gadget/udc/tegra-xudc.c
++++ b/drivers/usb/gadget/udc/tegra-xudc.c
+@@ -3692,6 +3692,19 @@ static struct tegra_xudc_soc tegra234_xudc_soc_data = {
+ 	.has_ipfs = false,
+ };
+ 
++static struct tegra_xudc_soc tegra238_xudc_soc_data = {
++	.clock_names = tegra186_xudc_clock_names,
++	.num_clks = ARRAY_SIZE(tegra186_xudc_clock_names),
++	.num_phys = 3,
++	.u1_enable = true,
++	.u2_enable = true,
++	.lpm_enable = true,
++	.invalid_seq_num = false,
++	.pls_quirk = false,
++	.port_reset_quirk = false,
++	.has_ipfs = false,
++};
++
+ static const struct of_device_id tegra_xudc_of_match[] = {
+ 	{
+ 		.compatible = "nvidia,tegra210-xudc",
+@@ -3709,6 +3722,10 @@ static const struct of_device_id tegra_xudc_of_match[] = {
+ 		.compatible = "nvidia,tegra234-xudc",
+ 		.data = &tegra234_xudc_soc_data
+ 	},
++	{
++		.compatible = "nvidia,tegra238-xudc",
++		.data = &tegra238_xudc_soc_data
++	},
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(of, tegra_xudc_of_match);
+
+-- 
+2.43.0
+
+
+
+From git@z Thu Jan  1 00:00:00 1970
+Subject: [PATCH 7/9] usb: gadget: tegra-xudc: Add SSPX register offset to
+ SoC data
+From: Jon Hunter <jonathanh@nvidia.com>
+Date: Mon, 21 Sep 2026 13:19:07 +0100
+Message-Id: <20260921-tegra-usb-v1-7-74a925a35d82@nvidia.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+The SuperSpeed Port (SSPX) register offsets for Tegra264 (0x4000) are
+different to the existing Tegra devices (0x600). In preparation for
+adding support for Tegra264, add the SSPX register offset into the SoC
+data and update the register definitions and register accesses to use
+the offset from the SoC data.
+
+Signed-off-by: Jon Hunter <jonathanh@nvidia.com>
+---
+ drivers/usb/gadget/udc/tegra-xudc.c | 90 ++++++++++++++++++++-----------------
+ 1 file changed, 48 insertions(+), 42 deletions(-)
+
+diff --git a/drivers/usb/gadget/udc/tegra-xudc.c b/drivers/usb/gadget/udc/tegra-xudc.c
+index 0b88c1610f27..c97cacb7e416 100644
+--- a/drivers/usb/gadget/udc/tegra-xudc.c
++++ b/drivers/usb/gadget/udc/tegra-xudc.c
+@@ -143,42 +143,42 @@
+ #define  HSFSPI_COUNT13_U2_RESUME_K_DURATION(x) ((x) & \
+ 				HSFSPI_COUNT13_U2_RESUME_K_DURATION_MASK)
+ #define BLCG 0x840
+-#define SSPX_CORE_CNT0 0x610
++#define SSPX_CORE_CNT0 0x10
+ #define  SSPX_CORE_CNT0_PING_TBURST_MASK GENMASK(7, 0)
+ #define  SSPX_CORE_CNT0_PING_TBURST(x) ((x) & SSPX_CORE_CNT0_PING_TBURST_MASK)
+-#define SSPX_CORE_CNT30 0x688
++#define SSPX_CORE_CNT30 0x88
+ #define  SSPX_CORE_CNT30_LMPITP_TIMER_MASK GENMASK(19, 0)
+ #define  SSPX_CORE_CNT30_LMPITP_TIMER(x) ((x) & \
+ 					SSPX_CORE_CNT30_LMPITP_TIMER_MASK)
+-#define SSPX_CORE_CNT32 0x690
++#define SSPX_CORE_CNT32 0x90
+ #define  SSPX_CORE_CNT32_POLL_TBURST_MAX_MASK GENMASK(7, 0)
+ #define  SSPX_CORE_CNT32_POLL_TBURST_MAX(x) ((x) & \
+ 					SSPX_CORE_CNT32_POLL_TBURST_MAX_MASK)
+-#define SSPX_CORE_CNT56 0x6fc
++#define SSPX_CORE_CNT56 0xfc
+ #define  SSPX_CORE_CNT56_SCD_BIT0_TRPT_MAX_MASK GENMASK(19, 0)
+ #define  SSPX_CORE_CNT56_SCD_BIT0_TRPT_MAX(x) ((x) & \
+ 				SSPX_CORE_CNT56_SCD_BIT0_TRPT_MAX_MASK)
+-#define SSPX_CORE_CNT57 0x700
++#define SSPX_CORE_CNT57 0x100
+ #define  SSPX_CORE_CNT57_SCD_BIT1_TRPT_MAX_MASK GENMASK(19, 0)
+ #define  SSPX_CORE_CNT57_SCD_BIT1_TRPT_MAX(x) ((x) & \
+ 				SSPX_CORE_CNT57_SCD_BIT1_TRPT_MAX_MASK)
+-#define SSPX_CORE_CNT65 0x720
++#define SSPX_CORE_CNT65 0x120
+ #define  SSPX_CORE_CNT65_TX_SCD_END_TRPT_MID_MASK GENMASK(19, 0)
+ #define  SSPX_CORE_CNT65_TX_SCD_END_TRPT_MID(x) ((x) & \
+ 				SSPX_CORE_CNT65_TX_SCD_END_TRPT_MID_MASK)
+-#define SSPX_CORE_CNT66 0x724
++#define SSPX_CORE_CNT66 0x124
+ #define  SSPX_CORE_CNT66_TX_SCD_BIT0_TRPT_MID_MASK GENMASK(19, 0)
+ #define  SSPX_CORE_CNT66_TX_SCD_BIT0_TRPT_MID(x) ((x) & \
+ 				SSPX_CORE_CNT66_TX_SCD_BIT0_TRPT_MID_MASK)
+-#define SSPX_CORE_CNT67 0x728
++#define SSPX_CORE_CNT67 0x128
+ #define  SSPX_CORE_CNT67_TX_SCD_BIT1_TRPT_MID_MASK GENMASK(19, 0)
+ #define  SSPX_CORE_CNT67_TX_SCD_BIT1_TRPT_MID(x) ((x) & \
+ 				SSPX_CORE_CNT67_TX_SCD_BIT1_TRPT_MID_MASK)
+-#define SSPX_CORE_CNT72 0x73c
++#define SSPX_CORE_CNT72 0x13c
+ #define  SSPX_CORE_CNT72_SCD_LFPS_TIMEOUT_MASK GENMASK(19, 0)
+ #define  SSPX_CORE_CNT72_SCD_LFPS_TIMEOUT(x) ((x) & \
+ 				SSPX_CORE_CNT72_SCD_LFPS_TIMEOUT_MASK)
+-#define SSPX_CORE_PADCTL4 0x750
++#define SSPX_CORE_PADCTL4 0x150
+ #define  SSPX_CORE_PADCTL4_RXDAT_VLD_TIMEOUT_U3_MASK GENMASK(19, 0)
+ #define  SSPX_CORE_PADCTL4_RXDAT_VLD_TIMEOUT_U3(x) ((x) & \
+ 				SSPX_CORE_PADCTL4_RXDAT_VLD_TIMEOUT_U3_MASK)
+@@ -548,6 +548,7 @@ struct tegra_xudc_soc {
+ 	const char * const *clock_names;
+ 	unsigned int num_clks;
+ 	unsigned int num_phys;
++	unsigned int sspx_offset;
+ 	bool u1_enable;
+ 	bool u2_enable;
+ 	bool lpm_enable;
+@@ -629,35 +630,35 @@ static void tegra_xudc_limit_port_speed(struct tegra_xudc *xudc)
+ 	u32 val;
+ 
+ 	/* limit port speed to gen 1 */
+-	val = xudc_readl(xudc, SSPX_CORE_CNT56);
++	val = xudc_readl(xudc, xudc->soc->sspx_offset + SSPX_CORE_CNT56);
+ 	val &= ~(SSPX_CORE_CNT56_SCD_BIT0_TRPT_MAX_MASK);
+ 	val |= SSPX_CORE_CNT56_SCD_BIT0_TRPT_MAX(0x260);
+-	xudc_writel(xudc, val, SSPX_CORE_CNT56);
++	xudc_writel(xudc, val, xudc->soc->sspx_offset + SSPX_CORE_CNT56);
+ 
+-	val = xudc_readl(xudc, SSPX_CORE_CNT57);
++	val = xudc_readl(xudc, xudc->soc->sspx_offset + SSPX_CORE_CNT57);
+ 	val &= ~(SSPX_CORE_CNT57_SCD_BIT1_TRPT_MAX_MASK);
+ 	val |= SSPX_CORE_CNT57_SCD_BIT1_TRPT_MAX(0x6D6);
+-	xudc_writel(xudc, val, SSPX_CORE_CNT57);
++	xudc_writel(xudc, val, xudc->soc->sspx_offset + SSPX_CORE_CNT57);
+ 
+-	val = xudc_readl(xudc, SSPX_CORE_CNT65);
++	val = xudc_readl(xudc, xudc->soc->sspx_offset + SSPX_CORE_CNT65);
+ 	val &= ~(SSPX_CORE_CNT65_TX_SCD_END_TRPT_MID_MASK);
+ 	val |= SSPX_CORE_CNT65_TX_SCD_END_TRPT_MID(0x4B0);
+-	xudc_writel(xudc, val, SSPX_CORE_CNT65);
++	xudc_writel(xudc, val, xudc->soc->sspx_offset + SSPX_CORE_CNT65);
+ 
+-	val = xudc_readl(xudc, SSPX_CORE_CNT66);
++	val = xudc_readl(xudc, xudc->soc->sspx_offset + SSPX_CORE_CNT66);
+ 	val &= ~(SSPX_CORE_CNT66_TX_SCD_BIT0_TRPT_MID_MASK);
+ 	val |= SSPX_CORE_CNT66_TX_SCD_BIT0_TRPT_MID(0x4B0);
+-	xudc_writel(xudc, val, SSPX_CORE_CNT66);
++	xudc_writel(xudc, val, xudc->soc->sspx_offset + SSPX_CORE_CNT66);
+ 
+-	val = xudc_readl(xudc, SSPX_CORE_CNT67);
++	val = xudc_readl(xudc, xudc->soc->sspx_offset + SSPX_CORE_CNT67);
+ 	val &= ~(SSPX_CORE_CNT67_TX_SCD_BIT1_TRPT_MID_MASK);
+ 	val |= SSPX_CORE_CNT67_TX_SCD_BIT1_TRPT_MID(0x4B0);
+-	xudc_writel(xudc, val, SSPX_CORE_CNT67);
++	xudc_writel(xudc, val, xudc->soc->sspx_offset + SSPX_CORE_CNT67);
+ 
+-	val = xudc_readl(xudc, SSPX_CORE_CNT72);
++	val = xudc_readl(xudc, xudc->soc->sspx_offset + SSPX_CORE_CNT72);
+ 	val &= ~(SSPX_CORE_CNT72_SCD_LFPS_TIMEOUT_MASK);
+ 	val |= SSPX_CORE_CNT72_SCD_LFPS_TIMEOUT(0x10);
+-	xudc_writel(xudc, val, SSPX_CORE_CNT72);
++	xudc_writel(xudc, val, xudc->soc->sspx_offset + SSPX_CORE_CNT72);
+ }
+ 
+ static void tegra_xudc_restore_port_speed(struct tegra_xudc *xudc)
+@@ -665,35 +666,35 @@ static void tegra_xudc_restore_port_speed(struct tegra_xudc *xudc)
+ 	u32 val;
+ 
+ 	/* restore port speed to gen2 */
+-	val = xudc_readl(xudc, SSPX_CORE_CNT56);
++	val = xudc_readl(xudc, xudc->soc->sspx_offset + SSPX_CORE_CNT56);
+ 	val &= ~(SSPX_CORE_CNT56_SCD_BIT0_TRPT_MAX_MASK);
+ 	val |= SSPX_CORE_CNT56_SCD_BIT0_TRPT_MAX(0x438);
+-	xudc_writel(xudc, val, SSPX_CORE_CNT56);
++	xudc_writel(xudc, val, xudc->soc->sspx_offset + SSPX_CORE_CNT56);
+ 
+-	val = xudc_readl(xudc, SSPX_CORE_CNT57);
++	val = xudc_readl(xudc, xudc->soc->sspx_offset + SSPX_CORE_CNT57);
+ 	val &= ~(SSPX_CORE_CNT57_SCD_BIT1_TRPT_MAX_MASK);
+ 	val |= SSPX_CORE_CNT57_SCD_BIT1_TRPT_MAX(0x528);
+-	xudc_writel(xudc, val, SSPX_CORE_CNT57);
++	xudc_writel(xudc, val, xudc->soc->sspx_offset + SSPX_CORE_CNT57);
+ 
+-	val = xudc_readl(xudc, SSPX_CORE_CNT65);
++	val = xudc_readl(xudc, xudc->soc->sspx_offset + SSPX_CORE_CNT65);
+ 	val &= ~(SSPX_CORE_CNT65_TX_SCD_END_TRPT_MID_MASK);
+ 	val |= SSPX_CORE_CNT65_TX_SCD_END_TRPT_MID(0xE10);
+-	xudc_writel(xudc, val, SSPX_CORE_CNT66);
++	xudc_writel(xudc, val, xudc->soc->sspx_offset + SSPX_CORE_CNT66);
+ 
+-	val = xudc_readl(xudc, SSPX_CORE_CNT66);
++	val = xudc_readl(xudc, xudc->soc->sspx_offset + SSPX_CORE_CNT66);
+ 	val &= ~(SSPX_CORE_CNT66_TX_SCD_BIT0_TRPT_MID_MASK);
+ 	val |= SSPX_CORE_CNT66_TX_SCD_BIT0_TRPT_MID(0x348);
+-	xudc_writel(xudc, val, SSPX_CORE_CNT66);
++	xudc_writel(xudc, val, xudc->soc->sspx_offset + SSPX_CORE_CNT66);
+ 
+-	val = xudc_readl(xudc, SSPX_CORE_CNT67);
++	val = xudc_readl(xudc, xudc->soc->sspx_offset + SSPX_CORE_CNT67);
+ 	val &= ~(SSPX_CORE_CNT67_TX_SCD_BIT1_TRPT_MID_MASK);
+ 	val |= SSPX_CORE_CNT67_TX_SCD_BIT1_TRPT_MID(0x5a0);
+-	xudc_writel(xudc, val, SSPX_CORE_CNT67);
++	xudc_writel(xudc, val, xudc->soc->sspx_offset + SSPX_CORE_CNT67);
+ 
+-	val = xudc_readl(xudc, SSPX_CORE_CNT72);
++	val = xudc_readl(xudc, xudc->soc->sspx_offset + SSPX_CORE_CNT72);
+ 	val &= ~(SSPX_CORE_CNT72_SCD_LFPS_TIMEOUT_MASK);
+ 	val |= SSPX_CORE_CNT72_SCD_LFPS_TIMEOUT(0x1c21);
+-	xudc_writel(xudc, val, SSPX_CORE_CNT72);
++	xudc_writel(xudc, val, xudc->soc->sspx_offset + SSPX_CORE_CNT72);
+ }
+ 
+ static void tegra_xudc_device_mode_on(struct tegra_xudc *xudc)
+@@ -3409,22 +3410,22 @@ static void tegra_xudc_device_params_init(struct tegra_xudc *xudc)
+ 		tegra_xudc_limit_port_speed(xudc);
+ 
+ 	/* Set a reasonable U3 exit timer value. */
+-	val = xudc_readl(xudc, SSPX_CORE_PADCTL4);
++	val = xudc_readl(xudc, xudc->soc->sspx_offset + SSPX_CORE_PADCTL4);
+ 	val &= ~(SSPX_CORE_PADCTL4_RXDAT_VLD_TIMEOUT_U3_MASK);
+ 	val |= SSPX_CORE_PADCTL4_RXDAT_VLD_TIMEOUT_U3(0x5dc0);
+-	xudc_writel(xudc, val, SSPX_CORE_PADCTL4);
++	xudc_writel(xudc, val, xudc->soc->sspx_offset + SSPX_CORE_PADCTL4);
+ 
+ 	/* Default ping LFPS tBurst is too large. */
+-	val = xudc_readl(xudc, SSPX_CORE_CNT0);
++	val = xudc_readl(xudc, xudc->soc->sspx_offset + SSPX_CORE_CNT0);
+ 	val &= ~(SSPX_CORE_CNT0_PING_TBURST_MASK);
+ 	val |= SSPX_CORE_CNT0_PING_TBURST(0xa);
+-	xudc_writel(xudc, val, SSPX_CORE_CNT0);
++	xudc_writel(xudc, val, xudc->soc->sspx_offset + SSPX_CORE_CNT0);
+ 
+ 	/* Default tPortConfiguration timeout is too small. */
+-	val = xudc_readl(xudc, SSPX_CORE_CNT30);
++	val = xudc_readl(xudc, xudc->soc->sspx_offset + SSPX_CORE_CNT30);
+ 	val &= ~(SSPX_CORE_CNT30_LMPITP_TIMER_MASK);
+ 	val |= SSPX_CORE_CNT30_LMPITP_TIMER(0x978);
+-	xudc_writel(xudc, val, SSPX_CORE_CNT30);
++	xudc_writel(xudc, val, xudc->soc->sspx_offset + SSPX_CORE_CNT30);
+ 
+ 	if (xudc->soc->lpm_enable) {
+ 		/* Set L1 resume duration to 95 us. */
+@@ -3438,10 +3439,10 @@ static void tegra_xudc_device_params_init(struct tegra_xudc *xudc)
+ 	 * Compliance suite appears to be violating polling LFPS tBurst max
+ 	 * of 1.4us.  Send 1.45us instead.
+ 	 */
+-	val = xudc_readl(xudc, SSPX_CORE_CNT32);
++	val = xudc_readl(xudc, xudc->soc->sspx_offset + SSPX_CORE_CNT32);
+ 	val &= ~(SSPX_CORE_CNT32_POLL_TBURST_MAX_MASK);
+ 	val |= SSPX_CORE_CNT32_POLL_TBURST_MAX(0xb0);
+-	xudc_writel(xudc, val, SSPX_CORE_CNT32);
++	xudc_writel(xudc, val, xudc->soc->sspx_offset + SSPX_CORE_CNT32);
+ 
+ 	/* Direct HS/FS port instance to RxDetect. */
+ 	val = xudc_readl(xudc, CFG_DEV_FE);
+@@ -3641,6 +3642,7 @@ static struct tegra_xudc_soc tegra210_xudc_soc_data = {
+ 	.clock_names = tegra210_xudc_clock_names,
+ 	.num_clks = ARRAY_SIZE(tegra210_xudc_clock_names),
+ 	.num_phys = 4,
++	.sspx_offset = 0x600,
+ 	.u1_enable = false,
+ 	.u2_enable = true,
+ 	.lpm_enable = false,
+@@ -3655,6 +3657,7 @@ static struct tegra_xudc_soc tegra186_xudc_soc_data = {
+ 	.clock_names = tegra186_xudc_clock_names,
+ 	.num_clks = ARRAY_SIZE(tegra186_xudc_clock_names),
+ 	.num_phys = 4,
++	.sspx_offset = 0x600,
+ 	.u1_enable = true,
+ 	.u2_enable = true,
+ 	.lpm_enable = false,
+@@ -3669,6 +3672,7 @@ static struct tegra_xudc_soc tegra194_xudc_soc_data = {
+ 	.clock_names = tegra186_xudc_clock_names,
+ 	.num_clks = ARRAY_SIZE(tegra186_xudc_clock_names),
+ 	.num_phys = 4,
++	.sspx_offset = 0x600,
+ 	.u1_enable = true,
+ 	.u2_enable = true,
+ 	.lpm_enable = true,
+@@ -3683,6 +3687,7 @@ static struct tegra_xudc_soc tegra234_xudc_soc_data = {
+ 	.clock_names = tegra186_xudc_clock_names,
+ 	.num_clks = ARRAY_SIZE(tegra186_xudc_clock_names),
+ 	.num_phys = 4,
++	.sspx_offset = 0x600,
+ 	.u1_enable = true,
+ 	.u2_enable = true,
+ 	.lpm_enable = true,
+@@ -3696,6 +3701,7 @@ static struct tegra_xudc_soc tegra238_xudc_soc_data = {
+ 	.clock_names = tegra186_xudc_clock_names,
+ 	.num_clks = ARRAY_SIZE(tegra186_xudc_clock_names),
+ 	.num_phys = 3,
++	.sspx_offset = 0x600,
+ 	.u1_enable = true,
+ 	.u2_enable = true,
+ 	.lpm_enable = true,
+
+-- 
+2.43.0
+
+
+
+From git@z Thu Jan  1 00:00:00 1970
+Subject: [PATCH 8/9] usb: gadget: tegra-xudc: Add default settings to SoC
+ data
+From: Jon Hunter <jonathanh@nvidia.com>
+Date: Mon, 21 Sep 2026 13:19:08 +0100
+Message-Id: <20260921-tegra-usb-v1-8-74a925a35d82@nvidia.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+Some of the default settings that need to be programmed into the
+SuperSpeed Port (SSPX) registers differ for Tegra264. In preparation for
+adding support for Tegra264 move the necessary register settings into
+the SoC data so that different values can be programmed for Tegra264.
+Note that for Tegra264 not all of the SSPX registers programmed for
+existing Tegra devices are programmed and so only write these registers
+if there is a non-zero value in the SoC data.
+
+Signed-off-by: Jon Hunter <jonathanh@nvidia.com>
+---
+ drivers/usb/gadget/udc/tegra-xudc.c | 80 ++++++++++++++++++++++++++-----------
+ 1 file changed, 56 insertions(+), 24 deletions(-)
+
+diff --git a/drivers/usb/gadget/udc/tegra-xudc.c b/drivers/usb/gadget/udc/tegra-xudc.c
+index c97cacb7e416..56585c350cab 100644
+--- a/drivers/usb/gadget/udc/tegra-xudc.c
++++ b/drivers/usb/gadget/udc/tegra-xudc.c
+@@ -549,6 +549,10 @@ struct tegra_xudc_soc {
+ 	unsigned int num_clks;
+ 	unsigned int num_phys;
+ 	unsigned int sspx_offset;
++	unsigned int lfps_ping;
++	unsigned int lfps_poll;
++	unsigned int lmpitp_timer;
++	unsigned int u3_timeout;
+ 	bool u1_enable;
+ 	bool u2_enable;
+ 	bool lpm_enable;
+@@ -3391,7 +3395,7 @@ static void tegra_xudc_fpci_ipfs_init(struct tegra_xudc *xudc)
+ 
+ static void tegra_xudc_device_params_init(struct tegra_xudc *xudc)
+ {
+-	u32 val, imod;
++	u32 val, imod, offset = xudc->soc->sspx_offset;
+ 
+ 	val = xudc_readl(xudc, BLCG);
+ 	if (xudc->soc->has_ipfs) {
+@@ -3409,23 +3413,29 @@ static void tegra_xudc_device_params_init(struct tegra_xudc *xudc)
+ 	if (xudc->soc->port_speed_quirk)
+ 		tegra_xudc_limit_port_speed(xudc);
+ 
+-	/* Set a reasonable U3 exit timer value. */
+-	val = xudc_readl(xudc, xudc->soc->sspx_offset + SSPX_CORE_PADCTL4);
+-	val &= ~(SSPX_CORE_PADCTL4_RXDAT_VLD_TIMEOUT_U3_MASK);
+-	val |= SSPX_CORE_PADCTL4_RXDAT_VLD_TIMEOUT_U3(0x5dc0);
+-	xudc_writel(xudc, val, xudc->soc->sspx_offset + SSPX_CORE_PADCTL4);
++	if (xudc->soc->u3_timeout) {
++		/* Set U3 exit timer value. */
++		val = xudc_readl(xudc, offset + SSPX_CORE_PADCTL4);
++		val &= ~(SSPX_CORE_PADCTL4_RXDAT_VLD_TIMEOUT_U3_MASK);
++		val |= SSPX_CORE_PADCTL4_RXDAT_VLD_TIMEOUT_U3(xudc->soc->u3_timeout);
++		xudc_writel(xudc, val, offset + SSPX_CORE_PADCTL4);
++	}
+ 
+-	/* Default ping LFPS tBurst is too large. */
+-	val = xudc_readl(xudc, xudc->soc->sspx_offset + SSPX_CORE_CNT0);
+-	val &= ~(SSPX_CORE_CNT0_PING_TBURST_MASK);
+-	val |= SSPX_CORE_CNT0_PING_TBURST(0xa);
+-	xudc_writel(xudc, val, xudc->soc->sspx_offset + SSPX_CORE_CNT0);
++	if (xudc->soc->lfps_ping) {
++		/* Default ping LFPS tBurst is too large. */
++		val = xudc_readl(xudc, offset + SSPX_CORE_CNT0);
++		val &= ~(SSPX_CORE_CNT0_PING_TBURST_MASK);
++		val |= SSPX_CORE_CNT0_PING_TBURST(xudc->soc->lfps_ping);
++		xudc_writel(xudc, val, offset + SSPX_CORE_CNT0);
++	}
+ 
+-	/* Default tPortConfiguration timeout is too small. */
+-	val = xudc_readl(xudc, xudc->soc->sspx_offset + SSPX_CORE_CNT30);
+-	val &= ~(SSPX_CORE_CNT30_LMPITP_TIMER_MASK);
+-	val |= SSPX_CORE_CNT30_LMPITP_TIMER(0x978);
+-	xudc_writel(xudc, val, xudc->soc->sspx_offset + SSPX_CORE_CNT30);
++	if (xudc->soc->lmpitp_timer) {
++		/* Default tPortConfiguration timeout is too small. */
++		val = xudc_readl(xudc, offset + SSPX_CORE_CNT30);
++		val &= ~(SSPX_CORE_CNT30_LMPITP_TIMER_MASK);
++		val |= SSPX_CORE_CNT30_LMPITP_TIMER(xudc->soc->lmpitp_timer);
++		xudc_writel(xudc, val, offset + SSPX_CORE_CNT30);
++	}
+ 
+ 	if (xudc->soc->lpm_enable) {
+ 		/* Set L1 resume duration to 95 us. */
+@@ -3435,14 +3445,16 @@ static void tegra_xudc_device_params_init(struct tegra_xudc *xudc)
+ 		xudc_writel(xudc, val, HSFSPI_COUNT13);
+ 	}
+ 
+-	/*
+-	 * Compliance suite appears to be violating polling LFPS tBurst max
+-	 * of 1.4us.  Send 1.45us instead.
+-	 */
+-	val = xudc_readl(xudc, xudc->soc->sspx_offset + SSPX_CORE_CNT32);
+-	val &= ~(SSPX_CORE_CNT32_POLL_TBURST_MAX_MASK);
+-	val |= SSPX_CORE_CNT32_POLL_TBURST_MAX(0xb0);
+-	xudc_writel(xudc, val, xudc->soc->sspx_offset + SSPX_CORE_CNT32);
++	if (xudc->soc->lfps_poll) {
++		/*
++		 * Compliance suite appears to be violating polling LFPS tBurst
++		 * max of 1.4us.
++		 */
++		val = xudc_readl(xudc, offset + SSPX_CORE_CNT32);
++		val &= ~(SSPX_CORE_CNT32_POLL_TBURST_MAX_MASK);
++		val |= SSPX_CORE_CNT32_POLL_TBURST_MAX(xudc->soc->lfps_poll);
++		xudc_writel(xudc, val, offset + SSPX_CORE_CNT32);
++	}
+ 
+ 	/* Direct HS/FS port instance to RxDetect. */
+ 	val = xudc_readl(xudc, CFG_DEV_FE);
+@@ -3643,6 +3655,10 @@ static struct tegra_xudc_soc tegra210_xudc_soc_data = {
+ 	.num_clks = ARRAY_SIZE(tegra210_xudc_clock_names),
+ 	.num_phys = 4,
+ 	.sspx_offset = 0x600,
++	.lfps_ping = 0xa,
++	.lfps_poll = 0xb0, /* 1.45us */
++	.lmpitp_timer = 0x978,
++	.u3_timeout = 0x5dc0,
+ 	.u1_enable = false,
+ 	.u2_enable = true,
+ 	.lpm_enable = false,
+@@ -3658,6 +3674,10 @@ static struct tegra_xudc_soc tegra186_xudc_soc_data = {
+ 	.num_clks = ARRAY_SIZE(tegra186_xudc_clock_names),
+ 	.num_phys = 4,
+ 	.sspx_offset = 0x600,
++	.lfps_ping = 0xa,
++	.lfps_poll = 0xb0, /* 1.45us */
++	.lmpitp_timer = 0x978,
++	.u3_timeout = 0x5dc0,
+ 	.u1_enable = true,
+ 	.u2_enable = true,
+ 	.lpm_enable = false,
+@@ -3673,6 +3693,10 @@ static struct tegra_xudc_soc tegra194_xudc_soc_data = {
+ 	.num_clks = ARRAY_SIZE(tegra186_xudc_clock_names),
+ 	.num_phys = 4,
+ 	.sspx_offset = 0x600,
++	.lfps_ping = 0xa,
++	.lfps_poll = 0xb0, /* 1.45us */
++	.lmpitp_timer = 0x978,
++	.u3_timeout = 0x5dc0,
+ 	.u1_enable = true,
+ 	.u2_enable = true,
+ 	.lpm_enable = true,
+@@ -3688,6 +3712,10 @@ static struct tegra_xudc_soc tegra234_xudc_soc_data = {
+ 	.num_clks = ARRAY_SIZE(tegra186_xudc_clock_names),
+ 	.num_phys = 4,
+ 	.sspx_offset = 0x600,
++	.lfps_ping = 0xa,
++	.lfps_poll = 0xb0, /* 1.45us */
++	.lmpitp_timer = 0x978,
++	.u3_timeout = 0x5dc0,
+ 	.u1_enable = true,
+ 	.u2_enable = true,
+ 	.lpm_enable = true,
+@@ -3702,6 +3730,10 @@ static struct tegra_xudc_soc tegra238_xudc_soc_data = {
+ 	.num_clks = ARRAY_SIZE(tegra186_xudc_clock_names),
+ 	.num_phys = 3,
+ 	.sspx_offset = 0x600,
++	.lfps_ping = 0xa,
++	.lfps_poll = 0xb0, /* 1.45us */
++	.lmpitp_timer = 0x978,
++	.u3_timeout = 0x5dc0,
+ 	.u1_enable = true,
+ 	.u2_enable = true,
+ 	.lpm_enable = true,
+
+-- 
+2.43.0
+
+
+
+From git@z Thu Jan  1 00:00:00 1970
+Subject: [PATCH 9/9] usb: gadget: tegra-xudc: Add support for Tegra264
+From: Jon Hunter <jonathanh@nvidia.com>
+Date: Mon, 21 Sep 2026 13:19:09 +0100
+Message-Id: <20260921-tegra-usb-v1-9-74a925a35d82@nvidia.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+Add support for the Tegra264 XUDC by adding the device-tree compatible
+string, SoC data and additional registers that need to be configured for
+Tegra264. The LMP ITP timer mask in the SSPX_CORE_CNT30 register is
+different for Tegra264 and so move the mask into the SoC data.
+
+Signed-off-by: Jon Hunter <jonathanh@nvidia.com>
+---
+ drivers/usb/gadget/udc/tegra-xudc.c | 60 +++++++++++++++++++++++++++++++++----
+ 1 file changed, 55 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/usb/gadget/udc/tegra-xudc.c b/drivers/usb/gadget/udc/tegra-xudc.c
+index 56585c350cab..cbbdcd00e9b9 100644
+--- a/drivers/usb/gadget/udc/tegra-xudc.c
++++ b/drivers/usb/gadget/udc/tegra-xudc.c
+@@ -146,10 +146,15 @@
+ #define SSPX_CORE_CNT0 0x10
+ #define  SSPX_CORE_CNT0_PING_TBURST_MASK GENMASK(7, 0)
+ #define  SSPX_CORE_CNT0_PING_TBURST(x) ((x) & SSPX_CORE_CNT0_PING_TBURST_MASK)
++#define SSPX_CORE_CNT13 0x44
++#define  SSPX_CORE_CNT13_CRDTHP_TIMER_MASK GENMASK(11, 0)
++#define  SSPX_CORE_CNT13_CRDTHP_TIMER(x) ((x) & \
++				SSPX_CORE_CNT13_CRDTHP_TIMER_MASK)
++#define SSPX_CORE_CNT27 0x7c
++#define  SSPX_CORE_CNT27_PING_LFPS_TRPT_MASK GENMASK(29, 0)
++#define  SSPX_CORE_CNT27_PING_LFPS_TRPT(x) ((x) & \
++				SSPX_CORE_CNT27_PING_LFPS_TRPT_MASK)
+ #define SSPX_CORE_CNT30 0x88
+-#define  SSPX_CORE_CNT30_LMPITP_TIMER_MASK GENMASK(19, 0)
+-#define  SSPX_CORE_CNT30_LMPITP_TIMER(x) ((x) & \
+-					SSPX_CORE_CNT30_LMPITP_TIMER_MASK)
+ #define SSPX_CORE_CNT32 0x90
+ #define  SSPX_CORE_CNT32_POLL_TBURST_MAX_MASK GENMASK(7, 0)
+ #define  SSPX_CORE_CNT32_POLL_TBURST_MAX(x) ((x) & \
+@@ -549,9 +554,12 @@ struct tegra_xudc_soc {
+ 	unsigned int num_clks;
+ 	unsigned int num_phys;
+ 	unsigned int sspx_offset;
++	unsigned int crdthp_timer;
+ 	unsigned int lfps_ping;
++	unsigned int lfps_ping_trpt;
+ 	unsigned int lfps_poll;
+ 	unsigned int lmpitp_timer;
++	unsigned int lmpitp_timer_mask;
+ 	unsigned int u3_timeout;
+ 	bool u1_enable;
+ 	bool u2_enable;
+@@ -3429,11 +3437,25 @@ static void tegra_xudc_device_params_init(struct tegra_xudc *xudc)
+ 		xudc_writel(xudc, val, offset + SSPX_CORE_CNT0);
+ 	}
+ 
++	if (xudc->soc->crdthp_timer) {
++		val = xudc_readl(xudc, offset + SSPX_CORE_CNT13);
++		val &= ~(SSPX_CORE_CNT13_CRDTHP_TIMER_MASK);
++		val |= SSPX_CORE_CNT13_CRDTHP_TIMER(xudc->soc->crdthp_timer);
++		xudc_writel(xudc, val, offset + SSPX_CORE_CNT13);
++	}
++
++	if (xudc->soc->lfps_ping_trpt) {
++		val = xudc_readl(xudc, offset + SSPX_CORE_CNT27);
++		val &= ~(SSPX_CORE_CNT27_PING_LFPS_TRPT_MASK);
++		val |= SSPX_CORE_CNT27_PING_LFPS_TRPT(xudc->soc->lfps_ping_trpt);
++		xudc_writel(xudc, val, offset + SSPX_CORE_CNT27);
++	}
++
+ 	if (xudc->soc->lmpitp_timer) {
+ 		/* Default tPortConfiguration timeout is too small. */
+ 		val = xudc_readl(xudc, offset + SSPX_CORE_CNT30);
+-		val &= ~(SSPX_CORE_CNT30_LMPITP_TIMER_MASK);
+-		val |= SSPX_CORE_CNT30_LMPITP_TIMER(xudc->soc->lmpitp_timer);
++		val &= ~(xudc->soc->lmpitp_timer_mask);
++		val |= xudc->soc->lmpitp_timer & xudc->soc->lmpitp_timer_mask;
+ 		xudc_writel(xudc, val, offset + SSPX_CORE_CNT30);
+ 	}
+ 
+@@ -3658,6 +3680,7 @@ static struct tegra_xudc_soc tegra210_xudc_soc_data = {
+ 	.lfps_ping = 0xa,
+ 	.lfps_poll = 0xb0, /* 1.45us */
+ 	.lmpitp_timer = 0x978,
++	.lmpitp_timer_mask = GENMASK(19, 0),
+ 	.u3_timeout = 0x5dc0,
+ 	.u1_enable = false,
+ 	.u2_enable = true,
+@@ -3677,6 +3700,7 @@ static struct tegra_xudc_soc tegra186_xudc_soc_data = {
+ 	.lfps_ping = 0xa,
+ 	.lfps_poll = 0xb0, /* 1.45us */
+ 	.lmpitp_timer = 0x978,
++	.lmpitp_timer_mask = GENMASK(19, 0),
+ 	.u3_timeout = 0x5dc0,
+ 	.u1_enable = true,
+ 	.u2_enable = true,
+@@ -3696,6 +3720,7 @@ static struct tegra_xudc_soc tegra194_xudc_soc_data = {
+ 	.lfps_ping = 0xa,
+ 	.lfps_poll = 0xb0, /* 1.45us */
+ 	.lmpitp_timer = 0x978,
++	.lmpitp_timer_mask = GENMASK(19, 0),
+ 	.u3_timeout = 0x5dc0,
+ 	.u1_enable = true,
+ 	.u2_enable = true,
+@@ -3715,6 +3740,7 @@ static struct tegra_xudc_soc tegra234_xudc_soc_data = {
+ 	.lfps_ping = 0xa,
+ 	.lfps_poll = 0xb0, /* 1.45us */
+ 	.lmpitp_timer = 0x978,
++	.lmpitp_timer_mask = GENMASK(19, 0),
+ 	.u3_timeout = 0x5dc0,
+ 	.u1_enable = true,
+ 	.u2_enable = true,
+@@ -3733,6 +3759,7 @@ static struct tegra_xudc_soc tegra238_xudc_soc_data = {
+ 	.lfps_ping = 0xa,
+ 	.lfps_poll = 0xb0, /* 1.45us */
+ 	.lmpitp_timer = 0x978,
++	.lmpitp_timer_mask = GENMASK(19, 0),
+ 	.u3_timeout = 0x5dc0,
+ 	.u1_enable = true,
+ 	.u2_enable = true,
+@@ -3743,6 +3770,25 @@ static struct tegra_xudc_soc tegra238_xudc_soc_data = {
+ 	.has_ipfs = false,
+ };
+ 
++static struct tegra_xudc_soc tegra264_xudc_soc_data = {
++	.clock_names = tegra186_xudc_clock_names,
++	.num_clks = ARRAY_SIZE(tegra186_xudc_clock_names),
++	.num_phys = 4,
++	.sspx_offset = 0x4000,
++	.crdthp_timer = 0x33,
++	.lfps_ping_trpt = 0x7a1200,
++	.lfps_poll = 0x3b, /* 1.466us */
++	.lmpitp_timer = 0xc9,
++	.lmpitp_timer_mask = GENMASK(11, 0),
++	.u1_enable = true,
++	.u2_enable = true,
++	.lpm_enable = true,
++	.invalid_seq_num = false,
++	.pls_quirk = false,
++	.port_reset_quirk = false,
++	.has_ipfs = false,
++};
++
+ static const struct of_device_id tegra_xudc_of_match[] = {
+ 	{
+ 		.compatible = "nvidia,tegra210-xudc",
+@@ -3764,6 +3810,10 @@ static const struct of_device_id tegra_xudc_of_match[] = {
+ 		.compatible = "nvidia,tegra238-xudc",
+ 		.data = &tegra238_xudc_soc_data
+ 	},
++	{
++		.compatible = "nvidia,tegra264-xudc",
++		.data = &tegra264_xudc_soc_data
++	},
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(of, tegra_xudc_of_match);
+
+-- 
+2.43.0
+
+
+
