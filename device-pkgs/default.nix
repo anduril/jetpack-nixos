@@ -144,7 +144,7 @@ let
     inherit config flashInitrd lib l4tMajorMinorPatchVersion writeText deviceTree tio expect;
     inherit writeShellApplication buildPackages nvidia-jetpack useFlashCmd;
     inherit mkRcmBootScript mkRcmBootArgs mkFlashCmdTools;
-    inherit (pkgs.nvidia-jetpack) socType signedFirmware;
+    inherit (pkgs.nvidia-jetpack) socType;
   };
 
   fuseScript = writeShellApplication {

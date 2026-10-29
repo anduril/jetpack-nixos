@@ -6,7 +6,6 @@
 , buildPackages
 , nvidia-jetpack
 , socType
-, signedFirmware
 , config
 , flashInitrd
 , lib
@@ -19,7 +18,7 @@
 }:
 let
   cfg = config.hardware.nvidia-jetpack;
-  inherit (flashInitrd.passthru) manufacturer product serialnumber;
+  inherit (flashInitrd.passthru) manufacturer product serialnumber signedFirmware;
   serialPortId = "usb-${manufacturer}_${product}_${serialnumber}-if00";
 
 
@@ -180,11 +179,14 @@ in
 (writeShellApplication {
   name = "initrd-flash-${cfg.name}";
   text = ''
-    (
-      cd "${builtins.placeholder "out"}"
+    if ! (
+      cd "${builtins.placeholder "out"}" || exit 1
       ${lib.getExe' buildPackages.coreutils "sha256sum"} \
         --check --status share/jetpack/flash-payload.sha256
-    )
+    ); then
+      echo "Flash payload verification failed; refusing to run RCM." >&2
+      exit 1
+    fi
     ${rcmScript}
 
     echo

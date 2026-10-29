@@ -1,12 +1,17 @@
-{ lib, stdenvNoCC, python3, makeWrapper }:
+{ lib, stdenvNoCC, python3 }:
+assert lib.assertMsg (lib.versionAtLeast python3.version "3.11")
+  "jetson-firmware-measurements requires Python 3.11 or later";
+let
+  pythonEnv = python3.withPackages (ps: [ ps.pyzstd ]);
+in
 stdenvNoCC.mkDerivation {
   pname = "jetson-firmware-measurements";
   version = "1";
   src = lib.fileset.toSource {
     root = ./.;
-    fileset = lib.fileset.unions [ ./measure.py ./tests/test_measure.py ];
+    fileset = lib.fileset.unions [ ./measure.py ./tests ];
   };
-  nativeBuildInputs = [ makeWrapper python3 ];
+  nativeBuildInputs = [ pythonEnv ];
   dontConfigure = true;
   dontBuild = true;
   doCheck = true;
@@ -19,13 +24,13 @@ stdenvNoCC.mkDerivation {
     runHook preInstall
     install -Dm755 measure.py "$out/bin/jetson-firmware-measurements"
     patchShebangs "$out/bin/jetson-firmware-measurements"
-    wrapProgram "$out/bin/jetson-firmware-measurements" \
-      --prefix PATH : ${lib.makeBinPath [ python3 ]}
     runHook postInstall
   '';
   doInstallCheck = true;
   installCheckPhase = ''
-    "$out/bin/jetson-firmware-measurements" --help >/dev/null
+    runHook preInstallCheck
+    PATH= "$out/bin/jetson-firmware-measurements" --help >/dev/null
+    runHook postInstallCheck
   '';
   meta = {
     description = "Predict Jetson firmware PCRs from prepared flash and capsule payloads";
