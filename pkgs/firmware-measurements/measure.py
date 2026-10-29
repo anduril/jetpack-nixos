@@ -9,7 +9,9 @@ from pathlib import Path, PurePosixPath
 import stat
 import struct
 
-# Layout and order from NVIDIA's ftpm_gen_measurement_list.py.
+import pyzstd
+
+# NVIDIA helper revisions and UEFI hash-mask sources are listed in README.md.
 FIRMWARE_ORDER = {
     "t234": (b"MB2B", b"TOSB", b"CPBL"),
     "t264": (b"MB2B", b"BL31", b"BL32", b"SECP", b"CPBL"),
@@ -42,22 +44,17 @@ def signed_digest(header, platform):
     return magic, header[0x1460:HEADER_SIZE]
 
 
-def add_image(images, header, platform):
-    measured = signed_digest(header, platform)
-    if measured is None:
-        return
-    magic, digest = measured
-    if magic in images and images[magic] != digest:
-        raise ValueError(f"Conflicting {magic.decode()} firmware images")
-    images[magic] = digest
+def validate_images(platform, images, context=""):
+    for magic in FIRMWARE_ORDER[platform]:
+        if magic not in images:
+            raise ValueError(f"Missing {magic.decode()} firmware image{context}")
 
 
 def pcr0(platform, images):
+    validate_images(platform, images)
     values = {name: bytes(hashlib.new(name).digest_size) for name in ALGORITHMS}
     events = []
     for magic in FIRMWARE_ORDER[platform]:
-        if magic not in images:
-            raise ValueError(f"Missing {magic.decode()} firmware image")
         measured = images[magic]
         digests = {
             name: measured if name == "sha512" else hashlib.new(name, measured).digest()
@@ -74,7 +71,7 @@ def pcr0(platform, images):
         for name, digest in digests.items():
             values[name] = hashlib.new(name, values[name] + digest).digest()
 
-    # UEFI caps SHA-256 and SHA-384 PCR 0; it does not extend SHA-512.
+    # The pinned NVIDIA UEFI hash masks include only SHA-256 and SHA-384.
     separator = {name: hashlib.new(name, bytes(4)).digest() for name in ALGORITHMS[:2]}
     events.append(
         {
@@ -90,20 +87,14 @@ def pcr0(platform, images):
     return {name: value.hex() for name, value in values.items()} | {"events": events}
 
 
-def directory_images(directory, platform):
-    variants = {}
-    for variant in sorted(directory.iterdir()):
-        if not variant.is_dir():
-            continue
-        images = {}
-        for path in sorted(variant.iterdir()):
-            if path.is_file():
-                with path.open("rb") as stream:
-                    add_image(images, stream.read(HEADER_SIZE), platform)
-        variants[variant.name] = images
-    if not variants:
-        raise ValueError("No signed firmware variants found")
-    return variants
+def initrd_stream(data):
+    if data.startswith(b"\x1f\x8b"):
+        return gzip.GzipFile(fileobj=io.BytesIO(data))
+    if data.startswith(b"\x28\xb5\x2f\xfd"):
+        return pyzstd.ZstdFile(io.BytesIO(data))
+    if data.startswith((b"070701", b"070702")):
+        return io.BytesIO(data)
+    raise ValueError("Recovery initrd requires gzip, zstd or uncompressed newc CPIO")
 
 
 def initrd_images(data, signed_directory, platform):
@@ -111,8 +102,7 @@ def initrd_images(data, signed_directory, platform):
     variants = {}
     files = []
     contents = {}
-    with io.BytesIO(data) as raw:
-        stream = gzip.GzipFile(fileobj=raw) if data.startswith(b"\x1f\x8b") else raw
+    with initrd_stream(data) as stream:
         while True:
             header = read_exact(stream, 110)
             if header[:6] not in (b"070701", b"070702"):
@@ -129,6 +119,14 @@ def initrd_images(data, signed_directory, platform):
             name = PurePosixPath(encoded[:-1].decode().lstrip("/"))
             skip(stream, -(110 + namesize) % 4)
             if str(name) == "TRAILER!!!":
+                if size:
+                    raise ValueError("Invalid CPIO trailer size")
+                while padding := stream.read(1024 * 1024):
+                    if any(padding):
+                        raise ValueError(
+                            "Recovery initrd requires a single CPIO archive; "
+                            "nonpadding data follows the trailer"
+                        )
                 break
             first = read_exact(stream, min(size, HEADER_SIZE))
             skip(stream, size - len(first))
@@ -155,6 +153,8 @@ def initrd_images(data, signed_directory, platform):
             images[magic] = digest
     if not variants:
         raise ValueError("No signed firmware found in the recovery initrd")
+    for variant, images in variants.items():
+        validate_images(platform, images, f" in recovery initrd variant {variant}")
     return variants
 
 
@@ -247,9 +247,7 @@ def bup_images(data, platform):
             if magic in images and images[magic] != digest:
                 raise ValueError(f"Conflicting {magic.decode()} in BUP variant {key}")
             images[magic] = digest
-        for magic in FIRMWARE_ORDER[platform]:
-            if magic not in images:
-                raise ValueError(f"Missing {magic.decode()} in BUP variant {spec}")
+        validate_images(platform, images, f" in BUP variant {key}")
         variants[key] = images
     if not variants:
         raise ValueError("No signed firmware variants found in BUP")

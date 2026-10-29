@@ -8,6 +8,8 @@ import sys
 import tempfile
 import unittest
 
+import pyzstd
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import measure
 
@@ -130,14 +132,15 @@ class PcrTests(unittest.TestCase):
                     self.assertEqual(result[algorithm], expected.hex())
                 self.assertNotIn("sha512", result["events"][-1]["digests"])
 
-    def test_missing_and_conflicting_images(self):
-        with self.assertRaisesRegex(ValueError, "Missing"):
-            measure.pcr0("t234", {})
-        images = {}
-        measure.add_image(images, image(b"MB2B", 1), "t234")
-        measure.add_image(images, image(b"MB2B", 1), "t234")
-        with self.assertRaisesRegex(ValueError, "Conflicting"):
-            measure.add_image(images, image(b"MB2B", 2), "t234")
+    def test_missing_images(self):
+        for platform, order in measure.FIRMWARE_ORDER.items():
+            for missing in order:
+                with self.subTest(platform=platform, missing=missing):
+                    images = {magic: bytes(64) for magic in order if magic != missing}
+                    with self.assertRaisesRegex(
+                        ValueError, f"Missing {missing.decode()} firmware image$"
+                    ):
+                        measure.pcr0(platform, images)
 
     def test_truncated_signed_header(self):
         with self.assertRaisesRegex(ValueError, "Truncated MB2B"):
@@ -145,15 +148,19 @@ class PcrTests(unittest.TestCase):
 
 
 class InitrdTests(unittest.TestCase):
-    def test_gzip_and_uncompressed(self):
+    def test_supported_compression(self):
         for platform in measure.FIRMWARE_ORDER:
             data = initrd(platform)
             expected = {
                 magic: bytes([index + 1]) * 64
                 for index, magic in enumerate(measure.FIRMWARE_ORDER[platform])
             }
-            for archive in (data, gzip.compress(data)):
-                with self.subTest(platform=platform, compressed=archive != data):
+            for name, archive in (
+                ("raw", data),
+                ("gzip", gzip.compress(data)),
+                ("zstd", pyzstd.compress(data)),
+            ):
+                with self.subTest(platform=platform, compression=name):
                     self.assertEqual(
                         measure.initrd_images(archive, SIGNED, platform),
                         {"board": expected},
@@ -186,16 +193,136 @@ class InitrdTests(unittest.TestCase):
             with self.subTest(size=len(data)), self.assertRaises(ValueError):
                 measure.initrd_images(data, SIGNED, "t234")
 
+    def test_archive_padding(self):
+        data = initrd()
+        expected = measure.initrd_images(data, SIGNED, "t234")
+        for archive in (
+            data + bytes(512),
+            gzip.compress(data + bytes(512)),
+            gzip.compress(data) + bytes(512),
+            pyzstd.compress(data + bytes(512)),
+            pyzstd.compress(data) + pyzstd.compress(bytes(512)),
+        ):
+            with self.subTest(size=len(archive)):
+                self.assertEqual(
+                    measure.initrd_images(archive, SIGNED, "t234"), expected
+                )
+
+    def test_concatenated_archives_and_trailing_data(self):
+        data = initrd()
+        for archive in (
+            data + data,
+            data + bytes(512) + data,
+            gzip.compress(data + data),
+            gzip.compress(data) + gzip.compress(data),
+            pyzstd.compress(data + data),
+            pyzstd.compress(data) + pyzstd.compress(data),
+            data + b"unexpected",
+            gzip.compress(data + b"unexpected"),
+            pyzstd.compress(data + b"unexpected"),
+        ):
+            with self.subTest(size=len(archive)):
+                with self.assertRaisesRegex(ValueError, "single CPIO archive"):
+                    measure.initrd_images(archive, SIGNED, "t234")
+
+    def test_unsupported_compression(self):
+        for magic in (
+            b"\xfd7zXZ\x00",
+            b"BZh",
+            b"\x04\x22\x4d\x18",
+        ):
+            with self.subTest(magic=magic):
+                with self.assertRaisesRegex(
+                    ValueError, "gzip, zstd or uncompressed newc"
+                ):
+                    measure.initrd_images(magic + bytes(110), SIGNED, "t234")
+
+    def test_truncated_and_corrupt_gzip(self):
+        data = gzip.compress(initrd())
+        with self.assertRaises(EOFError):
+            measure.initrd_images(data[:-1], SIGNED, "t234")
+        corrupt = bytearray(data)
+        corrupt[-8] ^= 1
+        with self.assertRaises(gzip.BadGzipFile):
+            measure.initrd_images(bytes(corrupt), SIGNED, "t234")
+
+    def test_truncated_and_corrupt_zstd(self):
+        data = pyzstd.compress(initrd(), {pyzstd.CParameter.checksumFlag: 1})
+        for truncated in (data[:4], data[: len(data) // 2], data[:-1]):
+            with self.subTest(size=len(truncated)), self.assertRaises(EOFError):
+                measure.initrd_images(truncated, SIGNED, "t234")
+        corrupt = bytearray(data)
+        corrupt[-1] ^= 1
+        with self.assertRaises(pyzstd.ZstdError):
+            measure.initrd_images(bytes(corrupt), SIGNED, "t234")
+
+    def test_zstd_frames_without_content_size(self):
+        for platform in measure.FIRMWARE_ORDER:
+            data = initrd(platform)
+            expected = measure.initrd_images(data, SIGNED, platform)
+            compressor = pyzstd.ZstdCompressor({pyzstd.CParameter.contentSizeFlag: 0})
+            streaming = compressor.compress(data) + compressor.flush()
+            multiframe = pyzstd.compress(data[:100]) + pyzstd.compress(data[100:])
+            for archive in (streaming, multiframe):
+                with self.subTest(platform=platform, size=len(archive)):
+                    self.assertEqual(
+                        measure.initrd_images(archive, SIGNED, platform), expected
+                    )
+
+    def test_zstd_trailing_junk(self):
+        data = pyzstd.compress(initrd())
+        with self.assertRaises(pyzstd.ZstdError):
+            measure.initrd_images(data + b"unexpected", SIGNED, "t234")
+
+    def test_invalid_trailer_size(self):
+        data = bytearray(initrd())
+        trailer = data.rfind(b"070701")
+        struct.pack_into("8s", data, trailer + 54, b"00000001")
+        with self.assertRaisesRegex(ValueError, "Invalid CPIO trailer size"):
+            measure.initrd_images(bytes(data), SIGNED, "t234")
+
+    def test_duplicate_and_conflicting_images(self):
+        entries = [
+            (f"{SIGNED}/board/{magic.decode()}", image(magic, index + 1), 0, 1)
+            for index, magic in enumerate(measure.FIRMWARE_ORDER["t234"])
+        ]
+        expected = measure.initrd_images(cpio(entries), SIGNED, "t234")
+        for value in (1, 9):
+            archive = cpio(
+                entries + [(f"{SIGNED}/board/extra-MB2B", image(b"MB2B", value), 0, 1)]
+            )
+            with self.subTest(value=value):
+                if value == 1:
+                    self.assertEqual(
+                        measure.initrd_images(archive, SIGNED, "t234"), expected
+                    )
+                else:
+                    with self.assertRaisesRegex(ValueError, "Conflicting MB2B"):
+                        measure.initrd_images(archive, SIGNED, "t234")
+
+    def test_missing_image_variant_context(self):
+        data = cpio([(f"{SIGNED}/board/MB2B", image(b"MB2B", 1), 0, 1)])
+        with self.assertRaisesRegex(
+            ValueError, "Missing TOSB firmware image in recovery initrd variant board$"
+        ):
+            measure.initrd_images(data, SIGNED, "t234")
+
     def test_missing_signed_directory(self):
         with self.assertRaisesRegex(ValueError, "No signed firmware"):
             measure.initrd_images(initrd(), Path("/nix/store/other"), "t234")
 
     def test_android_boot_image(self):
-        data = gzip.compress(initrd())
-        self.assertEqual(measure.boot_ramdisk(boot_image(data)), data)
-        for blob in (b"ANDROID!", boot_image(data, 3), boot_image(data)[:6000]):
-            with self.subTest(size=len(blob)), self.assertRaises(ValueError):
-                measure.boot_ramdisk(blob)
+        for compress in (gzip.compress, pyzstd.compress):
+            data = compress(initrd())
+            with self.subTest(compression=compress.__module__):
+                self.assertEqual(measure.boot_ramdisk(boot_image(data)), data)
+                for blob in (
+                    b"ANDROID!",
+                    boot_image(data, 3),
+                    boot_image(data)[:6000],
+                ):
+                    with self.subTest(size=len(blob)), self.assertRaises(ValueError):
+                        measure.boot_ramdisk(blob)
 
 
 class BupTests(unittest.TestCase):
@@ -298,7 +425,9 @@ class BupTests(unittest.TestCase):
         self.assertEqual(set(result), {"common-2"})
 
     def test_all_common_missing_images_and_incompatible_modes(self):
-        with self.assertRaisesRegex(ValueError, "Missing TOSB"):
+        with self.assertRaisesRegex(
+            ValueError, "Missing TOSB firmware image in BUP variant common-2$"
+        ):
             measure.bup_images(bup([("mb2", image(b"MB2B", 1), "", 2)]), "t234")
         entries = [
             ("mb2", image(b"MB2B", 1), "", 1),
@@ -348,7 +477,9 @@ class BupTests(unittest.TestCase):
             measure.bup_images(
                 bup(entries + [("extra", image(b"MB2B", 2), BOARD_A, 0)]), "t234"
             )
-        with self.assertRaisesRegex(ValueError, "Missing"):
+        with self.assertRaisesRegex(
+            ValueError, f"Missing CPBL firmware image in BUP variant {BOARD_A}$"
+        ):
             measure.bup_images(bup(entries[:-1]), "t234")
 
     def test_invalid_bup(self):
@@ -378,6 +509,24 @@ class ArtifactTests(unittest.TestCase):
                 hashlib.sha256(artifact.read_bytes()).hexdigest(),
             )
             self.assertIn("board", result["pcr0"]["variants"])
+
+    def test_zstd_boot_image_measurements(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            for platform in measure.FIRMWARE_ORDER:
+                artifact = Path(tmp) / "boot.img"
+                predictions = []
+                for compress in (gzip.compress, pyzstd.compress):
+                    artifact.write_bytes(boot_image(compress(initrd(platform))))
+                    result = measure.measurements(
+                        platform, "initrdFlashScript", artifact, artifact, SIGNED
+                    )
+                    self.assertEqual(
+                        result["artifact"]["sha256"],
+                        hashlib.sha256(artifact.read_bytes()).hexdigest(),
+                    )
+                    predictions.append(result["pcr0"])
+                with self.subTest(platform=platform):
+                    self.assertEqual(*predictions)
 
     def test_capsule_digest_uses_final_artifact(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -415,8 +564,11 @@ class ArtifactTests(unittest.TestCase):
             signed = Path(tmp) / "signed"
             (signed / "board").mkdir(parents=True)
             entries = []
+            current_images = {}
             for magic in measure.FIRMWARE_ORDER["t234"]:
-                (signed / "board" / magic.decode()).write_bytes(image(magic, 9))
+                current_header = image(magic, 9)
+                (signed / "board" / magic.decode()).write_bytes(current_header)
+                current_images[magic] = bytes([9]) * 64
                 entries.append(
                     (f"{signed}/board/{magic.decode()}", image(magic, 1), 0, 1)
                 )
@@ -425,9 +577,7 @@ class ArtifactTests(unittest.TestCase):
             measured = measure.measurements(
                 "t234", "initrdFlashScript", artifact, artifact, signed
             )["pcr0"]["variants"]["board"]
-            current = measure.pcr0(
-                "t234", measure.directory_images(signed, "t234")["board"]
-            )
+            current = measure.pcr0("t234", current_images)
             self.assertNotEqual(measured["sha256"], current["sha256"])
 
     def test_unsupported_soc(self):
