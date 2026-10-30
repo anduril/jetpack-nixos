@@ -36,7 +36,7 @@
 }:
 
 let
-  # NVIDIA did not publish r35.6.5 tags for the EDK2 repos used by JP5.1.7.
+  # NVIDIA did not publish newer r35 tags for the EDK2 repos (JP5.1.7, JP5.1.8).
   # Keep the firmware sources pinned to the latest available r35 tag.
   edk2ReleaseTag = "r35.6.4";
 
