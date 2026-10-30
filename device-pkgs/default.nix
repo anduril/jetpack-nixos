@@ -41,13 +41,17 @@ let
   #
   # The output of this should be something we can take anywhere and doesn't
   # require any additional signing or other dynamic behavior
-  mkFlashCmdScript = args: import ./flashcmd-script.nix {
+  mkFlashCmdTools = args: nvidia-jetpack.flash-tools-flashcmd.override {
+    inherit mkFlashScript;
+    mkFlashScriptArgs = args;
+  };
+
+  mkFlashCmdScript = { flashTools ? null, ... }@args: import ./flashcmd-script.nix {
     inherit lib;
     inherit gcc dtc;
-    flash-tools = nvidia-jetpack.flash-tools-flashcmd.override {
-      inherit mkFlashScript;
-      mkFlashScriptArgs = args;
-    };
+    flash-tools =
+      if flashTools != null then flashTools
+      else mkFlashCmdTools (builtins.removeAttrs args [ "flashTools" ]);
   };
 
   # Inside a Nix derivation (sandboxed), call the flash.sh scripts and others
@@ -69,7 +73,7 @@ let
   };
 
   # Produces a script that boots a given kernel, initrd, and cmdline using the RCM boot method.
-  mkRcmBootScript = { kernelPath, initrdPath, kernelCmdline, ... }@args: mkFlashScriptAuto (
+  mkRcmBootArgs = { kernelPath, initrdPath, kernelCmdline, ... }@args:
     builtins.removeAttrs args [ "kernelPath" "initrdPath" "kernelCmdline" ] // {
       preFlashCommands = ''
         cp ${kernelPath} kernel/Image
@@ -119,8 +123,9 @@ let
           cd bootloader; bash ./flashcmd.txt
         )
       '';
-    }
-  );
+    };
+
+  mkRcmBootScript = args: mkFlashScriptAuto (mkRcmBootArgs args);
 
   # Produces a script which boots into this NixOS system via RCM mode
   rcmBoot = writeShellApplication {
@@ -135,12 +140,12 @@ let
   };
 
   # TODO: The flash script should not have the kernel output in its runtime closure
-  initrdFlashScript =
-    writeShellApplication {
-      name = "initrd-flash-${cfg.name}";
-      text = import ./initrdflash-script.nix { inherit mkRcmBootScript config flashInitrd lib l4tMajorMinorPatchVersion writeText deviceTree tio expect; };
-      meta.platforms = [ "x86_64-linux" ];
-    };
+  initrdFlashScript = import ./initrdflash-script.nix {
+    inherit config flashInitrd lib l4tMajorMinorPatchVersion writeText deviceTree tio expect;
+    inherit writeShellApplication buildPackages nvidia-jetpack useFlashCmd;
+    inherit mkRcmBootScript mkRcmBootArgs mkFlashCmdTools;
+    inherit (pkgs.nvidia-jetpack) socType;
+  };
 
   fuseScript = writeShellApplication {
     name = "fuse-${cfg.name}";

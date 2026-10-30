@@ -119,6 +119,8 @@ makeScope final.newScope (self: {
 
   flash-tools = self.callPackage ./pkgs/flash-tools { };
 
+  firmwareMeasurements = self.callPackage ./pkgs/firmware-measurements { };
+
   # Allows automation of Orin AGX devkit
   board-automation = self.callPackage ./pkgs/board-automation { };
 
