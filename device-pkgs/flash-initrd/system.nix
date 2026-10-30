@@ -102,7 +102,12 @@
             };
             path = [ pkgs.gt ];
             script = ''
-              gt load /etc/jetson-flash.scheme g.1
+              gt load --off /etc/jetson-flash.scheme g.1
+              # force into device mode if OTG and something is up with automatic detection
+              if [ -w /sys/class/usb_role/usb2-0-role-switch/role ] ; then
+                echo device > /sys/class/usb_role/usb2-0-role-switch/role
+              fi
+              gt enable g.1
             '';
             postStop = ''
               if [[ -d /sys/kernel/config/usb_gadget/g.1 ]]; then
