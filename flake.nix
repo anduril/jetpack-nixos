@@ -208,6 +208,7 @@
         dlopenOverride = pkgs.runCommand "dlopen-override-test" { } ''
           ${lib.getExe self.legacyPackages.${system}.tests.dlopen-override} && touch $out
         '';
+        otaUtils = self.legacyPackages.${system}.nvidia-jetpack5.tests.ota-utils;
       });
 
       formatter = forAllSystems ({ pkgs, ... }: import ./treefmt.nix pkgs);
