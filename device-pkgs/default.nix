@@ -63,7 +63,14 @@ let
   # With either produce a standard flash script, which does variant detection,
   # or if there is only a single variant, will produce a script specialized to
   # that particular variant.
-  mkFlashScriptAuto = if useFlashCmd then mkFlashCmdScript else (mkFlashScript nvidia-jetpack.flash-tools);
+  mkFlashScriptAuto = args:
+    if useFlashCmd then mkFlashCmdScript args
+    else
+      mkFlashScript
+        (if args ? flashToolsPath then
+          nvidia-jetpack.flash-tools // { outPath = args.flashToolsPath; }
+        else nvidia-jetpack.flash-tools)
+        (builtins.removeAttrs args [ "flashToolsPath" ]);
 
   # Generate a flash script using the built configuration options set in a NixOS configuration
   legacyFlashScript = writeShellApplication {
@@ -143,6 +150,7 @@ let
   initrdFlashScript = import ./initrdflash-script.nix {
     inherit config flashInitrd lib l4tMajorMinorPatchVersion writeText deviceTree tio expect;
     inherit writeShellApplication buildPackages nvidia-jetpack useFlashCmd;
+    flashTools = nvidia-jetpack.flash-tools;
     inherit mkRcmBootScript mkRcmBootArgs mkFlashCmdTools;
     inherit (pkgs.nvidia-jetpack) socType;
   };

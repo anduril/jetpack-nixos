@@ -41,6 +41,7 @@ let
   mkFlasher = useFlashCmd: import ../../device-pkgs/initrdflash-script.nix {
     inherit lib useFlashCmd writeText;
     flashInitrd = overriddenInitrd;
+    flashTools = "/unused/flash-tools";
     socType = "t234";
     buildPackages = {
       inherit coreutils findutils;
@@ -88,6 +89,9 @@ assert builtins.all
     "--signed-directory ${overriddenInitrd.passthru.signedFirmware}"
     flasher.passthru.payloadBundle.buildCommand)
   flashers;
+assert lib.hasInfix
+  "cp -r /unused/flash-tools/. \"$out/libexec/rcm/\""
+  (builtins.head flashers).passthru.payloadBundle.buildCommand;
 assert formatSupported "gzip" [ ];
 assert formatSupported "zstd" [ ];
 assert formatSupported "cat" [ ];
@@ -126,31 +130,32 @@ runCommand "jetson-flash-initrd-test"
     fi
     test ! -e "$marker"
     [[ "$(< stderr)" == *"Flash payload verification failed; refusing to run RCM."* ]]
+
+    printf 'original\n' > libexec/initrd
+    printf 'changed\n' > libexec/rcm/bootloader/flashcmd.txt
+    if bash "$script" > stdout 2> stderr; then
+      echo "The flasher accepted a changed RCM command" >&2
+      exit 1
+    fi
+    test ! -e "$marker"
+    [[ "$(< stderr)" == *"Flash payload verification failed; refusing to run RCM."* ]]
+    printf 'prepared\n' > libexec/rcm/bootloader/flashcmd.txt
+    rm libexec/rcm/bootloader/flashcmd.txt
+    if bash "$script" > stdout 2> stderr; then
+      echo "The flasher accepted a missing RCM command" >&2
+      exit 1
+    fi
+    test ! -e "$marker"
+    [[ "$(< stderr)" == *"Flash payload verification failed; refusing to run RCM."* ]]
+    printf 'prepared\n' > libexec/rcm/bootloader/flashcmd.txt
+    touch libexec/rcm/bootloader/extra
+    if bash "$script" > stdout 2> stderr; then
+      echo "The flasher accepted an extra RCM file" >&2
+      exit 1
+    fi
+    test ! -e "$marker"
+    [[ "$(< stderr)" == *"Flash payload verification failed; refusing to run RCM."* ]]
+    rm libexec/rcm/bootloader/extra
   done
-  printf 'original\n' > libexec/initrd
-  sha256sum libexec/initrd > share/jetpack/flash-payload.sha256
-  printf 'changed\n' > libexec/rcm/bootloader/flashcmd.txt
-  if bash ${builtins.elemAt scripts 1} > stdout 2> stderr; then
-    echo "The flasher accepted a changed RCM command" >&2
-    exit 1
-  fi
-  test ! -e "$marker"
-  [[ "$(< stderr)" == *"Flash payload verification failed; refusing to run RCM."* ]]
-  printf 'prepared\n' > libexec/rcm/bootloader/flashcmd.txt
-  rm libexec/rcm/bootloader/flashcmd.txt
-  if bash ${builtins.elemAt scripts 1} > stdout 2> stderr; then
-    echo "The flasher accepted a missing RCM command" >&2
-    exit 1
-  fi
-  test ! -e "$marker"
-  [[ "$(< stderr)" == *"Flash payload verification failed; refusing to run RCM."* ]]
-  printf 'prepared\n' > libexec/rcm/bootloader/flashcmd.txt
-  touch libexec/rcm/bootloader/extra
-  if bash ${builtins.elemAt scripts 1} > stdout 2> stderr; then
-    echo "The flasher accepted an extra RCM file" >&2
-    exit 1
-  fi
-  test ! -e "$marker"
-  [[ "$(< stderr)" == *"Flash payload verification failed; refusing to run RCM."* ]]
   touch "$out"
 ''

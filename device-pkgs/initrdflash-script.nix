@@ -8,6 +8,7 @@
 , socType
 , config
 , flashInitrd
+, flashTools
 , lib
 , l4tMajorMinorPatchVersion
 , writeText
@@ -128,17 +129,20 @@ let
     additionalDtbOverlays = (lib.filter (path: (path.name or "") != "DefaultBootOrder.dtbo") cfg.flashScriptOverrides.additionalDtbOverlays) ++ [ forceXusbPeripheralDtbo ];
   };
 
-  rcmScript = mkRcmBootScript (rcmBootArgs // lib.optionalAttrs useFlashCmd {
+  rcmScript = mkRcmBootScript (rcmBootArgs // lib.optionalAttrs (!useFlashCmd) {
+    flashToolsPath = "${builtins.placeholder "out"}/libexec/rcm";
+  } // lib.optionalAttrs useFlashCmd {
     flashTools = "${builtins.placeholder "out"}/libexec/rcm";
   });
   preparedRcm = mkFlashCmdTools (mkRcmBootArgs rcmBootArgs);
   payload = if useFlashCmd then "libexec/rcm/bootloader/boot.img" else "libexec/initrd";
   payloadBundle = buildPackages.runCommand "jetson-flash-payload-${cfg.name}" { } ''
     mkdir -p "$out/libexec" "$out/share/jetpack"
+    mkdir -p "$out/libexec/rcm"
     ${if useFlashCmd then ''
-      mkdir -p "$out/libexec/rcm"
       cp -r ${preparedRcm}/. "$out/libexec/rcm/"
     '' else ''
+      cp -r ${flashTools}/. "$out/libexec/rcm/"
       cp ${flashInitrd}/initrd "$out/libexec/initrd"
     ''}
     # The signed directory is only an archive lookup key, not another input.
@@ -150,14 +154,12 @@ let
       cd "$out"
       ${lib.getExe' buildPackages.coreutils "sha256sum"} ${payload} \
         > share/jetpack/flash-payload.sha256
-      ${lib.optionalString useFlashCmd ''
-        ${lib.getExe' buildPackages.findutils "find"} libexec/rcm \
-          \( -type f -o -type l \) -print0 |
-          ${lib.getExe' buildPackages.coreutils "sort"} -z |
-          ${lib.getExe' buildPackages.findutils "xargs"} -0 \
-            ${lib.getExe' buildPackages.coreutils "sha256sum"} \
-              > share/jetpack/rcm-payload.sha256
-      ''}
+      ${lib.getExe' buildPackages.findutils "find"} libexec/rcm \
+        \( -type f -o -type l \) -print0 |
+        ${lib.getExe' buildPackages.coreutils "sort"} -z |
+        ${lib.getExe' buildPackages.findutils "xargs"} -0 \
+          ${lib.getExe' buildPackages.coreutils "sha256sum"} \
+            > share/jetpack/rcm-payload.sha256
     )
   '';
 
@@ -210,17 +212,15 @@ in
       cd "${builtins.placeholder "out"}" || exit 1
       ${lib.getExe' buildPackages.coreutils "sha256sum"} \
         --check --status share/jetpack/flash-payload.sha256 || exit 1
-      ${lib.optionalString useFlashCmd ''
-        expected=$(< share/jetpack/rcm-payload.sha256) || exit 1
-        actual=$(
-          ${lib.getExe' buildPackages.findutils "find"} libexec/rcm \
-            \( -type f -o -type l \) -print0 |
-            ${lib.getExe' buildPackages.coreutils "sort"} -z |
-            ${lib.getExe' buildPackages.findutils "xargs"} -0 \
-              ${lib.getExe' buildPackages.coreutils "sha256sum"}
-        ) || exit 1
-        [[ "$actual" == "$expected" ]] || exit 1
-      ''}
+      expected=$(< share/jetpack/rcm-payload.sha256) || exit 1
+      actual=$(
+        ${lib.getExe' buildPackages.findutils "find"} libexec/rcm \
+          \( -type f -o -type l \) -print0 |
+          ${lib.getExe' buildPackages.coreutils "sort"} -z |
+          ${lib.getExe' buildPackages.findutils "xargs"} -0 \
+            ${lib.getExe' buildPackages.coreutils "sha256sum"}
+      ) || exit 1
+      [[ "$actual" == "$expected" ]] || exit 1
     ); then
       echo "Flash payload verification failed; refusing to run RCM." >&2
       exit 1

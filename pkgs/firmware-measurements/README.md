@@ -84,13 +84,17 @@ multi-frame Zstandard input. It allows zero padding after the decompressed
 CPIO trailer but rejects concatenated archives and other trailing data.
 
 Before RCM starts, the flasher checks `share/jetpack/flash-payload.sha256`.
-For a single-variant flasher, it also compares every file and symlink in
-the prepared `libexec/rcm` tree against `share/jetpack/rcm-payload.sha256`.
-This includes `flashcmd.txt`, scripts and prebuilt signed/encrypted images.
-For a multi-variant flasher, the check covers only the bundled initrd;
-NVIDIA generates the RCM tree dynamically after this check. The PCR0
-predictions describe persisted firmware, not temporary RCM firmware. A
-checksum mismatch stops the flasher and prints an error.
+It also compares every file and symlink in `libexec/rcm` against
+`share/jetpack/rcm-payload.sha256`. For a single-variant flasher, this
+includes the prepared `flashcmd.txt`, scripts and signed/encrypted images.
+For a multi-variant flasher, it covers the bundled NVIDIA flash tools
+before they detect the board and generate RCM files at runtime. It does
+not check the generated `flashcmd.txt` or signed/encrypted images against
+independent expected values. Closing this gap requires building the RCM
+tree for every supported variant, selecting the expected tree using
+independently read board identity, and checking it before RCM execution.
+PCR0 predictions describe persisted firmware, not temporary RCM
+firmware. A checksum mismatch stops the flasher and prints an error.
 
 ## Capsule Migration
 
