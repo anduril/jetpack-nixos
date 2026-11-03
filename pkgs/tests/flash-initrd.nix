@@ -1,4 +1,4 @@
-{ lib, runCommand, coreutils, findutils, bash, writeText }:
+{ lib, runCommand, coreutils, findutils, glibcLocales, bash, writeText }:
 let
   initrdConfig = compressor: prepend: {
     boot.initrd = { inherit compressor prepend; };
@@ -102,9 +102,11 @@ runCommand "jetson-flash-initrd-test"
 {
   nativeBuildInputs = [ bash coreutils findutils ];
 } ''
+  export LOCALE_ARCHIVE=${glibcLocales}/lib/locale/locale-archive
   export payloadRoot="$PWD/payload" marker="$PWD/rcm-started"
   mkdir -p "$payloadRoot/share/jetpack" "$payloadRoot/libexec/rcm/bootloader"
   cd "$payloadRoot"
+  printf 'prepared\n' > libexec/rcm/README
   printf 'prepared\n' > libexec/rcm/bootloader/flashcmd.txt
   for mode in multi single; do
     if [[ "$mode" == multi ]]; then
@@ -121,7 +123,7 @@ runCommand "jetson-flash-initrd-test"
     else
       script=${lib.escapeShellArg (builtins.elemAt scripts 1)}
     fi
-    bash "$script" > stdout 2> stderr
+    LC_ALL=en_US.UTF-8 bash "$script" > stdout 2> stderr
     test -e "$marker"
     rm "$marker"
 

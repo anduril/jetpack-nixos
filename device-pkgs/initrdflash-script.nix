@@ -209,6 +209,7 @@ in
   name = "initrd-flash-${cfg.name}";
   text = ''
     if ! (
+      export LC_ALL=C
       cd "${builtins.placeholder "out"}" || exit 1
       ${lib.getExe' buildPackages.coreutils "sha256sum"} \
         --check --status share/jetpack/flash-payload.sha256 || exit 1
