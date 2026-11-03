@@ -71,7 +71,9 @@ def pcr0(platform, images):
         for name, digest in digests.items():
             values[name] = hashlib.new(name, values[name] + digest).digest()
 
-    # The pinned NVIDIA UEFI hash masks include only SHA-256 and SHA-384.
+    # NVIDIA UEFI hash masks include only SHA-256 and SHA-384:
+    # r36.5.1: https://github.com/NVIDIA/edk2-nvidia/blob/r36.5.1/Platform/NVIDIA/NVIDIA.common.dsc.inc#L1110-L1111
+    # r39.2.1: https://github.com/NVIDIA/edk2-nvidia/blob/r39.2.1/Platform/NVIDIA/NVIDIA.common.dsc.inc#L1158-L1159
     separator = {name: hashlib.new(name, bytes(4)).digest() for name in ALGORITHMS[:2]}
     events.append(
         {
