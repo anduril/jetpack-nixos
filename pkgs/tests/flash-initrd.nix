@@ -78,6 +78,15 @@ let
       [ (builtins.placeholder "out") ] [ "$payloadRoot" ]
       flasher.text))
     flashers;
+  flashScript = import ../../device-pkgs/flash-script.nix {
+    inherit lib;
+    l4tAtLeast = _: false;
+    flash-tools = {
+      outPath = "/unused/original-tools";
+      flashDeps = [ "/unused/bin-dep" ];
+    };
+    flashToolsPath = "/unused/payload/libexec/rcm";
+  };
 in
 assert originalInitrd.passthru.retained;
 assert overriddenInitrd.passthru.retained;
@@ -92,6 +101,9 @@ assert builtins.all
 assert lib.hasInfix
   "ln -s /unused/flash-tools \"$out/libexec/rcm\""
   (builtins.head flashers).passthru.payloadBundle.buildCommand;
+assert lib.hasInfix "cp -r /unused/payload/libexec/rcm/. \"$WORKDIR\"" flashScript;
+assert lib.hasInfix "export PATH=/unused/bin-dep/bin:$PATH" flashScript;
+assert !(lib.hasInfix "cp -r /unused/original-tools/. \"$WORKDIR\"" flashScript);
 assert formatSupported "gzip" [ ];
 assert formatSupported "zstd" [ ];
 assert formatSupported "cat" [ ];

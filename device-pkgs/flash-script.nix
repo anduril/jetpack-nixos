@@ -21,6 +21,7 @@
 , # Optional UEFI FMP lowest supported version, packed as in flash.sh
   fmpLowestSupportedVersion ? null
 , flash-tools
+, flashToolsPath ? flash-tools
 }:
 let
   uefi_bins = if l4tAtLeast "38" then "bootloader/uefi_bins" else "bootloader";
@@ -37,7 +38,7 @@ in
     trap on_exit EXIT
   fi
 
-  cp -r ${flash-tools}/. "$WORKDIR"
+  cp -r ${flashToolsPath}/. "$WORKDIR"
   chmod -R u+w "$WORKDIR"
   cd "$WORKDIR"
 

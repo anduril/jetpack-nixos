@@ -65,12 +65,7 @@ let
   # that particular variant.
   mkFlashScriptAuto = args:
     if useFlashCmd then mkFlashCmdScript args
-    else
-      mkFlashScript
-        (if args ? flashToolsPath then
-          nvidia-jetpack.flash-tools // { outPath = args.flashToolsPath; }
-        else nvidia-jetpack.flash-tools)
-        (builtins.removeAttrs args [ "flashToolsPath" ]);
+    else mkFlashScript nvidia-jetpack.flash-tools args;
 
   # Generate a flash script using the built configuration options set in a NixOS configuration
   legacyFlashScript = writeShellApplication {
