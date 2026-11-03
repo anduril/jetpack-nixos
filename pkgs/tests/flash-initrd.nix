@@ -1,4 +1,4 @@
-{ lib, runCommand, coreutils, bash, writeText }:
+{ lib, runCommand, coreutils, findutils, bash, writeText }:
 let
   initrdConfig = compressor: prepend: {
     boot.initrd = { inherit compressor prepend; };
@@ -42,7 +42,13 @@ let
     inherit lib useFlashCmd writeText;
     flashInitrd = overriddenInitrd;
     socType = "t234";
-    buildPackages = { inherit coreutils; };
+    buildPackages = {
+      inherit coreutils findutils;
+      runCommand = name: _: buildCommand: {
+        outPath = "/unused/${name}";
+        inherit buildCommand;
+      };
+    };
     nvidia-jetpack.firmwareMeasurements = executable "measure";
     writeShellApplication = attrs:
       let base = attrs // { buildCommand = ""; }; in
@@ -80,7 +86,7 @@ assert originalInitrd.passthru.signedFirmware != overriddenInitrd.passthru.signe
 assert builtins.all
   (flasher: lib.hasInfix
     "--signed-directory ${overriddenInitrd.passthru.signedFirmware}"
-    flasher.buildCommand)
+    flasher.passthru.payloadBundle.buildCommand)
   flashers;
 assert formatSupported "gzip" [ ];
 assert formatSupported "zstd" [ ];
@@ -90,11 +96,14 @@ assert !(formatSupported (_: "/unused/gzip") [ ]);
 assert !(formatSupported "gzip" [ "/unused/prepended.cpio" ]);
 runCommand "jetson-flash-initrd-test"
 {
-  nativeBuildInputs = [ bash coreutils ];
+  nativeBuildInputs = [ bash coreutils findutils ];
 } ''
   export payloadRoot="$PWD/payload" marker="$PWD/rcm-started"
-  mkdir -p "$payloadRoot/share/jetpack" "$payloadRoot/libexec"
+  mkdir -p "$payloadRoot/share/jetpack" "$payloadRoot/libexec/rcm/bootloader"
   cd "$payloadRoot"
+  printf 'prepared\n' > libexec/rcm/bootloader/flashcmd.txt
+  find libexec/rcm \( -type f -o -type l \) -print0 |
+    sort -z | xargs -0 sha256sum > share/jetpack/rcm-payload.sha256
   for script in ${lib.escapeShellArgs scripts}; do
     printf 'original\n' > libexec/initrd
     sha256sum libexec/initrd > share/jetpack/flash-payload.sha256
@@ -118,5 +127,30 @@ runCommand "jetson-flash-initrd-test"
     test ! -e "$marker"
     [[ "$(< stderr)" == *"Flash payload verification failed; refusing to run RCM."* ]]
   done
+  printf 'original\n' > libexec/initrd
+  sha256sum libexec/initrd > share/jetpack/flash-payload.sha256
+  printf 'changed\n' > libexec/rcm/bootloader/flashcmd.txt
+  if bash ${builtins.elemAt scripts 1} > stdout 2> stderr; then
+    echo "The flasher accepted a changed RCM command" >&2
+    exit 1
+  fi
+  test ! -e "$marker"
+  [[ "$(< stderr)" == *"Flash payload verification failed; refusing to run RCM."* ]]
+  printf 'prepared\n' > libexec/rcm/bootloader/flashcmd.txt
+  rm libexec/rcm/bootloader/flashcmd.txt
+  if bash ${builtins.elemAt scripts 1} > stdout 2> stderr; then
+    echo "The flasher accepted a missing RCM command" >&2
+    exit 1
+  fi
+  test ! -e "$marker"
+  [[ "$(< stderr)" == *"Flash payload verification failed; refusing to run RCM."* ]]
+  printf 'prepared\n' > libexec/rcm/bootloader/flashcmd.txt
+  touch libexec/rcm/bootloader/extra
+  if bash ${builtins.elemAt scripts 1} > stdout 2> stderr; then
+    echo "The flasher accepted an extra RCM file" >&2
+    exit 1
+  fi
+  test ! -e "$marker"
+  [[ "$(< stderr)" == *"Flash payload verification failed; refusing to run RCM."* ]]
   touch "$out"
 ''

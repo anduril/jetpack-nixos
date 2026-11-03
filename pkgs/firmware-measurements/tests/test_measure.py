@@ -116,12 +116,7 @@ class PcrTests(unittest.TestCase):
             for boot in ("initial", "post-capsule"):
                 with self.subTest(device=device, boot=boot):
                     observed = json.loads(
-                        (
-                            fixtures
-                            / device
-                            / boot
-                            / "pcr0-observed.json"
-                        ).read_text()
+                        (fixtures / device / boot / "pcr0-observed.json").read_text()
                     )
                     kind = (
                         "initrdFlashScript"
@@ -140,7 +135,7 @@ class PcrTests(unittest.TestCase):
                     headers = {}
                     for magic in measure.FIRMWARE_ORDER[platform]:
                         header = bytearray(image(magic, 0))
-                        header[0x1460:measure.HEADER_SIZE] = bytes.fromhex(
+                        header[0x1460 : measure.HEADER_SIZE] = bytes.fromhex(
                             observed["bchDigests"][magic.decode()]
                         )
                         headers[magic] = bytes(header)
@@ -151,7 +146,9 @@ class PcrTests(unittest.TestCase):
                                 for magic, header in headers.items()
                             ]
                         )
-                        images = measure.initrd_images(archive, SIGNED, platform)["board"]
+                        images = measure.initrd_images(archive, SIGNED, platform)[
+                            "board"
+                        ]
                     else:
                         payload = bup(
                             [
@@ -161,7 +158,10 @@ class PcrTests(unittest.TestCase):
                         )
                         images = measure.bup_images(payload, platform)[BOARD_B]
                     self.assertEqual(
-                        {magic.decode(): digest.hex() for magic, digest in images.items()},
+                        {
+                            magic.decode(): digest.hex()
+                            for magic, digest in images.items()
+                        },
                         observed["bchDigests"],
                     )
 
@@ -183,10 +183,7 @@ class PcrTests(unittest.TestCase):
                             (event["eventType"], event["digests"])
                             for event in predicted["events"]
                         ],
-                        [
-                            (event["eventType"], event["digests"])
-                            for event in events
-                        ],
+                        [(event["eventType"], event["digests"]) for event in events],
                     )
                     for algorithm in measure.ALGORITHMS:
                         value = bytes(hashlib.new(algorithm).digest_size)
@@ -197,7 +194,9 @@ class PcrTests(unittest.TestCase):
                                     value + bytes.fromhex(event["digests"][algorithm]),
                                 ).digest()
                         self.assertEqual(value.hex(), observed["pcr0"][algorithm])
-                        self.assertEqual(predicted[algorithm], observed["pcr0"][algorithm])
+                        self.assertEqual(
+                            predicted[algorithm], observed["pcr0"][algorithm]
+                        )
 
     def test_order_banks_and_separator(self):
         for platform, order in measure.FIRMWARE_ORDER.items():
@@ -591,6 +590,66 @@ class BupTests(unittest.TestCase):
 
 
 class ArtifactTests(unittest.TestCase):
+    def test_matching_flash_and_capsule_target(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            headers = {
+                magic: image(magic, index + 1)
+                for index, magic in enumerate(measure.FIRMWARE_ORDER["t234"])
+            }
+            flash = root / "initrd"
+            flash.write_bytes(
+                cpio(
+                    [
+                        (f"{SIGNED}/{BOARD_A}/{magic.decode()}", header, 0, 1)
+                        for magic, header in headers.items()
+                    ]
+                )
+            )
+            capsule = root / "capsule.Cap"
+            capsule.write_bytes(
+                bup(
+                    [
+                        (magic.decode(), header, BOARD_A, 2)
+                        for magic, header in headers.items()
+                    ]
+                )
+            )
+            self.assertEqual(
+                measure.initrd_images(flash.read_bytes(), SIGNED, "t234")[BOARD_A],
+                measure.bup_images(capsule.read_bytes(), "t234")[BOARD_A],
+            )
+            flashed = measure.measurements(
+                "t234", "initrdFlashScript", flash, flash, SIGNED
+            )["pcr0"]["variants"][BOARD_A]
+            updated = measure.measurements(
+                "t234", "uefiCapsuleUpdate", capsule, capsule
+            )["pcr0"]["variants"][BOARD_A]
+            self.assertEqual(flashed["boardSpec"], updated["boardSpec"])
+            self.assertEqual(flashed["fuseMode"], updated["fuseMode"])
+            self.assertEqual(flashed["fuseMode"], 2)
+            for algorithm in measure.ALGORITHMS:
+                self.assertEqual(flashed[algorithm], updated[algorithm])
+            self.assertEqual(flashed["events"], updated["events"])
+
+    def test_common_target_has_no_board_identity(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            capsule = Path(tmp) / "capsule.Cap"
+            capsule.write_bytes(
+                bup(
+                    [
+                        (magic.decode(), image(magic, 1), "", 0)
+                        for magic in measure.FIRMWARE_ORDER["t234"]
+                    ]
+                )
+            )
+            variants = measure.measurements(
+                "t234", "uefiCapsuleUpdate", capsule, capsule
+            )["pcr0"]["variants"]
+            for mode in (1, 2):
+                self.assertIsNone(variants[f"common-{mode}"]["boardSpec"])
+                self.assertEqual(variants[f"common-{mode}"]["fuseMode"], mode)
+
     def test_artifact_digest_and_variants(self):
         with tempfile.TemporaryDirectory() as tmp:
             artifact = Path(tmp) / "initrd"

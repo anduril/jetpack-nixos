@@ -180,6 +180,15 @@ def board_specs_match(left, right):
     )
 
 
+def variant_metadata(name):
+    if name in ("common-1", "common-2"):
+        return {"boardSpec": None, "fuseMode": int(name[-1])}
+    fields = name.split("-")
+    if len(fields) >= 5 and fields[4] in ("0", "1"):
+        return {"boardSpec": name, "fuseMode": 2 if fields[4] == "1" else 1}
+    return {"boardSpec": None, "fuseMode": None}
+
+
 def bup_images(data, platform):
     if len(data) < BUP_HEADER.size:
         raise ValueError("Truncated BUP header")
@@ -286,7 +295,7 @@ def measurements(platform, kind, artifact, source, signed_directory=None):
     return result | {
         "pcr0": {
             "variants": {
-                name: pcr0(platform, images)
+                name: variant_metadata(name) | pcr0(platform, images)
                 for name, images in sorted(variants.items())
             }
         }

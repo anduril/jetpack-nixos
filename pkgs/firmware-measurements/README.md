@@ -14,6 +14,10 @@ The JSON includes:
 - `pcr0.variants.<variant>.{sha256,sha384,sha512}`: predicted PCR 0.
 - `pcr0.variants.<variant>.events`: ordered firmware and separator events with
   their per-bank digests.
+- `pcr0.variants.<variant>.boardSpec` and `fuseMode`: target board
+  specification and BUP fuse mode (1 or 2). Common-only variants have no
+  board identity; synthetic or nonstandard flash variant names have null
+  metadata.
 
 | Artifact | File hashed by `artifact.sha256` |
 | --- | --- |
@@ -23,7 +27,9 @@ The JSON includes:
 
 The flasher measures persisted firmware inside its bundled recovery initrd,
 not the temporary RCM firmware. Its JSON is also available at
-`out/share/jetpack/measurements.json`. Capsule measurements use the same BUP
+`out/share/jetpack/measurements.json`. The flasher's `out/libexec` and
+`out/share` point into a cache-substitutable payload derivation; the
+flasher retains the public `.pcr` accessor. Capsule measurements use the same BUP
 snapshot passed to capsule encoding. Capsule variants use BUP board
 specifications, matching empty fields as wildcards in BUP entry order.
 Common-only payloads use `common-1`/`common-2` only for fuse modes with an
@@ -78,11 +84,13 @@ multi-frame Zstandard input. It allows zero padding after the decompressed
 CPIO trailer but rejects concatenated archives and other trailing data.
 
 Before RCM starts, the flasher checks `share/jetpack/flash-payload.sha256`.
-For a single-variant flasher, this check covers only the bundled `boot.img`.
-For a multi-variant flasher, it covers only the bundled initrd. It does not
-verify the complete RCM tool tree or signed/encrypted derivatives sent by
-RCM. The PCR0 predictions describe persisted firmware, not temporary RCM
-firmware. A checksum mismatch stops the flasher and prints an error.
+For a single-variant flasher, it also compares every file and symlink in
+the prepared `libexec/rcm` tree against `share/jetpack/rcm-payload.sha256`.
+This includes `flashcmd.txt`, scripts and prebuilt signed/encrypted images.
+For a multi-variant flasher, the check covers only the bundled initrd;
+NVIDIA generates the RCM tree dynamically after this check. The PCR0
+predictions describe persisted firmware, not temporary RCM firmware. A
+checksum mismatch stops the flasher and prints an error.
 
 ## Capsule Migration
 

@@ -133,6 +133,33 @@ let
   });
   preparedRcm = mkFlashCmdTools (mkRcmBootArgs rcmBootArgs);
   payload = if useFlashCmd then "libexec/rcm/bootloader/boot.img" else "libexec/initrd";
+  payloadBundle = buildPackages.runCommand "jetson-flash-payload-${cfg.name}" { } ''
+    mkdir -p "$out/libexec" "$out/share/jetpack"
+    ${if useFlashCmd then ''
+      mkdir -p "$out/libexec/rcm"
+      cp -r ${preparedRcm}/. "$out/libexec/rcm/"
+    '' else ''
+      cp ${flashInitrd}/initrd "$out/libexec/initrd"
+    ''}
+    # The signed directory is only an archive lookup key, not another input.
+    ${lib.getExe nvidia-jetpack.firmwareMeasurements} \
+      ${socType} initrdFlashScript "$out/${payload}" "$out/${payload}" \
+      --signed-directory ${builtins.unsafeDiscardStringContext (toString signedFirmware)} \
+      > "$out/share/jetpack/measurements.json"
+    (
+      cd "$out"
+      ${lib.getExe' buildPackages.coreutils "sha256sum"} ${payload} \
+        > share/jetpack/flash-payload.sha256
+      ${lib.optionalString useFlashCmd ''
+        ${lib.getExe' buildPackages.findutils "find"} libexec/rcm \
+          \( -type f -o -type l \) -print0 |
+          ${lib.getExe' buildPackages.coreutils "sort"} -z |
+          ${lib.getExe' buildPackages.findutils "xargs"} -0 \
+            ${lib.getExe' buildPackages.coreutils "sha256sum"} \
+              > share/jetpack/rcm-payload.sha256
+      ''}
+    )
+  '';
 
   expectScript = writeText "expect-initrd-flash" ''
     set modem /dev/serial/by-id/${serialPortId}
@@ -182,7 +209,18 @@ in
     if ! (
       cd "${builtins.placeholder "out"}" || exit 1
       ${lib.getExe' buildPackages.coreutils "sha256sum"} \
-        --check --status share/jetpack/flash-payload.sha256
+        --check --status share/jetpack/flash-payload.sha256 || exit 1
+      ${lib.optionalString useFlashCmd ''
+        expected=$(< share/jetpack/rcm-payload.sha256) || exit 1
+        actual=$(
+          ${lib.getExe' buildPackages.findutils "find"} libexec/rcm \
+            \( -type f -o -type l \) -print0 |
+            ${lib.getExe' buildPackages.coreutils "sort"} -z |
+            ${lib.getExe' buildPackages.findutils "xargs"} -0 \
+              ${lib.getExe' buildPackages.coreutils "sha256sum"}
+        ) || exit 1
+        [[ "$actual" == "$expected" ]] || exit 1
+      ''}
     ); then
       echo "Flash payload verification failed; refusing to run RCM." >&2
       exit 1
@@ -219,24 +257,11 @@ in
   meta.outputsToInstall = [ "out" ];
 }).overrideAttrs (prev: {
   outputs = [ "out" "pcr" ];
+  passthru = (prev.passthru or { }) // { inherit payloadBundle; };
   buildCommand = prev.buildCommand + ''
-    mkdir -p "$out/libexec" "$out/share/jetpack" "$pcr"
-    ${if useFlashCmd then ''
-      mkdir -p "$out/libexec/rcm"
-      cp -r ${preparedRcm}/. "$out/libexec/rcm/"
-    '' else ''
-      cp ${flashInitrd}/initrd "$out/libexec/initrd"
-    ''}
-    # The signed directory is only an archive lookup key, not another input.
-    ${lib.getExe nvidia-jetpack.firmwareMeasurements} \
-      ${socType} initrdFlashScript "$out/${payload}" "$out/${payload}" \
-      --signed-directory ${builtins.unsafeDiscardStringContext (toString signedFirmware)} \
-      > "$pcr/measurements.json"
-    cp "$pcr/measurements.json" "$out/share/jetpack/measurements.json"
-    (
-      cd "$out"
-      ${lib.getExe' buildPackages.coreutils "sha256sum"} ${payload} \
-        > share/jetpack/flash-payload.sha256
-    )
+    mkdir -p "$out" "$pcr"
+    ln -s ${payloadBundle}/libexec "$out/libexec"
+    ln -s ${payloadBundle}/share "$out/share"
+    cp ${payloadBundle}/share/jetpack/measurements.json "$pcr/measurements.json"
   '';
 })
