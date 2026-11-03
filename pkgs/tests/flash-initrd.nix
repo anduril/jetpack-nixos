@@ -106,16 +106,26 @@ runCommand "jetson-flash-initrd-test"
   mkdir -p "$payloadRoot/share/jetpack" "$payloadRoot/libexec/rcm/bootloader"
   cd "$payloadRoot"
   printf 'prepared\n' > libexec/rcm/bootloader/flashcmd.txt
-  find libexec/rcm \( -type f -o -type l \) -print0 |
-    sort -z | xargs -0 sha256sum > share/jetpack/rcm-payload.sha256
-  for script in ${lib.escapeShellArgs scripts}; do
-    printf 'original\n' > libexec/initrd
-    sha256sum libexec/initrd > share/jetpack/flash-payload.sha256
+  for mode in multi single; do
+    if [[ "$mode" == multi ]]; then
+      payload=libexec/initrd
+    else
+      payload=libexec/rcm/bootloader/boot.img
+    fi
+    printf 'original\n' > "$payload"
+    sha256sum "$payload" > share/jetpack/flash-payload.sha256
+    find libexec/rcm \( -type f -o -type l \) -print0 |
+      sort -z | xargs -0 sha256sum > share/jetpack/rcm-payload.sha256
+    if [[ "$mode" == multi ]]; then
+      script=${lib.escapeShellArg (builtins.elemAt scripts 0)}
+    else
+      script=${lib.escapeShellArg (builtins.elemAt scripts 1)}
+    fi
     bash "$script" > stdout 2> stderr
     test -e "$marker"
     rm "$marker"
 
-    printf 'changed\n' > libexec/initrd
+    printf 'changed\n' > "$payload"
     if bash "$script" > stdout 2> stderr; then
       echo "The flasher accepted a changed payload" >&2
       exit 1
@@ -123,7 +133,7 @@ runCommand "jetson-flash-initrd-test"
     test ! -e "$marker"
     [[ "$(< stderr)" == *"Flash payload verification failed; refusing to run RCM."* ]]
 
-    printf 'original\n' > libexec/initrd
+    printf 'original\n' > "$payload"
     if payloadRoot="$PWD/missing" bash "$script" > stdout 2> stderr; then
       echo "The flasher accepted a missing payload directory" >&2
       exit 1
@@ -131,7 +141,7 @@ runCommand "jetson-flash-initrd-test"
     test ! -e "$marker"
     [[ "$(< stderr)" == *"Flash payload verification failed; refusing to run RCM."* ]]
 
-    printf 'original\n' > libexec/initrd
+    printf 'original\n' > "$payload"
     printf 'changed\n' > libexec/rcm/bootloader/flashcmd.txt
     if bash "$script" > stdout 2> stderr; then
       echo "The flasher accepted a changed RCM command" >&2
