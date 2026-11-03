@@ -4,6 +4,7 @@
 , lib
 , makeWrapper
 , stdenv
+, xxd
 ,
 }:
 # For tegrastats and jetson_clocks
@@ -19,6 +20,6 @@ buildFromDebs {
     rm -rf opt
   '';
   postFixup = ''
-    wrapProgram $out/bin/nv_fuse_read.sh --prefix PATH : ${lib.makeBinPath [ bc ]}
+    wrapProgram $out/bin/nv_fuse_read.sh --prefix PATH : ${lib.makeBinPath [ bc xxd ]}
   '';
 }
