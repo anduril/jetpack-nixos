@@ -1,0 +1,57 @@
+{
+  "artifact": {
+    "type": "uefiCapsuleUpdate",
+    "sha256": "c1331167e2e2190e4c22a9a40961f007d1ab4fea646b2671416a3e14590b7eef",
+    "bupSha256": "e076414d4e1560639125bba4c8f648589edea71a4d268d27979e06e8105b8ee9"
+  },
+  "bchDigests": {
+    "MB2B": "68e6a7e08ac1dd78f050b10f6ba1f240536d72c8ec91f3147c2700c2a76fe773a16093f7540ad080f7bf420d9c84cee01f9393c60094c6966ab5f42ec7224e1a",
+    "TOSB": "765edd82518227ca22edc3579d6e931a347b3b3134e13e3bfc51f711639536ef089c3bbc10e2c8fb5263e806110623b7f2cd91ac2cd848489c408d7dfe8787ff",
+    "CPBL": "0ec110f1c17db2c8e80c44a1d0c9c67b7f20a5bad902ea4b30ee6bd63f49e047067abd5f51a2dc6e582476454fc19e6d0c455de931e236c522a988183ff80959"
+  },
+  "events": [
+    {
+      "source": "optee",
+      "eventType": "EV_POST_CODE",
+      "digests": {
+        "sha256": "3ab7f8df146af35123a9ee46e4613764eb2e3c657cf9d26770755d8be1c7879c",
+        "sha384": "0e1c7750d6fc7c56a4186562e322b193261fa1fc04dacd1b20eb0b8f1975450d18e74da4509a0835489a3bdc0bd7b143",
+        "sha512": "68e6a7e08ac1dd78f050b10f6ba1f240536d72c8ec91f3147c2700c2a76fe773a16093f7540ad080f7bf420d9c84cee01f9393c60094c6966ab5f42ec7224e1a"
+      },
+      "image": "MB2B"
+    },
+    {
+      "source": "optee",
+      "eventType": "EV_POST_CODE",
+      "digests": {
+        "sha256": "8ea661032cc64dbeb3623db626d6e8bcfcb6b49787d805aacc8e77219b9b3350",
+        "sha384": "6c5584863992566ea57795ed8d7ce1e6f21e7fb7275755382a4a403213f66bc24414dc1b52eb63927449b1a325b1b049",
+        "sha512": "765edd82518227ca22edc3579d6e931a347b3b3134e13e3bfc51f711639536ef089c3bbc10e2c8fb5263e806110623b7f2cd91ac2cd848489c408d7dfe8787ff"
+      },
+      "image": "TOSB"
+    },
+    {
+      "source": "optee",
+      "eventType": "EV_POST_CODE",
+      "digests": {
+        "sha256": "1fae7ceaca656080f6f21bbd03af71aef9a78a072406efdd04918b3c2106fbca",
+        "sha384": "c62919bd3960b9574f9794071e33cdce8c2914f0fe67dd751c3097709a34cf0d665d85f85847f6d9b03f269476153015",
+        "sha512": "0ec110f1c17db2c8e80c44a1d0c9c67b7f20a5bad902ea4b30ee6bd63f49e047067abd5f51a2dc6e582476454fc19e6d0c455de931e236c522a988183ff80959"
+      },
+      "image": "CPBL"
+    },
+    {
+      "source": "efi",
+      "eventType": "EV_SEPARATOR",
+      "digests": {
+        "sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+        "sha384": "394341b7182cd227c5c6b07ef8000cdfd86136c4292b8e576573ad7ed9ae41019f5818b4b971c9effc60e1ad9f1289f0"
+      }
+    }
+  ],
+  "pcr0": {
+    "sha256": "6617a7cff90e72b9d6db4fef4e2248d443fac4eedfb8c3e924c79a3d89c0f0c9",
+    "sha384": "ffa4300b094e1c7eaf75aa389896499ac981eb489838af303c6ab00e957d15c33a9cf1276dc11c68d86cf06609cdcc99",
+    "sha512": "1340130c9b1dc65d0aaa0521644832bcfa3ea9782e2bd4d38378ba92e7a01dccfde2de88fb3ead6cd5d2a44ee144e1a96d31d2cedb7ace8533b90302ee155da1"
+  }
+}

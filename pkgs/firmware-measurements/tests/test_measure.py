@@ -1,6 +1,7 @@
 import gzip
 import hashlib
 import io
+import json
 from pathlib import Path
 import stat
 import struct
@@ -105,6 +106,95 @@ def bup(entries):
 
 
 class PcrTests(unittest.TestCase):
+    def test_observed_orin_nano_ftpm_pcr0(self):
+        fixtures = Path(__file__).parent / "fixtures"
+        for jetpack in ("jp6", "jp7"):
+            for boot in ("initial", "post-capsule"):
+                with self.subTest(jetpack=jetpack, boot=boot):
+                    observed = json.loads(
+                        (
+                            fixtures
+                            / f"orin-nano-fused-{jetpack}-ftpm"
+                            / boot
+                            / "pcr0-observed.json"
+                        ).read_text()
+                    )
+                    kind = (
+                        "initrdFlashScript"
+                        if boot == "initial"
+                        else "uefiCapsuleUpdate"
+                    )
+                    self.assertEqual(observed["artifact"]["type"], kind)
+                    self.assertEqual(
+                        len(bytes.fromhex(observed["artifact"]["sha256"])), 32
+                    )
+                    if boot == "post-capsule":
+                        self.assertEqual(
+                            len(bytes.fromhex(observed["artifact"]["bupSha256"])), 32
+                        )
+
+                    headers = {}
+                    for magic in measure.FIRMWARE_ORDER["t234"]:
+                        header = bytearray(image(magic, 0))
+                        header[0x1460:measure.HEADER_SIZE] = bytes.fromhex(
+                            observed["bchDigests"][magic.decode()]
+                        )
+                        headers[magic] = bytes(header)
+                    if boot == "initial":
+                        archive = cpio(
+                            [
+                                (f"{SIGNED}/board/{magic.decode()}", header, 0, 1)
+                                for magic, header in headers.items()
+                            ]
+                        )
+                        images = measure.initrd_images(archive, SIGNED, "t234")["board"]
+                    else:
+                        payload = bup(
+                            [
+                                (magic.decode(), header, BOARD_B, 2)
+                                for magic, header in headers.items()
+                            ]
+                        )
+                        images = measure.bup_images(payload, "t234")[BOARD_B]
+                    self.assertEqual(
+                        {magic.decode(): digest.hex() for magic, digest in images.items()},
+                        observed["bchDigests"],
+                    )
+
+                    predicted = measure.pcr0("t234", images)
+                    events = observed["events"]
+                    self.assertEqual(
+                        [
+                            (event["source"], event["eventType"], event.get("image"))
+                            for event in events
+                        ],
+                        [
+                            ("optee", "EV_POST_CODE", magic.decode())
+                            for magic in measure.FIRMWARE_ORDER["t234"]
+                        ]
+                        + [("efi", "EV_SEPARATOR", None)],
+                    )
+                    self.assertEqual(
+                        [
+                            (event["eventType"], event["digests"])
+                            for event in predicted["events"]
+                        ],
+                        [
+                            (event["eventType"], event["digests"])
+                            for event in events
+                        ],
+                    )
+                    for algorithm in measure.ALGORITHMS:
+                        value = bytes(hashlib.new(algorithm).digest_size)
+                        for event in events:
+                            if algorithm in event["digests"]:
+                                value = hashlib.new(
+                                    algorithm,
+                                    value + bytes.fromhex(event["digests"][algorithm]),
+                                ).digest()
+                        self.assertEqual(value.hex(), observed["pcr0"][algorithm])
+                        self.assertEqual(predicted[algorithm], observed["pcr0"][algorithm])
+
     def test_order_banks_and_separator(self):
         for platform, order in measure.FIRMWARE_ORDER.items():
             with self.subTest(platform=platform):
