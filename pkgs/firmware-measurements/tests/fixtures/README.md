@@ -1,7 +1,7 @@
 # Jetson fTPM PCR0 observations
 
 The JP6 (36.5.2) and JP7 (39.2.1) fTPM-enabled OP-TEE HITL tests passed
-on 2026-11-02 using a fused Orin Nano devkit (flash variant
+on 2026-11-02 using an SBKPKC-fused Orin Nano devkit (flash variant
 `3767-000-0005--1---`, capsule board specification
 `3767-000-0005--1-0-jetson-orin-nano-devkit-`). Each capsule applied
 successfully and switched the active bootloader slot from 0 to 1.

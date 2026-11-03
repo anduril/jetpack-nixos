@@ -208,7 +208,6 @@
         dlopenOverride = pkgs.runCommand "dlopen-override-test" { } ''
           ${lib.getExe self.legacyPackages.${system}.tests.dlopen-override} && touch $out
         '';
-        flashInitrd = self.legacyPackages.${system}.tests.flash-initrd;
       });
 
       formatter = forAllSystems ({ pkgs, ... }: import ./treefmt.nix pkgs);

@@ -4,5 +4,4 @@
   oci = callPackage ./oci { };
 
   dlopen-override = callPackage ./dlopen-override.nix { };
-  flash-initrd = callPackage ./flash-initrd.nix { };
 }
