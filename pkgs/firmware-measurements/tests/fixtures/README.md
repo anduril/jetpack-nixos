@@ -1,4 +1,4 @@
-# Orin Nano fused PCR0 observations
+# Jetson fTPM PCR0 observations
 
 The JP6 (36.5.2) and JP7 (39.2.1) fTPM-enabled OP-TEE HITL tests passed
 on 2026-11-02 using a fused Orin Nano devkit (flash variant
@@ -18,3 +18,16 @@ the live reads and separate artifact measurements for all four boots.
 Raw firmware headers and TPM event logs remain outside the staged
 fixture. Synthetic headers can test extraction offsets without
 publishing signed firmware bytes.
+
+The JP7 (39.2.1) `optee` HITL test also passed on `thor-agx-devkit0`
+on 2026-11-03, including a capsule update and a post-update boot.
+The initial flash variant was `3834-000-0008--1---`; the selected
+capsule board specification was
+`3834-000-0008--1-0-jetson-agx-thor-devkit-`. Its five signed images
+are `MB2B`, `BL31`, `BL32`, `SECP` and `CPBL`. The initial BCH values
+were extracted from the exact flasher initrd, and the capsule values
+from the matched BUP. Both boots have the same PCR0 across all three
+banks; independently replayed OP-TEE and EFI events agree with live
+TPM reads and both artifact manifests. This devkit reports non-secure
+boot authentication, so the capture does not validate fused PKC or
+independently encrypted builds.

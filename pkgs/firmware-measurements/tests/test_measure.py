@@ -106,15 +106,19 @@ def bup(entries):
 
 
 class PcrTests(unittest.TestCase):
-    def test_observed_orin_nano_ftpm_pcr0(self):
+    def test_observed_jetpack_ftpm_pcr0(self):
         fixtures = Path(__file__).parent / "fixtures"
-        for jetpack in ("jp6", "jp7"):
+        for device, platform in (
+            ("orin-nano-fused-jp6-ftpm", "t234"),
+            ("orin-nano-fused-jp7-ftpm", "t234"),
+            ("thor-agx-devkit-jp7-ftpm", "t264"),
+        ):
             for boot in ("initial", "post-capsule"):
-                with self.subTest(jetpack=jetpack, boot=boot):
+                with self.subTest(device=device, boot=boot):
                     observed = json.loads(
                         (
                             fixtures
-                            / f"orin-nano-fused-{jetpack}-ftpm"
+                            / device
                             / boot
                             / "pcr0-observed.json"
                         ).read_text()
@@ -134,7 +138,7 @@ class PcrTests(unittest.TestCase):
                         )
 
                     headers = {}
-                    for magic in measure.FIRMWARE_ORDER["t234"]:
+                    for magic in measure.FIRMWARE_ORDER[platform]:
                         header = bytearray(image(magic, 0))
                         header[0x1460:measure.HEADER_SIZE] = bytes.fromhex(
                             observed["bchDigests"][magic.decode()]
@@ -147,7 +151,7 @@ class PcrTests(unittest.TestCase):
                                 for magic, header in headers.items()
                             ]
                         )
-                        images = measure.initrd_images(archive, SIGNED, "t234")["board"]
+                        images = measure.initrd_images(archive, SIGNED, platform)["board"]
                     else:
                         payload = bup(
                             [
@@ -155,13 +159,13 @@ class PcrTests(unittest.TestCase):
                                 for magic, header in headers.items()
                             ]
                         )
-                        images = measure.bup_images(payload, "t234")[BOARD_B]
+                        images = measure.bup_images(payload, platform)[BOARD_B]
                     self.assertEqual(
                         {magic.decode(): digest.hex() for magic, digest in images.items()},
                         observed["bchDigests"],
                     )
 
-                    predicted = measure.pcr0("t234", images)
+                    predicted = measure.pcr0(platform, images)
                     events = observed["events"]
                     self.assertEqual(
                         [
@@ -170,7 +174,7 @@ class PcrTests(unittest.TestCase):
                         ],
                         [
                             ("optee", "EV_POST_CODE", magic.decode())
-                            for magic in measure.FIRMWARE_ORDER["t234"]
+                            for magic in measure.FIRMWARE_ORDER[platform]
                         ]
                         + [("efi", "EV_SEPARATOR", None)],
                     )
