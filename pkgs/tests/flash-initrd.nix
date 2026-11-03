@@ -90,7 +90,7 @@ assert builtins.all
     flasher.passthru.payloadBundle.buildCommand)
   flashers;
 assert lib.hasInfix
-  "cp -r /unused/flash-tools/. \"$out/libexec/rcm/\""
+  "ln -s /unused/flash-tools \"$out/libexec/rcm\""
   (builtins.head flashers).passthru.payloadBundle.buildCommand;
 assert formatSupported "gzip" [ ];
 assert formatSupported "zstd" [ ];
@@ -104,19 +104,23 @@ runCommand "jetson-flash-initrd-test"
 } ''
   export LOCALE_ARCHIVE=${glibcLocales}/lib/locale/locale-archive
   export payloadRoot="$PWD/payload" marker="$PWD/rcm-started"
-  mkdir -p "$payloadRoot/share/jetpack" "$payloadRoot/libexec/rcm/bootloader"
+  mkdir -p "$payloadRoot/share/jetpack" "$payloadRoot/libexec" "$PWD/shared-rcm/bootloader"
   cd "$payloadRoot"
-  printf 'prepared\n' > libexec/rcm/README
-  printf 'prepared\n' > libexec/rcm/bootloader/flashcmd.txt
+  printf 'prepared\n' > ../shared-rcm/README
+  printf 'prepared\n' > ../shared-rcm/bootloader/flashcmd.txt
   for mode in multi single; do
     if [[ "$mode" == multi ]]; then
       payload=libexec/initrd
+      ln -s "$PWD/../shared-rcm" libexec/rcm
     else
+      rm libexec/rcm
+      mkdir -p libexec/rcm/bootloader
+      cp -r ../shared-rcm/. libexec/rcm/
       payload=libexec/rcm/bootloader/boot.img
     fi
     printf 'original\n' > "$payload"
     sha256sum "$payload" > share/jetpack/flash-payload.sha256
-    find libexec/rcm \( -type f -o -type l \) -print0 |
+    find -H libexec/rcm \( -type f -o -type l \) -print0 |
       sort -z | xargs -0 sha256sum > share/jetpack/rcm-payload.sha256
     if [[ "$mode" == multi ]]; then
       script=${lib.escapeShellArg (builtins.elemAt scripts 0)}

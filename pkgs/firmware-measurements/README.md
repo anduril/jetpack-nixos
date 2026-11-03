@@ -87,8 +87,9 @@ Before RCM starts, the flasher checks `share/jetpack/flash-payload.sha256`.
 It also compares every file and symlink in `libexec/rcm` against
 `share/jetpack/rcm-payload.sha256`. For a single-variant flasher, this
 includes the prepared `flashcmd.txt`, scripts and signed/encrypted images.
-For a multi-variant flasher, it covers the bundled NVIDIA flash tools
-before they detect the board and generate RCM files at runtime. It does
+For a multi-variant flasher, `libexec/rcm` links to the shared NVIDIA flash
+tools in the store; the check follows that link and hashes its files before
+the tools detect the board and generate RCM files at runtime. It does
 not check the generated `flashcmd.txt` or signed/encrypted images against
 independent expected values. Closing this gap requires building the RCM
 tree for every supported variant, selecting the expected tree using
