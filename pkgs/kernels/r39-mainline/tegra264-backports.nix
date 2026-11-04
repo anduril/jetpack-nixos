@@ -70,6 +70,36 @@ map (patch: { name = patch.name; inherit patch; }) [
     url = "https://github.com/torvalds/linux/commit/b236b7973808195fd9c471492bee0041148b823e.patch";
     hash = "sha256-J7S/3fdhuMQQo2FaFEx7q13Lmtq/U+cZgXNPI5SX9KA=";
   })
+  (fetchpatch {
+    name = "tegra-pwm-tegra264-bindings.patch";
+    url = "https://github.com/torvalds/linux/commit/b4772201070d8a4b459eff4a42f6c28058d84d2d.patch";
+    hash = "sha256-tp1B9HAQMCeZhFzwWqNY8pa//5HsI2O+Vrl/zO/o9NA=";
+  })
+  (fetchpatch {
+    name = "tegra-pwm-prefix-local-symbols.patch";
+    url = "https://github.com/torvalds/linux/commit/dbd80899658a86ac6f1058909ce7b474120b4acf.patch";
+    hash = "sha256-2kFgueO7JNaRK5RbTmTgi373VdnXedGz96WBXAD7OL4=";
+  })
+  (fetchpatch {
+    name = "tegra-pwm-max-clock-rate.patch";
+    url = "https://github.com/torvalds/linux/commit/d6bf1d39c3413a44712cba461d47d31e0cec51d7.patch";
+    hash = "sha256-qykBAMZ3d5NshsvcMOWPKVxFZkUjLrvTM+Z9AhcBmwU=";
+  })
+  (fetchpatch {
+    name = "tegra-pwm-multi-register.patch";
+    url = "https://github.com/torvalds/linux/commit/83a4cadc7ae5512262930bbbc2d802e8eef1dc93.patch";
+    hash = "sha256-g4QfuJ6sBpL0blECUpyL818EjUhzRrsyirjkHFHhZyk=";
+  })
+  (fetchpatch {
+    name = "tegra-pwm-field-widths.patch";
+    url = "https://github.com/torvalds/linux/commit/b9a6f48de9a4816d5f5fc9adacfe7f3433012d2b.patch";
+    hash = "sha256-7Qhy99JjfUcE7JZhfqVFbWsAWBckZNb0m7dgrFdnWUg=";
+  })
+  (fetchpatch {
+    name = "tegra-pwm-tegra264-support.patch";
+    url = "https://github.com/torvalds/linux/commit/82dcd68f7246eeacbc2ef614b82e284a50b2b8bb.patch";
+    hash = "sha256-SV2YTUsF2K4g0UbRKhYCD0z4v7lNG/aAS58R/WPqqY0=";
+  })
 ] ++ [
   {
     name = "tegra-i2c-optional-dma";
