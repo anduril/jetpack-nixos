@@ -131,6 +131,8 @@ measurements for PCRs 1 through 8 and PCR 12.
   measurement to predict from the flash or capsule artifacts.
 
 A separator event alone identifies no firmware image or configuration.
-The Orin observations do not establish the event sequences for all devices
-or for Thor. Before you use these PCRs in a policy, check the complete EFI
-event log and verify that its replay matches the live PCR values.
+The Orin observations do not establish event sequences for PCRs 1 through
+3 on all devices. Thor PCR 0 has been validated, but event sequences for
+PCRs 1 through 3 have not been checked on Thor. Before you use these PCRs
+in a policy, check the complete EFI event log and verify that its replay
+matches the live PCR values.
