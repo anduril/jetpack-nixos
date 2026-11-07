@@ -3,6 +3,7 @@
 # Convenience package that allows you to set options for the flash script using the NixOS module system.
 # You could do the overrides yourself if you'd prefer.
 let
+  pkcs11Key = import ../lib/pkcs11-key.nix { inherit lib; };
   inherit (lib)
     mkEnableOption
     mkOption
@@ -122,9 +123,10 @@ in
               '';
             };
             signer.key = mkOption {
-              type = types.oneOf [ types.path types.str ];
+              type = pkcs11Key.type;
               description = ''
-                RSA Private key in PEM format used for signing.
+                RSA private key in PEM format, a literal PKCS#11 URI, or
+                `{ uriFile = path; }` for a build-time PKCS#11 URI.
                 This is currently only used for RCM payload verification used in initrd flash script.
                 Besides this specific option, UEFI secure boot behaves as it normally would for any other NixOS system.
                 Do _not_ include a signing key in the Nix store. How to do this
@@ -178,11 +180,17 @@ in
             };
 
             signerPrivateCertPemFile = mkOption {
-              type = types.oneOf [ types.path types.str ];
+              type = pkcs11Key.type;
               description = ''
-                The path to the private certificate (in PEM format) that will be
-                used for signing capsule payloads.
+                Private certificate in PEM format, a literal PKCS#11 URI, or
+                `{ uriFile = path; }` for a build-time PKCS#11 URI.
               '';
+            };
+
+            signerPublicCertPemFile = mkOption {
+              type = types.nullOr types.path;
+              default = null;
+              description = "Signer certificate used with a PKCS#11 private key for capsule authentication.";
             };
 
             requiredSystemFeatures = lib.mkOption {
@@ -221,18 +229,32 @@ in
         # See: https://docs.nvidia.com/jetson/archives/r35.4.1/DeveloperGuide/text/SD/Security/SecureBoot.html#prepare-an-sbk-key
         secureBoot = {
           pkcFile = mkOption {
-            type = types.nullOr (types.oneOf [ types.path types.str ]);
+            type = types.nullOr pkcs11Key.type;
             default = null;
-            description = "Path to Public Key Cryptography (PKC) .pem file used to validate authenticity and integrity of firmware partitions. Do not include this file in your /nix/store. Instead, use a sandbox exception to provide access to the key";
+            description = "PKC PEM path, literal PKCS#11 URI, or `{ uriFile = path; }` for a build-time URI. Do not put a private key in the Nix store.";
             example = "/run/keys/jetson/xavier_pkc.pem";
           };
 
           sbkFile = mkOption {
-            type = types.nullOr (types.oneOf [ types.path types.str ]);
+            type = types.nullOr pkcs11Key.type;
             default = null;
-            description = "Path to Secure Boot Key (SBK) file used to encrypt firmware partitions. Do not include this file in your /nix/store.  Instead, use a sandbox exception to provide access to the key";
+            description = "SBK path, literal PKCS#11 URI, or `{ uriFile = path; }` for a build-time URI. Do not put a secret key in the Nix store.";
             example = "/run/keys/jetson/xavier_skb.key";
           };
+
+          fusePkcFile = mkOption {
+            type = types.nullOr pkcs11Key.type;
+            default = null;
+            description = "Existing PKC key for a subsequent fuse operation.";
+          };
+
+          fuseSbkFile = mkOption {
+            type = types.nullOr pkcs11Key.type;
+            default = null;
+            description = "Existing SBK key for a subsequent fuse operation.";
+          };
+
+          hsmKeyHash = mkEnableOption "PKCS#11 signing of the Thor PKC combination hash";
 
           requiredSystemFeatures = lib.mkOption {
             type = types.listOf types.str;
@@ -493,8 +515,8 @@ in
     ];
 
     hardware.nvidia-jetpack.flashScriptOverrides.flashArgs = lib.mkAfter (
-      lib.optional (cfg.firmware.secureBoot.pkcFile != null) "-u ${lib.escapeShellArg "${cfg.firmware.secureBoot.pkcFile}"}" ++
-      lib.optional (cfg.firmware.secureBoot.sbkFile != null) "-v ${lib.escapeShellArg "${cfg.firmware.secureBoot.sbkFile}"}" ++
+      lib.optional (cfg.firmware.secureBoot.pkcFile != null) "-u ${(pkcs11Key.render "jetpack_pkc_uri" cfg.firmware.secureBoot.pkcFile).argument}" ++
+      lib.optional (cfg.firmware.secureBoot.sbkFile != null) "-v ${(pkcs11Key.render "jetpack_sbk_uri" cfg.firmware.secureBoot.sbkFile).argument}" ++
       [ cfg.flashScriptOverrides.configFileName "mmcblk0p1" ]
     );
 
@@ -516,9 +538,26 @@ in
       (lib.optional (cfg.firmware.initialBootOrder != null) bootOrder) ++
       (lib.optional cfg.firmware.uefi.secureBoot.enrollDefaultKeys uefiDefaultKeysDtbo);
 
-    hardware.nvidia-jetpack.flashScriptOverrides.fuseArgs = lib.mkAfter [ cfg.flashScriptOverrides.configFileName ];
+    hardware.nvidia-jetpack.flashScriptOverrides.fuseArgs = lib.mkAfter (
+      lib.optional (cfg.firmware.secureBoot.fusePkcFile != null) "-k ${(pkcs11Key.render "jetpack_fuse_pkc_uri" cfg.firmware.secureBoot.fusePkcFile).argument}"
+      ++ lib.optional (cfg.firmware.secureBoot.fuseSbkFile != null) "-S ${(pkcs11Key.render "jetpack_fuse_sbk_uri" cfg.firmware.secureBoot.fuseSbkFile).argument}"
+      ++ [ cfg.flashScriptOverrides.configFileName ]
+    );
 
     assertions = [
+      {
+        assertion =
+          !cfg.firmware.uefi.capsuleAuthentication.enable
+          || !(
+            let
+              signer = cfg.firmware.uefi.capsuleAuthentication.signerPrivateCertPemFile;
+            in
+            (builtins.isAttrs signer && !lib.isDerivation signer)
+            || (builtins.isString signer && lib.hasPrefix "pkcs11:" signer)
+          )
+          || cfg.firmware.uefi.capsuleAuthentication.signerPublicCertPemFile != null;
+        message = "Capsule signing with a PKCS#11 URI file requires signerPublicCertPemFile.";
+      }
       {
         assertion = !cfg.firmware.fskp.enable || (lib.versionAtLeast cfg.majorVersion "7");
         message = "FSKP support currently limited to Jetpack 7+ boards";
