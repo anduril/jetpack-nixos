@@ -241,7 +241,10 @@ final: prev: (
 
       signedFirmware =
         let
-          signedDir = if cfg.firmware.secureBoot.sbkFile != null then "enc_signed" else "signed";
+          signedDir =
+            if cfg.firmware.secureBoot.sbkFile == null then "signed"
+            else if finalJetpack.socFamily == "t19x" then "encrypted_signed_t19x"
+            else "enc_signed";
         in
         final.runCommand "signed-${cfg.name}-${finalJetpack.l4tMajorMinorPatchVersion}"
           { inherit (cfg.firmware.secureBoot) requiredSystemFeatures; }
