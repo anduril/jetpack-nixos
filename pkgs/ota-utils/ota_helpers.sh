@@ -17,6 +17,9 @@ generate_compat_spec() {
     if [[ "${boardsku}" == "0004" ]]; then
       boardrev=""
       fab="400"
+    elif [[ "${boardsku}" == "0005" ]]; then
+      boardrev=""
+      fab="402"
     elif [[ "${fab}" == "400" ]]; then
       if [[ "${boardrev}" == "D.0" || "${boardrev}" < "D.0" ]]; then
         boardrev="D.0"

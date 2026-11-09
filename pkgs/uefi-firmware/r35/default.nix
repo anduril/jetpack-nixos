@@ -36,9 +36,8 @@
 }:
 
 let
-  # NVIDIA did not publish r35.6.5 tags for the EDK2 repos used by JP5.1.7.
-  # Keep the firmware sources pinned to the latest available r35 tag.
-  edk2ReleaseTag = "r35.6.4";
+  # NVIDIA tags the EDK2 repos as r35.7 for JP5.1.8 / L4T 35.7.0.
+  edk2ReleaseTag = "r35.7";
 
   # TODO: Move this generation out of uefi-firmware.nix, because this .nix
   # file is callPackage'd using an aarch64 version of nixpkgs, and we don't
@@ -59,7 +58,7 @@ let
       repo = "edk2";
       rev = edk2ReleaseTag;
       fetchSubmodules = true;
-      sha256 = "sha256-4SGqdNOHPqZXxG8XYj8Md6CsxiO9bwecty57u/2xfwU=";
+      sha256 = "sha256-xmroeLxCiakZWyr5YtYtJ3s865xyo0Mqejo4cY0JnQI=";
     };
     patches = [
       # Fix GCC 14 compile issue.
@@ -95,7 +94,7 @@ let
       owner = "NVIDIA";
       repo = "edk2-nvidia";
       rev = edk2ReleaseTag;
-      sha256 = "sha256-X4l0yf0Z181reSG8Y9sF9Kqmil56qBZc3fdWynXbZ50=";
+      sha256 = "sha256-Hzi7ynpKLYPnVrFUfO/NchoSAtN5nJuBFxBZGXMqgP4=";
     };
     patches = [
       # Fix Eqos driver to use correct TX clock name
@@ -107,20 +106,11 @@ let
 
       ./capsule-authentication.patch
 
-      # Include patches to fix "Assertion 3" mentioned here:
+      # Include patch to fix "Assertion 3" mentioned here:
       # https://forums.developer.nvidia.com/t/assertion-issue-in-uefi-during-boot/315628
       # From this PR: https://github.com/NVIDIA/edk2-nvidia/pull/110
-      # As of (2025-05-23), this is still not fixed in any release branch of 35.x.x
-      ./0001-fix-varint-read-records-per-erase-block-and-fix-leak.patch
+      # As of r35.7, this is still not fixed in any release branch of 35.x.x
       ./0002-fix-bug-in-block-erase-logic.patch
-
-      # fix: split ftw writes if they span blocks
-      # https://forums.developer.nvidia.com/t/possible-uefi-memory-leak-and-partition-full/308540/50
-      # https://github.com/NVIDIA/edk2-nvidia/issues/114
-      (fetchpatch {
-        url = "https://github.com/NVIDIA/edk2-nvidia/commit/c101ba515b2737fb78d8929c2852f5c8f9607330.patch";
-        sha256 = "sha256-M+9y5lmUoUrc985MDuZzHIa2EySqoPWzRu2QSTc0Q1A=";
-      })
 
       # feat: Add Aquantia AQR113 PHY ID
       (fetchpatch {
@@ -143,7 +133,7 @@ let
     owner = "NVIDIA";
     repo = "edk2-nvidia-non-osi";
     rev = edk2ReleaseTag;
-    sha256 = "sha256-LUpYaldctQz1/dAsybQjxjSRQN/EkgxxhbsJsRMkhwI=";
+    sha256 = "sha256-MnUHTW4FdecTAQLUEBmHtDxlSfPMmeBoDbUqpQ+S2HQ=";
   };
 
   edk2-jetson = edk2.overrideAttrs (prev: {
