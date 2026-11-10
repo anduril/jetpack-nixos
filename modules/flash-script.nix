@@ -253,6 +253,16 @@ in
             description = "Additional requiredSystemFeatures to add to derivations which make use of secure boot keys";
           };
 
+          noChroot = lib.mkOption {
+            type = types.bool;
+            default = false;
+            description = ''
+              Set `__noChroot` on derivations which make use of secure boot keys, so
+              they build outside the sandbox chroot. Requires the builder to run with
+              `sandbox = relaxed`.
+            '';
+          };
+
           preSignCommands = lib.mkOption {
             type = types.oneOf [ (types.functionTo types.lines) types.lines ];
             apply = val: if lib.isFunction val then val else _: val;
@@ -268,6 +278,25 @@ in
               define this option to be a function that accepts the `pkgs`
               package-set if you need to access something from it.
             '';
+          };
+
+          derivationAttrs = mkOption {
+            internal = true;
+            readOnly = true;
+            type = types.attrs;
+            default = { inherit (cfg.firmware.secureBoot) requiredSystemFeatures; }
+              // lib.optionalAttrs cfg.firmware.secureBoot.noChroot { __noChroot = true; };
+            description = "Attributes for derivations which make use of secure boot keys: requiredSystemFeatures and noChroot.";
+          };
+
+          keyFlashArgs = mkOption {
+            internal = true;
+            readOnly = true;
+            type = types.listOf types.str;
+            default =
+              lib.optional (cfg.firmware.secureBoot.pkcFile != null) "-u ${lib.escapeShellArg "${cfg.firmware.secureBoot.pkcFile}"}" ++
+              lib.optional (cfg.firmware.secureBoot.sbkFile != null) "-v ${lib.escapeShellArg "${cfg.firmware.secureBoot.sbkFile}"}";
+            description = "The flash.sh options that pass pkcFile and sbkFile, as added to flashScriptOverrides.flashArgs.";
           };
         };
 
@@ -506,9 +535,7 @@ in
     ];
 
     hardware.nvidia-jetpack.flashScriptOverrides.flashArgs = lib.mkAfter (
-      lib.optional (cfg.firmware.secureBoot.pkcFile != null) "-u ${lib.escapeShellArg "${cfg.firmware.secureBoot.pkcFile}"}" ++
-      lib.optional (cfg.firmware.secureBoot.sbkFile != null) "-v ${lib.escapeShellArg "${cfg.firmware.secureBoot.sbkFile}"}" ++
-      [ cfg.flashScriptOverrides.configFileName "mmcblk0p1" ]
+      cfg.firmware.secureBoot.keyFlashArgs ++ [ cfg.flashScriptOverrides.configFileName "mmcblk0p1" ]
     );
 
     hardware.nvidia-jetpack.flashScriptOverrides.additionalDtbOverlays =

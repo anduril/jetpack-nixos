@@ -13,11 +13,7 @@ let
     then throw "mkFlashCmdScript requires exactly one Jetson variant set in hardware.nvidia-jetson.firmware.variants"
     else builtins.elemAt cfg.firmware.variants 0;
 in
-runCommand "flash-tools-flashcmd"
-{
-  # Needed for signing
-  inherit (cfg.firmware.secureBoot) requiredSystemFeatures;
-} ''
+runCommand "flash-tools-flashcmd" cfg.firmware.secureBoot.derivationAttrs ''
   export BOARDID=${variant.boardid}
   export BOARDSKU=${variant.boardsku}
   export FAB=${variant.fab}

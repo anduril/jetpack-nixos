@@ -225,9 +225,7 @@ let
       } // (builtins.removeAttrs args [ "additionalDtbOverlays" ]));
 
       bup = (flasherPkgsOr pkgs).runCommand "bup-${cfg.name}-${finalJetpack.l4tMajorMinorPatchVersion}"
-        {
-          inherit (cfg.firmware.secureBoot) requiredSystemFeatures;
-        }
+        cfg.firmware.secureBoot.derivationAttrs
         ((finalJetpack.mkFlashScript
           l4tFlashTools # we need flash-tools for the platform that runs them
           {
@@ -267,6 +265,7 @@ let
           nativeBuildInputs = [ pkgs.buildPackages.python3 pkgs.buildPackages.openssl ];
         } // lib.optionalAttrs cfg.firmware.uefi.capsuleAuthentication.enable {
           inherit (cfg.firmware.uefi.capsuleAuthentication) requiredSystemFeatures;
+          __noChroot = cfg.firmware.secureBoot.noChroot;
         })
         (''
           ${cfg.firmware.uefi.capsuleAuthentication.preSignCommands pkgs.buildPackages}
@@ -290,7 +289,7 @@ let
             else "enc_signed";
         in
         (flasherPkgsOr pkgs).runCommand "signed-${cfg.name}-${finalJetpack.l4tMajorMinorPatchVersion}"
-          { inherit (cfg.firmware.secureBoot) requiredSystemFeatures; }
+          cfg.firmware.secureBoot.derivationAttrs
           (finalJetpack.mkFlashScript l4tFlashTools {
             flashCommands = ''
               ${cfg.firmware.secureBoot.preSignCommands (flasherPkgsOr pkgs)}
