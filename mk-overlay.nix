@@ -142,6 +142,8 @@ makeScope final.newScope (self: {
   patchfv = self.callPackage ./pkgs/patchfv { };
   diffblocks = self.callPackage ./pkgs/diffblocks { };
 
+  signImage = self.callPackage ./pkgs/l4t-sign/sign-image.nix { };
+
   samples = makeScope self.newScope (finalSamples: {
     callPackages = callPackagesWith (self // finalSamples);
     recurseForDerivations = true;
