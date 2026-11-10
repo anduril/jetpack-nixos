@@ -310,7 +310,7 @@ let
 
   uefi-firmware = runCommand "${unstamped-firmware.pname}-${unstamped-firmware.version}-stamped"
     {
-      nativeBuildInputs = [ python3 buildPackages.nvidia-jetpack.patchfv ];
+      nativeBuildInputs = [ python3 patchfv ];
       passthru = {
         inherit biosVersion;
         inherit (unstamped-firmware.passthru) srcs;

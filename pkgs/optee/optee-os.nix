@@ -1,10 +1,9 @@
-{ optee-config, lib }:
+{ optee-config, lib, ftpmHelperTa ? null, msTpm20RefTa ? null }:
 optee-config.overrideAttrs (finalAttrs: _: {
   pname = "optee-os";
 
   # fTPM — set ftpmHelperTa/msTpm20RefTa to the TA derivations to embed them as early TAs
-  ftpmHelperTa = null;
-  msTpm20RefTa = null;
+  inherit ftpmHelperTa msTpm20RefTa;
 
   # Stripped ELFs are used here rather than signed .ta files. Early TAs
   # are embedded directly in the OP-TEE binary image and do not require

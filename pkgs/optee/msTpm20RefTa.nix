@@ -5,6 +5,9 @@
 , lib
 , buildPackages
 , gitRepos
+, patches ? [ ]
+, taLogLevel ? null
+, measuredBoot ? false
 }:
 let
   l4tMajorVersion = lib.versions.major l4tMajorMinorPatchVersion;
@@ -16,10 +19,13 @@ let
   # (bc50d971-d4c9-42c4-82cb-343fb7f37896), so consumers don't need to care.
   isR38OrLater = lib.versionAtLeast l4tMajorVersion "38";
 in
-stdenv.mkDerivation {
+stdenv.mkDerivation (finalAttrs: {
   pname = "ms-tpm-20-ref-ta";
   version = l4tMajorMinorPatchVersion;
   src = gitRepos."tegra/optee-src/nv-optee";
+  # Constructor inputs need not add env attrs, but overrideAttrs can still
+  # supply taLogLevel/measuredBoot: makeFlags consults finalAttrs first.
+  inherit patches;
   nativeBuildInputs = [ (buildPackages.python3.withPackages (p: [ p.cryptography ])) ];
   enableParallelBuilding = true;
 
@@ -41,7 +47,9 @@ stdenv.mkDerivation {
   ] else [
     "-C optee/samples/ms-tpm-20-ref/Samples/ARM32-FirmwareTPM/optee_ta"
     "O=$(PWD)/out"
-  ]);
+  ]) ++ lib.optional ((finalAttrs.taLogLevel or taLogLevel) != null)
+    "CFG_TEE_TA_LOG_LEVEL=${toString (finalAttrs.taLogLevel or taLogLevel)}"
+  ++ lib.optional (finalAttrs.measuredBoot or measuredBoot) "CFG_TA_MEASURED_BOOT=y";
 
   installPhase = ''
     runHook preInstall
@@ -51,4 +59,4 @@ stdenv.mkDerivation {
     runHook postInstall
   '';
   meta.platforms = [ "aarch64-linux" ];
-}
+})

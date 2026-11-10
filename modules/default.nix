@@ -17,6 +17,52 @@ let
 
   cfg = config.hardware.nvidia-jetpack;
 
+  soc = import ../soc.nix { inherit lib; };
+
+  # The SoC of the configured SoM (null for "generic") and its GPU driver. With
+  # `majorVersion`, the SoC selects the userspace in `pkgs` (see
+  # `lib.nixpkgsArgsFor`), so none of these are options of their own.
+  socType = soc.socTypeForSom cfg.som;
+  gpuDriver = soc.gpuDriverFor socType;
+
+  # The `overlays` and `config` this configuration instantiates Nixpkgs with.
+  # Not used with `readOnlyPkgs`, where `pkgs` must have been built from the
+  # same arguments.
+  nixpkgsArgs = import ../nixpkgs-args.nix { inherit lib overlay; } {
+    inherit (cfg) majorVersion;
+    inherit socType;
+  };
+
+  # Whether `pkgs` comes from upstream's `nixpkgs.nixosModules.readOnlyPkgs`, which
+  # replaces the nixpkgs module (and with it `localSystem`). The package set is then
+  # fixed: this module cannot configure it, only check it. With the normal nixpkgs
+  # module this module configures Nixpkgs as usual, which NixOS appends to
+  # `nixpkgs.pkgs` if that is set.
+  readOnlyNixpkgs = !(options.nixpkgs ? localSystem);
+
+  # The userspace in `pkgs`; null if `pkgs` lacks the jetpack-nixos overlay.
+  maybeJetpack = pkgs.nvidia-jetpack or null;
+  missingJetpackMessage = ''
+    `pkgs` has no `nvidia-jetpack`. Instantiate it with jetpack-nixos's
+    `lib.nixpkgsArgsFor { majorVersion = "${cfg.majorVersion}"; socType = ${builtins.toJSON socType}; }`.
+  '';
+
+  # Same representation as `nixpkgs.overlays`: functions, not merged.
+  extensionType = lib.mkOptionType {
+    name = "extension";
+    description = "package set extension (`final: prev: { ... }`)";
+    check = lib.isFunction;
+    merge = lib.mergeOneOption;
+  };
+
+  mkFirmware = targetPkgs: import ../firmware-packages.nix {
+    inherit config;
+    pkgs = targetPkgs;
+    devicePkgs = pkgs;
+    extensions = cfg.firmwarePkgsExtensions;
+  };
+  mkFirmwarePkgs = targetPkgs: (mkFirmware targetPkgs).scope;
+
   jetpackVersions = [ "5" "6" "7" ];
 
   checkValidSoms = soms: cfg.som == "generic" || lib.lists.any (s: lib.hasPrefix s cfg.som) soms;
@@ -118,25 +164,81 @@ in
         description = "Enable PREEMPT_RT patches";
       };
 
+      kernelPackagesExtension = mkOption {
+        type = lib.mkOptionType {
+          name = "extension";
+          description = "kernel package set extension (`final: prev: { ... }`), composed";
+          check = lib.isFunction;
+          merge = _: defs: lib.composeManyExtensions (map (d: d.value) defs);
+        };
+        description = ''
+          The extension to apply via `.extend` to a JetPack kernel package set
+          (`pkgs.nvidia-jetpack.kernelPackages`): the out-of-tree modules of
+          `pkgs.nvidia-jetpack.kernelPackagesOverlay`, followed by every
+          definition of this option, for example to patch the device tree or
+          the out-of-tree modules for a carrier board. `boot.kernelPackages`
+          uses it by default.
+
+          Unlike overlays on `pkgs`, this only affects this configuration, so
+          configurations with different carrier boards can share one `pkgs`.
+        '';
+      };
+
+      firmwarePkgsExtensions = mkOption {
+        type = types.listOf extensionType;
+        default = [ ];
+        description = ''
+          Extensions (`finalJetpack: prevJetpack: { ... }`) applied to
+          `firmwarePkgs`, and to the instances of it built for the flashing
+          host and, when cross-compiling, the build platform.
+
+          Use these instead of overlays on `pkgs.nvidia-jetpack` to replace or
+          extend firmware, OP-TEE trusted applications, or flashing tools.
+        '';
+      };
+
+      firmwarePkgs = mkOption {
+        type = types.raw;
+        default = if readOnlyNixpkgs then mkFirmwarePkgs pkgs else pkgs.nvidia-jetpack;
+        defaultText = lib.literalMD "`pkgs.nvidia-jetpack` when this configuration instantiates Nixpkgs, otherwise a separate package set built from `firmwarePkgsExtensions`";
+        readOnly = true;
+        description = ''
+          The firmware and flashing package set configured for this NixOS
+          configuration: UEFI, OP-TEE, trusted firmware, BUP and capsule
+          updates, and the flash scripts. When this configuration instantiates
+          Nixpkgs itself, they are part of `pkgs.nvidia-jetpack`. When `pkgs`
+          is read-only they are a separate package set on top of it, so that
+          `pkgs.nvidia-jetpack` does not depend on the configuration.
+
+          Customize it with `firmwarePkgsExtensions`.
+        '';
+      };
+
+      flasherFirmwarePkgs = mkOption {
+        type = types.raw;
+        default = if readOnlyNixpkgs then mkFirmwarePkgs cfg.flasherPkgs else cfg.flasherPkgs.nvidia-jetpack;
+        defaultText = lib.literalMD "`firmwarePkgs`, built for `flasherPkgs`";
+        readOnly = true;
+        description = ''
+          `firmwarePkgs` built for the flashing host (`flasherPkgs`), with the same
+          configuration and `firmwarePkgsExtensions`. The flashing and fusing
+          tools come from here.
+        '';
+      };
 
       flasherPkgs = mkOption {
         type = options.nixpkgs.pkgs.type;
-        default = import pkgs.path {
-          system = "x86_64-linux";
-          inherit (pkgs) config;
-        };
-        defaultText = ''
-          import pkgs.path {
-            system = "x86_64-linux";
-            inherit (pkgs) config;
-          }
-        '';
-        apply = p: p.appendOverlays pkgs.overlays;
+        default = pkgs.pkgsForJetsonFlashing;
+        defaultText = lib.literalExpression "pkgs.pkgsForJetsonFlashing";
+        # A package set without the jetpack-nixos overlay gets this
+        # configuration's overlays appended, as before.
+        apply = p: if p ? nvidia-jetpack then p else p.appendOverlays pkgs.overlays;
         description = ''
           The package set that is used to build packages that run on an
           external host for purposes of flashing/fusing a Jetson device. This
           defaults to a package set that can run NVIDIA's pre-built x86
-          binaries needed for flashing/fusing Jetson SOMs.
+          binaries needed for flashing/fusing Jetson SOMs. It is part of
+          `pkgs`, so configurations sharing a `pkgs` share it as well.
         '';
       };
 
@@ -183,38 +285,47 @@ in
             Invalid combination! XavierNxDevkit carrier board only valid with Orin NX SOM.
           '';
         }
-      ];
-
-      # Use mkOptionDefault so that we prevent conflicting with the priority that
-      # `nixos-generate-config` uses.
-      nixpkgs.hostPlatform = lib.mkOptionDefault "aarch64-linux";
-
-      # Use mkBefore to ensure that our overlays get merged prior to any
-      # downstream jetpack-nixos users. This should prevent a situation where a
-      # user's overlay is merged before ours and that overlay depends on
-      # something defined in our overlay.
-      nixpkgs.overlays = mkBefore [
-        overlay
-        (
-          let
-            otherJetpacks = builtins.filter (v: v != cfg.majorVersion) jetpackVersions;
-          in
-          final: prev:
-            let
-              mkWarnJetpack = v: lib.warn "nvidia-jetpack${v} is unsupported when nixos is configured to use Jetpack ${cfg.majorVersion}" prev."nvidia-jetpack${v}";
-            in
-            # NOTE: While the version of `cudaPackages` drives the version of `nvidia-jetpack`, we need to set them both here since
-              # overlay-with-config needs to reference `prev.nvidia-jetpack`, so we can't wait for it to resolve via `final`.
-            {
-              nvidia-jetpack = final."nvidia-jetpack${cfg.majorVersion}";
-              cudaPackages = final."cudaPackages_${lib.versions.major final."nvidia-jetpack${cfg.majorVersion}".cudaMajorMinorVersion}";
-            }
-            # warn if anyone tries to evaluate non-default nvidia-jetpack package sets, but keep them around to avoid missing attribute errors.
-            // builtins.listToAttrs (builtins.map
-              (v: { name = "nvidia-jetpack${v}"; value = mkWarnJetpack v; })
-              otherJetpacks)
-        )
-        (import ../overlay-with-config.nix config)
+        # The JetPack major version and the SoC (with its GPU driver) select the
+        # userspace in `pkgs`. This configuration selects them when it
+        # instantiates Nixpkgs; a package set passed in must have been built for
+        # the same ones. Together with the CUDA check in cuda.nix, `pkgs` is then
+        # the package set this configuration would have built for itself.
+        {
+          assertion = maybeJetpack != null;
+          message = missingJetpackMessage;
+        }
+        {
+          assertion = maybeJetpack != null -> lib.versions.major maybeJetpack.jetpackMajorMinorPatchVersion == cfg.majorVersion;
+          message = ''
+            `pkgs.nvidia-jetpack` is JetPack ${maybeJetpack.jetpackMajorMinorPatchVersion}, but
+            `hardware.nvidia-jetpack.majorVersion` is "${cfg.majorVersion}". Instantiate `pkgs` with
+            jetpack-nixos's `lib.nixpkgsArgsFor { majorVersion = "${cfg.majorVersion}"; ... }`.
+          '';
+        }
+        {
+          assertion = (maybeJetpack != null && gpuDriver != null) -> (maybeJetpack.gpuDriver or null) == gpuDriver;
+          message = ''
+            `pkgs.nvidia-jetpack.gpuDriver` is "${maybeJetpack.gpuDriver or "unset"}", but SoM "${toString cfg.som}" uses
+            "${toString gpuDriver}". Instantiate `pkgs` with jetpack-nixos's
+            `lib.nixpkgsArgsFor { majorVersion = "${cfg.majorVersion}"; socType = "${toString socType}"; }`.
+          '';
+        }
+        {
+          assertion = (maybeJetpack != null && socType != null) -> (maybeJetpack.socType or null) == socType;
+          message = ''
+            `pkgs.nvidia-jetpack` was selected for SoC "${maybeJetpack.socType or "unset"}", but SoM "${toString cfg.som}"
+            is a ${toString socType}. Instantiate `pkgs` with jetpack-nixos's
+            `lib.nixpkgsArgsFor { majorVersion = "${cfg.majorVersion}"; socType = "${toString socType}"; }`.
+          '';
+        }
+        {
+          assertion = maybeJetpack != null -> lib.versions.major cfg.flasherPkgs.nvidia-jetpack.jetpackMajorMinorPatchVersion == cfg.majorVersion;
+          message = ''
+            `hardware.nvidia-jetpack.flasherPkgs.nvidia-jetpack` is JetPack
+            ${cfg.flasherPkgs.nvidia-jetpack.jetpackMajorMinorPatchVersion}, but
+            `hardware.nvidia-jetpack.majorVersion` is "${cfg.majorVersion}".
+          '';
+        }
       ];
 
       hardware.nvidia-jetpack.console.args = lib.mkMerge [
@@ -235,11 +346,16 @@ in
         ])
       ];
 
+      hardware.nvidia-jetpack.kernelPackagesExtension = mkBefore pkgs.nvidia-jetpack.kernelPackagesOverlay;
+
+      # The first use of `pkgs.nvidia-jetpack` that NixOS forces, from its own
+      # assertions, so it is where a `pkgs` without jetpack-nixos is reported.
       boot.kernelPackages =
+        assert lib.assertMsg (maybeJetpack != null) missingJetpackMessage;
         (if cfg.kernel.realtime then
           pkgs.nvidia-jetpack.rtkernelPackages
         else
-          pkgs.nvidia-jetpack.kernelPackages).extend pkgs.nvidia-jetpack.kernelPackagesOverlay;
+          pkgs.nvidia-jetpack.kernelPackages).extend cfg.kernelPackagesExtension;
 
       boot.kernelParams = [
         # Needed on Orin at least, but upstream has it for both
@@ -426,12 +542,29 @@ in
 
       environment.systemPackages = with pkgs.nvidia-jetpack; [
         l4t-tools
-        otaUtils # Tools for UEFI capsule updates
+        cfg.firmwarePkgs.otaUtils # Tools for UEFI capsule updates
       ]
       # Tool to view GPU utilization.
       ++ lib.optionals (l4tAtLeast "36") [ nvidia-smi ]
       ++ lib.optionals (l4tAtLeast "38") [ l4t-bootloader-utils ];
     }
+    # readOnlyPkgs removes the normal nixpkgs module, including localSystem,
+    # config and overlays. Omit the entire option block: even mkIf false on
+    # hostPlatform counts as a definition of that read-only option upstream.
+    (lib.optionalAttrs (!readOnlyNixpkgs) {
+      # Use mkOptionDefault so that we prevent conflicting with the priority that
+      # `nixos-generate-config` uses.
+      nixpkgs.hostPlatform = lib.mkOptionDefault "aarch64-linux";
+
+      # Use mkBefore to ensure that our overlays get merged prior to any
+      # downstream jetpack-nixos users. This should prevent a situation where a
+      # user's overlay is merged before ours and that overlay depends on
+      # something defined in our overlay.
+      nixpkgs.overlays = mkBefore (nixpkgsArgs.overlays ++ [
+        # Firmware is part of `pkgs.nvidia-jetpack` here, as before `firmwarePkgs`.
+        (final: prev: { nvidia-jetpack = prev.nvidia-jetpack.overrideScope (mkFirmware final).extension; })
+      ]);
+    })
     (lib.mkIf (jetpackAtLeast "6") {
       hardware.deviceTree.dtbSource = config.boot.kernelPackages.devicetree;
 
