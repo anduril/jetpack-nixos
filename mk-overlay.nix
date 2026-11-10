@@ -143,6 +143,7 @@ makeScope final.newScope (self: {
   diffblocks = self.callPackage ./pkgs/diffblocks { };
 
   signImage = self.callPackage ./pkgs/l4t-sign/sign-image.nix { };
+  bldtb = self.callPackage ./pkgs/l4t-sign/bldtb.nix { };
 
   samples = makeScope self.newScope (finalSamples: {
     callPackages = callPackagesWith (self // finalSamples);
