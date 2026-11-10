@@ -15,6 +15,11 @@ final: prev: (
       cfg.firmware.uefi.lowestSupportedVersion;
 
     flashTools = cfg.flasherPkgs.callPackages (import ./device-pkgs { inherit config; pkgs = final; }) { };
+
+    # Picks the package set that runs NVIDIA's L4T tools. Unset, it returns the
+    # caller's own set, which keeps the derivations (and the UEFI version stamp
+    # derived from them) unchanged.
+    flasherPkgsOr = pkgs: if cfg.firmware.useFlasherPkgsForL4tTools then cfg.flasherPkgs else pkgs;
   in
   {
     nvidia-jetpack = prev.nvidia-jetpack.overrideScope (finalJetpack: prevJetpack: {
@@ -182,16 +187,16 @@ final: prev: (
         dtbsDir = config.hardware.deviceTree.package;
       } // (builtins.removeAttrs args [ "additionalDtbOverlays" ]));
 
-      bup = prev.runCommand "bup-${cfg.name}-${finalJetpack.l4tMajorMinorPatchVersion}"
+      bup = (flasherPkgsOr prev).runCommand "bup-${cfg.name}-${finalJetpack.l4tMajorMinorPatchVersion}"
         {
           inherit (cfg.firmware.secureBoot) requiredSystemFeatures;
         }
         ((finalJetpack.mkFlashScript
-          final.pkgsBuildBuild.nvidia-jetpack.flash-tools # we need flash-tools for the buildPlatform
+          (flasherPkgsOr final.pkgsBuildBuild).nvidia-jetpack.flash-tools # we need flash-tools for the platform that runs them
           {
             # TODO: Remove preSignCommands when we switch to using signedFirmware directly
             flashCommands = ''
-              ${cfg.firmware.secureBoot.preSignCommands final.buildPackages}
+              ${cfg.firmware.secureBoot.preSignCommands (flasherPkgsOr final.buildPackages)}
             '' + lib.concatMapStringsSep "\n"
               (v: with v;
               (lib.concatStringsSep " " [
@@ -246,11 +251,11 @@ final: prev: (
             else if finalJetpack.socFamily == "t19x" then "encrypted_signed_t19x"
             else "enc_signed";
         in
-        final.runCommand "signed-${cfg.name}-${finalJetpack.l4tMajorMinorPatchVersion}"
+        (flasherPkgsOr final).runCommand "signed-${cfg.name}-${finalJetpack.l4tMajorMinorPatchVersion}"
           { inherit (cfg.firmware.secureBoot) requiredSystemFeatures; }
-          (finalJetpack.mkFlashScript final.pkgsBuildBuild.nvidia-jetpack.flash-tools {
+          (finalJetpack.mkFlashScript (flasherPkgsOr final.pkgsBuildBuild).nvidia-jetpack.flash-tools {
             flashCommands = ''
-              ${cfg.firmware.secureBoot.preSignCommands final}
+              ${cfg.firmware.secureBoot.preSignCommands (flasherPkgsOr final)}
             '' + lib.concatMapStringsSep "\n"
               (v: with v;
               (lib.concatStringsSep " " [
