@@ -7,6 +7,8 @@ final: prev: (
 
     inherit (final) lib;
 
+    soc = import ./soc.nix { inherit lib; };
+
     jetpackAtLeast = lib.versionAtLeast cfg.majorVersion;
 
     # L4T version packed the way flash.sh and l4t_generate_soc_capsule.sh encode it.
@@ -23,37 +25,12 @@ final: prev: (
   in
   {
     nvidia-jetpack = prev.nvidia-jetpack.overrideScope (finalJetpack: prevJetpack: {
-      socType =
-        if cfg.som == null then null
-        else if lib.hasPrefix "thor-" cfg.som then "t264"
-        else if lib.hasPrefix "orin-" cfg.som then "t234"
-        else if lib.hasPrefix "xavier-" cfg.som then "t194"
-        else throw "Unknown SoC type";
+      socType = soc.socTypeForSom cfg.som;
 
-      socFamily =
-        if cfg.som == null then null
-        else if lib.hasPrefix "thor-" cfg.som then "t26x"
-        else if lib.hasPrefix "orin-" cfg.som then "t23x"
-        else if lib.hasPrefix "xavier-" cfg.som then "t19x"
-        else throw "Unknown SoC type";
-
-      chipId =
-        if cfg.som == null then null
-        else if lib.hasPrefix "thor-" cfg.som then "0x26"
-        else if lib.hasPrefix "orin-" cfg.som then "0x23"
-        else if lib.hasPrefix "xavier-" cfg.som then "0x19"
-        else throw "Unknown SoC type";
-
-      pkcListChipId =
-        if lib.hasPrefix "thor-" cfg.som then "0x260"
-        else throw "Unknown SoC type";
-
-      gpuDriver =
-        if cfg.som == null then null
-        else if lib.hasPrefix "thor-" cfg.som then "openrm"
-        else if lib.hasPrefix "orin-" cfg.som then "nvgpu"
-        else if lib.hasPrefix "xavier-" cfg.som then "nvgpu"
-        else throw "Unknown SoC type";
+      socFamily = lib.mapNullable (t: soc.socs.${t}.family) finalJetpack.socType;
+      chipId = lib.mapNullable (t: soc.socs.${t}.chipId) finalJetpack.socType;
+      pkcListChipId = lib.mapNullable (t: soc.socs.${t}.pkcListChipId) finalJetpack.socType;
+      gpuDriver = soc.gpuDriverFor finalJetpack.socType;
 
       otaUtils = prevJetpack.otaUtils.override {
         inherit (config.boot.loader.efi) efiSysMountPoint;

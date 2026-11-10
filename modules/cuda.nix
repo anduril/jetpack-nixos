@@ -10,6 +10,8 @@ let
 
   cfg = config.hardware.nvidia-jetpack;
 
+  soc = import ../soc.nix { inherit lib; };
+
   thor2505 = (lib.hasPrefix "thor" cfg.som) && (lib.versionOlder lib.trivial.version "25.11");
 in
 {
@@ -65,16 +67,7 @@ in
     # Advertise support for CUDA.
     nixpkgs.config = mkIf cfg.configureCuda (mkBefore {
       cudaSupport = true;
-      cudaCapabilities =
-        let
-          isGeneric = cfg.som == "generic";
-          isXavier = lib.hasPrefix "xavier-" cfg.som;
-          isOrin = lib.hasPrefix "orin-" cfg.som;
-          isThor = lib.hasPrefix "thor-" cfg.som;
-        in
-        lib.optionals (isXavier || isGeneric) [ "7.2" ] ++
-        lib.optionals (isOrin || isGeneric) [ "8.7" ] ++
-        lib.optionals isThor [ "11.0" ];
+      cudaCapabilities = soc.cudaCapabilitiesForSom cfg.som;
     });
   };
 }
