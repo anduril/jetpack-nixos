@@ -155,6 +155,10 @@ final: prev: (
         patches = prevAttrs.patches or [ ] ++ cfg.firmware.optee.patches;
         makeFlags = prevAttrs.makeFlags or [ ] ++ cfg.firmware.optee.extraMakeFlags;
       });
+      opteeXtest = prevJetpack.opteeXtest.overrideAttrs (prevAttrs: {
+        patches = prevAttrs.patches or [ ] ++ cfg.firmware.optee.patches;
+        makeFlags = prevAttrs.makeFlags or [ ] ++ cfg.firmware.optee.extraMakeFlags;
+      });
 
       flashInitrd = final.callPackage ./device-pkgs/flash-initrd {
         extraModules = cfg.flashScriptOverrides.additionalInitrdFlashModules;
