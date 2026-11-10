@@ -86,21 +86,35 @@
           { som = "xavier-nx-emmc"; carrierBoard = "devkit"; }
         ]));
 
+      sampleSystemModule = { lib, ... }: {
+        hardware.graphics.enable = true;
+        # Prevents a warning from being emitted, providing a nicer UX for
+        # users, plus we don't care to actually have this fixed here.
+        system.stateVersion = lib.trivial.release;
+        # Just set these options to make the toplevel system evaluate without assertion errors
+        fileSystems."/".fsType = "tmpfs";
+        boot.loader.grub.enable = false;
+        boot.loader.systemd-boot.enable = false;
+        boot.zfs.forceImportRoot = false;
+      };
+
       commonModules = [
         self.nixosModules.default
-        ({ lib, ... }: {
-          nixpkgs.config.allowUnfree = true;
-          hardware.graphics.enable = true;
-          # Prevents a warning from being emitted, providing a nicer UX for
-          # users, plus we don't care to actually have this fixed here.
-          system.stateVersion = lib.trivial.release;
-          # Just set these options to make the toplevel system evaluate without assertion errors
-          fileSystems."/".fsType = "tmpfs";
-          boot.loader.grub.enable = false;
-          boot.loader.systemd-boot.enable = false;
-          boot.zfs.forceImportRoot = false;
-        })
+        { nixpkgs.config.allowUnfree = true; }
+        sampleSystemModule
       ];
+
+      # One package set for Orin on JetPack 6, passed to the module through
+      # `readOnlyPkgs`. See "Sharing a package set between configurations" in README.md.
+      orinJp6Pkgs =
+        let
+          args = self.lib.nixpkgsArgsFor { majorVersion = "6"; socType = "t234"; };
+        in
+        import nixpkgs {
+          system = "aarch64-linux";
+          inherit (args) overlays;
+          config = args.config // { cudaSupport = true; allowUnfree = true; };
+        };
 
       supportedNixOSConfigurations = lib.mapAttrs
         (name: cfg: (nixpkgs.lib.nixosSystem {
@@ -149,7 +163,20 @@
           modules = [ aarch64_cross_config installer_minimal_config jetpack7_config ];
         };
       }
-      // supportedNixOSConfigurations;
+      // supportedNixOSConfigurations
+      // {
+        orin-agx-devkit-ro-nixpkgs = nixpkgs.lib.nixosSystem {
+          modules = [
+            nixpkgs.nixosModules.readOnlyPkgs
+            { nixpkgs.pkgs = orinJp6Pkgs; }
+            self.nixosModules.default
+            sampleSystemModule
+            {
+              hardware.nvidia-jetpack = { enable = true; som = "orin-agx"; carrierBoard = "devkit"; };
+            }
+          ];
+        };
+      };
 
       nixosModules.default = import ./modules/default.nix self.overlays.default;
 
