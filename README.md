@@ -270,7 +270,13 @@ The NixOS module uses these sets by default.
 On JetPack 6+, however, you may use a mainline package set instead.
 Consult the [Bring Your Own Kernel](https://docs.nvidia.com/jetson/archives/r36.4.4/DeveloperGuide/SD/Kernel/BringYourOwnKernel.html) documentation for more details.
 
-When using a custom package set in the NixOS configuration, the out-of-tree
+On JetPack 7, setting `hardware.nvidia-jetpack.kernel.mainline = true` adds the
+Jetson patches through `boot.kernelPatches` and defaults `boot.kernelPackages`
+to `pkgs.linuxPackages_6_18`. Override `boot.kernelPackages` to choose another
+kernel; the module builds NVIDIA's out-of-tree modules and device trees against
+the selected kernel.
+
+For other custom package sets in the NixOS configuration, the out-of-tree
 modules must be added using the provided overlay.
 
 e.g. (using the `pkgs.nvidia-jetpack.kernelPackages` set)

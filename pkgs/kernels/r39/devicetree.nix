@@ -3,6 +3,7 @@
 , kernel
 , l4tMajorMinorPatchVersion
 , lib
+, mainline ? false
 , runCommand
 , stdenv
 , buildPackages
@@ -51,5 +52,19 @@ stdenv.mkDerivation (finalAttrs: {
     install -Dm644 build/nvidia-public/devicetree/generic-dtbs/* "$out/"
 
     runHook postInstall
+  '';
+} // lib.optionalAttrs mainline {
+  # BSP prod-settings contain register tuning, not I2C client devices.
+  # Mainline ignores the data, but bus enumeration reports missing modaliases.
+  # Disable only these I2C children in installed DTBs, retaining their data.
+  postInstall = ''
+    for dtb in "$out/"*.dtb; do
+      for node in $(${lib.getExe' buildPackages.dtc "fdtget"} -l "$dtb" /bus@0); do
+        if [[ "$node" == i2c@* ]] &&
+          ${lib.getExe' buildPackages.dtc "fdtget"} -l "$dtb" "/bus@0/$node" | grep -Fxq prod-settings; then
+          ${lib.getExe' buildPackages.dtc "fdtput"} -t s "$dtb" "/bus@0/$node/prod-settings" status disabled
+        fi
+      done
+    done
   '';
 })

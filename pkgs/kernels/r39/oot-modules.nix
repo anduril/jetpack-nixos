@@ -2,7 +2,9 @@
 , bspSrc
 , buildPackages
 , gitRepos
+, hypervisorGuestSupport ? false
 , kernel
+, kernelName ? "noble"
 , l4tMajorMinorPatchVersion
 , lib
 , runCommand
@@ -27,7 +29,11 @@ let
         # Some boards hit QSPI_DMA_TIMEOUT's flat 1s limit on large transfers.
         # Scale the timeout to the transfer's size and negotiated speed.
         ./0002-spi-tegra210-quad-scale-xfer-completion-timeout-to-.patch
-      ];
+      ]
+      # Needs NV_OOT_TEGRA_HV_SKIP_BUILD=y, which both configs/Makefile.config.{noble,nvmainline} set.
+      ++ lib.optional (!hypervisorGuestSupport) ./0001-Skip-hypervisor-guest-modules.patch
+      # Mainline has no tegra_hv_ivc_* implementation; bare-metal modules (tegra-drm) still reference it.
+      ++ lib.optional (kernelName == "nvmainline") ./0002-tegra_hv-dummy-export-bare-metal-IVC-stubs.patch;
     };
     nvethernetrm = applyPatches {
       name = "nvethernetrm";
@@ -55,6 +61,15 @@ let
         ln -vsrf "$out/nvethernetrm" "$out/nvidia-oot/drivers/net/ethernet/nvidia/nvethernet/nvethernetrm"
       ''
     );
+
+  # nixpkgs' kernel.makeFlags contains `O=$(buildRoot)`, and buildRoot is unset
+  # here. With kernel >= 7 an empty O= overrides the KBUILD_OUTPUT exported by
+  # the dev output's build/Makefile, so kbuild looks for auto.conf in the
+  # read-only source tree and fails.
+  kernelMakeFlags =
+    if kernelName == "nvmainline"
+    then lib.filter (flag: !(lib.hasPrefix "O=" flag)) kernel.makeFlags
+    else kernel.makeFlags;
 in
 stdenv.mkDerivation (finalAttrs: {
   __structuredAttrs = true;
@@ -70,13 +85,19 @@ stdenv.mkDerivation (finalAttrs: {
   depsBuildBuild = [ buildPackages.stdenv.cc ];
 
   # See bspSrc/source/Makefile
-  makeFlags = finalAttrs.kernel.makeFlags ++ [
+  makeFlags = kernelMakeFlags ++ [
     "KERNEL_HEADERS=${finalAttrs.kernel.dev}/lib/modules/${finalAttrs.kernel.modDirVersion}/source"
     "KERNEL_OUTPUT=${finalAttrs.kernel.dev}/lib/modules/${finalAttrs.kernel.modDirVersion}/build"
     "INSTALL_MOD_PATH=$(out)"
     # Maybe TODO: get these from kernel_src_build_env.sh directly
-    "kernel_name=noble"
+    "kernel_name=${kernelName}"
     "system_type=l4t"
+  ]
+    # configs/Makefile.config.nvmainline assumes NVIDIA's kernel, which already has the IVC
+    # extensions (tegra_ivc_can_read/read/write/...) that the camera RTCPU, etc. use. Vanilla
+    # mainline does not, so build nvidia-oot's own ivc_ext instead of the dummy.
+    ++ lib.optionals (kernelName == "nvmainline") [
+    "NV_OOT_IVC_EXT_SKIP_BUILD=n"
   ];
 
   postInstall = ''

@@ -181,6 +181,14 @@ makeScope final.newScope (self: {
   # Make visible for Hydra
   recurseForDerivations = true;
 }
+// final.lib.optionalAttrs (versions.major jetpackMajorMinorPatchVersion == "7") {
+  kernelMainlinePackagesOverlay = final: prev:
+    let base = self.kernelPackagesOverlay final prev; in
+    base // {
+      devicetree = base.devicetree.override { mainline = true; };
+      nvidia-oot-modules = base.nvidia-oot-modules.override { kernelName = "nvmainline"; };
+    };
+}
 # Add the L4T packages
 # NOTE: Since this is adding packages to the top-level, and callPackage's auto args functionality draws from that
 # attribute set, we cannot use self.callPackages because we would end up with infinite recursion.
