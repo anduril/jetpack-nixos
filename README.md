@@ -271,15 +271,118 @@ On JetPack 6+, however, you may use a mainline package set instead.
 Consult the [Bring Your Own Kernel](https://docs.nvidia.com/jetson/archives/r36.4.4/DeveloperGuide/SD/Kernel/BringYourOwnKernel.html) documentation for more details.
 
 When using a custom package set in the NixOS configuration, the out-of-tree
-modules must be added using the provided overlay.
+modules must be added by extending it with
+`config.hardware.nvidia-jetpack.kernelPackagesExtension`.
 
 e.g. (using the `pkgs.nvidia-jetpack.kernelPackages` set)
+
+```nix
+{ config, pkgs, ... }:
+
+{
+  config.boot.kernelPackages = pkgs.nvidia-jetpack.kernelPackages.extend config.hardware.nvidia-jetpack.kernelPackagesExtension;
+}
+```
+
+To patch the device tree or the out-of-tree modules for a carrier board, define
+`hardware.nvidia-jetpack.kernelPackagesExtension` rather than an overlay on
+`pkgs.nvidia-jetpack`. Definitions are composed after the out-of-tree modules:
 
 ```nix
 { pkgs, ... }:
 
 {
-  config.boot.kernelPackages = pkgs.nvidia-jetpack.kernelPackages.extend pkgs.nvidia-jetpack.kernelPackagesOverlay
+  hardware.nvidia-jetpack.kernelPackagesExtension = finalKernelPackages: prevKernelPackages: {
+    devicetree = prevKernelPackages.devicetree.overrideAttrs (old: {
+      patches = (old.patches or [ ]) ++ [ ./my-carrier-board.patch ];
+    });
+  };
+}
+```
+
+### Firmware packages
+
+Firmware and flashing packages depend on the NixOS configuration (SoM, firmware
+options, secure boot keys, ...). They live in
+`config.hardware.nvidia-jetpack.firmwarePkgs`: `uefi-firmware`, `tosImage`,
+`opteeClient`, `bup`, `uefiCapsuleUpdate`, `signedFirmware`, `mkPkcList`, the
+flash scripts, etc. Customize them with
+`hardware.nvidia-jetpack.firmwarePkgsExtensions`. Those extensions also apply to
+the instances built for the flashing host and the build platform:
+
+```nix
+{
+  hardware.nvidia-jetpack.firmwarePkgsExtensions = [
+    (finalJetpack: prevJetpack: {
+      optee-os = prevJetpack.optee-os.overrideAttrs (old: { /* ... */ });
+    })
+  ];
+}
+```
+
+### Customizing the flashing initrd
+
+Initrd flashing boots a standalone NixOS systemd stage 1 environment on the
+Jetson. It reuses the device's package set, configured kernel, extra kernel
+modules, and firmware; it does not instantiate Nixpkgs again or use the x86
+flashing host's runtime packages. Unsigned configurations permit an emergency
+console on failure; PKC-signed configurations lock emergency access by default.
+
+Add services or other initrd settings using
+`hardware.nvidia-jetpack.flashScriptOverrides.additionalInitrdFlashNixosModules`
+(a deferred NixOS module; definitions from multiple modules merge):
+
+```nix
+{
+  hardware.nvidia-jetpack.flashScriptOverrides.additionalInitrdFlashNixosModules =
+    { pkgs, ... }: {
+      boot.initrd.systemd.services.prepare-flash = {
+        wantedBy = [ "jetson-flash.target" ];
+        before = [ "jetson-flash.service" ];
+        path = [ pkgs.coreutils ];
+        script = "echo Preparing to flash";
+      };
+    };
+}
+```
+
+The nested environment uses upstream `readOnlyPkgs`: additional definitions
+of `nixpkgs.config` or `nixpkgs.overlays` are rejected, not silently ignored.
+Configure packages in the device's package set instead. For introspection,
+`firmwarePkgs.flashInitrd.flashInitrdConfig` exposes the nested NixOS config.
+
+### Sharing a package set between configurations
+
+`pkgs` depends on the JetPack major version and the SoC, which determines the
+GPU driver (openrm on Thor, nvgpu on Orin and Xavier) and the CUDA capability.
+Configurations with the same JetPack major version and SoC can therefore share
+one instance of Nixpkgs, which saves time when evaluating mutliple systems.
+Build it with `lib.nixpkgsArgsFor` and pass it through `nixpkgs.pkgs`, using
+`nixosModules.default` with upstream's `readOnlyPkgs`. The module omits its
+entire `nixpkgs` option block when the normal Nixpkgs options are absent:
+
+```nix
+let
+  jetpack7Thor = jetpack-nixos.lib.nixpkgsArgsFor {
+    majorVersion = "7";
+    socType = "t264";
+  };
+  pkgs = import nixpkgs {
+    system = "aarch64-linux";
+    inherit (jetpack7Thor) overlays;
+    config = jetpack7Thor.config // {
+      cudaSupport = true;
+      allowUnfree = true;
+    };
+  };
+in
+nixpkgs.lib.nixosSystem {
+  modules = [
+    nixpkgs.nixosModules.readOnlyPkgs
+    { nixpkgs.pkgs = pkgs; }
+    jetpack-nixos.nixosModules.default
+    ./configuration.nix
+  ];
 }
 ```
 

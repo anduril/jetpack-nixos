@@ -22,8 +22,8 @@
 let
   cfg = config.hardware.nvidia-jetpack;
 
-  # We need to grab some packages from the device's aarch64 package set.
-  inherit (pkgs.nvidia-jetpack)
+  # We need to grab some packages from the device's configured firmware package set.
+  inherit (cfg.firmwarePkgs)
     chipId
     flashInitrd
     mkFlashScript

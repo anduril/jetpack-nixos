@@ -5,6 +5,18 @@
 , lib
 , stdenv
 , jetsonStandaloneMMOptee ? null
+, socType ? if lib.versions.major l4tMajorMinorPatchVersion == "35" then "t194"
+  else if lib.versions.major l4tMajorMinorPatchVersion == "36" then "t234"
+  else if lib.versions.major l4tMajorMinorPatchVersion == "39" then "t264"
+  else throw "Unknown SoC type"
+, coreLogLevel ? 2
+, taLogLevel ? null # null follows finalAttrs.coreLogLevel, including overrides
+, taPublicKeyFile ? null
+, enableFTPM ? false
+, measuredBoot ? false
+, unsecureInjectEPS ? false
+, patches ? [ ]
+, extraMakeFlags ? [ ]
 }:
 stdenv.mkDerivation (finalAttrs:
 let
@@ -13,8 +25,6 @@ let
     t234 = "${finalAttrs.src}/optee/optee_os/prebuilt/t234/libcommon_crypto.a";
     t264 = "${finalAttrs.src}/optee/optee_os/prebuilt/t264/libcommon_crypto.a";
   }.${finalAttrs.socType};
-
-  l4tMajorVersion = lib.versions.major l4tMajorMinorPatchVersion;
 in
 {
   # Shared build config for optee-os and taDevKit. TA derivations and
@@ -23,20 +33,9 @@ in
   pname = "optee-config";
   version = l4tMajorMinorPatchVersion;
 
-  # Override-able arguments
-  socType =
-    if l4tMajorVersion == "35" then "t194"
-    else if l4tMajorVersion == "36" then "t234"
-    else if l4tMajorVersion == "39" then "t264"
-    else throw "Unknown SoC type";
-  coreLogLevel = 2;
-  taLogLevel = finalAttrs.coreLogLevel;
-  taPublicKeyFile = null;
-
-  # fTPM build flags; TA embedding lives in optee-os.nix
-  enableFTPM = false;
-  measuredBoot = false;
-  unsecureInjectEPS = false;
+  # Retain derivation attributes so overrideAttrs extensions still control flags.
+  inherit socType coreLogLevel taPublicKeyFile enableFTPM measuredBoot unsecureInjectEPS;
+  taLogLevel = if taLogLevel == null then finalAttrs.coreLogLevel else taLogLevel;
 
   src = gitRepos."tegra/optee-src/nv-optee";
   patches = [
@@ -44,7 +43,7 @@ in
     ./0003-Add-pre-sign-hook.patch
   ] ++ lib.optionals (lib.versionAtLeast l4tMajorMinorPatchVersion "36") [
     ./0001-jetson_ftpm_helper_pta-Return-SHORT_BUFFER-when-EPS-.patch
-  ];
+  ] ++ patches;
 
   nativeBuildInputs = [
     dtc
@@ -85,7 +84,7 @@ in
     (lib.warn
       "fTPM is using UNSECURE Endorsement Primary Seed (EPS) injection."
       "CFG_JETSON_FTPM_HELPER_INJECT_EPS=y"))
-  ;
+  ++ extraMakeFlags;
 
   dontInstall = true;
 

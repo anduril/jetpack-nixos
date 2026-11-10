@@ -153,6 +153,19 @@
 
       nixosModules.default = import ./modules/default.nix self.overlays.default;
 
+      lib = {
+        # `{ overlays, config }` for instantiating the Nixpkgs that a JetPack
+        # configuration uses, from the JetPack major version and SoC. Userspace
+        # only depends on these, so one package set can be shared by every
+        # configuration with the same ones. See "Sharing a package set between
+        # configurations" in README.md.
+        nixpkgsArgsFor = import ./nixpkgs-args.nix { inherit lib; overlay = self.overlays.default; };
+
+        # The Jetson SoCs, and the SoC (e.g. "t234") of a
+        # `hardware.nvidia-jetpack.som`, to choose a package set by SoM.
+        inherit (import ./soc.nix { inherit lib; }) socs socTypeForSom;
+      };
+
       overlays.default = final: prev:
         # We've already applied our overlay and should not apply it again.
         # TODO(@connorbaker): Create a general "named overlay" mechanism which provides visibility into which overlays

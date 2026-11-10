@@ -1,45 +1,134 @@
-# device-specific packages that are influenced by the nixos config
-config:
+# The firmware and flashing package set configured for one NixOS configuration:
+# UEFI, OP-TEE, trusted firmware, BUP and capsules, and the flashing/fusing
+# tools. It depends on `config`, so it is
+# `config.hardware.nvidia-jetpack.firmwarePkgs` rather than part of `pkgs`. That
+# way `pkgs` stays independent of any one machine and can be shared between
+# configurations.
+#
+# `pkgs` is the platform this instance is built for: the device's own package
+# set, the flashing host's (`hardware.nvidia-jetpack.flasherPkgs`), or the build
+# platform's when cross-compiling. `extensions`
+# (`hardware.nvidia-jetpack.firmwarePkgsExtensions`) are applied to every
+# instance.
+#
+# Returns two forms of the same packages: `scope`, a standalone package set
+# (`config.hardware.nvidia-jetpack.firmwarePkgs` when `pkgs` is read-only), and
+# `extension`, an overlay-style extension of `pkgs.nvidia-jetpack` (when the module
+# instantiates Nixpkgs itself, `firmwarePkgs` is `pkgs.nvidia-jetpack`).
+{ config
+, pkgs
+, # The device package set is distinct from pkgs in flashing/build scopes.
+  devicePkgs ? pkgs
+, extensions ? [ ]
+,
+}:
 
-final: prev: (
-  let
-    cfg = config.hardware.nvidia-jetpack;
+let
+  inherit (pkgs) lib;
+  sdk = pkgs.nvidia-jetpack;
 
-    inherit (final) lib;
+  cfg = config.hardware.nvidia-jetpack;
 
-    soc = import ./soc.nix { inherit lib; };
+  soc = import ./soc.nix { inherit lib; };
+  socType = soc.socTypeForSom cfg.som;
+  socInfo =
+    if socType != null then
+      soc.socs.${socType}
+    else
+      throw "hardware.nvidia-jetpack.som must name a specific SoM, not \"${cfg.som}\", to build firmware";
 
-    jetpackAtLeast = lib.versionAtLeast cfg.majorVersion;
+  jetpackAtLeast = lib.versionAtLeast cfg.majorVersion;
 
-    # L4T version packed the way flash.sh and l4t_generate_soc_capsule.sh encode it.
-    fmpLowestSupportedVersion = lib.mapNullable
-      (v: let p = map lib.toInt (lib.splitVersion v); in (builtins.elemAt p 0) * 65536 + (builtins.elemAt p 1) * 256 + (builtins.elemAt p 2))
-      cfg.firmware.uefi.lowestSupportedVersion;
+  # Another instance of this package set, with the same configuration and extensions.
+  forPkgs =
+    otherPkgs:
+    (import ./firmware-packages.nix {
+      inherit config devicePkgs extensions;
+      pkgs = otherPkgs;
+    }).scope;
 
-    flashTools = cfg.flasherPkgs.callPackages (import ./device-pkgs { inherit config; pkgs = final; }) { };
+  # L4T version packed the way flash.sh and l4t_generate_soc_capsule.sh encode it.
+  fmpLowestSupportedVersion = lib.mapNullable
+    (v: let p = map lib.toInt (lib.splitVersion v); in (builtins.elemAt p 0) * 65536 + (builtins.elemAt p 1) * 256 + (builtins.elemAt p 2))
+    cfg.firmware.uefi.lowestSupportedVersion;
 
-    # Picks the package set that runs NVIDIA's L4T tools. Unset, it returns the
-    # caller's own set, which keeps the derivations (and the UEFI version stamp
-    # derived from them) unchanged.
-    flasherPkgsOr = pkgs: if cfg.firmware.useFlasherPkgsForL4tTools then cfg.flasherPkgs else pkgs;
-  in
-  {
-    nvidia-jetpack = prev.nvidia-jetpack.overrideScope (finalJetpack: prevJetpack: {
-      socType = soc.socTypeForSom cfg.som;
+  # Picks the package set that runs NVIDIA's L4T tools. Unset, it returns the
+  # caller's own set, which keeps the derivations (and the UEFI version stamp
+  # derived from them) unchanged.
+  flasherPkgsOr = pkgs: if cfg.firmware.useFlasherPkgsForL4tTools then cfg.flasherPkgs else pkgs;
 
-      socFamily = lib.mapNullable (t: soc.socs.${t}.family) finalJetpack.socType;
-      chipId = lib.mapNullable (t: soc.socs.${t}.chipId) finalJetpack.socType;
-      pkcListChipId = lib.mapNullable (t: soc.socs.${t}.pkcListChipId) finalJetpack.socType;
-      gpuDriver = soc.gpuDriverFor finalJetpack.socType;
+  # The flashing/fusing tools run on the flashing host, so they are built from
+  # its instance of this package set.
+  flashTools =
+    cfg.flasherPkgs.callPackages
+      (import ./device-pkgs {
+        inherit config pkgs;
+      })
+      {
+        nvidia-jetpack = cfg.flasherFirmwarePkgs;
+      };
 
-      otaUtils = prevJetpack.otaUtils.override {
+  # Defined both here and in `pkgs.nvidia-jetpack` on purpose: the unconfigured
+  # tools, of which this package set builds its own configured copies, and the SoC
+  # that `lib.nixpkgsArgsFor` selects. Anything else this package set defines is
+  # firmware that is configured per machine.
+  sdkOverlap = [ "flash-tools" "otaUtils" "ftpmManufacturingTools" "socType" "chipId" ];
+
+  applyExtensions = scope: if extensions == [ ] then scope else scope.overrideScope (lib.composeManyExtensions extensions);
+
+  mkExtension = buildPlatformJetpack: finalJetpack: _:
+    let
+      l4tMajorVersion = lib.versions.major finalJetpack.l4tMajorMinorPatchVersion;
+      opteeArgs = {
+        optee-config = {
+          inherit (cfg.firmware.optee) taPublicKeyFile coreLogLevel taLogLevel patches extraMakeFlags;
+          enableFTPM = cfg.firmware.optee.ftpm.enable;
+          measuredBoot = cfg.firmware.optee.ftpm.measuredBoot;
+          unsecureInjectEPS = cfg.firmware.optee.ftpm.unsecureInjectEPS.enable;
+        };
+        optee-os = {
+          ftpmHelperTa = if cfg.firmware.optee.ftpm.enable then finalJetpack.ftpmHelperTa else null;
+          msTpm20RefTa = if cfg.firmware.optee.ftpm.enable then finalJetpack.msTpm20RefTa else null;
+        };
+        msTpm20RefTa = {
+          inherit (cfg.firmware.optee) patches;
+          inherit (cfg.firmware.optee.ftpm) taLogLevel measuredBoot;
+        };
+        opteeClient = {
+          inherit (cfg.firmware.optee) patches extraMakeFlags;
+        };
+      };
+      # Every recipe in ./pkgs/optee is built here: they depend on this machine's
+      # OP-TEE configuration, directly or through the TA dev kit.
+      opteePkgs = lib.packagesFromDirectoryRecursive {
+        callPackage = path: args:
+          finalJetpack.callPackage path (args // (opteeArgs.${lib.removeSuffix ".nix" (baseNameOf path)} or { }));
+        directory = ./pkgs/optee;
+      };
+      nativeBuild = pkgs.stdenv.buildPlatform.config == pkgs.stdenv.hostPlatform.config;
+      buildFirmwarePkgs = if nativeBuild then finalJetpack else buildPlatformJetpack;
+      buildPlatformFlashTools = buildFirmwarePkgs.flash-tools;
+      l4tFlashTools = if cfg.firmware.useFlasherPkgsForL4tTools then cfg.flasherFirmwarePkgs.flash-tools else buildPlatformFlashTools;
+    in
+    opteePkgs
+    // {
+      inherit socType;
+      socFamily = socInfo.family;
+      chipId = socInfo.chipId;
+      pkcListChipId = if socInfo.pkcListChipId != null then socInfo.pkcListChipId else throw "Unknown SoC type";
+
+      # Built here from the recipe, like the firmware, rather than by overriding
+      # the unconfigured `pkgs.nvidia-jetpack.otaUtils`.
+      otaUtils = finalJetpack.callPackage ./pkgs/ota-utils {
         inherit (config.boot.loader.efi) efiSysMountPoint;
 
         # uefi-firmware can be evaluated only if som is set
         expectedBiosVersion = if (cfg.som != "generic") then finalJetpack.uefi-firmware.biosVersion else "Unknown";
       };
 
-      uefi-firmware = prevJetpack.uefi-firmware.override ({
+      inherit (finalJetpack.callPackages ./pkgs/uefi-firmware/r${l4tMajorVersion} ({
+        inherit (finalJetpack) l4tMajorMinorPatchVersion socFamily;
+        patchfv = buildFirmwarePkgs.patchfv;
         bootLogo = cfg.firmware.uefi.logo;
         inherit (cfg.firmware.uefi)
           debugMode
@@ -48,7 +137,6 @@ final: prev: (
           edk2NvidiaPatches
           edk2UefiPatches
           ;
-        inherit (finalJetpack) socFamily;
 
         # A hash of something that represents everything that goes into the
         # platform firmware so that we can include it in the firmware version.
@@ -65,10 +153,10 @@ final: prev: (
             })).bup;
           in
           builtins.hashString "sha256" "${cursedBup}";
-      } // lib.optionalAttrs (prevJetpack.l4tAtLeast "36") {
+      } // lib.optionalAttrs (finalJetpack.l4tAtLeast "36") {
         # r36+ only: r35's stuart argument set is closed, so it can't accept this.
         extraPackages = cfg.firmware.uefi.edk2ExtraPackages;
-      } // lib.optionalAttrs (prevJetpack.l4tAtLeast "38") {
+      } // lib.optionalAttrs (finalJetpack.l4tAtLeast "38") {
         # r38-only: when true, skip the disable-ftpm.diff patch so UEFI uses
         # the fTPM TA we embedded in tos.img. r35/r36 builders don't accept
         # this argument (their fn args don't include enableFTPM), so we only
@@ -76,66 +164,38 @@ final: prev: (
         enableFTPM = cfg.firmware.optee.ftpm.enable;
       } // lib.optionalAttrs cfg.firmware.uefi.capsuleAuthentication.enable {
         inherit (cfg.firmware.uefi.capsuleAuthentication) trustedPublicCertPemFile;
-      });
+      })) uefi-firmware;
 
-      jetsonStandaloneMMOptee = prevJetpack.jetsonStandaloneMMOptee.override
-        {
-          inherit (cfg.firmware.uefi)
-            debugMode
-            errorLevelInfo
-            printErrorLevel
-            edk2NvidiaPatches
-            edk2UefiPatches
-            ;
-          inherit (finalJetpack) socFamily;
-        } // lib.optionalAttrs (prevJetpack.l4tAtLeast "36") {
+      inherit (finalJetpack.callPackages ./pkgs/uefi-firmware/r${l4tMajorVersion} ({
+        inherit (finalJetpack) l4tMajorMinorPatchVersion socFamily;
+        patchfv = buildFirmwarePkgs.patchfv;
+        inherit (cfg.firmware.uefi)
+          debugMode
+          errorLevelInfo
+          printErrorLevel
+          edk2NvidiaPatches
+          edk2UefiPatches
+          ;
+      } // lib.optionalAttrs (finalJetpack.l4tAtLeast "36") {
         extraPackages = cfg.firmware.uefi.standaloneMMExtraPackages;
-      };
+      })) jetsonStandaloneMMOptee;
 
-      flash-tools = prevJetpack.flash-tools.overrideAttrs ({ patches ? [ ], postPatch ? "", ... }: {
+      # Built here from the recipe, so firmware extensions to its inputs
+      # (`bspSrc`, ...) flow in. Customize it with `firmwarePkgsExtensions`;
+      # overrides of the unconfigured `pkgs.nvidia-jetpack.flash-tools` do not
+      # reach it.
+      flash-tools = (finalJetpack.callPackage ./pkgs/flash-tools { }).overrideAttrs ({ patches ? [ ], postPatch ? "", ... }: {
         patches = patches ++ cfg.flashScriptOverrides.patches;
         postPatch = postPatch + cfg.flashScriptOverrides.postPatch;
       });
 
-      armTrustedFirmware = prevJetpack.armTrustedFirmware.overrideAttrs {
-        inherit (finalJetpack) socType;
-      };
-
-      msTpm20RefTa = prevJetpack.msTpm20RefTa.overrideAttrs (prevAttrs: {
-        patches = prevAttrs.patches or [ ] ++ cfg.firmware.optee.patches;
-        makeFlags = prevAttrs.makeFlags or [ ]
-          ++ [ "CFG_TEE_TA_LOG_LEVEL=${toString cfg.firmware.optee.ftpm.taLogLevel}" ]
-          ++ lib.optional cfg.firmware.optee.ftpm.measuredBoot "CFG_TA_MEASURED_BOOT=y";
-      });
-
-      # General OP-TEE build config; TA derivations stay on optee-os to
-      # avoid an optee-config -> fTPM TA -> taDevKit -> optee-config cycle.
-      optee-config = prevJetpack.optee-config.overrideAttrs (prevAttrs: {
-        inherit (finalJetpack) socType;
-        inherit (cfg.firmware.optee) taPublicKeyFile coreLogLevel taLogLevel;
-        patches = prevAttrs.patches or [ ] ++ cfg.firmware.optee.patches;
-        makeFlags = prevAttrs.makeFlags or [ ] ++ cfg.firmware.optee.extraMakeFlags;
-        enableFTPM = cfg.firmware.optee.ftpm.enable;
-        measuredBoot = cfg.firmware.optee.ftpm.measuredBoot;
-        unsecureInjectEPS = cfg.firmware.optee.ftpm.unsecureInjectEPS.enable;
-      });
-
-      optee-os = prevJetpack.optee-os.overrideAttrs (_: {
-        ftpmHelperTa =
-          if cfg.firmware.optee.ftpm.enable
-          then finalJetpack.ftpmHelperTa else null;
-        msTpm20RefTa =
-          if cfg.firmware.optee.ftpm.enable
-          then finalJetpack.msTpm20RefTa else null;
-      });
-      opteeClient = prevJetpack.opteeClient.overrideAttrs (prevAttrs: {
-        patches = prevAttrs.patches or [ ] ++ cfg.firmware.optee.patches;
-        makeFlags = prevAttrs.makeFlags or [ ] ++ cfg.firmware.optee.extraMakeFlags;
-      });
-
-      flashInitrd = final.callPackage ./device-pkgs/flash-initrd {
+      # This environment RUNS on the device, even when this firmware scope is
+      # for x86 flashing/build tools. Reuse the outer NixOS package set exactly;
+      # never auto-fill pkgs or runtime helpers from the flashing host's scope.
+      flashInitrd = devicePkgs.callPackage ./device-pkgs/flash-initrd {
+        pkgs = devicePkgs;
         extraModules = cfg.flashScriptOverrides.additionalInitrdFlashModules;
-        inherit (finalJetpack) flashFromDevice signedFirmware;
+        inherit (cfg.firmwarePkgs) flashFromDevice signedFirmware;
         extraConfig = {
           imports = [ cfg.flashScriptOverrides.additionalInitrdFlashNixosModules ];
           boot = {
@@ -164,16 +224,16 @@ final: prev: (
         dtbsDir = config.hardware.deviceTree.package;
       } // (builtins.removeAttrs args [ "additionalDtbOverlays" ]));
 
-      bup = (flasherPkgsOr prev).runCommand "bup-${cfg.name}-${finalJetpack.l4tMajorMinorPatchVersion}"
+      bup = (flasherPkgsOr pkgs).runCommand "bup-${cfg.name}-${finalJetpack.l4tMajorMinorPatchVersion}"
         {
           inherit (cfg.firmware.secureBoot) requiredSystemFeatures;
         }
         ((finalJetpack.mkFlashScript
-          (flasherPkgsOr final.pkgsBuildBuild).nvidia-jetpack.flash-tools # we need flash-tools for the platform that runs them
+          l4tFlashTools # we need flash-tools for the platform that runs them
           {
             # TODO: Remove preSignCommands when we switch to using signedFirmware directly
             flashCommands = ''
-              ${cfg.firmware.secureBoot.preSignCommands (flasherPkgsOr final.buildPackages)}
+              ${cfg.firmware.secureBoot.preSignCommands (flasherPkgsOr pkgs.buildPackages)}
             '' + lib.concatMapStringsSep "\n"
               (v: with v;
               (lib.concatStringsSep " " [
@@ -202,15 +262,15 @@ final: prev: (
       # See l4t_generate_soc_bup.sh
       # python ${edk2-jetson}/BaseTools/BinWrappers/PosixLike/GenerateCapsule -v --encode --monotonic-count 1
       # NOTE: providing null public certs here will use the test certs in the EDK2 repo
-      uefiCapsuleUpdate = prev.runCommand "uefi-${cfg.name}-${finalJetpack.l4tMajorMinorPatchVersion}.Cap"
+      uefiCapsuleUpdate = pkgs.runCommand "uefi-${cfg.name}-${finalJetpack.l4tMajorMinorPatchVersion}.Cap"
         {
-          nativeBuildInputs = [ prev.buildPackages.python3 prev.buildPackages.openssl ];
+          nativeBuildInputs = [ pkgs.buildPackages.python3 pkgs.buildPackages.openssl ];
           inherit (cfg.firmware.uefi.capsuleAuthentication) requiredSystemFeatures;
         }
         (''
-          ${cfg.firmware.uefi.capsuleAuthentication.preSignCommands final.buildPackages}
+          ${cfg.firmware.uefi.capsuleAuthentication.preSignCommands pkgs.buildPackages}
           ${lib.optionalString (fmpLowestSupportedVersion != null) "export FMP_LOWEST_SUPPORTED_VERSION=${toString fmpLowestSupportedVersion}"}
-          bash ${final.pkgsBuildBuild.nvidia-jetpack.flash-tools}/generate_capsule/l4t_generate_soc_capsule.sh \
+          bash ${buildPlatformFlashTools}/generate_capsule/l4t_generate_soc_capsule.sh \
         '' + (lib.optionalString cfg.firmware.uefi.capsuleAuthentication.enable ''
           --trusted-public-cert ${lib.escapeShellArg "${cfg.firmware.uefi.capsuleAuthentication.trustedPublicCertPemFile}"} \
           --other-public-cert ${lib.escapeShellArg "${cfg.firmware.uefi.capsuleAuthentication.otherPublicCertPemFile}"} \
@@ -228,11 +288,11 @@ final: prev: (
             else if finalJetpack.socFamily == "t19x" then "encrypted_signed_t19x"
             else "enc_signed";
         in
-        (flasherPkgsOr final).runCommand "signed-${cfg.name}-${finalJetpack.l4tMajorMinorPatchVersion}"
+        (flasherPkgsOr pkgs).runCommand "signed-${cfg.name}-${finalJetpack.l4tMajorMinorPatchVersion}"
           { inherit (cfg.firmware.secureBoot) requiredSystemFeatures; }
-          (finalJetpack.mkFlashScript (flasherPkgsOr final.pkgsBuildBuild).nvidia-jetpack.flash-tools {
+          (finalJetpack.mkFlashScript l4tFlashTools {
             flashCommands = ''
-              ${cfg.firmware.secureBoot.preSignCommands (flasherPkgsOr final)}
+              ${cfg.firmware.secureBoot.preSignCommands (flasherPkgsOr pkgs)}
             '' + lib.concatMapStringsSep "\n"
               (v: with v;
               (lib.concatStringsSep " " [
@@ -254,9 +314,9 @@ final: prev: (
               ''
                 outdir=$out/${boardid}-${fab}-${boardsku}-${boardrev}-${if fuselevel == "fuselevel_production" then "1" else "0"}-${chiprev}--
                 mkdir -p $outdir
-
+  
                 cp -v bootloader/${signedDir}/flash.idx $outdir/
-
+  
                 # Copy files referenced by flash.idx
                 while IFS=", " read -r partnumber partloc start_location partsize partfile partattrs partsha; do
                   if [[ "$partfile" != "" ]]; then
@@ -270,7 +330,7 @@ final: prev: (
                     fi
                   fi
                 done < bootloader/${signedDir}/flash.idx
-
+  
                 rm -rf bootloader/${signedDir}
               '')
               cfg.firmware.variants;
@@ -280,6 +340,10 @@ final: prev: (
       # the script made, as well as the flashcmd.txt from it
       flash-tools-flashcmd = finalJetpack.callPackage ./device-pkgs/flash-tools-flashcmd.nix {
         inherit cfg;
+        # This runs on the flashing host, but embeds the device's ARM
+        # firmware. Do not auto-fill mkFlashScript from an x86 firmware
+        # scope (which would try to build OP-TEE/UEFI for x86).
+        mkFlashScript = cfg.firmwarePkgs.mkFlashScript;
       };
 
       # Generates `pkgs.nvidia-jetpack.pkcList` which contains the required PKC list xml files.
@@ -306,7 +370,7 @@ final: prev: (
           keyType
         ,
         }:
-        prev.runCommand "pkc-list-${cfg.name}" { } (
+        pkgs.runCommand "pkc-list-${cfg.name}" { } (
           lib.concatStringsSep "\n" [
             ''
               mkdir -p $out
@@ -340,12 +404,39 @@ final: prev: (
             ''
               </entry_list>
               EOF
-
+  
               cp $out/pkc_keylist.xml $out/pkc_keylist_signed.xml
               cp $out/pkc_keylist.xml $out/pkc_keylist_signed_ref.xml
             ''
           ]
         );
-    } // flashTools);
-  }
-)
+    } // flashTools;
+in
+{
+  extension = lib.composeManyExtensions ([ (mkExtension pkgs.pkgsBuildBuild.nvidia-jetpack) ] ++ extensions);
+
+  scope =
+    let
+      # Fail on overlays that still put firmware into `pkgs.nvidia-jetpack`. This
+      # package set would otherwise silently shadow them. Only names are forced.
+      shadowedAttrs = builtins.filter
+        (name: sdk ? ${name} && !(lib.elem name sdkOverlap))
+        (builtins.attrNames (mkExtension null sdk sdk));
+    in
+    assert lib.assertMsg (shadowedAttrs == [ ]) ''
+      pkgs.nvidia-jetpack defines ${lib.concatStringsSep ", " shadowedAttrs}. Firmware is configured per machine,
+      in config.hardware.nvidia-jetpack.firmwarePkgs, so these would be ignored. Move the override from the
+      overlays that `pkgs` was instantiated with to hardware.nvidia-jetpack.firmwarePkgsExtensions.
+    '';
+    applyExtensions (lib.makeScope sdk.newScope (finalJetpack:
+      {
+        # Only these SDK inputs/helpers are part of the firmware API. sdk.newScope
+        # supplies Nixpkgs + SDK automatic arguments without exporting userspace.
+        # Rebind callPackages as well: its nested callPackage (e.g. Stuart) must see
+        # this firmware fixed point, not the SDK's or top-level Nixpkgs'.
+        inherit (sdk) bspSrc gitRepos l4tMajorMinorPatchVersion jetpackMajorMinorPatchVersion
+          l4tAtLeast l4tOlder patchfv flashFromDevice;
+        callPackages = lib.callPackagesWith (pkgs // sdk // finalJetpack);
+      }
+      // mkExtension (forPkgs pkgs.pkgsBuildBuild) finalJetpack sdk));
+}

@@ -130,6 +130,18 @@ in
         final.nvidia-jetpack7
     );
 
+  # The x86_64-linux package set that runs NVIDIA's x86-only flashing and fusing
+  # tools. It reuses this package set's config and overlays. It lives here instead
+  # of in the NixOS module so that configurations sharing a `pkgs` also share it.
+  pkgsForJetsonFlashing =
+    if system == "x86_64-linux" then
+      final
+    else
+      import final.path {
+        system = "x86_64-linux";
+        inherit (final) config overlays;
+      };
+
   # Set cudaPackage package sets to our JetPack-constructed package sets if we are on aarch64-linux. This is strictly
   # worse than conditioning on Jetson capabilities, but allows us to avoid infinite recursion when depending on the
   # version of the default CUDA package set. Since non-Jetson ARM platforms aren't supported by the CUDA 11.4 release,

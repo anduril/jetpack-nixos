@@ -8,14 +8,16 @@
 , dtc
 , buildPackages
 , pkg-config
+, socType ? if lib.versions.major l4tMajorMinorPatchVersion == "35" then "t194"
+  else if lib.versions.major l4tMajorMinorPatchVersion == "36" then "t234"
+  else if lib.versions.major l4tMajorMinorPatchVersion == "39" then "t264"
+  else throw "Unknown SoC type"
 }:
 stdenv.mkDerivation (finalAttrs:
 let
   socSpecialization = gitRepos ? "tegra/optee-src/atf_${finalAttrs.socType}";
   src = if socSpecialization then gitRepos."tegra/optee-src/atf_${finalAttrs.socType}" else gitRepos."tegra/optee-src/atf";
   srcDir = if (l4tAtLeast "38") then "arm-trusted-firmware.${finalAttrs.socType}" else "arm-trusted-firmware";
-
-  l4tMajorVersion = lib.versions.major l4tMajorMinorPatchVersion;
 in
 {
   pname = "arm-trusted-firmware";
@@ -25,11 +27,7 @@ in
 
   NIX_CFLAGS_COMPILE = lib.optionalString (lib.versionAtLeast stdenv.cc.version "16") "-Wno-error=unused-but-set-variable";
 
-  socType =
-    if l4tMajorVersion == "35" then "t194"
-    else if l4tMajorVersion == "36" then "t234"
-    else if l4tMajorVersion == "39" then "t264"
-    else throw "Unknown SoC type";
+  inherit socType;
 
   # openssl is used to build fiptool
   buildInputs = lib.optionals (l4tAtLeast "38") [ openssl ];
