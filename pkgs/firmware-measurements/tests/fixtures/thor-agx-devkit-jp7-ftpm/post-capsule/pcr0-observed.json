@@ -1,0 +1,79 @@
+{
+  "artifact": {
+    "type": "uefiCapsuleUpdate",
+    "sha256": "3f5c1c0977584357bbd792338951b2d21de7c0420f001534231be4de9e4dcfa0",
+    "bupSha256": "9f2c1d476850e07f349322a98d54f69eb99bcfa2870e3cfc2c427c821196107c"
+  },
+  "bchDigests": {
+    "MB2B": "12bc291e1b9bbf54c9e8687169e673ba750f72a9c2849cde5f46b1e6e0038101cd226c6a8cdd8e4ded950f53ddee6ca6a113ce30e9b465c208c45c481a4b0a7c",
+    "CPBL": "68bb27531bf35e4a87ef504184db8fabd86b0842d17808000f7c3199dfec3928c8ecb90f9ac4cad99456833c68c9f2f2b3eb7eb3a361f1ec6cca76885260e028",
+    "BL31": "3537431d5ab7817874441586fd84904b774ee967d71179adbffad2563deb171af8a1f32d2254c21586c056f5051077e4707b8fa4affa0d01d2c545b22f25e299",
+    "BL32": "a7b5d6bc3094cf54fbcf2cc7ad601f1e59507ab2036b353520434aeb17bcb6163a053365fa181063be3e29e960a580a1aa8cbdd490adc497989ba41cf9e5885d",
+    "SECP": "24a6ac9708f72280b1009a0cfe357033ce90dd36cdc200bcaf7431060d6289c45cd2db25ab0c9b4a765ccf1da7c8ff91decadd20b306f1c601e25387780ba724"
+  },
+  "events": [
+    {
+      "source": "optee",
+      "eventType": "EV_POST_CODE",
+      "digests": {
+        "sha256": "e14f0baa98da05fe8f7bdfa1c6751bdf01ff37991e4b21bcab6ea27b7e1e292c",
+        "sha384": "7e3e3da9a21e403169161bc13787ce18933a8564f312524ec65e3f27ab0433fc17cb53063c995e74a9745e31ede76e3d",
+        "sha512": "12bc291e1b9bbf54c9e8687169e673ba750f72a9c2849cde5f46b1e6e0038101cd226c6a8cdd8e4ded950f53ddee6ca6a113ce30e9b465c208c45c481a4b0a7c"
+      },
+      "image": "MB2B"
+    },
+    {
+      "source": "optee",
+      "eventType": "EV_POST_CODE",
+      "digests": {
+        "sha256": "7cd1b1c22df2433c7f282f57b3e67bc2fe3d185f1002edc12c6ead8c032a6579",
+        "sha384": "918ca820a0804c0dfa4c8d4635ab38d0d2a8f72fb016a28808a9d96609cc9c81b65b2c91c4336c94d773236413a6c3ec",
+        "sha512": "3537431d5ab7817874441586fd84904b774ee967d71179adbffad2563deb171af8a1f32d2254c21586c056f5051077e4707b8fa4affa0d01d2c545b22f25e299"
+      },
+      "image": "BL31"
+    },
+    {
+      "source": "optee",
+      "eventType": "EV_POST_CODE",
+      "digests": {
+        "sha256": "2e0a3bd4fcc98388a5c4c66ab8f5451b588b0e3dfc5be164c6d4b21d7aae7b92",
+        "sha384": "8e814d179a876ec5b5dff20e8154218ca1e70a39580f8ac5cb10b74f8bd9976ef380c0f65f53acc339d0f4bb0ea5ecfd",
+        "sha512": "a7b5d6bc3094cf54fbcf2cc7ad601f1e59507ab2036b353520434aeb17bcb6163a053365fa181063be3e29e960a580a1aa8cbdd490adc497989ba41cf9e5885d"
+      },
+      "image": "BL32"
+    },
+    {
+      "source": "optee",
+      "eventType": "EV_POST_CODE",
+      "digests": {
+        "sha256": "4828659ec46055af2ed818f259839e49c9be67a2eda0abbe4eeb9cfc38ae5dec",
+        "sha384": "203d254ef86e7e7a795db0da10c92f39c4bdf461076120635b8d537e90b7c8fd1ed0cf1faf68cca9e409c8863d4b773f",
+        "sha512": "24a6ac9708f72280b1009a0cfe357033ce90dd36cdc200bcaf7431060d6289c45cd2db25ab0c9b4a765ccf1da7c8ff91decadd20b306f1c601e25387780ba724"
+      },
+      "image": "SECP"
+    },
+    {
+      "source": "optee",
+      "eventType": "EV_POST_CODE",
+      "digests": {
+        "sha256": "9a634b8f037f0f591fb56a7551d2ed95c0b202cf5c1ba12c9d464d83ad7daffa",
+        "sha384": "c515d105b669bbd499f26c88cc230e0e0b87e68bc18ce23bea40fb617c916774f53d29374c37e450b71023cad247d18e",
+        "sha512": "68bb27531bf35e4a87ef504184db8fabd86b0842d17808000f7c3199dfec3928c8ecb90f9ac4cad99456833c68c9f2f2b3eb7eb3a361f1ec6cca76885260e028"
+      },
+      "image": "CPBL"
+    },
+    {
+      "source": "efi",
+      "eventType": "EV_SEPARATOR",
+      "digests": {
+        "sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+        "sha384": "394341b7182cd227c5c6b07ef8000cdfd86136c4292b8e576573ad7ed9ae41019f5818b4b971c9effc60e1ad9f1289f0"
+      }
+    }
+  ],
+  "pcr0": {
+    "sha256": "df1a8e407d1ec0231527c7f24e073aca9e4c2d7b69dcb269d424994fc73c3396",
+    "sha384": "fd2515a54d36f0a800647543fbe28dc6fa0307da5e7027ef7e459d901078e001f0b6bb392d716d8f11ed334db74b4701",
+    "sha512": "3ab6a3d1cd3808553b957d0523eea03a94525fe2975a3e92e8650b0247ae0e532b4da0d1a8c55e56f24399d3213eca09455b3473acc77ab7cf3dde05c5cd8b8e"
+  }
+}
