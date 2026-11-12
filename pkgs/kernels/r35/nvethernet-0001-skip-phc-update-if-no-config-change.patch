@@ -72,10 +72,10 @@ diff --git a/nvidia/drivers/net/ethernet/nvidia/nvethernet/ether_linux.h b/nvidi
 index 51f4b4b..9fa6f16 100644
 --- a/nvidia/drivers/net/ethernet/nvidia/nvethernet/ether_linux.h
 +++ b/nvidia/drivers/net/ethernet/nvidia/nvethernet/ether_linux.h
-@@ -631,6 +631,8 @@ struct ether_priv_data {
- 	struct tasklet_struct lane_restart_task;
- 	/** xtra sw error counters */
- 	struct ether_xtra_stat_counters xstats;
+@@ -635,6 +635,8 @@ struct ether_priv_data {
+ 	struct mutex osi_mdio_lock;
+ 	/** Flag to track system shutdown for WoL handling */
+ 	unsigned int is_shutdown;
 +	/** PTP configuration passed by application */
 +	struct hwtstamp_config ptp_config;
  };

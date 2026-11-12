@@ -6,15 +6,15 @@ in
   nvidia-jetpack5 = import ./mk-overlay.nix
     {
       # Below 3 are from release notes
-      jetpackMajorMinorPatchVersion = "5.1.7";
-      l4tMajorMinorPatchVersion = "35.6.5";
+      jetpackMajorMinorPatchVersion = "5.1.8";
+      l4tMajorMinorPatchVersion = "35.7.0";
       cudaMajorMinorPatchVersion = "11.4.298";
 
       # used to version libnvidia-ptxjitcompiler.so. L4T r35 uses l4tMajorMinorPatchVersion, so set to null
       # and we'll use l4tMajorMinorPatchVersion instead
       cudaDriverMajorMinorVersion = null;
 
-      bspHash = "sha256-A0HUPHLUtx9dVqG9kM92MfbWoAc2E35AqgZiWK/S/lk=";
+      bspHash = "sha256-AsMg7RlVLT3jjQDWP+oiNVZloqVi3YTL9GuG6dnJviQ=";
       bspPostPatch =
         let
           overlay_mb1bct = final.fetchzip {
