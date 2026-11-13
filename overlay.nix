@@ -198,6 +198,9 @@ in
       # Replace CUDA packages from manifests with our own, which are built from debian installers, if we're using
       # CUDA 11.4.
       (import ./cuda-packages-11-4-extension.nix { inherit (final) lib; inherit system; })
+
+      # Make NVCC usable when cross-compiling for Jetson devices; must come after extensions which replace cuda_nvcc.
+      (import ./cuda-cross-extension.nix { pkgs = final; })
     ];
   });
 }
