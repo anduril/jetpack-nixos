@@ -1,0 +1,42 @@
+diff --git a/kdk_gen.py b/kdk_gen.py
+--- a/kdk_gen.py
++++ b/kdk_gen.py
+@@ -13,1 +13,3 @@
+-from ecdsa import NIST256p, SigningKey
++from cryptography.hazmat.primitives import serialization
++from cryptography.hazmat.primitives.asymmetric import ec
++from lib.ftpm_ek import SECP256R1_ORDER
+@@ -75,1 +77,1 @@
+-        if int_key > 0 and int_key < NIST256p.order:
++        if int_key > 0 and int_key < SECP256R1_ORDER:
+@@ -112,2 +114,4 @@ def gen_silicon_id_pubkey_and_csr(kdk: str, sn: bytes, gen_csr: bool,
+-    silicon_id_private_key = SigningKey.from_string(ecdsa_key, curve=NIST256p)
+-    silicon_id_public_key = silicon_id_private_key.get_verifying_key()
++    silicon_id_private_key = ec.derive_private_key(
++        int.from_bytes(ecdsa_key, "big"), ec.SECP256R1()
++    )
++    silicon_id_public_key = silicon_id_private_key.public_key()
+@@ -118,1 +122,4 @@
+-        return silicon_id_public_key.to_string().hex()
++        return silicon_id_public_key.public_bytes(
++            serialization.Encoding.X962,
++            serialization.PublicFormat.UncompressedPoint,
++        )[1:].hex()
+@@ -121,2 +129,9 @@
+-                                                   silicon_id_private_key.to_der(),
+-                                                   silicon_id_public_key.to_der())
++                                                   silicon_id_private_key.private_bytes(
++                                                       serialization.Encoding.DER,
++                                                       serialization.PrivateFormat.TraditionalOpenSSL,
++                                                       serialization.NoEncryption(),
++                                                   ),
++                                                   silicon_id_public_key.public_bytes(
++                                                       serialization.Encoding.DER,
++                                                       serialization.PublicFormat.SubjectPublicKeyInfo,
++                                                   ))
+@@ -123,1 +138,4 @@
+-        return silicon_id_public_key.to_string().hex(), silicon_id_csr.build_csr()
++        return silicon_id_public_key.public_bytes(
++            serialization.Encoding.X962,
++            serialization.PublicFormat.UncompressedPoint,
++        )[1:].hex(), silicon_id_csr.build_csr()

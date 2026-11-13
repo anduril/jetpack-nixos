@@ -1,0 +1,24 @@
+diff --git a/kdk_gen.py b/kdk_gen.py
+--- a/kdk_gen.py
++++ b/kdk_gen.py
+@@ -22,1 +22,3 @@
+-from ecdsa import NIST256p, SigningKey
++from cryptography.hazmat.primitives import serialization
++from cryptography.hazmat.primitives.asymmetric import ec
++from lib.ftpm_ek import SECP256R1_ORDER
+@@ -84,1 +86,1 @@
+-        if int_key > 0 and int_key < NIST256p.order:
++        if int_key > 0 and int_key < SECP256R1_ORDER:
+@@ -120,2 +122,4 @@ def gen_silicon_id_pubkey(kdk: str, sn: bytes):
+-    silicon_id_private_key = SigningKey.from_string(ecdsa_key, curve=NIST256p)
+-    silicon_id_public_key = silicon_id_private_key.get_verifying_key()
++    silicon_id_private_key = ec.derive_private_key(
++        int.from_bytes(ecdsa_key, "big"), ec.SECP256R1()
++    )
++    silicon_id_public_key = silicon_id_private_key.public_key()
+@@ -124,1 +128,4 @@ def gen_silicon_id_pubkey(kdk: str, sn: bytes):
+-    return silicon_id_public_key.to_string().hex()
++    return silicon_id_public_key.public_bytes(
++        serialization.Encoding.X962,
++        serialization.PublicFormat.UncompressedPoint,
++    )[1:].hex()

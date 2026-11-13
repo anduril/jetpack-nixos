@@ -1,6 +1,7 @@
 { lib
 , stdenvNoCC
 , makeWrapper
+, patch
 , python3
 , openssl
 , coreutils
@@ -14,8 +15,6 @@ let
   toolSrc = "${nvOpteeSrc}/optee/samples/ftpm-helper/host/tool";
   genEkbSrc = "${nvOpteeSrc}/optee/samples/hwkey-agent/host/tool/gen_ekb/gen_ekb.py";
 
-  # ecdsa is required by NVIDIA's tools; nixpkgs marks it insecure
-  # (CVE-2024-23342, wontfix), so building needs NIXPKGS_ALLOW_INSECURE=1.
   pythonEnv = python3.withPackages (ps: [
     ps.cryptography
     ps.pyaes
@@ -24,7 +23,6 @@ let
     ps.oscrypto
     ps.pycryptodome
     ps.pycryptodomex
-    ps.ecdsa
   ]);
 
   runtimePath = lib.makeBinPath [
@@ -50,7 +48,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
   version = l4tMajorMinorPatchVersion;
 
   dontUnpack = true;
-  nativeBuildInputs = [ makeWrapper ];
+  nativeBuildInputs = [ makeWrapper patch ];
 
   # Override hooks (via overrideAttrs) to replace NVIDIA's EK CSR generator,
   # CA simulator, and/or (JP7 only) CA signing class with site-specific
@@ -72,6 +70,19 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     cp -r ${toolSrc}/. $out/libexec/ftpm/
     cp ${genEkbSrc} $out/libexec/ftpm/gen_ekb.py
     chmod -R u+w $out/libexec/ftpm
+
+    ${lib.optionalString (l4tOlder "36") ''
+      patch -d $out/libexec/ftpm -p1 < ${./ftpmManufacturingTools-ecdsa-cryptography.patch}
+      patch -d $out/libexec/ftpm -p1 < ${./ftpmManufacturingTools-jp5-kdk-cryptography.patch}
+    ''}
+    ${lib.optionalString (l4tAtLeast "36" && l4tOlder "39") ''
+      patch -d $out/libexec/ftpm -p1 < ${./ftpmManufacturingTools-ecdsa-cryptography.patch}
+      patch -d $out/libexec/ftpm -p1 < ${./ftpmManufacturingTools-jp6-kdk-cryptography.patch}
+    ''}
+    ${lib.optionalString (l4tAtLeast "39") ''
+      patch -d $out/libexec/ftpm -p1 < ${./ftpmManufacturingTools-jp6-kdk-cryptography.patch}
+      patch -d $out/libexec/ftpm -p1 < ${./ftpmManufacturingTools-jp7-cryptography.patch}
+    ''}
 
     substituteInPlace $out/libexec/ftpm/odm_ekb_gen.py \
       --replace-fail \
