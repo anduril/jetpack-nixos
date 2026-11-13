@@ -492,17 +492,17 @@ in
 
   config = lib.mkIf cfg.enable {
     hardware.nvidia-jetpack.flashScript = lib.warn "hardware.nvidia-jetpack.flashScript is deprecated, use config.system.build.flashScript" config.system.build.flashScript;
-    hardware.nvidia-jetpack.devicePkgs = (lib.mapAttrs (_: lib.warn "hardware.nvidia-jetpack.devicePkgs is deprecated, use pkgs.nvidia-jetpack") pkgs.nvidia-jetpack);
+    hardware.nvidia-jetpack.devicePkgs = (lib.mapAttrs (_: lib.warn "hardware.nvidia-jetpack.devicePkgs is deprecated, use config.hardware.nvidia-jetpack.firmwarePkgs") cfg.firmwarePkgs);
 
     system.build = lib.mkMerge [
       {
-        jetsonDevicePkgs = (lib.mapAttrs (_: lib.warn "system.build.jetsonDevicePkgs is deprecated, use pkgs.nvidia-jetpack") pkgs.nvidia-jetpack);
+        jetsonDevicePkgs = (lib.mapAttrs (_: lib.warn "system.build.jetsonDevicePkgs is deprecated, use config.hardware.nvidia-jetpack.firmwarePkgs") cfg.firmwarePkgs);
 
         # Left here for compatibility
-        inherit (pkgs.nvidia-jetpack) uefiCapsuleUpdate flashScript initrdFlashScript legacyFlashScript fuseScript signedFirmware;
+        inherit (cfg.firmwarePkgs) uefiCapsuleUpdate flashScript initrdFlashScript legacyFlashScript fuseScript signedFirmware;
 
       }
-      (lib.optionalAttrs cfg.firmware.fskp.enable { inherit (pkgs.nvidia-jetpack) fskpFuseScript; })
+      (lib.optionalAttrs cfg.firmware.fskp.enable { inherit (cfg.firmwarePkgs) fskpFuseScript; })
     ];
 
     hardware.nvidia-jetpack.flashScriptOverrides.flashArgs = lib.mkAfter (

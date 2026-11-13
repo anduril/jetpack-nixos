@@ -9,6 +9,8 @@ let
 
   cfg = config.services.nvpmodel;
 
+  gpuDriver = (import ../soc.nix { inherit lib; }).gpuDriverForSom config.hardware.nvidia-jetpack.som;
+
   # Experimentally found by doing each of the following for the different power modes
   # rm -f /var/lib/nvpmodel/status && echo gpu_pg_mask_param=4294967295 >/opt/nvidia/l4t-gpusetup/gpu_pg_mask && /nix/store/0000000000-nvidia-l4t-nvpmodel-x.y.z/bin/nvpmodel -f /etc/nvpmodel.conf -m 3 && cat /opt/nvidia/l4t-gpusetup/gpu_pg_mask
   initialGpuPgMaskParamDefaults = {
@@ -65,7 +67,7 @@ let
 
     ln -sf ${pkgs.nvidia-jetpack.l4t-nvpmodel}/etc/nvpmodel/nvpmodel_"$device_som".conf /etc/nvpmodel.conf
   ''
-  + lib.optionalString (pkgs.nvidia-jetpack.gpuDriver == "openrm") ''
+  + lib.optionalString (gpuDriver == "openrm") ''
     if [ ! -e /opt/nvidia/l4t-gpusetup/gpu_pg_mask ] ; then
       mkdir -p /opt/nvidia/l4t-gpusetup
       echo "gpu_pg_mask_param=${toString cfg.initialGpuPgMaskParam}" >/opt/nvidia/l4t-gpusetup/gpu_pg_mask

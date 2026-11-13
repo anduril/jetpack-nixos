@@ -25,7 +25,19 @@ let
   '';
   name = "flash-from-device";
 in
-runCommand name { meta.mainProgram = name; } ''
+runCommand name
+{
+  meta.mainProgram = name;
+  # These binaries are executed on the Jetson, not on the flashing/build host.
+  # Expose the actual copied tools and interpreter for platform checks.
+  passthru.runtimeTools = [
+    pkgsStatic.busybox
+    mtdutils
+    tegra-eeprom-tool-static
+    pkgsStatic.nvidia-jetpack.patchgpt
+    pkgsStatic.nvidia-jetpack.diffblocks
+  ];
+} ''
   mkdir -p $out/bin
 
   cat > $out/bin/flash-from-device <<EOF
