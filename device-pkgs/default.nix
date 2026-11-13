@@ -21,6 +21,7 @@
 
 let
   cfg = config.hardware.nvidia-jetpack;
+  pkcs11Key = import ../lib/pkcs11-key.nix { inherit lib; };
 
   # We need to grab some packages from the device's aarch64 package set.
   inherit (pkgs.nvidia-jetpack)
@@ -81,12 +82,14 @@ let
         # If secure boot is enabled, nvidia requires the kernel to be signed
         (
           ${cfg.firmware.secureBoot.preSignCommands buildPackages}
+          # Stop before signing the kernel if its key URI cannot be read.
+          ${(pkcs11Key.render "jetpack_uefi_signer_uri" cfg.firmware.uefi.secureBoot.signer.key).verify}
           # See l4t_uefi_sign_image.sh from BSP, or tools/README_uefi_secureboot.txt
           # This is not good
           bash ./l4t_uefi_sign_image.sh \
             --image ./kernel/Image \
             --cert ${lib.escapeShellArg "${cfg.firmware.uefi.secureBoot.signer.cert}"} \
-            --key ${lib.escapeShellArg "${cfg.firmware.uefi.secureBoot.signer.key}"} \
+            --key ${(pkcs11Key.render "jetpack_uefi_signer_uri" cfg.firmware.uefi.secureBoot.signer.key).argument} \
             --mode nosplit
         )
       '';
@@ -105,11 +108,13 @@ let
           # If secure boot is enabled, the boot.img needs to be signed.
           cd bootloader
           ${cfg.firmware.secureBoot.preSignCommands buildPackages}
+          # Stop before signing the boot image if its key URI cannot be read.
+          ${(pkcs11Key.render "jetpack_uefi_signer_uri" cfg.firmware.uefi.secureBoot.signer.key).verify}
           # See l4t_uefi_sign_image.sh from BSP, or tools/README_uefi_secureboot.txt
           bash ../l4t_uefi_sign_image.sh \
             --image boot.img \
             --cert ${lib.escapeShellArg "${cfg.firmware.uefi.secureBoot.signer.cert}"} \
-            --key ${lib.escapeShellArg "${cfg.firmware.uefi.secureBoot.signer.key}"} \
+            --key ${(pkcs11Key.render "jetpack_uefi_signer_uri" cfg.firmware.uefi.secureBoot.signer.key).argument} \
             --mode append
         )
       '' + lib.optionalString (!useFlashCmd && cfg.firmware.secureBoot.pkcFile != null) ''
@@ -125,6 +130,7 @@ let
   # Produces a script which boots into this NixOS system via RCM mode
   rcmBoot = writeShellApplication {
     name = "rcmboot-nixos";
+    runtimeInputs = [ buildPackages.python3 ];
     text = mkRcmBootScript {
       # See nixpkgs nixos/modules/system/activatation/top-level.nix for standard usage of these paths
       kernelPath = "${config.system.build.kernel}/${config.system.boot.loader.kernelFile}";
@@ -138,6 +144,7 @@ let
   initrdFlashScript =
     writeShellApplication {
       name = "initrd-flash-${cfg.name}";
+      runtimeInputs = [ buildPackages.python3 ];
       text = import ./initrdflash-script.nix { inherit mkRcmBootScript config flashInitrd lib l4tMajorMinorPatchVersion writeText deviceTree tio expect; };
       meta.platforms = [ "x86_64-linux" ];
     };
@@ -153,6 +160,10 @@ let
             true # Noop in case of empty commands.
             ${cfg.firmware.secureBoot.preSignCommands buildPackages}
           fi
+          # Check the existing PKC key before passing it to odmfuse.
+          ${lib.optionalString (cfg.firmware.secureBoot.fusePkcFile != null) (pkcs11Key.render "jetpack_fuse_pkc_uri" cfg.firmware.secureBoot.fusePkcFile).verify}
+          # Check the existing SBK key before passing it to odmfuse.
+          ${lib.optionalString (cfg.firmware.secureBoot.fuseSbkFile != null) (pkcs11Key.render "jetpack_fuse_sbk_uri" cfg.firmware.secureBoot.fuseSbkFile).verify}
           ./odmfuse.sh -i ${chipId} "$@" ${toString cfg.flashScriptOverrides.fuseArgs}
         )
       '';
@@ -220,15 +231,21 @@ let
   # combination hash, e.g., Thor. The output file contains the hash value in hex that you can copy
   # paste into `fuse.xml`.
   pkcListComboHash = runCommand "pkc-list-combo-hash.hex"
-    { nativeBuildInputs = nvidia-jetpack.flash-tools.flashDeps; }
+    {
+      inherit (cfg.firmware.secureBoot) requiredSystemFeatures;
+      nativeBuildInputs = nvidia-jetpack.flash-tools.flashDeps;
+    }
     ''
       cp -r ${nvidia-jetpack.flash-tools}/. .
       chmod -R u+w .
 
+      ${lib.optionalString cfg.firmware.secureBoot.hsmKeyHash (cfg.firmware.secureBoot.preSignCommands buildPackages)}
+      # Stop before calculating the hash if the PKC URI cannot be read.
+      ${lib.optionalString (cfg.firmware.secureBoot.pkcFile != null) (pkcs11Key.render "jetpack_pkc_uri" cfg.firmware.secureBoot.pkcFile).verify}
       ./bootloader/tegrasign_v3.py \
-        --key ${lib.escapeShellArg "${cfg.firmware.secureBoot.pkcFile}"} \
+        --key ${(pkcs11Key.render "jetpack_pkc_uri" cfg.firmware.secureBoot.pkcFile).argument} \
         --pubkeyhash nv_combo.pcp nv_combo.pcps.hash \
-        --sha sha512
+        --sha sha512 ${lib.optionalString cfg.firmware.secureBoot.hsmKeyHash "--hsm pkc --softhsm --register-pkcs11-uris"}
 
       printf '0x%s\n' "$(xxd -p -c 64 nv_combo.pcps.hash)" > $out
     '';

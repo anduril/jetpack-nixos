@@ -6,6 +6,7 @@ final: prev: (
     cfg = config.hardware.nvidia-jetpack;
 
     inherit (final) lib;
+    pkcs11Key = import ./lib/pkcs11-key.nix { inherit lib; };
 
     jetpackAtLeast = lib.versionAtLeast cfg.majorVersion;
 
@@ -183,6 +184,11 @@ final: prev: (
         inherit (cfg.flashScriptOverrides) flashArgs partitionTemplate preFlashCommands postFlashCommands;
         inherit (finalJetpack) tosImage socType socFamily uefi-firmware l4tAtLeast;
 
+        # Check key URI files before any flash command consumes their variables.
+        keyVerifyCommands = lib.concatMapStringsSep "\n" (value: value.verify) (
+          lib.optional (cfg.firmware.secureBoot.pkcFile != null) (pkcs11Key.render "jetpack_pkc_uri" cfg.firmware.secureBoot.pkcFile)
+            ++ lib.optional (cfg.firmware.secureBoot.sbkFile != null) (pkcs11Key.render "jetpack_sbk_uri" cfg.firmware.secureBoot.sbkFile)
+        );
         additionalDtbOverlays = args.additionalDtbOverlays or cfg.flashScriptOverrides.additionalDtbOverlays;
         dtbsDir = config.hardware.deviceTree.package;
       } // (builtins.removeAttrs args [ "additionalDtbOverlays" ]));
@@ -233,11 +239,16 @@ final: prev: (
         (''
           ${cfg.firmware.uefi.capsuleAuthentication.preSignCommands final.buildPackages}
           ${lib.optionalString (fmpLowestSupportedVersion != null) "export FMP_LOWEST_SUPPORTED_VERSION=${toString fmpLowestSupportedVersion}"}
+        '' + (lib.optionalString cfg.firmware.uefi.capsuleAuthentication.enable ''
+          # Stop capsule generation if the signer URI cannot be read.
+          ${(pkcs11Key.render "jetpack_capsule_signer_uri" cfg.firmware.uefi.capsuleAuthentication.signerPrivateCertPemFile).verify}
+        '') + ''
           bash ${final.pkgsBuildBuild.nvidia-jetpack.flash-tools}/generate_capsule/l4t_generate_soc_capsule.sh \
         '' + (lib.optionalString cfg.firmware.uefi.capsuleAuthentication.enable ''
           --trusted-public-cert ${lib.escapeShellArg "${cfg.firmware.uefi.capsuleAuthentication.trustedPublicCertPemFile}"} \
           --other-public-cert ${lib.escapeShellArg "${cfg.firmware.uefi.capsuleAuthentication.otherPublicCertPemFile}"} \
-          --signer-private-cert ${lib.escapeShellArg "${cfg.firmware.uefi.capsuleAuthentication.signerPrivateCertPemFile}"} \
+          ${lib.optionalString (cfg.firmware.uefi.capsuleAuthentication.signerPublicCertPemFile != null) "--signer-public-cert ${lib.escapeShellArg "${cfg.firmware.uefi.capsuleAuthentication.signerPublicCertPemFile}"} \\"}
+          --signer-private-cert ${(pkcs11Key.render "jetpack_capsule_signer_uri" cfg.firmware.uefi.capsuleAuthentication.signerPrivateCertPemFile).argument} \
         '') + ''
           -i ${finalJetpack.bup}/bl_only_payload \
           -o $out \
@@ -318,57 +329,64 @@ final: prev: (
         {
           # Directory containing per-slot private-key PEMs. Filenames must follow the convention
           # `<keyType>_<keyNum>.pem` per the Jetson developer guide examples.
-          privateKeyDir
+          privateKeyDir ? null
+        , pkcUriFiles ? null
         , # PKC slot index [0..15] used to sign BCT and boot images.
           activeKeyIndex
         , # Number of keys to include in the PKC keylist, from 1..N. Only the included keys are
           # used to produce the `pkcListComboHash` package which contains the fuse value.
-          numKeys
+          numKeys ? if pkcUriFiles == null then throw "mkPkcList requires numKeys" else builtins.length pkcUriFiles
         , # Key type identifier from the Jetson developer guide. Examples include `rsa3k` for
           # RSA-3072, `ecp256` / `ecp521` for ECDSA, `ed25519`, `xmss`.
           keyType
         ,
         }:
-        prev.runCommand "pkc-list-${cfg.name}" { } (
-          lib.concatStringsSep "\n" [
-            ''
-              mkdir -p $out
-            ''
-            (lib.concatStringsSep "\n" (
-              lib.forEach (lib.range 0 (numKeys - 1)) (keyId: ''
-                cp "${privateKeyDir}/${keyType}_${toString keyId}.pem" $out/
-              '')
-            ))
-            ''
-              cat > $out/pkc_keylist.xml <<EOF
-              <?xml version="1.0"?>
-              <entry_list>
-                <bct
-                  active_index="${toString activeKeyIndex}"
-                  chip_id="${finalJetpack.pkcListChipId}"
-                  pcp_file="active_key.pcp"
-                  pcps_file="active_key.pcps"
-                  pcps_hash_file="active_key.pcps.hash"
-                />
-            ''
-            (lib.concatStringsSep "\n" (lib.forEach (lib.range 0 (numKeys - 1)) (keyId: ''
-              <entry
-                key_id="${toString keyId}"
-                mode="pkc"
-                key="${placeholder "out"}/${keyType}_${toString keyId}.pem"
-                pub_file="${keyType}_${toString keyId}.pub"
-                hash_file="${keyType}_${toString keyId}.pub.hash"
-              />
-            '')))
-            ''
-              </entry_list>
-              EOF
+          assert lib.assertMsg ((privateKeyDir == null) != (pkcUriFiles == null)) "mkPkcList requires exactly one of privateKeyDir or pkcUriFiles";
+          assert lib.assertMsg (pkcUriFiles == null || numKeys == builtins.length pkcUriFiles) "mkPkcList numKeys must match pkcUriFiles";
+          prev.runCommand "pkc-list-${cfg.name}"
+            { nativeBuildInputs = lib.optional (pkcUriFiles != null) prev.buildPackages.python3; }
+            (
+              lib.concatStringsSep "\n" [
+                ''
+                  mkdir -p $out
+                ''
+                (lib.concatStringsSep "\n" (lib.forEach (lib.range 0 (numKeys - 1)) (keyId:
+                if pkcUriFiles != null then ''
+                  uriKey${toString keyId}=$(python3 ${./lib/pkcs11-uri-from-file.py} --xml ${lib.escapeShellArg "${builtins.elemAt pkcUriFiles keyId}"})
+                '' else ''
+                  cp "${privateKeyDir}/${keyType}_${toString keyId}.pem" $out/
+                ''
+                )))
+                ''
+                  cat > $out/pkc_keylist.xml <<EOF
+                  <?xml version="1.0"?>
+                  <entry_list>
+                    <bct
+                      active_index="${toString activeKeyIndex}"
+                      chip_id="${finalJetpack.pkcListChipId}"
+                      pcp_file="active_key.pcp"
+                      pcps_file="active_key.pcps"
+                      pcps_hash_file="active_key.pcps.hash"
+                    />
+                ''
+                (lib.concatStringsSep "\n" (lib.forEach (lib.range 0 (numKeys - 1)) (keyId: ''
+                  <entry
+                    key_id="${toString keyId}"
+                    mode="pkc"
+                    key="${if pkcUriFiles != null then "$uriKey${toString keyId}" else "${placeholder "out"}/${keyType}_${toString keyId}.pem"}"
+                    pub_file="${keyType}_${toString keyId}.pub"
+                    hash_file="${keyType}_${toString keyId}.pub.hash"
+                  />
+                '')))
+                ''
+                  </entry_list>
+                  EOF
 
-              cp $out/pkc_keylist.xml $out/pkc_keylist_signed.xml
-              cp $out/pkc_keylist.xml $out/pkc_keylist_signed_ref.xml
-            ''
-          ]
-        );
+                  cp $out/pkc_keylist.xml $out/pkc_keylist_signed.xml
+                  cp $out/pkc_keylist.xml $out/pkc_keylist_signed_ref.xml
+                ''
+              ]
+            );
     } // flashTools);
   }
 )

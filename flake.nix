@@ -198,6 +198,40 @@
       };
 
       checks = forAllSystems ({ pkgs, system, ... }: {
+        pkcs11KeyArgument =
+          let
+            key = import ./lib/pkcs11-key.nix { inherit lib; };
+            uriFile = pkgs.writeText "pkcs11-test-key.uri" "pkcs11:token=test;id=%01;type=private\n";
+            invalidUriFile = pkgs.writeText "pkcs11-invalid-key.uri" "not-a-pkcs11-uri\n";
+            valid = key.render "test_key_uri" { inherit uriFile; };
+            invalid = key.render "test_key_uri" { uriFile = invalidUriFile; };
+          in
+          pkgs.runCommand "pkcs11-key-argument-test"
+            { nativeBuildInputs = [ pkgs.python3 ]; }
+            ''
+              # The checked read must produce the value passed as an argument.
+              ${valid.verify}
+              test ${valid.argument} = 'pkcs11:token=test;id=%01;type=private'
+              test ${(key.render "unused" "/run/keys/key.pem").argument} = /run/keys/key.pem
+              test ${(key.render "unused" "pkcs11:token=literal").argument} = 'pkcs11:token=literal'
+              if (
+                # A failed read must stop before the tool is invoked.
+                ${invalid.verify}
+                touch invoked
+              ); then
+                exit 1
+              fi
+              test ! -e invoked
+              touch $out
+            '';
+        pkcs11UriFile = pkgs.runCommand "pkcs11-uri-file-test"
+          { nativeBuildInputs = [ pkgs.python3 ]; }
+          ''
+            export PKCS11_URI_FROM_FILE=${./lib/pkcs11-uri-from-file.py}
+            export PYTHONDONTWRITEBYTECODE=1
+            python3 -m unittest discover -s ${./tests} -p 'test_pkcs11_uri_from_file.py'
+            touch $out
+          '';
         formatting = pkgs.stdenv.mkDerivation {
           name = "repo-formatting";
           src = self;

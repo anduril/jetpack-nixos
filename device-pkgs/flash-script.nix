@@ -3,6 +3,7 @@
 , preFlashCommands ? ""
 , flashCommands ? ""
 , postFlashCommands ? ""
+, keyVerifyCommands ? ""
 , flashArgs ? [ ]
 , partitionTemplate ? null
 , socType ? null
@@ -79,6 +80,8 @@ in
   ''}
 
   ${preFlashCommands}
+  # Resolve URI files before flash.sh so read failures stop the script.
+  ${keyVerifyCommands}
 
   chmod -R u+w .
 
