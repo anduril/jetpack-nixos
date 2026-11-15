@@ -136,6 +136,10 @@ lib.extendMkDerivation {
           + " -fomit-frame-pointer"
           + lib.optionalString (lib.versionAtLeast stdenv.cc.version "16") " -Wno-error=discarded-qualifiers -Wno-error=unused-but-set-variable";
 
+        # The build machine compiler needs its own GCC 16 warning flags.
+        NIX_CFLAGS_COMPILE_FOR_BUILD = (env.NIX_CFLAGS_COMPILE_FOR_BUILD or "")
+          + lib.optionalString (lib.versionAtLeast buildPackages.stdenv.cc.version "16") "-Wno-error=discarded-qualifiers -Wno-error=unused-but-set-variable";
+
         # stuart (nvidia extensions) really wants CROSS_COMPILER_PREFIX to look like this
         CROSS_COMPILER_PREFIX = "${stdenv.cc}/bin/${stdenv.cc.targetPrefix}";
         # Version is ${FIRMWARE_VERSION_BASE}-${GIT_SYNC_REVISION}

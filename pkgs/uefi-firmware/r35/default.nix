@@ -154,6 +154,8 @@ let
     depsBuildBuild = prev.depsBuildBuild ++ [ libuuid ];
     env = (prev.env or { }) // {
       NIX_CFLAGS_COMPILE = (prev.env.NIX_CFLAGS_COMPILE or "") + lib.optionalString (lib.versionAtLeast stdenv.cc.version "16") " -Wno-error=unused-but-set-variable -Wno-error=discarded-qualifiers";
+      NIX_CFLAGS_COMPILE_FOR_BUILD = (prev.env.NIX_CFLAGS_COMPILE_FOR_BUILD or "")
+        + lib.optionalString (lib.versionAtLeast buildPackages.stdenv.cc.version "16") " -Wno-error=discarded-qualifiers -Wno-error=unused-but-set-variable";
     };
   });
 
