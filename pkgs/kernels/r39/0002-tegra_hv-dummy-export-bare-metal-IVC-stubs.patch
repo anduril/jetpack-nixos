@@ -1,0 +1,180 @@
+From: jetpack-nixos
+Subject: [PATCH] tegra_hv dummy: export bare-metal IVC stubs
+
+With NV_OOT_TEGRA_HV_SKIP_BUILD=y tegra_hv.ko is an empty dummy, but bare-metal
+modules such as tegra-drm (virt.o) still reference the tegra_hv_ivc_* API.
+Outside NVIDIA's downstream kernel nothing provides it, so export stubs that
+report no hypervisor (is_tegra_hypervisor_mode() == false).
+---
+diff -ru a/drivers/virt/tegra/tegra_hv_dummy.c b/drivers/virt/tegra/tegra_hv_dummy.c
+--- a/drivers/virt/tegra/tegra_hv_dummy.c
++++ b/drivers/virt/tegra/tegra_hv_dummy.c
+@@ -2,6 +2,9 @@
+ // SPDX-FileCopyrightText: Copyright (c) 2024-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ 
+ #include <linux/module.h>
++#include <linux/err.h>
++#include <soc/tegra/virt/hv-ivc.h>
++#include "tegra_hv.h"
+ 
+ static int __init tegra_hv_dummy_init(void)
+ {
+@@ -19,3 +22,158 @@
+ MODULE_AUTHOR("Manish Bhardwaj <mbhardwaj@nvidia.com>");
+ MODULE_DESCRIPTION("Tegra HV Dummy Driver");
+ MODULE_LICENSE("GPL v2");
++
++/*
++ * Bare-metal stubs for the IVC API. Modules that are also useful on bare metal
++ * (e.g. tegra-drm via virt.o) reference these even though they are never
++ * reachable without a hypervisor; NVIDIA's downstream kernel provides the real
++ * implementation, mainline does not.
++ */
++bool is_tegra_hypervisor_mode(void)
++{
++	return false;
++}
++EXPORT_SYMBOL(is_tegra_hypervisor_mode);
++
++struct tegra_hv_ivc_cookie *tegra_hv_ivc_reserve(struct device_node *dn, int id,
++						 const struct tegra_hv_ivc_ops *ops)
++{
++	return ERR_PTR(-ENODEV);
++}
++EXPORT_SYMBOL(tegra_hv_ivc_reserve);
++
++int tegra_hv_ivc_unreserve(struct tegra_hv_ivc_cookie *ivck)
++{
++	return -ENODEV;
++}
++EXPORT_SYMBOL(tegra_hv_ivc_unreserve);
++
++int tegra_hv_ivc_write(struct tegra_hv_ivc_cookie *ivck, const void *buf, int size)
++{
++	return -ENODEV;
++}
++EXPORT_SYMBOL(tegra_hv_ivc_write);
++
++int tegra_hv_ivc_write_user(struct tegra_hv_ivc_cookie *ivck, const void __user *buf, int size)
++{
++	return -ENODEV;
++}
++EXPORT_SYMBOL(tegra_hv_ivc_write_user);
++
++int tegra_hv_ivc_read(struct tegra_hv_ivc_cookie *ivck, void *buf, int size)
++{
++	return -ENODEV;
++}
++EXPORT_SYMBOL(tegra_hv_ivc_read);
++
++int tegra_hv_ivc_read_user(struct tegra_hv_ivc_cookie *ivck, void __user *buf, int size)
++{
++	return -ENODEV;
++}
++EXPORT_SYMBOL(tegra_hv_ivc_read_user);
++
++int tegra_hv_ivc_read_peek(struct tegra_hv_ivc_cookie *ivck, void *buf, int off, int count)
++{
++	return -ENODEV;
++}
++EXPORT_SYMBOL(tegra_hv_ivc_read_peek);
++
++int tegra_hv_ivc_can_read(struct tegra_hv_ivc_cookie *ivck)
++{
++	return 0;
++}
++EXPORT_SYMBOL(tegra_hv_ivc_can_read);
++
++int tegra_hv_ivc_can_write(struct tegra_hv_ivc_cookie *ivck)
++{
++	return 0;
++}
++EXPORT_SYMBOL(tegra_hv_ivc_can_write);
++
++int tegra_hv_ivc_tx_empty(struct tegra_hv_ivc_cookie *ivck)
++{
++	return 0;
++}
++EXPORT_SYMBOL(tegra_hv_ivc_tx_empty);
++
++uint32_t tegra_hv_ivc_tx_frames_available(struct tegra_hv_ivc_cookie *ivck)
++{
++	return 0;
++}
++EXPORT_SYMBOL(tegra_hv_ivc_tx_frames_available);
++
++int tegra_hv_ivc_dump(struct tegra_hv_ivc_cookie *ivck)
++{
++	return -ENODEV;
++}
++EXPORT_SYMBOL(tegra_hv_ivc_dump);
++
++void *tegra_hv_ivc_read_get_next_frame(struct tegra_hv_ivc_cookie *ivck)
++{
++	return ERR_PTR(-ENODEV);
++}
++EXPORT_SYMBOL(tegra_hv_ivc_read_get_next_frame);
++
++int tegra_hv_ivc_read_advance(struct tegra_hv_ivc_cookie *ivck)
++{
++	return -ENODEV;
++}
++EXPORT_SYMBOL(tegra_hv_ivc_read_advance);
++
++void *tegra_hv_ivc_write_get_next_frame(struct tegra_hv_ivc_cookie *ivck)
++{
++	return ERR_PTR(-ENODEV);
++}
++EXPORT_SYMBOL(tegra_hv_ivc_write_get_next_frame);
++
++int tegra_hv_ivc_write_advance(struct tegra_hv_ivc_cookie *ivck)
++{
++	return -ENODEV;
++}
++EXPORT_SYMBOL(tegra_hv_ivc_write_advance);
++
++struct tegra_hv_ivm_cookie *tegra_hv_mempool_reserve(unsigned int id)
++{
++	return ERR_PTR(-ENODEV);
++}
++EXPORT_SYMBOL(tegra_hv_mempool_reserve);
++
++int tegra_hv_mempool_unreserve(struct tegra_hv_ivm_cookie *ck)
++{
++	return -ENODEV;
++}
++EXPORT_SYMBOL(tegra_hv_mempool_unreserve);
++
++int tegra_hv_ivc_channel_notified(struct tegra_hv_ivc_cookie *ivck)
++{
++	return -ENODEV;
++}
++EXPORT_SYMBOL(tegra_hv_ivc_channel_notified);
++
++void tegra_hv_ivc_channel_reset(struct tegra_hv_ivc_cookie *ivck)
++{
++}
++EXPORT_SYMBOL(tegra_hv_ivc_channel_reset);
++
++int tegra_hv_ivc_get_info(struct tegra_hv_ivc_cookie *ivck, uint64_t *pa, uint64_t *size)
++{
++	return -ENODEV;
++}
++EXPORT_SYMBOL(tegra_hv_ivc_get_info);
++
++void tegra_hv_ivc_notify(struct tegra_hv_ivc_cookie *ivck)
++{
++}
++EXPORT_SYMBOL(tegra_hv_ivc_notify);
++
++const struct ivc_info_page *tegra_hv_get_ivc_info(void)
++{
++	return ERR_PTR(-ENODEV);
++}
++EXPORT_SYMBOL(tegra_hv_get_ivc_info);
++
++int tegra_hv_get_vmid(void)
++{
++	return -ENODEV;
++}
++EXPORT_SYMBOL(tegra_hv_get_vmid);

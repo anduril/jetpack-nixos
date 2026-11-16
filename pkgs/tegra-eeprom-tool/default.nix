@@ -2,12 +2,12 @@
 
 stdenv.mkDerivation rec {
   pname = "tegra-eeprom-tool";
-  version = "unstable-2023-03-24";
+  version = "2.1.0";
 
   src = fetchFromGitHub {
     owner = "OE4T";
     repo = pname;
-    rev = "v2.1.0";
+    rev = "v${version}";
     sha256 = "sha256-oPc1IUyje4m9KDmvkyJbrImf5o/g+4eEkD6+e5Cq6iA=";
   };
 
