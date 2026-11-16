@@ -14,7 +14,7 @@ let
 
   updateFirmware = pkgs.writeShellApplication {
     name = "update-jetson-firmware";
-    runtimeInputs = [ pkgs.coreutils config.systemd.package pkgs.nvidia-jetpack.otaUtils ];
+    runtimeInputs = [ pkgs.coreutils config.systemd.package cfg.firmwarePkgs.otaUtils ];
     text = ''
       # If this script is not run on real hardware, don't attempt to perform an
       # update. This script could potentially run in a few places, for example
@@ -44,7 +44,7 @@ let
         # fixes/improvements.
         ota-setup-efivars ${cfg.flashScriptOverrides.targetBoard}
 
-        ota-apply-capsule-update ${pkgs.nvidia-jetpack.uefiCapsuleUpdate}
+        ota-apply-capsule-update ${cfg.firmwarePkgs.uefiCapsuleUpdate}
       else
         ota-abort-capsule-update
       fi
@@ -91,7 +91,7 @@ in
       before = [ "sysinit.target" "shutdown.target" ];
       conflicts = [ "shutdown.target" ];
       serviceConfig.Type = "oneshot";
-      serviceConfig.ExecStart = "${pkgs.nvidia-jetpack.otaUtils}/bin/ota-setup-efivars ${cfg.flashScriptOverrides.targetBoard}";
+      serviceConfig.ExecStart = "${cfg.firmwarePkgs.otaUtils}/bin/ota-setup-efivars ${cfg.flashScriptOverrides.targetBoard}";
     };
 
     systemd.services.firmware-update = lib.mkIf canUpdateFirmware {
@@ -127,7 +127,7 @@ in
 
     environment.systemPackages = lib.mkIf canUpdateFirmware [
       (pkgs.writeShellScriptBin "ota-apply-capsule-update-included" ''
-        ${pkgs.nvidia-jetpack.otaUtils}/bin/ota-apply-capsule-update ${pkgs.nvidia-jetpack.uefiCapsuleUpdate}
+        ${cfg.firmwarePkgs.otaUtils}/bin/ota-apply-capsule-update ${cfg.firmwarePkgs.uefiCapsuleUpdate}
       '')
     ];
   };

@@ -5,6 +5,8 @@
 , fetchpatch
 , pkg-config
 , libuuid
+, patches ? [ ]
+, extraMakeFlags ? [ ]
 }:
 stdenv.mkDerivation {
   pname = "optee_client";
@@ -46,7 +48,7 @@ stdenv.mkDerivation {
         hash = "sha256-QDE6wKxA3kvLfcb5ILZZqgJ7WC3UGFmuKtrRP7MwPfM=";
       })
       ./0003-tee-supplicant-Makefile-restore-nvme-rpmb.patch
-    ]);
+    ]) ++ patches;
 
   nativeBuildInputs = [ pkg-config ];
   buildInputs = [ libuuid ];
@@ -59,7 +61,7 @@ stdenv.mkDerivation {
     "SBINDIR=/sbin"
     "LIBDIR=/lib"
     "INCLUDEDIR=/include"
-  ];
+  ] ++ extraMakeFlags;
 
   meta.platforms = [ "aarch64-linux" ];
 }

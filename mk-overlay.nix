@@ -47,7 +47,12 @@ makeScope final.newScope (self: {
   inherit (sourceInfo) debs gitRepos;
   inherit jetpackMajorMinorPatchVersion l4tMajorMinorPatchVersion cudaMajorMinorVersion cudaDriverMajorMinorVersion;
   inherit l4tAtLeast l4tOlder;
-  gpuDriver = "nvgpu"; # GPU driver for JP5, JP6, and Orin JP7. Overridden in overlay-with-config.nix
+  # GPU driver userspace for JP5, JP6, and Orin JP7. A package set for a particular
+  # SoC is selected with `nixpkgsArgsFor`, which the NixOS module also uses: it sets
+  # `gpuDriver` (openrm on Thor) and, for packages that need to know which SoC they
+  # target (e.g. by `chipId`), `socType` and `chipId`. An unselected package set
+  # has no SoC.
+  gpuDriver = "nvgpu";
 
   callPackages = callPackagesWith (final // self);
 
@@ -112,12 +117,17 @@ makeScope final.newScope (self: {
 
   dlopenOverride = final.callPackage ./pkgs/dlopen-override { };
 
-  inherit (final.callPackages ./pkgs/uefi-firmware/r${l4tMajorVersion} { inherit (self) l4tMajorMinorPatchVersion patchfv; })
-    uefi-firmware jetsonStandaloneMMOptee;
+  genEkb = self.callPackage ./pkgs/gen-ekb.nix { };
 
-  genEkb = self.callPackage ./pkgs/optee/gen-ekb.nix { };
+  # Host-side fTPM manufacturing tools. Unlike the rest of ./pkgs/optee, they do
+  # not depend on any machine's OP-TEE configuration.
+  ftpmManufacturingTools = self.callPackage ./pkgs/optee/ftpmManufacturingTools.nix { };
 
+  # Unconfigured flashing tools and OTA helpers, for use outside a NixOS
+  # configuration (e.g. recovery tooling). `config.hardware.nvidia-jetpack.firmwarePkgs`
+  # builds its own from the same recipes, configured for a particular machine.
   flash-tools = self.callPackage ./pkgs/flash-tools { };
+  otaUtils = self.callPackage ./pkgs/ota-utils { };
 
   # Allows automation of Orin AGX devkit
   board-automation = self.callPackage ./pkgs/board-automation { };
@@ -168,8 +178,6 @@ makeScope final.newScope (self: {
 
   flashFromDevice = self.callPackage ./pkgs/flash-from-device { };
 
-  otaUtils = self.callPackage ./pkgs/ota-utils { };
-
   l4tCsv = self.callPackage ./pkgs/containers/l4t-csv.nix { };
   genL4tJson = self.callPackage ./pkgs/containers/genL4tJson.nix { };
   containerDeps = self.callPackage ./pkgs/containers/deps.nix { };
@@ -181,15 +189,11 @@ makeScope final.newScope (self: {
   # Make visible for Hydra
   recurseForDerivations = true;
 }
-# Add the L4T packages
-# NOTE: Since this is adding packages to the top-level, and callPackage's auto args functionality draws from that
-# attribute set, we cannot use self.callPackages because we would end up with infinite recursion.
-# Instead, we must either use final.callPackages or packagesFromDirectoryRecursive.
-// final.callPackages ./pkgs/l4t {
+  # Add the L4T packages
+  # NOTE: Since this is adding packages to the top-level, and callPackage's auto args functionality draws from that
+  # attribute set, we cannot use self.callPackages because we would end up with infinite recursion.
+  # Instead, we must either use final.callPackages or packagesFromDirectoryRecursive.
+  // final.callPackages ./pkgs/l4t {
   inherit self l4tAtLeast l4tOlder;
-}
-  // final.lib.packagesFromDirectoryRecursive {
-  inherit (self) callPackage;
-  directory = ./pkgs/optee;
 }
 )
