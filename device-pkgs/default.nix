@@ -68,6 +68,13 @@ let
     meta.platforms = [ "x86_64-linux" ];
   };
 
+  # The RCM kernel and boot.img must be signed with the UEFI db key whenever
+  # the temporary UEFI will enforce secure boot, which is true whenever we
+  # enable secure boot
+  rcmSigningEnabled =
+    cfg.firmware.secureBoot.pkcFile != null
+    || cfg.firmware.uefi.secureBoot.enrollDefaultKeys;
+
   # Produces a script that boots a given kernel, initrd, and cmdline using the RCM boot method.
   mkRcmBootScript = { kernelPath, initrdPath, kernelCmdline, ... }@args: mkFlashScriptAuto (
     builtins.removeAttrs args [ "kernelPath" "initrdPath" "kernelCmdline" ] // {
@@ -77,7 +84,7 @@ let
 
         export CMDLINE="${builtins.toString kernelCmdline}"
         export INITRD_IN_BOOTIMG="yes"
-      '' + lib.optionalString (cfg.firmware.secureBoot.pkcFile != null) ''
+      '' + lib.optionalString rcmSigningEnabled ''
         # If secure boot is enabled, nvidia requires the kernel to be signed
         (
           ${cfg.firmware.secureBoot.preSignCommands buildPackages}
@@ -97,10 +104,10 @@ let
         ++ lib.optional (jetpackAtLeast "7") "-r"
         # A little jank, but don't have the flash script itself actually flash, just produce the flashcmd.txt file
         # We need to sign the boot.img file afterwards in this script
-        ++ lib.optional (cfg.firmware.secureBoot.pkcFile != null) "--no-flash"
+        ++ lib.optional rcmSigningEnabled "--no-flash"
         ++ cfg.flashScriptOverrides.flashArgs;
 
-      postFlashCommands = lib.optionalString (cfg.firmware.secureBoot.pkcFile != null) ''
+      postFlashCommands = lib.optionalString rcmSigningEnabled ''
         (
           # If secure boot is enabled, the boot.img needs to be signed.
           cd bootloader
@@ -112,7 +119,7 @@ let
             --key ${lib.escapeShellArg "${cfg.firmware.uefi.secureBoot.signer.key}"} \
             --mode append
         )
-      '' + lib.optionalString (!useFlashCmd && cfg.firmware.secureBoot.pkcFile != null) ''
+      '' + lib.optionalString (!useFlashCmd && rcmSigningEnabled) ''
         (
           # Now execute flash
           echo "Flashing device now"
