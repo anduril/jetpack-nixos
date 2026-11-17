@@ -72,6 +72,16 @@ let
       # Originaly from e063f8b8a53861043b9872cc35b08a3dc03b0942 upstream, but
       # vendored here to fix merge conflict
       ./0001-BaseTools-Pccts-set-C-standard.patch
+
+      # Python 3.13 removed xdrlib; drop BinToPcd's use of it.
+      (fetchpatch {
+        url = "https://github.com/tianocore/edk2/commit/5cadb8ce2148979b6c464f6da5a8cd97425c5165.patch";
+        hash = "sha256-1Hwys7yI2pjBe7hbOn21qYfV8ktDlwEZYMMJT/thtQE=";
+      })
+      (fetchpatch {
+        url = "https://github.com/tianocore/edk2/commit/8c09d862bfb034e00b6b3bc37fe37243c866dd3a.patch";
+        hash = "sha256-Ve/qptzYWy/ELX/RkLwaKYJTTKJ2x2cXLrYEGU5G9mE=";
+      })
     ];
   };
 
