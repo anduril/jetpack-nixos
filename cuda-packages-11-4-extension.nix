@@ -337,9 +337,10 @@ let
         };
       });
 
-      cuda_cccl = finalCudaPackages.debWrapBuildRedist {
+      # nixpkgs renamed cuda_cccl to cccl (cuda_cccl became an alias); override whichever is real.
+      ${if prevCudaPackages ? cccl then "cccl" else "cuda_cccl"} = finalCudaPackages.debWrapBuildRedist {
         sourceName = "cuda-thrust";
-        drv = prevCudaPackages.cuda_cccl;
+        drv = prevCudaPackages.cccl or prevCudaPackages.cuda_cccl;
       };
 
       # NOTE: CUDA 11.4 doesn't provide cuda-profiler-api for x86_64-linux, so we repackage the debian for it.
