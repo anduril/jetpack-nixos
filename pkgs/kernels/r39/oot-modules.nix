@@ -53,6 +53,10 @@ let
       # See bspSrc/source/source_sync.sh symlink at end of file
       + ''
         ln -vsrf "$out/nvethernetrm" "$out/nvidia-oot/drivers/net/ethernet/nvidia/nvethernet/nvethernetrm"
+
+        # Restore executable permissions dropped by "cp --no-preserve=all".
+        # Otherwise, BTF generation fails when enabled.
+        chmod +x "$out"/{nvdisplay,unifiedgpudisp}/kernel-open/pahole.sh
       ''
     );
 in
