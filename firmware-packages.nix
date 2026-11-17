@@ -423,7 +423,12 @@ let
       jetpack = finalJetpack;
       dtbsDir = config.hardware.deviceTree.package;
     };
-  } // lib.optionalAttrs cfg.firmware.decomposedSigning.enable {
+    flashEquivalence = import ./firmware/tests/flash-equivalence.nix {
+      inherit lib config pkgs devicePkgs extensions;
+      jetpack = finalJetpack;
+      toolsPkgs = flasherPkgsOr pkgs;
+    };
+  } // lib.optionalAttrs cfg.firmware.decomposedFirmware.enable {
     inherit (finalJetpack.decomposed) signedFirmware bup;
   };
 in
