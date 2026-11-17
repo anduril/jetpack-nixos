@@ -41,7 +41,7 @@ let
     "kernel/nvgpu" = "nvidia/nvgpu";
   };
 in
-buildLinux (args // {
+(buildLinux (args // {
   # See Makefile in kernel source root for VERSION/PATCHLEVEL/SUBLEVEL. See realtime patch for rt version
   version = "5.10.216" + lib.optionalString realtime "-rt108";
   extraMeta.branch = "5.10";
@@ -255,4 +255,9 @@ buildLinux (args // {
     FAIR_GROUP_SCHED = no;
   }) // structuredExtraConfig;
 
-} // argsOverride)
+} // argsOverride)).overrideAttrs (old: lib.optionalAttrs (lib.versionAtLeast lib.trivial.release "26.11") {
+  # nixpkgs 26.11 no longer runs `make prepare` serially; prepare0 then races nvmap's top-level build.
+  postConfigure = (old.postConfigure or "") + ''
+    make "''${makeFlags[@]}" prepare
+  '';
+})
