@@ -7,6 +7,7 @@
 , structuredExtraConfig ? { }
 , argsOverride ? { }
 , buildLinux
+, buildPackages
 , gitRepos
 , ...
 }@args:
@@ -46,6 +47,10 @@ buildLinux (args // {
   extraMeta.branch = "5.10";
 
   defconfig = "tegra_defconfig";
+
+  # nixpkgs signs modules via kmodigest through `cmd_sign`, which 5.10 lacks; route its `mod_sign_cmd` there too.
+  extraMakeFlags = (args.extraMakeFlags or [ ])
+    ++ lib.optional (buildPackages ? kmodigest) "mod_sign_cmd=${lib.getExe buildPackages.kmodigest}";
 
   # https://github.com/NixOS/nixpkgs/pull/366004
   # introduced a breaking change that if a module is declared but it is not being used it will fail
