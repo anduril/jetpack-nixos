@@ -114,6 +114,8 @@ let
     // {
       inherit socType;
       socFamily = socInfo.family;
+      # The configured flash-tools (flashScriptOverrides.patches) for the platform that runs them.
+      inherit l4tFlashTools;
       chipId = socInfo.chipId;
       pkcListChipId = if socInfo.pkcListChipId != null then socInfo.pkcListChipId else throw "Unknown SoC type";
 
@@ -152,7 +154,8 @@ let
               uefi-firmware = null;
             })).bup;
           in
-          builtins.hashString "sha256" "${cursedBup}";
+          if cfg.firmware.decomposedFirmware.enable then finalJetpack.decomposed.versionHash
+          else builtins.hashString "sha256" "${cursedBup}";
       } // lib.optionalAttrs (finalJetpack.l4tAtLeast "36") {
         # r36+ only: r35's stuart argument set is closed, so it can't accept this.
         extraPackages = cfg.firmware.uefi.edk2ExtraPackages;
@@ -411,9 +414,21 @@ let
           ]
         );
     } // flashTools;
+
+  # Today's derivations, which see the same uefi-firmware as decomposed's.
+  decomposedFirmware = finalJetpack: prevJetpack: {
+    reference = { inherit (prevJetpack) signedFirmware bup; };
+    decomposed = (flasherPkgsOr pkgs).callPackage ./firmware {
+      inherit cfg;
+      jetpack = finalJetpack;
+      dtbsDir = config.hardware.deviceTree.package;
+    };
+  } // lib.optionalAttrs cfg.firmware.decomposedSigning.enable {
+    inherit (finalJetpack.decomposed) signedFirmware;
+  };
 in
 {
-  extension = lib.composeManyExtensions ([ (mkExtension pkgs.pkgsBuildBuild.nvidia-jetpack) ] ++ extensions);
+  extension = lib.composeManyExtensions ([ (mkExtension pkgs.pkgsBuildBuild.nvidia-jetpack) decomposedFirmware ] ++ extensions);
 
   scope =
     let
@@ -428,15 +443,15 @@ in
       in config.hardware.nvidia-jetpack.firmwarePkgs, so these would be ignored. Move the override from the
       overlays that `pkgs` was instantiated with to hardware.nvidia-jetpack.firmwarePkgsExtensions.
     '';
-    applyExtensions (lib.makeScope sdk.newScope (finalJetpack:
+    applyExtensions ((lib.makeScope sdk.newScope (finalJetpack:
       {
         # Only these SDK inputs/helpers are part of the firmware API. sdk.newScope
         # supplies Nixpkgs + SDK automatic arguments without exporting userspace.
         # Rebind callPackages as well: its nested callPackage (e.g. Stuart) must see
         # this firmware fixed point, not the SDK's or top-level Nixpkgs'.
         inherit (sdk) bspSrc gitRepos l4tMajorMinorPatchVersion jetpackMajorMinorPatchVersion
-          l4tAtLeast l4tOlder patchfv flashFromDevice;
+          l4tAtLeast l4tOlder patchfv flashFromDevice signImage bldtb;
         callPackages = lib.callPackagesWith (pkgs // sdk // finalJetpack);
       }
-      // mkExtension (forPkgs pkgs.pkgsBuildBuild) finalJetpack sdk));
+      // mkExtension (forPkgs pkgs.pkgsBuildBuild) finalJetpack sdk)).overrideScope decomposedFirmware);
 }

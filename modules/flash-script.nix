@@ -226,6 +226,14 @@ in
           '';
         };
 
+        decomposedFirmware.enable = mkEnableOption ''
+          building `signedFirmware` from one stock flash.sh run per variant plus
+          per-image signing of the firmware jetpack-nixos supplies (OP-TEE, ATF,
+          EKS, UEFI, kernel DTB), so changing those doesn't rerun flash.sh.
+          Enabling it changes the UEFI version stamp, so devices apply one
+          capsule update
+        '';
+
         eksFile = mkOption {
           type = types.nullOr types.path;
           default = null;
@@ -566,6 +574,16 @@ in
       {
         assertion = cfg.firmware.uefi.lowestSupportedVersion != null -> !(lib.versionOlder pkgs.nvidia-jetpack.l4tMajorMinorPatchVersion cfg.firmware.uefi.lowestSupportedVersion);
         message = "hardware.nvidia-jetpack.firmware.uefi.lowestSupportedVersion (${toString cfg.firmware.uefi.lowestSupportedVersion}) must not exceed the flashed L4T version (${pkgs.nvidia-jetpack.l4tMajorMinorPatchVersion}).";
+      }
+      {
+        assertion = cfg.firmware.decomposedFirmware.enable -> pkgs.nvidia-jetpack.l4tAtLeast "36";
+        message = "hardware.nvidia-jetpack.firmware.decomposedFirmware requires L4T r36 or newer.";
+      }
+      {
+        # signImage models neither the PV key flows nor --uefi-enc.
+        assertion = cfg.firmware.decomposedFirmware.enable ->
+          !lib.any (a: lib.any (f: lib.hasInfix f a) [ "--pv-enc" "--pv-crt" "--uefi-enc" ]) cfg.flashScriptOverrides.flashArgs;
+        message = "hardware.nvidia-jetpack.firmware.decomposedFirmware doesn't support the --pv-enc, --pv-crt and --uefi-enc flash.sh options.";
       }
       {
         assertion = cfg.firmware.uefi.edk2ExtraPackages != [ ] -> pkgs.nvidia-jetpack.l4tAtLeast "36";
