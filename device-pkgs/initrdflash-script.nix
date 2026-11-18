@@ -94,30 +94,34 @@ let
     dtsFile = forceXusbPeripheralDts;
   };
 
-  rcmScript = mkRcmBootScript {
-    kernelPath = "${config.system.build.kernel}/${config.system.boot.loader.kernelFile}";
-    initrdPath = "${flashInitrd}/initrd";
-    kernelCmdline = lib.concatStringsSep " " ([
-      "sdhci_tegra.en_boot_part_access=1"
-      "clk_ignore_unused"
-      "rd.systemd.unit=jetson-flash.target"
-      "rd.systemd.gpt_auto=no"
-      "noresume"
-    ] ++ cfg.console.args);
-    # During the initrd flash script, we upload two edk2 builds to the
-    # board, one that is only used temporarily to boot into our
-    # kernel/initrd to perform the flashing, and another one that is
-    # persisted to the firmware storage medium for future booting. We
-    # don't want to influence the boot order of the temporary edk2 since
-    # this may cause that edk2 to boot from something other than our
-    # intended flashing kernel/initrd combo (e.g. disk or network). Since
-    # the edk2 build that we actually persist to the board is embedded in
-    # the initrd used for flashing, we have the desired boot order (as
-    # configured in nix) in there and is not affected dynamically during
-    # the flashing procedure. NVIDIA ensures that when the device is
-    # using RCM boot, only the boot mode named "boot.img" is used (see https://gist.github.com/jmbaur/1ca79436e69eadc0a38ec0b43b16cb2f#file-flash-sh-L1675).
-    additionalDtbOverlays = (lib.filter (path: (path.name or "") != "DefaultBootOrder.dtbo") cfg.flashScriptOverrides.additionalDtbOverlays) ++ [ forceXusbPeripheralDtbo ];
-  };
+  mkInitrdRcmBootScript =
+    { systemdTarget ? "jetson-flash.target"
+    , extraKernelParams ? [ ]
+    }:
+    mkRcmBootScript {
+      kernelPath = "${config.system.build.kernel}/${config.system.boot.loader.kernelFile}";
+      initrdPath = "${flashInitrd}/initrd";
+      kernelCmdline = lib.concatStringsSep " " ([
+        "sdhci_tegra.en_boot_part_access=1"
+        "clk_ignore_unused"
+        "rd.systemd.unit=${systemdTarget}"
+        "rd.systemd.gpt_auto=no"
+        "noresume"
+      ] ++ extraKernelParams ++ cfg.console.args);
+      # During the initrd flash script, we upload two edk2 builds to the
+      # board, one that is only used temporarily to boot into our
+      # kernel/initrd to perform the flashing, and another one that is
+      # persisted to the firmware storage medium for future booting. We
+      # don't want to influence the boot order of the temporary edk2 since
+      # this may cause that edk2 to boot from something other than our
+      # intended flashing kernel/initrd combo (e.g. disk or network). Since
+      # the edk2 build that we actually persist to the board is embedded in
+      # the initrd used for flashing, we have the desired boot order (as
+      # configured in nix) in there and is not affected dynamically during
+      # the flashing procedure. NVIDIA ensures that when the device is
+      # using RCM boot, only the boot mode named "boot.img" is used (see https://gist.github.com/jmbaur/1ca79436e69eadc0a38ec0b43b16cb2f#file-flash-sh-L1675).
+      additionalDtbOverlays = (lib.filter (path: (path.name or "") != "DefaultBootOrder.dtbo") cfg.flashScriptOverrides.additionalDtbOverlays) ++ [ forceXusbPeripheralDtbo ];
+    };
 
   expectScript = writeText "expect-initrd-flash" ''
     set modem /dev/serial/by-id/${serialPortId}
@@ -161,32 +165,35 @@ let
     }
   '';
 in
-''
-  ${rcmScript}
+{
+  inherit mkInitrdRcmBootScript;
+  initrdFlashScript = ''
+    ${mkInitrdRcmBootScript { }}
 
-  echo
-  echo "Jetson device should now be flashing and will reboot when complete."
+    echo
+    echo "Jetson device should now be flashing and will reboot when complete."
 
-  # TODO(eberman): maybe stop assuming /dev/serial/by-id is present
-  # It'll be populated with udev, so most Linux systems will work fine
-  echo -n "Waiting up to ${builtins.toString cfg.flashScriptOverrides.initrdFlashSerialEnumerateTimeoutSeconds}s for Jetson device to appear via USB"
+    # TODO(eberman): maybe stop assuming /dev/serial/by-id is present
+    # It'll be populated with udev, so most Linux systems will work fine
+    echo -n "Waiting up to ${builtins.toString cfg.flashScriptOverrides.initrdFlashSerialEnumerateTimeoutSeconds}s for Jetson device to appear via USB"
 
-  counter=0
-  until [[ -e /dev/serial/by-id/${serialPortId} || $counter -gt ${builtins.toString (cfg.flashScriptOverrides.initrdFlashSerialEnumerateTimeoutSeconds * 2)} ]] ; do
-    echo -n "."
-    sleep 0.5
-    ((++counter))
-  done
-  echo
+    counter=0
+    until [[ -e /dev/serial/by-id/${serialPortId} || $counter -gt ${builtins.toString (cfg.flashScriptOverrides.initrdFlashSerialEnumerateTimeoutSeconds * 2)} ]] ; do
+      echo -n "."
+      sleep 0.5
+      ((++counter))
+    done
+    echo
 
-  if [ ! -e /dev/serial/by-id/${serialPortId} ] ; then
-    echo "Jetson device not detected, please monitor the serial port or wait 5-15 minutes"
-    exit 2
-  fi
+    if [ ! -e /dev/serial/by-id/${serialPortId} ] ; then
+      echo "Jetson device not detected, please monitor the serial port or wait 5-15 minutes"
+      exit 2
+    fi
 
-  if ! ${lib.getExe expect} -f ${expectScript} ; then
-    echo "Flashing may have failed"
-    exit 1
-  fi
-  echo "Device reported flashing succeeded. Device should be rebooting."
-''
+    if ! ${lib.getExe expect} -f ${expectScript} ; then
+      echo "Flashing may have failed"
+      exit 1
+    fi
+    echo "Device reported flashing succeeded. Device should be rebooting."
+  '';
+}

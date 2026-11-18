@@ -134,11 +134,15 @@ let
     meta.platforms = [ "x86_64-linux" ];
   };
 
+  initrdFlash = import ./initrdflash-script.nix {
+    inherit mkRcmBootScript config flashInitrd lib l4tMajorMinorPatchVersion writeText deviceTree tio expect;
+  };
+
   # TODO: The flash script should not have the kernel output in its runtime closure
   initrdFlashScript =
     writeShellApplication {
       name = "initrd-flash-${cfg.name}";
-      text = import ./initrdflash-script.nix { inherit mkRcmBootScript config flashInitrd lib l4tMajorMinorPatchVersion writeText deviceTree tio expect; };
+      text = initrdFlash.initrdFlashScript;
       meta.platforms = [ "x86_64-linux" ];
     };
 
@@ -235,6 +239,7 @@ let
 in
 {
   inherit initrdFlashScript legacyFlashScript fuseScript rcmBoot pkcListComboHash mkRcmBootScript;
+  inherit (initrdFlash) mkInitrdRcmBootScript;
   flashScript = initrdFlashScript;
 }
   // (lib.optionalAttrs cfg.firmware.fskp.enable { inherit fskpFuseScript; })
