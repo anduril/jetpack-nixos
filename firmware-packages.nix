@@ -72,7 +72,7 @@ let
   # tools, of which this package set builds its own configured copies, and the SoC
   # that `inputs.jetpack-nixos.lib.nixpkgsArgsFor` selects. Anything else this package set defines is
   # firmware that is configured per machine.
-  sdkOverlap = [ "flash-tools" "otaUtils" "ftpmManufacturingTools" "socType" "chipId" ];
+  sdkOverlap = [ "flash-tools" "otaUtils" "socType" "chipId" ];
 
   applyExtensions = scope: if extensions == [ ] then scope else scope.overrideScope (lib.composeManyExtensions extensions);
 
@@ -98,13 +98,14 @@ let
           inherit (cfg.firmware.optee) patches extraMakeFlags;
         };
       };
-      # Every recipe in ./pkgs/optee is built here: they depend on this machine's
-      # OP-TEE configuration, directly or through the TA dev kit.
-      opteePkgs = lib.packagesFromDirectoryRecursive {
-        callPackage = path: args:
-          finalJetpack.callPackage path (args // (opteeArgs.${lib.removeSuffix ".nix" (baseNameOf path)} or { }));
-        directory = ./pkgs/optee;
-      };
+      # Build OP-TEE firmware and device recipes here. Standalone host tools
+      # under host-tools are exposed through pkgs.nvidia-jetpack.
+      opteePkgs = builtins.removeAttrs
+        (lib.packagesFromDirectoryRecursive {
+          callPackage = path: args:
+            finalJetpack.callPackage path (args // (opteeArgs.${lib.removeSuffix ".nix" (baseNameOf path)} or { }));
+          directory = ./pkgs/optee;
+        }) [ "host-tools" ];
       nativeBuild = pkgs.stdenv.buildPlatform.config == pkgs.stdenv.hostPlatform.config;
       buildFirmwarePkgs = if nativeBuild then finalJetpack else buildPlatformJetpack;
       buildPlatformFlashTools = buildFirmwarePkgs.flash-tools;

@@ -320,6 +320,9 @@ the instances built for the flashing host and the build platform:
 }
 ```
 
+Standalone OP-TEE host tools live under `pkgs/optee/host-tools` and are exposed
+as `pkgs.nvidia-jetpack.genEkb` and `pkgs.nvidia-jetpack.ftpmManufacturingTools`.
+
 ### Customizing the flashing initrd
 
 Initrd flashing boots a standalone NixOS systemd stage 1 environment on the
