@@ -1,5 +1,5 @@
 # A scope: a member overridden with overrideScope (e.g. a variant's, through
-# `variants`) reaches signedFirmware.
+# `variants`) reaches signedFirmware and bup.
 { lib, pkgs, newScope, cfg, jetpack, dtbsDir }@args:
 lib.makeScope newScope (self:
 let
@@ -18,7 +18,7 @@ let
 
   leaves = self.callPackage ./leaves.nix { };
   variantArgs = {
-    inherit lib pkgs cfg jetpack dtbsDir variantKey;
+    inherit lib pkgs cfg jetpack dtbsDir boardSpec variantKey;
     inherit (leaves) sign;
     inherit (self) variants;
   };
@@ -35,6 +35,7 @@ in
   defaultColdboot = (builtins.head self.variantsList).reference;
 
   signedFirmware = self.callPackage ./signed-firmware.nix { };
+  bup = self.callPackage ./bup-payload.nix { };
 
   # Assembly can change the BUP without changing its base images or leaves.
   # Hash its source here, not the BUP output, which depends on UEFI.
@@ -44,5 +45,6 @@ in
       ./default.nix
       ./signed-firmware.nix
       ./signed-firmware.sh
+      ./bup-payload.nix
     ]));
 })

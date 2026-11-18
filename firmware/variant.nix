@@ -1,8 +1,8 @@
 # variants.<key>: the scope of one firmware.variants entry. Its leaves are
 # signed against `reference`, the variant's stock flash.sh run (baseColdboot):
 # its layout, ratchet blob and overlay set. Override `reference`, `bldtb` or
-# an input and everything built from it, through signedFirmware, follows.
-{ lib, pkgs, cfg, jetpack, dtbsDir, sign, variantKey, variants }:
+# an input and everything built from it, through bup, follows.
+{ lib, pkgs, cfg, jetpack, dtbsDir, sign, boardSpec, variantKey, variants }:
 variant: self:
 let
   inherit (jetpack) l4tMajorMinorPatchVersion uefi-firmware socFamily l4tAtLeast;
@@ -10,7 +10,11 @@ let
 in
 {
   inherit variant;
+  inherit (variant) fuselevel;
   key = variantKey variant;
+  # flash.sh's BUP spec (generate_specs), with the board name the device
+  # matches against (ota-setup-efivars).
+  spec = boardSpec variant (if variant.chiprev == "" then "0" else variant.chiprev) cfg.flashScriptOverrides.targetBoard;
 
   reference = self.callPackage ./base-flash-bins.nix {
     inputs = lib.optional (jetpack.socType == "t264") "standalonemm_jetson.pkg";

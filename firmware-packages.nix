@@ -232,7 +232,7 @@ let
         ((finalJetpack.mkFlashScript
           l4tFlashTools # we need flash-tools for the platform that runs them
           {
-            # TODO: Remove preSignCommands when we switch to using signedFirmware directly
+            # Legacy BUP still signs via flash.sh; decomposed BUP consumes signedFirmware.
             flashCommands = ''
               ${cfg.firmware.secureBoot.preSignCommands (flasherPkgsOr pkgs.buildPackages)}
             '' + lib.concatMapStringsSep "\n"
@@ -424,7 +424,7 @@ let
       dtbsDir = config.hardware.deviceTree.package;
     };
   } // lib.optionalAttrs cfg.firmware.decomposedSigning.enable {
-    inherit (finalJetpack.decomposed) signedFirmware;
+    inherit (finalJetpack.decomposed) signedFirmware bup;
   };
 in
 {
