@@ -1,7 +1,7 @@
 # variants.<key>: the scope of one firmware.variants entry. Its leaves are
 # signed against `reference`, the variant's stock flash.sh run (baseColdboot):
 # its layout, ratchet blob and overlay set. Override `reference`, `bldtb` or
-# an input and everything built from it, through bup, follows.
+# an input and everything built from it, through bup and rcmBundle, follows.
 { lib, pkgs, cfg, jetpack, dtbsDir, sign, boardSpec, variantKey, variants }:
 variant: self:
 let
@@ -10,13 +10,14 @@ let
 in
 {
   inherit variant;
-  inherit (variant) fuselevel;
+  inherit (variant) fuselevel chipsku;
   key = variantKey variant;
   # flash.sh's BUP spec (generate_specs), with the board name the device
   # matches against (ota-setup-efivars).
   spec = boardSpec variant (if variant.chiprev == "" then "0" else variant.chiprev) cfg.flashScriptOverrides.targetBoard;
 
   reference = self.callPackage ./base-flash-bins.nix {
+    mode = "coldboot";
     inputs = lib.optional (jetpack.socType == "t264") "standalonemm_jetson.pkg";
   };
   # The first variant with this fuselevel: l4t_bup_gen's common images come from it.

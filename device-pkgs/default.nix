@@ -53,13 +53,15 @@ let
   # Inside a Nix derivation (sandboxed), call the flash.sh scripts and others
   # to produce a flashcmd.txt that will be run directly. This removes most of
   # the dynamism available to the flash script and requires specifying many
-  # more environment variables which are normally autodetected
-  useFlashCmd = builtins.length cfg.firmware.variants == 1;
+  # more environment variables which are normally autodetected.
+  # "flashcmd": one variant, flashcmd.txt prepared in the sandbox.
+  # "dynamic": flash.sh on the flashing host, which detects the variant.
+  flashBackend = if builtins.length cfg.firmware.variants == 1 then "flashcmd" else "dynamic";
 
   # With either produce a standard flash script, which does variant detection,
   # or if there is only a single variant, will produce a script specialized to
   # that particular variant.
-  mkFlashScriptAuto = if useFlashCmd then mkFlashCmdScript else (mkFlashScript nvidia-jetpack.flash-tools);
+  mkFlashScriptAuto = if flashBackend == "flashcmd" then mkFlashCmdScript else (mkFlashScript nvidia-jetpack.flash-tools);
 
   # Generate a flash script using the built configuration options set in a NixOS configuration
   legacyFlashScript = writeShellApplication {
@@ -68,14 +70,31 @@ let
     meta.platforms = [ "x86_64-linux" ];
   };
 
-  # Produces a script that boots a given kernel, initrd, and cmdline using the RCM boot method.
-  mkRcmBootScript = { kernelPath, initrdPath, kernelCmdline, ... }@args: mkFlashScriptAuto (
-    builtins.removeAttrs args [ "kernelPath" "initrdPath" "kernelCmdline" ] // {
-      preFlashCommands = ''
-        cp ${kernelPath} kernel/Image
-        cp ${initrdPath} bootloader/l4t_initrd.img
+  # With decomposedFirmware, every variant has a prepared RCM bundle, whichever
+  # flashBackend; the script detects the board when there are several.
+  rcmBackend = if cfg.firmware.decomposedFirmware.enable then "bundle" else flashBackend;
 
-        export CMDLINE="${builtins.toString kernelCmdline}"
+  mkRcm = { kernel, initrd, kernelCmdline, additionalDtbOverlays ? cfg.flashScriptOverrides.additionalDtbOverlays }:
+    cfg.firmwarePkgs.decomposed.mkRcm {
+      inherit kernel initrd additionalDtbOverlays;
+      cmdline = kernelCmdline;
+      tegrarcm = "${nvidia-jetpack.flash-tools}/bootloader/tegrarcm_v2";
+      tegrahost = "${nvidia-jetpack.flash-tools}/bootloader/tegrahost_v2";
+    };
+
+  rcmFlashScriptArgs =
+    { kernel
+    , initrd
+    , kernelCmdline
+    , additionalDtbOverlays ? cfg.flashScriptOverrides.additionalDtbOverlays
+    }:
+    {
+      inherit additionalDtbOverlays;
+      preFlashCommands = ''
+        cp ${kernel} kernel/Image
+        cp ${initrd} bootloader/l4t_initrd.img
+
+        export CMDLINE="${kernelCmdline}"
         export INITRD_IN_BOOTIMG="yes"
       '' + lib.optionalString (cfg.firmware.secureBoot.pkcFile != null) ''
         # If secure boot is enabled, nvidia requires the kernel to be signed
@@ -112,39 +131,82 @@ let
             --key ${lib.escapeShellArg "${cfg.firmware.uefi.secureBoot.signer.key}"} \
             --mode append
         )
-      '' + lib.optionalString (!useFlashCmd && cfg.firmware.secureBoot.pkcFile != null) ''
+      '' + lib.optionalString (flashBackend == "dynamic" && cfg.firmware.secureBoot.pkcFile != null) ''
         (
           # Now execute flash
           echo "Flashing device now"
           cd bootloader; bash ./flashcmd.txt
         )
       '';
-    }
-  );
+    };
+
+  mkRcmBundleScript =
+    { kernel
+    , initrd
+    , kernelCmdline
+    , additionalDtbOverlays ? cfg.flashScriptOverrides.additionalDtbOverlays
+    , bundleRoot ? null
+    }:
+    let
+      rcm = mkRcm { inherit kernel initrd kernelCmdline additionalDtbOverlays; };
+    in
+    import ./rcmbundle-script.nix {
+      inherit lib bundleRoot;
+      inherit (rcm) rcmBundle;
+      detect = cfg.firmwarePkgs.decomposed.mkRcmDetectVariant rcm.baseRcm;
+      inherit (pkgs.nvidia-jetpack) socType chipId;
+    };
+
+  # Produces a script that boots a given kernel, initrd, and cmdline using the RCM boot method
+  mkRcmBootScript = if rcmBackend == "bundle" then mkRcmBundleScript else
+  request: mkFlashScriptAuto (rcmFlashScriptArgs request);
+
+  # The RCM boot parts of mkRcmBootScript, and what flash.sh makes of the same
+  # arguments (the reference, its bootloader/rcmboot_blob).
+  rcmParts = request:
+    let
+      rcm = mkRcm request;
+    in
+    {
+      inherit (rcm) baseRcm bootImg rcmBundle;
+      reference = nvidia-jetpack.flash-tools-flashcmd.override {
+        inherit mkFlashScript;
+        mkFlashScriptArgs = rcmFlashScriptArgs request;
+      };
+    };
 
   # Produces a script which boots into this NixOS system via RCM mode
-  rcmBoot = writeShellApplication {
+  rcmBoot = writeShellApplication ({
     name = "rcmboot-nixos";
     text = mkRcmBootScript {
       # See nixpkgs nixos/modules/system/activatation/top-level.nix for standard usage of these paths
-      kernelPath = "${config.system.build.kernel}/${config.system.boot.loader.kernelFile}";
-      initrdPath = "${config.system.build.initialRamdisk}/${config.system.boot.loader.initrdFile}";
+      kernel = "${config.system.build.kernel}/${config.system.boot.loader.kernelFile}";
+      initrd = "${config.system.build.initialRamdisk}/${config.system.boot.loader.initrdFile}";
       kernelCmdline = "init=${config.system.build.toplevel}/init ${toString config.boot.kernelParams}";
     };
     meta.platforms = [ "x86_64-linux" ];
-  };
+  } // lib.optionalAttrs (rcmBackend == "bundle") {
+    extraShellCheckFlags = [ "-x" ];
+  });
 
   initrdFlash = import ./initrdflash-script.nix {
     inherit mkRcmBootScript config flashInitrd lib l4tMajorMinorPatchVersion writeText deviceTree tio expect;
   };
 
-  # TODO: The flash script should not have the kernel output in its runtime closure
+  # The dynamic flash.sh backend copies the kernel at runtime.
   initrdFlashScript =
-    writeShellApplication {
+    (writeShellApplication ({
       name = "initrd-flash-${cfg.name}";
       text = initrdFlash.initrdFlashScript;
       meta.platforms = [ "x86_64-linux" ];
-    };
+    } // lib.optionalAttrs cfg.firmware.decomposedFirmware.enable {
+      extraShellCheckFlags = [ "-x" ];
+    })).overrideAttrs (prev: {
+      disallowedReferences = lib.optionals (rcmBackend == "bundle") [
+        config.system.build.kernel
+        nvidia-jetpack.flash-tools
+      ];
+    });
 
   fuseScript = writeShellApplication {
     name = "fuse-${cfg.name}";

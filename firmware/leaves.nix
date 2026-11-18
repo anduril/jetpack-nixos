@@ -1,6 +1,6 @@
 # Derivations that sign the leaf images jetpack-nixos supplies (UEFI, TOS, kernel
 # DTB, ...), in place of the stub inputs NVIDIA's `flash.sh --sign` signs.
-# `reference` throughout: a variant's baseColdboot, the stock flash.sh
+# `reference` throughout: a variant's baseColdboot or baseRcm, the stock flash.sh
 # run whose layout and ratchet blob the leaves are signed against. The
 # per-variant leaves are in variant.nix.
 { lib, pkgs, runCommand, cfg, jetpack, defaultColdboot }:
@@ -20,6 +20,11 @@ let
     inherit partition;
     layout = "${reference}/flash.xml.tmp";
   } // args);
+  # T234 signs the blob's cpubl and dce per file, uncompressed (tegraflash_oem_[enc_and_]sign_file).
+  signFile = reference: name: magicId: image: jetpack.signFile (signArgs reference name) {
+    inherit image magicId;
+  };
+
   # tegraflash_create_secure_fip (r39.2.1 tegraflash_impl_t264.py:1652-1684),
   # in its order; mods_t264.pkg is not in the BSP.
   stmm = "standalonemm_jetson.pkg";
@@ -46,4 +51,23 @@ in
 {
   inherit sign common;
 
+  # The RCM blob entries (by blob.xml type) holding our inputs, for `rcm`, a
+  # variant scope with baseRcm as its reference. coldbootDce: the variant's
+  # dce-fw as signed against baseColdboot, which T264's blob takes.
+  rcm = rcm: coldbootDce: {
+    t234 = {
+      bootloader = signFile rcm.reference "cpubl-rcm" "CPBL" rcm.cpublInput;
+      dce_fw = signFile rcm.reference "dce-rcm" "DCEF" rcm.dceInput;
+      tos = common.secure-os;
+    };
+    # The RCM layout is its own; it signs cpubl and the OP-TEE FIP uncompressed.
+    t264 = {
+      bootloader_stage2 = sign rcm.reference "cpubl-rcm" "cpu-bootloader" { image = rcm.cpublInput; };
+      secure_partition = sign rcm.reference "sec-partition-rcm" "sec-partition" { fileName = "sp_t264.fip"; image = "${spFip}/sp_t264.fip"; };
+      dce_fw = coldbootDce;
+      inherit (common) atf;
+    };
+  }.${socType} // lib.optionalAttrs (cfg.firmware.eksFile != null) {
+    inherit (common) eks;
+  };
 }

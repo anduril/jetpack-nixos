@@ -60,7 +60,7 @@ assert lib.assertMsg (passthrough != [ ] -> !lib.any (a: lib.hasInfix "'" a || l
 assert lib.assertMsg (unknownPassthrough == [ ])
   "signImage/signFile: --passthrough tegraflash option(s) not supported for per-image signing: ${toString unknownPassthrough}";
 {
-  inherit pkgs name ratchetBlob chipId pkcFile sbkFile t264 pkcArgs;
+  inherit pkgs name ratchetBlob chipId pkcFile sbkFile t264 r39 flags passthrough pkcArgs;
   runCommandEnv = { inherit requiredSystemFeatures; } // lib.optionalAttrs noChroot { __noChroot = true; };
   sbkArgs = if hsm then "--hsm sbk --softhsm" else "--key ${lib.escapeShellArg "${sbkFile}"}";
   pubkeyHashArgs = lib.optionalString (pkcFile != null) "--pubkeyhash pub_key.key";

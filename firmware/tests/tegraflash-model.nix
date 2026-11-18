@@ -8,10 +8,11 @@
 # board config and stay free.
 # `signing` is pkgs/l4t-sign/flash-args.nix on the flashArgs and keys signImage
 # gets, so a mismatch also means per-image signing reads the options wrong.
-{ lib, jetpack, variant, signing }:
+{ lib, jetpack, mode, variant, signing }:
 let
   inherit (jetpack) chipId;
   inherit (signing) r39 t264 pkcFile sbkFile flags passthrough;
+  rcm = mode == "rcm";
 
   any = { n = [ 1 ]; };
   maybe = { n = [ 0 1 ]; };
@@ -80,17 +81,42 @@ let
     "--cpubl_rcm" = if t264 then maybe else any;
     "--minratchet_config" = any;
     "--bins" = any;
-    "--bct_backup" = bool ;
+    "--bct_backup" = bool (if t264 && rcm then 0 else 1);
     "--boot_chain" = is "A";
     "--keep" = bool (1 + passthroughCount "--keep");
     # Board configs may set RAMCODE themselves; T264 flash.sh requires one.
     "--ramcode" = if variant.ramcode != null then is variant.ramcode else if t264 then any else maybe;
-    ${if !t264 then "--cfg" else "--coldboot_pt_layout"} = any;
+    ${if !t264 then "--cfg" else if rcm then "--rcmboot_pt_layout" else "--coldboot_pt_layout"} = any;
   } // lib.optionalAttrs r39 {
     "--rawkerneldtb" = any;
     "--no_pva" = is "0";
   };
+
+  rcmboot = lib.genAttrs [
+    "--bl"
+    "--bct"
+    "--bldtb"
+    "--applet"
+    "--applet_softfuse"
+    "--cfg"
+    "--mb1_bct"
+    "--mem_bct"
+    "--mb1_cold_boot_bct"
+    "--mb1_bin"
+    "--psc_bl1_bin"
+    "--mem_bct_cold_boot"
+    "--bins"
+  ]
+    (_: any) // {
+    "--cmd" = is "rcmboot";
+    "--chip" = is chipId;
+    "--securedev" = bool 1;
+    "--bct_backup" = bool (if t264 then 0 else 1);
+    "--keep" = bool 1;
+    "--no_flash" = bool 1;
+  };
 in
 {
-  invocations = [{ role = "sign"; flags = sign; }];
+  invocations = [{ role = "sign"; flags = sign; }]
+    ++ lib.optional rcm { role = "rcmboot"; flags = rcmboot; };
 }

@@ -450,7 +450,7 @@ in
         # Rebind callPackages as well: its nested callPackage (e.g. Stuart) must see
         # this firmware fixed point, not the SDK's or top-level Nixpkgs'.
         inherit (sdk) bspSrc gitRepos l4tMajorMinorPatchVersion jetpackMajorMinorPatchVersion
-          l4tAtLeast l4tOlder patchfv flashFromDevice signImage bldtb;
+          l4tAtLeast l4tOlder patchfv flashFromDevice signImage signFile bldtb;
         callPackages = lib.callPackagesWith (pkgs // sdk // finalJetpack);
       }
       // mkExtension (forPkgs pkgs.pkgsBuildBuild) finalJetpack sdk)).overrideScope decomposedFirmware);
