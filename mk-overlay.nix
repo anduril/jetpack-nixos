@@ -117,11 +117,9 @@ makeScope final.newScope (self: {
 
   dlopenOverride = final.callPackage ./pkgs/dlopen-override { };
 
-  genEkb = self.callPackage ./pkgs/gen-ekb.nix { };
-
-  # Host-side fTPM manufacturing tools. Unlike the rest of ./pkgs/optee, they do
-  # not depend on any machine's OP-TEE configuration.
-  ftpmManufacturingTools = self.callPackage ./pkgs/optee/ftpmManufacturingTools.nix { };
+  # Standalone OP-TEE host tools are independent of machine firmware configuration.
+  genEkb = self.callPackage ./pkgs/optee/host-tools/gen-ekb.nix { };
+  ftpmManufacturingTools = self.callPackage ./pkgs/optee/host-tools/ftpmManufacturingTools.nix { };
 
   # Unconfigured flashing tools and OTA helpers, for use outside a NixOS
   # configuration (e.g. recovery tooling). `config.hardware.nvidia-jetpack.firmwarePkgs`
