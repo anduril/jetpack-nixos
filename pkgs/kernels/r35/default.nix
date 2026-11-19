@@ -48,7 +48,7 @@ buildLinux (args // {
 
   defconfig = "tegra_defconfig";
 
-  # nixpkgs signs modules via kmodigest through `cmd_sign`, which 5.10 lacks; route its `mod_sign_cmd` there too.
+  # nixpkgs signs modules via kmodigest through `cmd_sign`. 5.10 calls it `mod_sign_cmd`.
   extraMakeFlags = (args.extraMakeFlags or [ ])
     ++ lib.optional (buildPackages ? kmodigest) "mod_sign_cmd=${lib.getExe buildPackages.kmodigest}";
 
