@@ -5,7 +5,7 @@
 
 # usage:
 # nix build .\#bspSrc
-# ./sourceinfo/gitrepos-update.py r36.4.4 ./result/source/source_sync.sh
+# ./sourceinfo/gitrepos-update.py r36.4.4 ./result/source/source_sync.sh [tag]
 
 import json
 import re
@@ -26,7 +26,9 @@ def fetch_git(url, ref):
 def main():
     version = sys.argv[1].removeprefix("r")
 
-    tag = f"jetson_{version}"
+    # Optional tag override, e.g. jetson_39.2.2_GA when NVIDIA publishes a
+    # release under a suffixed tag.
+    tag = sys.argv[3] if len(sys.argv) > 3 else f"jetson_{version}"
     filename = f"r{version}-gitrepos.json"
 
     script_contents = open(sys.argv[2]).read()
@@ -47,7 +49,8 @@ def main():
             data = json.load(fd)
 
     for line in source_info.split("\n"):
-        k, relpath, giturl, _ = line.split(":")
+        # r39.2.2+ uses "|" as the field separator; older releases use ":"
+        k, relpath, giturl, _ = line.split("|" if "|" in line else ":")
 
         giturl = giturl.replace("nv-tegra.nvidia.com", "gitlab.com/nvidia/nv-tegra")
         giturl = giturl.replace("${GIT_SERVER}", "gitlab.com/nvidia/nv-tegra")

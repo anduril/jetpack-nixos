@@ -1,9 +1,9 @@
 diff --git a/Silicon/NVIDIA/edk2nv/stuart/builder.py b/Silicon/NVIDIA/edk2nv/stuart/builder.py
-index 692400d2..f4e37d05 100644
+index fc5c5ec..8bf2db7 100644
 --- a/Silicon/NVIDIA/edk2nv/stuart/builder.py
 +++ b/Silicon/NVIDIA/edk2nv/stuart/builder.py
-@@ -323,7 +323,7 @@ class NVIDIAPlatformBuilder(UefiBuilder):
-                     self.settings.GetGuid(), reason_dynamic)
+@@ -412,7 +412,7 @@ class NVIDIAPlatformBuilder(UefiBuilder):
+         self.env.SetValue("BLD_*_BUILD_GUID", build_guid, reason_setman)
  
          # Set additional build variables
 -        cur_time = datetime.datetime.now()

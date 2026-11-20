@@ -294,6 +294,12 @@
       "sha256": "7e7a08811c49eb95e779f0c16e1f157ef721ade63aa6a2e3845442be29aab7b4",
       "version": "9.1.0-1"
     },
+    "deepstream-9.2": {
+      "filename": "pool/main/d/deepstream/deepstream-9.2_9.2.0-1_arm64.deb",
+      "sha256": "9cb72b6d1ef171b7eac1465a47fea852905e9f08ca106bd13ad37f2261d1557c",
+      "source": "deepstream",
+      "version": "9.2.0-1"
+    },
     "dh-dkms": {
       "filename": "pool/main/d/dkms/dh-dkms_3.4.0-1ubuntu1_all.deb",
       "sha256": "12d2bf665653b89926af927696666c9edfccadabcb12fcd609724cad99d5bfbf",
@@ -336,15 +342,64 @@
       "version": "1.17.1.22-1"
     },
     "holoscan": {
-      "filename": "pool/main/h/holoscan/holoscan_4.5.0-2_all.deb",
-      "sha256": "3a4467bebcb9a7bde7a84bc08d9ac320500038e9330ed2139ff61feba57be17c",
-      "version": "4.5.0-2"
+      "filename": "pool/main/h/holoscan/holoscan_5.0.0-1_arm64.deb",
+      "sha256": "3b023f97dc2610ba68e3f7700034041b51fdb9420bb69f71b241cdca3fb59262",
+      "version": "5.0.0-1"
+    },
+    "holoscan-camera": {
+      "filename": "pool/main/h/holoscan-camera/holoscan-camera_1.0.0-1+l4t39.2_arm64.deb",
+      "sha256": "8c5bc45d48dc8dccd86252657141b4beb6ed7426e05d13c4d9bcc783de624b29",
+      "version": "1.0.0-1+l4t39.2"
+    },
+    "holoscan-core": {
+      "filename": "pool/main/h/holoscan-core/holoscan-core_5.0.0.8.0-1_arm64.deb",
+      "sha256": "5e2b71ccaac89dc23a82852257138e49eb0141d51c88d0f2a8d8b32fa1b112ff",
+      "version": "5.0.0.8.0-1"
+    },
+    "holoscan-core-cuda-13": {
+      "filename": "pool/main/h/holoscan-core/holoscan-core-cuda-13_5.0.0.8.0-1_arm64.deb",
+      "sha256": "ea1c5c41e1bc905d48c5fed6e80a4f71a40c2338b68018d7d343c2448848ef29",
+      "source": "holoscan-core",
+      "version": "5.0.0.8.0-1"
     },
     "holoscan-cuda-13": {
-      "filename": "pool/main/h/holoscan/holoscan-cuda-13_4.5.0.0-1_arm64.deb",
-      "sha256": "515b58116791ba57cf3a25e8283fb59f0c00c567d9b629195ab2ab59244dcc92",
+      "filename": "pool/main/h/holoscan/holoscan-cuda-13_4.6.0.0-1_arm64.deb",
+      "sha256": "de5da74f095c36f64ba446a04f98e8f3e30c04be96845b604333098f95e6e5e9",
       "source": "holoscan",
-      "version": "4.5.0.0-1"
+      "version": "4.6.0.0-1"
+    },
+    "holoscan-inference": {
+      "filename": "pool/main/h/holoscan-inference/holoscan-inference_5.0.0.8.0-1_arm64.deb",
+      "sha256": "47e09c5a1d0c2fe49f061a0859dd0b3679b831d90043a30a610efefb78802794",
+      "version": "5.0.0.8.0-1"
+    },
+    "holoscan-inference-cuda-13": {
+      "filename": "pool/main/h/holoscan-inference/holoscan-inference-cuda-13_5.0.0.8.0-1_arm64.deb",
+      "sha256": "740a4bd8fc24353583626f76c55bd2d6cdcea9b4b010fd018ec5bf459b8df98c",
+      "source": "holoscan-inference",
+      "version": "5.0.0.8.0-1"
+    },
+    "holoscan-vision": {
+      "filename": "pool/main/h/holoscan-vision/holoscan-vision_5.0.0.8.0-1_arm64.deb",
+      "sha256": "dd795935c4a3c6ddd689519161fd23c6e7767aee38e93329ad090f5f479764a0",
+      "version": "5.0.0.8.0-1"
+    },
+    "holoscan-vision-cuda-13": {
+      "filename": "pool/main/h/holoscan-vision/holoscan-vision-cuda-13_5.0.0.8.0-1_arm64.deb",
+      "sha256": "ec7af523cc94ea78d6a65400d739adcf6c24e7dfcc311c803283a55d937c34c7",
+      "source": "holoscan-vision",
+      "version": "5.0.0.8.0-1"
+    },
+    "holoscan-visualization": {
+      "filename": "pool/main/h/holoscan-visualization/holoscan-visualization_5.0.0.8.0-1_arm64.deb",
+      "sha256": "f5b3a7eb54c8932f89c849b850de7111de9223638053ee6f0285a3a0cb05507a",
+      "version": "5.0.0.8.0-1"
+    },
+    "holoscan-visualization-cuda-13": {
+      "filename": "pool/main/h/holoscan-visualization/holoscan-visualization-cuda-13_5.0.0.8.0-1_arm64.deb",
+      "sha256": "daf81a77814947b9ac19e6454fd210636a7f5e9dcff9f384bfbd06596356c428",
+      "source": "holoscan-visualization",
+      "version": "5.0.0.8.0-1"
     },
     "libcublas-13-2": {
       "filename": "pool/main/libc/libcublas/libcublas-13-2_13.4.1.3-1_arm64.deb",
@@ -520,6 +575,42 @@
       "source": "libcusparse",
       "version": "12.7.10.12-1"
     },
+    "libholoscan-inference-cuda-13": {
+      "filename": "pool/main/h/holoscan-inference/libholoscan-inference-cuda-13_5.0.0.8.0-1_arm64.deb",
+      "sha256": "f9c2f006899acc527ec59a1c0c67ea4d149800ed2af8718465de717d090da507",
+      "source": "holoscan-inference",
+      "version": "5.0.0.8.0-1"
+    },
+    "libholoscan-inference-dev-cuda-13": {
+      "filename": "pool/main/h/holoscan-inference/libholoscan-inference-dev-cuda-13_5.0.0.8.0-1_arm64.deb",
+      "sha256": "8dda8589d8cdd1ee532fb0d034a5f5e02eba8145f37b17c0997f8aae2b637d75",
+      "source": "holoscan-inference",
+      "version": "5.0.0.8.0-1"
+    },
+    "libholoscan-vision5-cuda-13": {
+      "filename": "pool/main/h/holoscan-vision/libholoscan-vision5-cuda-13_5.0.0.8.0-1_arm64.deb",
+      "sha256": "91d062d19172b12c267763ab6dddf795aa2453129ae54e353d39da19ee7759c6",
+      "source": "holoscan-vision",
+      "version": "5.0.0.8.0-1"
+    },
+    "libholoscan-vision5-dev-cuda-13": {
+      "filename": "pool/main/h/holoscan-vision/libholoscan-vision5-dev-cuda-13_5.0.0.8.0-1_arm64.deb",
+      "sha256": "1c6e821b040bd49acea54a174081bfdffc0c9faf69ebe9c9a25295b84fafade3",
+      "source": "holoscan-vision",
+      "version": "5.0.0.8.0-1"
+    },
+    "libholoscan-visualization-cuda-13": {
+      "filename": "pool/main/h/holoscan-visualization/libholoscan-visualization-cuda-13_5.0.0.8.0-1_arm64.deb",
+      "sha256": "83ba746b419ca34bdc0361e7ed878395c3e650b821ae5fffe8b98d74f20befb8",
+      "source": "holoscan-visualization",
+      "version": "5.0.0.8.0-1"
+    },
+    "libholoscan-visualization-dev-cuda-13": {
+      "filename": "pool/main/h/holoscan-visualization/libholoscan-visualization-dev-cuda-13_5.0.0.8.0-1_arm64.deb",
+      "sha256": "b124e305623c8be699b08bdc4fc1e58c116e4ab760b67ee0ea190692c35b7ac4",
+      "source": "holoscan-visualization",
+      "version": "5.0.0.8.0-1"
+    },
     "libnpp-13-2": {
       "filename": "pool/main/libn/libnpp/libnpp-13-2_13.1.0.59-1_arm64.deb",
       "sha256": "6ac91d81042c198d65f1bca8fa10410ab150674499e04a79ffd005f8e64a1058",
@@ -640,22 +731,28 @@
       "version": "595.71.05-1ubuntu1"
     },
     "libnvinfer-bin": {
-      "filename": "pool/main/t/tensorrt/libnvinfer-bin_10.16.2.10-1+cuda13.2_arm64.deb",
-      "sha256": "7a7de013265b50acb1839ec1e42c2e611a323446dd09142deced5b0cea052f56",
+      "filename": "pool/main/t/tensorrt/libnvinfer-bin_11.4.1.31-1+cuda13.4_arm64.deb",
+      "sha256": "2cf4082bac5c0245fe9b479b32ab663e1a77914bd5b17f8feeb21367262cc31a",
       "source": "tensorrt",
-      "version": "10.16.2.10-1+cuda13.2"
+      "version": "11.4.1.31-1+cuda13.4"
+    },
+    "libnvinfer-cmake-dev": {
+      "filename": "pool/main/t/tensorrt/libnvinfer-cmake-dev_11.4.1.31-1+cuda13.4_arm64.deb",
+      "sha256": "00f9d7988c6cdc34e5449616d2953eef190447497db3aa8f553b52693d68eff0",
+      "source": "tensorrt",
+      "version": "11.4.1.31-1+cuda13.4"
     },
     "libnvinfer-dev": {
-      "filename": "pool/main/t/tensorrt/libnvinfer-dev_10.16.2.10-1+cuda13.2_arm64.deb",
-      "sha256": "d090713a4690eb7f20612008180b749c9b8e76de2fffc46ca8ef00c2fbe812e0",
+      "filename": "pool/main/t/tensorrt/libnvinfer-dev_11.4.1.31-1+cuda13.4_arm64.deb",
+      "sha256": "08fef71b28c45173cce297e49df2cf1f5a53d8e59d9bab084fef46a3fc3ec608",
       "source": "tensorrt",
-      "version": "10.16.2.10-1+cuda13.2"
+      "version": "11.4.1.31-1+cuda13.4"
     },
     "libnvinfer-dispatch-dev": {
-      "filename": "pool/main/t/tensorrt/libnvinfer-dispatch-dev_10.16.2.10-1+cuda13.2_arm64.deb",
-      "sha256": "2411eec858d7cac59e37433a449f19663b61e4a26c6c11868a769e34817f8c8b",
+      "filename": "pool/main/t/tensorrt/libnvinfer-dispatch-dev_11.4.1.31-1+cuda13.4_arm64.deb",
+      "sha256": "55c0b8ab4fd02b68598eb5355817d99b39549d786686cf7a184b9d99265ec2d8",
       "source": "tensorrt",
-      "version": "10.16.2.10-1+cuda13.2"
+      "version": "11.4.1.31-1+cuda13.4"
     },
     "libnvinfer-dispatch10": {
       "filename": "pool/main/t/tensorrt/libnvinfer-dispatch10_10.16.2.10-1+cuda13.2_arm64.deb",
@@ -663,29 +760,41 @@
       "source": "tensorrt",
       "version": "10.16.2.10-1+cuda13.2"
     },
-    "libnvinfer-headers-dev": {
-      "filename": "pool/main/t/tensorrt/libnvinfer-headers-dev_10.16.2.10-1+cuda13.2_arm64.deb",
-      "sha256": "6208dbba5dc7fd04ca1bca71a3dcaed6642cb08765edbfcc10996b52844b2ec9",
+    "libnvinfer-dispatch11": {
+      "filename": "pool/main/t/tensorrt/libnvinfer-dispatch11_11.4.1.31-1+cuda13.4_arm64.deb",
+      "sha256": "6810e1591fabe996805c42e5060132cdcfc8e83ac8019c026b7470610ef9512c",
       "source": "tensorrt",
-      "version": "10.16.2.10-1+cuda13.2"
+      "version": "11.4.1.31-1+cuda13.4"
+    },
+    "libnvinfer-dla-compiler11": {
+      "filename": "pool/main/t/tensorrt/libnvinfer-dla-compiler11_11.4.1.31-1+cuda13.4_arm64.deb",
+      "sha256": "323ca45da41be05639e27683acdab8db7979a5f8897b956055bd631dd2612ecc",
+      "source": "tensorrt",
+      "version": "11.4.1.31-1+cuda13.4"
+    },
+    "libnvinfer-headers-dev": {
+      "filename": "pool/main/t/tensorrt/libnvinfer-headers-dev_11.4.1.31-1+cuda13.4_arm64.deb",
+      "sha256": "5c203314e4bb4cc1ef19025dede71de251437ca77f8852fa77d2663fd45f7f3b",
+      "source": "tensorrt",
+      "version": "11.4.1.31-1+cuda13.4"
     },
     "libnvinfer-headers-plugin-dev": {
-      "filename": "pool/main/t/tensorrt/libnvinfer-headers-plugin-dev_10.16.2.10-1+cuda13.2_arm64.deb",
-      "sha256": "951ebb46c7a33ff71dca064e62fab19c8ebdc4b895aa14027e6907113aa3e928",
+      "filename": "pool/main/t/tensorrt/libnvinfer-headers-plugin-dev_11.4.1.31-1+cuda13.4_arm64.deb",
+      "sha256": "f56964186b9e91af19eaa95099ef1ba6a6676a00097d81c10afadc9a72322723",
       "source": "tensorrt",
-      "version": "10.16.2.10-1+cuda13.2"
+      "version": "11.4.1.31-1+cuda13.4"
     },
     "libnvinfer-headers-python-plugin-dev": {
-      "filename": "pool/main/t/tensorrt/libnvinfer-headers-python-plugin-dev_10.16.2.10-1+cuda13.2_arm64.deb",
-      "sha256": "fc309f227f30306f9b56fdc8e751075a257985d52d7af8b637a8f1fc01b824c2",
+      "filename": "pool/main/t/tensorrt/libnvinfer-headers-python-plugin-dev_11.4.1.31-1+cuda13.4_arm64.deb",
+      "sha256": "5f559a24391de83184741cef05a980c1335f0d99b1bd4590dcbb1bafd0dee42e",
       "source": "tensorrt",
-      "version": "10.16.2.10-1+cuda13.2"
+      "version": "11.4.1.31-1+cuda13.4"
     },
     "libnvinfer-lean-dev": {
-      "filename": "pool/main/t/tensorrt/libnvinfer-lean-dev_10.16.2.10-1+cuda13.2_arm64.deb",
-      "sha256": "dbeaed0a6a6779940ed0ad1423018593a71367ca005d25c13069c0393adaf1f8",
+      "filename": "pool/main/t/tensorrt/libnvinfer-lean-dev_11.4.1.31-1+cuda13.4_arm64.deb",
+      "sha256": "3725016fa5eb3b7ac39edf70dad1660425fc436ff84917a4d7295f3e91dc6259",
       "source": "tensorrt",
-      "version": "10.16.2.10-1+cuda13.2"
+      "version": "11.4.1.31-1+cuda13.4"
     },
     "libnvinfer-lean10": {
       "filename": "pool/main/t/tensorrt/libnvinfer-lean10_10.16.2.10-1+cuda13.2_arm64.deb",
@@ -693,11 +802,17 @@
       "source": "tensorrt",
       "version": "10.16.2.10-1+cuda13.2"
     },
-    "libnvinfer-plugin-dev": {
-      "filename": "pool/main/t/tensorrt/libnvinfer-plugin-dev_10.16.2.10-1+cuda13.2_arm64.deb",
-      "sha256": "4552160fed001a990daceca670a9e562470b794cd7f74b354d016bf4ba4efbf7",
+    "libnvinfer-lean11": {
+      "filename": "pool/main/t/tensorrt/libnvinfer-lean11_11.4.1.31-1+cuda13.4_arm64.deb",
+      "sha256": "5d6ef4591508002652ba26a41b4fd63633e8854d3e96df4fdc96cf70b0d27321",
       "source": "tensorrt",
-      "version": "10.16.2.10-1+cuda13.2"
+      "version": "11.4.1.31-1+cuda13.4"
+    },
+    "libnvinfer-plugin-dev": {
+      "filename": "pool/main/t/tensorrt/libnvinfer-plugin-dev_11.4.1.31-1+cuda13.4_arm64.deb",
+      "sha256": "708f3317d2a09413aeaebcac6d145ddc52dedcdf936605073689f58dbfccd7ae",
+      "source": "tensorrt",
+      "version": "11.4.1.31-1+cuda13.4"
     },
     "libnvinfer-plugin10": {
       "filename": "pool/main/t/tensorrt/libnvinfer-plugin10_10.16.2.10-1+cuda13.2_arm64.deb",
@@ -705,17 +820,23 @@
       "source": "tensorrt",
       "version": "10.16.2.10-1+cuda13.2"
     },
-    "libnvinfer-safe-headers-dev": {
-      "filename": "pool/main/t/tensorrt/libnvinfer-safe-headers-dev_10.16.2.10-1+cuda13.2_arm64.deb",
-      "sha256": "8b355de759c31626451c30e50545dc55bb19832e64f9fde839b4b380714de504",
+    "libnvinfer-plugin11": {
+      "filename": "pool/main/t/tensorrt/libnvinfer-plugin11_11.4.1.31-1+cuda13.4_arm64.deb",
+      "sha256": "2c4cbe20662f25e264a245b5574afaa93617e7c1a9f99510381af2706a893df2",
       "source": "tensorrt",
-      "version": "10.16.2.10-1+cuda13.2"
+      "version": "11.4.1.31-1+cuda13.4"
+    },
+    "libnvinfer-safe-headers-dev": {
+      "filename": "pool/main/t/tensorrt/libnvinfer-safe-headers-dev_11.4.1.31-1+cuda13.4_arm64.deb",
+      "sha256": "fba620d8b2a6be1f8b2a83f5eb4e42dea8f587b44c4ec1da1a045deae99717f8",
+      "source": "tensorrt",
+      "version": "11.4.1.31-1+cuda13.4"
     },
     "libnvinfer-vc-plugin-dev": {
-      "filename": "pool/main/t/tensorrt/libnvinfer-vc-plugin-dev_10.16.2.10-1+cuda13.2_arm64.deb",
-      "sha256": "21b9df45051d1d7b956629b6638ecddb1a91c22c1a96be8222d88243883b336a",
+      "filename": "pool/main/t/tensorrt/libnvinfer-vc-plugin-dev_11.4.1.31-1+cuda13.4_arm64.deb",
+      "sha256": "487ad37b9e766f8e0e9fa3e0420685431fa66f5d40f205171d14779948b01a87",
       "source": "tensorrt",
-      "version": "10.16.2.10-1+cuda13.2"
+      "version": "11.4.1.31-1+cuda13.4"
     },
     "libnvinfer-vc-plugin10": {
       "filename": "pool/main/t/tensorrt/libnvinfer-vc-plugin10_10.16.2.10-1+cuda13.2_arm64.deb",
@@ -723,11 +844,23 @@
       "source": "tensorrt",
       "version": "10.16.2.10-1+cuda13.2"
     },
+    "libnvinfer-vc-plugin11": {
+      "filename": "pool/main/t/tensorrt/libnvinfer-vc-plugin11_11.4.1.31-1+cuda13.4_arm64.deb",
+      "sha256": "d0ebbf49f9983a4bace0655db41fc6fc1c61b75758f14402af660d94bce75a64",
+      "source": "tensorrt",
+      "version": "11.4.1.31-1+cuda13.4"
+    },
     "libnvinfer10": {
       "filename": "pool/main/t/tensorrt/libnvinfer10_10.16.2.10-1+cuda13.2_arm64.deb",
       "sha256": "d02111e3600d91bef407fe537a4179445cdc73fb259bf1f83dd256804de1897e",
       "source": "tensorrt",
       "version": "10.16.2.10-1+cuda13.2"
+    },
+    "libnvinfer11": {
+      "filename": "pool/main/t/tensorrt/libnvinfer11_11.4.1.31-1+cuda13.4_arm64.deb",
+      "sha256": "9c278096e89d5ef9bd670e3be3933037e49faa5c483c5224007c45feda57c5b2",
+      "source": "tensorrt",
+      "version": "11.4.1.31-1+cuda13.4"
     },
     "libnvjitlink-13-2": {
       "filename": "pool/main/libn/libnvjitlink/libnvjitlink-13-2_13.2.86-1_arm64.deb",
@@ -754,16 +887,22 @@
       "version": "13.1.0.59-1"
     },
     "libnvonnxparsers-dev": {
-      "filename": "pool/main/t/tensorrt/libnvonnxparsers-dev_10.16.2.10-1+cuda13.2_arm64.deb",
-      "sha256": "53bcf84f06c20f2b171379db79389d6680775a94c761b57ea7480134d0c038a7",
+      "filename": "pool/main/t/tensorrt/libnvonnxparsers-dev_11.4.1.31-1+cuda13.4_arm64.deb",
+      "sha256": "f91f9b87dd3f45b7b3d12a86373835a08e69cebe01f416a6aacc53ecbf84ea37",
       "source": "tensorrt",
-      "version": "10.16.2.10-1+cuda13.2"
+      "version": "11.4.1.31-1+cuda13.4"
     },
     "libnvonnxparsers10": {
       "filename": "pool/main/t/tensorrt/libnvonnxparsers10_10.16.2.10-1+cuda13.2_arm64.deb",
       "sha256": "f146cbcc4d5d0d29f2c0123dd6a4b16ed1159eff27d03beeab27bbe9a766bff8",
       "source": "tensorrt",
       "version": "10.16.2.10-1+cuda13.2"
+    },
+    "libnvonnxparsers11": {
+      "filename": "pool/main/t/tensorrt/libnvonnxparsers11_11.4.1.31-1+cuda13.4_arm64.deb",
+      "sha256": "dec89bd74309323951d5b64ad46cd1cf8d7c870615f04930f8c27cc1fbe9ffb6",
+      "source": "tensorrt",
+      "version": "11.4.1.31-1+cuda13.4"
     },
     "libnvptxcompiler-13-2": {
       "filename": "pool/main/libn/libnvptxcompiler/libnvptxcompiler-13-2_13.2.86-1_arm64.deb",
@@ -778,9 +917,9 @@
       "version": "13.2.86-1"
     },
     "libnvvpi4": {
-      "filename": "pool/main/libn/libnvvpi4/libnvvpi4_4.1.4_arm64.deb",
-      "sha256": "2cba87a09e15c57f3fca977537535a19abee0992099c97f65f6e5fbda309e559",
-      "version": "4.1.4"
+      "filename": "pool/main/libn/libnvvpi4/libnvvpi4_4.1.6_arm64.deb",
+      "sha256": "1f55345ad7d57df1baf10d0ee04d9b3cbde1b90e68d5d77609c41dc543349b1b",
+      "version": "4.1.6"
     },
     "libopencv": {
       "filename": "pool/main/libo/libopencv/libopencv_4.8.0-4-g18251aa_arm64.deb",
@@ -845,10 +984,15 @@
       "sha256": "72640c2c40c2f7f45aa79b06de4c51615ba008b8c4f32fb9807dae7d8f7ab2fb",
       "version": "2026.3.1.157-263138048394v0"
     },
+    "nsight-systems-2026.5.1": {
+      "filename": "pool/main/n/nsight-systems-2026.5.1/nsight-systems-2026.5.1_2026.5.1.161-265138896106v0_arm64.deb",
+      "sha256": "66006ea39f60fc1f1d8d276306c282768d0fc789a3986e00eae8af73090f442d",
+      "version": "2026.5.1.161-265138896106v0"
+    },
     "nvidia-container": {
-      "filename": "pool/main/n/nvidia-container/nvidia-container_7.2.1-b49_arm64.deb",
-      "sha256": "a9222fcb2db8de767b0059d5db14364603864096978fa0d5b9cafea2256abd4f",
-      "version": "7.2.1-b49"
+      "filename": "pool/main/n/nvidia-container/nvidia-container_7.2.2-b56_arm64.deb",
+      "sha256": "509fc50892cbb7769bc3a35b9456d905d521ea2774eaaaf8cddb4fa1c2dbfc09",
+      "version": "7.2.2-b56"
     },
     "nvidia-container-toolkit": {
       "filename": "pool/main/n/nvidia-container-toolkit/nvidia-container-toolkit_1.19.1-1_arm64.deb",
@@ -862,29 +1006,29 @@
       "version": "1.19.1-1"
     },
     "nvidia-cuda": {
-      "filename": "pool/main/n/nvidia-cuda/nvidia-cuda_7.2.1-b49_arm64.deb",
-      "sha256": "a67cd5bb9f589189ff6a3069ac26c31b29558b6597baa10470c9a707a5fd1c53",
-      "version": "7.2.1-b49"
+      "filename": "pool/main/n/nvidia-cuda/nvidia-cuda_7.2.2-b56_arm64.deb",
+      "sha256": "5abe1d7045922a701fd2f1129299ccd63b284d00a6be75dc79e54038ef713592",
+      "version": "7.2.2-b56"
     },
     "nvidia-cuda-dev": {
-      "filename": "pool/main/n/nvidia-cuda-dev/nvidia-cuda-dev_7.2.1-b49_arm64.deb",
-      "sha256": "19e780988e172c14e32b7baa414601ac2c9b115b4ae9181f2f8f5906e199b8a1",
-      "version": "7.2.1-b49"
+      "filename": "pool/main/n/nvidia-cuda-dev/nvidia-cuda-dev_7.2.2-b56_arm64.deb",
+      "sha256": "1c7ae77ea148ae6d0fc843b2b13c7e58d321c7766f9b30bce1c7cd5a28ac423b",
+      "version": "7.2.2-b56"
     },
     "nvidia-cudnn": {
-      "filename": "pool/main/n/nvidia-cudnn/nvidia-cudnn_7.2.1-b49_arm64.deb",
-      "sha256": "39bdd23a0b0edca86410645713771dfbf2253e0d3fec80ea624897e5e78a943b",
-      "version": "7.2.1-b49"
+      "filename": "pool/main/n/nvidia-cudnn/nvidia-cudnn_7.2.2-b56_arm64.deb",
+      "sha256": "68b907704844fa9ad81957039e7fdd281e3a9e3891d871d129398b11ee6f9b24",
+      "version": "7.2.2-b56"
     },
     "nvidia-cudnn-dev": {
-      "filename": "pool/main/n/nvidia-cudnn-dev/nvidia-cudnn-dev_7.2.1-b49_arm64.deb",
-      "sha256": "07ee23d3f283b9010b85ef9901221816283fa69b9c01ba62eb1e7638fe9c0e9e",
-      "version": "7.2.1-b49"
+      "filename": "pool/main/n/nvidia-cudnn-dev/nvidia-cudnn-dev_7.2.2-b56_arm64.deb",
+      "sha256": "dfc2b736315771aa6a23f0f476353b303fba3bd2fba5426c67c0ca2b66ac01be",
+      "version": "7.2.2-b56"
     },
     "nvidia-cupva": {
-      "filename": "pool/main/n/nvidia-cupva/nvidia-cupva_7.2.1-b49_arm64.deb",
-      "sha256": "602408a13bac15fbb429350f360c1c041d85f76bc453a9a8a78162d5775170e6",
-      "version": "7.2.1-b49"
+      "filename": "pool/main/n/nvidia-cupva/nvidia-cupva_7.2.2-b56_arm64.deb",
+      "sha256": "8318563a12c1a22acc31edcf13c9e74f2d085f1ae36f39f8f3a4189454499cfb",
+      "version": "7.2.2-b56"
     },
     "nvidia-dkms": {
       "filename": "pool/main/n/nvidia-graphics-drivers/nvidia-dkms_595.71.05-1ubuntu1_arm64.deb",
@@ -992,19 +1136,19 @@
       "version": "595.71.05-1ubuntu1"
     },
     "nvidia-jetpack": {
-      "filename": "pool/main/n/nvidia-jetpack/nvidia-jetpack_7.2.1-b49_arm64.deb",
-      "sha256": "b3b9e6faf9b8c9769ad1dbdea076a87b14af55be9813023370b92de3f40a74f5",
-      "version": "7.2.1-b49"
+      "filename": "pool/main/n/nvidia-jetpack/nvidia-jetpack_7.2.2-b56_arm64.deb",
+      "sha256": "2f8c59b5cf23a015f2beca7ac0212f825c9414444ad1b153f67576b1adbe5e80",
+      "version": "7.2.2-b56"
     },
     "nvidia-jetpack-dev": {
-      "filename": "pool/main/n/nvidia-jetpack-dev/nvidia-jetpack-dev_7.2.1-b49_arm64.deb",
-      "sha256": "2644c88dcff5592f268f22ed3cfe67c20de918aa219360c0e418ae34bdea1da5",
-      "version": "7.2.1-b49"
+      "filename": "pool/main/n/nvidia-jetpack-dev/nvidia-jetpack-dev_7.2.2-b56_arm64.deb",
+      "sha256": "346215eff3d504b7c540771fc45a92ac438d43350bc910fe927486fd54e4fbdc",
+      "version": "7.2.2-b56"
     },
     "nvidia-jetpack-runtime": {
-      "filename": "pool/main/n/nvidia-jetpack-runtime/nvidia-jetpack-runtime_7.2.1-b49_arm64.deb",
-      "sha256": "536766ecce45b7e8fcbd5b7684b1b9f14ce1e0a0226bb7205f2f649d46ee2a00",
-      "version": "7.2.1-b49"
+      "filename": "pool/main/n/nvidia-jetpack-runtime/nvidia-jetpack-runtime_7.2.2-b56_arm64.deb",
+      "sha256": "52f6861c5cdaae6c1bac1298646d69f60f2fca0de9a76baedcd69f511f831846",
+      "version": "7.2.2-b56"
     },
     "nvidia-kernel-common": {
       "filename": "pool/main/n/nvidia-graphics-drivers/nvidia-kernel-common_595.71.05-1ubuntu1_arm64.deb",
@@ -1030,14 +1174,14 @@
       "version": "13.2-37290934.0"
     },
     "nvidia-l4t-gstreamer": {
-      "filename": "pool/main/n/nvidia-l4t-gstreamer/nvidia-l4t-gstreamer_39.2.1-20260806224157_arm64.deb",
-      "sha256": "5101937ba4df642e2a054b5bc87ff6155703fee21ad1c85c134d6cf2b02b6f33",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-gstreamer/nvidia-l4t-gstreamer_39.2.2-20261112230500_arm64.deb",
+      "sha256": "a42d90461511832152f8e170afb410998441d4f22116ec7af935890d8de645b6",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-jetson-multimedia-api": {
-      "filename": "pool/main/n/nvidia-l4t-jetson-multimedia-api/nvidia-l4t-jetson-multimedia-api_39.2.1-20260806224157_arm64.deb",
-      "sha256": "fe88dbe8afe4158f5985e32fd0dddc83768091788b3bd1ffbc8d878492cee30b",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-jetson-multimedia-api/nvidia-l4t-jetson-multimedia-api_39.2.2-20261112230500_arm64.deb",
+      "sha256": "ae6ef8d817ad7092d31b2d21ddf43ad856d26dbad10bb23b03e08e0c5b6bb2ea",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-modprobe": {
       "filename": "pool/main/n/nvidia-modprobe/nvidia-modprobe_595.71.05-1ubuntu1_arm64.deb",
@@ -1045,19 +1189,19 @@
       "version": "595.71.05-1ubuntu1"
     },
     "nvidia-nsight-systems": {
-      "filename": "pool/main/n/nvidia-nsight-systems/nvidia-nsight-systems_7.2.1-b49_arm64.deb",
-      "sha256": "e47408a80a0b2549f07d679b62cea5b7b8863cf5bfbf7a7b668737917ef621ba",
-      "version": "7.2.1-b49"
+      "filename": "pool/main/n/nvidia-nsight-systems/nvidia-nsight-systems_7.2.2-b56_arm64.deb",
+      "sha256": "5bfd07addaf1f0ee20908603db087e576d6b4f64674437ff5ba13ab22a22a1b3",
+      "version": "7.2.2-b56"
     },
     "nvidia-opencv": {
-      "filename": "pool/main/n/nvidia-opencv/nvidia-opencv_7.2.1-b49_arm64.deb",
-      "sha256": "8e40bb43f62e0f2eb1f30c72663dd5cb27400a2d8219942f5a8893dbe1040324",
-      "version": "7.2.1-b49"
+      "filename": "pool/main/n/nvidia-opencv/nvidia-opencv_7.2.2-b56_arm64.deb",
+      "sha256": "8a8398114615c904e918bc48613b639ec228641e12412c3c97d766308d7863d1",
+      "version": "7.2.2-b56"
     },
     "nvidia-opencv-dev": {
-      "filename": "pool/main/n/nvidia-opencv-dev/nvidia-opencv-dev_7.2.1-b49_arm64.deb",
-      "sha256": "400967daf1198ba9710f87b73fee7e5c5ed9f64fdedd84523049bacdc2b3fe09",
-      "version": "7.2.1-b49"
+      "filename": "pool/main/n/nvidia-opencv-dev/nvidia-opencv-dev_7.2.2-b56_arm64.deb",
+      "sha256": "3c35a5dc78734edc1dfd13f683947df7c547f9e6cadfebaf5bf42df8bb4a7345",
+      "version": "7.2.2-b56"
     },
     "nvidia-persistenced": {
       "filename": "pool/main/n/nvidia-persistenced/nvidia-persistenced_595.71.05-1ubuntu1_arm64.deb",
@@ -1070,14 +1214,14 @@
       "version": "595.71.05-1ubuntu1"
     },
     "nvidia-tensorrt": {
-      "filename": "pool/main/n/nvidia-tensorrt/nvidia-tensorrt_7.2.1-b49_arm64.deb",
-      "sha256": "c27d4d24651f5f89ab6b6cd7e24944062fcae25713521e414d83d1f5ae2a3dc2",
-      "version": "7.2.1-b49"
+      "filename": "pool/main/n/nvidia-tensorrt/nvidia-tensorrt_7.2.2-b56_arm64.deb",
+      "sha256": "c2ce04daba87663d1b86220d08f0990cd2c35ea191443c0aa1671d6c04d480c2",
+      "version": "7.2.2-b56"
     },
     "nvidia-tensorrt-dev": {
-      "filename": "pool/main/n/nvidia-tensorrt-dev/nvidia-tensorrt-dev_7.2.1-b49_arm64.deb",
-      "sha256": "eb7efe91e80a0f7604b39259643b42db80686d4aea03b3a72e1fb10b47e670fe",
-      "version": "7.2.1-b49"
+      "filename": "pool/main/n/nvidia-tensorrt-dev/nvidia-tensorrt-dev_7.2.2-b56_arm64.deb",
+      "sha256": "145338a0bbd24ab5860fe9bb54e23818348da2ec8a13f1de751fb79a365d5521",
+      "version": "7.2.2-b56"
     },
     "nvidia-video-codec-sdk": {
       "filename": "pool/main/n/nvidia-video-codec-sdk/nvidia-video-codec-sdk_13.0.37-2_arm64.deb",
@@ -1086,14 +1230,14 @@
       "version": "13.0.37-2"
     },
     "nvidia-vpi": {
-      "filename": "pool/main/n/nvidia-vpi/nvidia-vpi_7.2.1-b49_arm64.deb",
-      "sha256": "8d86a756b272be4b65a1e532fbae60885b4acd1fa7152d1e0c47b79ec98983f3",
-      "version": "7.2.1-b49"
+      "filename": "pool/main/n/nvidia-vpi/nvidia-vpi_7.2.2-b56_arm64.deb",
+      "sha256": "09c7a1c034eddfee4839ac95c7792c128cc20ca71d4c9a08548327ff3625dc47",
+      "version": "7.2.2-b56"
     },
     "nvidia-vpi-dev": {
-      "filename": "pool/main/n/nvidia-vpi-dev/nvidia-vpi-dev_7.2.1-b49_arm64.deb",
-      "sha256": "c4b82d2bb2471fba4d40c27b3f1ea130adba2d6a401f10428fe6c023d3a61d92",
-      "version": "7.2.1-b49"
+      "filename": "pool/main/n/nvidia-vpi-dev/nvidia-vpi-dev_7.2.2-b56_arm64.deb",
+      "sha256": "eb97b04654d85f13d2ce1163068022aed0c5bd0c8153e23f771a4f989d0c9a8a",
+      "version": "7.2.2-b56"
     },
     "nvidia-xconfig": {
       "filename": "pool/main/n/nvidia-xconfig/nvidia-xconfig_595.71.05-1ubuntu1_arm64.deb",
@@ -1131,65 +1275,65 @@
       "version": "2.9.4"
     },
     "python3-libnvinfer": {
-      "filename": "pool/main/t/tensorrt/python3-libnvinfer_10.16.2.10-1+cuda13.2_arm64.deb",
-      "sha256": "da1282da12166871f731bb3f058f81b76c4ef22036668111723b0116ba2cf216",
+      "filename": "pool/main/t/tensorrt/python3-libnvinfer_11.4.1.31-1+cuda13.4_arm64.deb",
+      "sha256": "0088dc0f63284973f45f4938d80d83a89e11fbb9d501d8bbaefab27347a5b2e3",
       "source": "tensorrt",
-      "version": "10.16.2.10-1+cuda13.2"
+      "version": "11.4.1.31-1+cuda13.4"
     },
     "python3-libnvinfer-dev": {
-      "filename": "pool/main/t/tensorrt/python3-libnvinfer-dev_10.16.2.10-1+cuda13.2_arm64.deb",
-      "sha256": "af6670a83f690f1bae043da421688069521259bb057aad56b6de3a0ed9c8e86f",
+      "filename": "pool/main/t/tensorrt/python3-libnvinfer-dev_11.4.1.31-1+cuda13.4_arm64.deb",
+      "sha256": "f6554692d9032fdb84812ee6da094ebabbd012ecb9753a9853d0fcd7fce2c7e9",
       "source": "tensorrt",
-      "version": "10.16.2.10-1+cuda13.2"
+      "version": "11.4.1.31-1+cuda13.4"
     },
     "python3-libnvinfer-dispatch": {
-      "filename": "pool/main/t/tensorrt/python3-libnvinfer-dispatch_10.16.2.10-1+cuda13.2_arm64.deb",
-      "sha256": "14d761c6f94b910a3aab8e44c85d5fea9b82622856abd28cd4f5899ad42041bf",
+      "filename": "pool/main/t/tensorrt/python3-libnvinfer-dispatch_11.4.1.31-1+cuda13.4_arm64.deb",
+      "sha256": "0749591cdac929078227cf91be4d4c75854e1026ec951b2494350611eb835668",
       "source": "tensorrt",
-      "version": "10.16.2.10-1+cuda13.2"
+      "version": "11.4.1.31-1+cuda13.4"
     },
     "python3-libnvinfer-lean": {
-      "filename": "pool/main/t/tensorrt/python3-libnvinfer-lean_10.16.2.10-1+cuda13.2_arm64.deb",
-      "sha256": "b4e44dad6ecd1ef0c9f8cb8228443b5dd30a4e8d4834a90354b6a1484bf2e567",
+      "filename": "pool/main/t/tensorrt/python3-libnvinfer-lean_11.4.1.31-1+cuda13.4_arm64.deb",
+      "sha256": "f9c467e5cf4dfcf5a3da94a7eb653037889bc4ba9abb1592b40474dcd139a281",
       "source": "tensorrt",
-      "version": "10.16.2.10-1+cuda13.2"
+      "version": "11.4.1.31-1+cuda13.4"
     },
     "python3.12-vpi4": {
-      "filename": "pool/main/p/python3.12-vpi4/python3.12-vpi4_4.1.4_arm64.deb",
-      "sha256": "d656b7fced7b47bae80f28992bbf3e35b1357bad09735aadbe26d344e237b6b2",
-      "version": "4.1.4"
+      "filename": "pool/main/p/python3.12-vpi4/python3.12-vpi4_4.1.6_arm64.deb",
+      "sha256": "f8f6eed7969d0e724665bcd73148376d45981d14734b8b98a8973f8e0e4e21b4",
+      "version": "4.1.6"
     },
     "tensorrt": {
-      "filename": "pool/main/t/tensorrt/tensorrt_10.16.2.10-1+cuda13.2_arm64.deb",
-      "sha256": "a9334cefe5bf309737d48830d8107678a9baff61f82406049e614fd4818bd767",
-      "version": "10.16.2.10-1+cuda13.2"
+      "filename": "pool/main/t/tensorrt/tensorrt_11.4.1.31-1+cuda13.4_arm64.deb",
+      "sha256": "32389f53d604c096d9335212ef9a0ca8538c683431a5a3b9e84ba7642f996716",
+      "version": "11.4.1.31-1+cuda13.4"
     },
     "tensorrt-dev": {
-      "filename": "pool/main/t/tensorrt/tensorrt-dev_10.16.2.10-1+cuda13.2_arm64.deb",
-      "sha256": "3355dcd9751921b98136b6c984847a5dcd4728d6632b80986dc8a35e14e62b23",
+      "filename": "pool/main/t/tensorrt/tensorrt-dev_11.4.1.31-1+cuda13.4_arm64.deb",
+      "sha256": "f0f5dd8c9e0f6e3a16ed5004843641d85313b3612f597ce0c0cffee3afe699b5",
       "source": "tensorrt",
-      "version": "10.16.2.10-1+cuda13.2"
+      "version": "11.4.1.31-1+cuda13.4"
     },
     "tensorrt-libs": {
-      "filename": "pool/main/t/tensorrt/tensorrt-libs_10.16.2.10-1+cuda13.2_arm64.deb",
-      "sha256": "b14c66bcf5924b0c3d5cd7b41dc3d579e6452e7a51da5afa840383d300fe5313",
+      "filename": "pool/main/t/tensorrt/tensorrt-libs_11.4.1.31-1+cuda13.4_arm64.deb",
+      "sha256": "79e61c81c4db0aa72c985b17d8f5697dd7a4beee6e9c512dfde3e9e262f1963f",
       "source": "tensorrt",
-      "version": "10.16.2.10-1+cuda13.2"
+      "version": "11.4.1.31-1+cuda13.4"
     },
     "vpi4-dev": {
-      "filename": "pool/main/v/vpi4-dev/vpi4-dev_4.1.4_arm64.deb",
-      "sha256": "73f378b9a0fe437558ea1759f0a3c46337338a68e54efbb6e5eeea7dd46f5858",
-      "version": "4.1.4"
+      "filename": "pool/main/v/vpi4-dev/vpi4-dev_4.1.6_arm64.deb",
+      "sha256": "93426e75586d3f7167305b4258a0e004690f34a3c26cdc4ea4b094f4b74b3ade",
+      "version": "4.1.6"
     },
     "vpi4-python-src": {
-      "filename": "pool/main/v/vpi4-python-src/vpi4-python-src_4.1.4_arm64.deb",
-      "sha256": "6a800ad162291e83ca49e5970567f6f9fd7cf0ed4a58b501cc52858c8de39bc2",
-      "version": "4.1.4"
+      "filename": "pool/main/v/vpi4-python-src/vpi4-python-src_4.1.6_arm64.deb",
+      "sha256": "2102cf6c6a5ac19e093c5c0b7af9352507962f8636561ac378618120151c087a",
+      "version": "4.1.6"
     },
     "vpi4-samples": {
-      "filename": "pool/main/v/vpi4-samples/vpi4-samples_4.1.4_arm64.deb",
-      "sha256": "7267c7819e74153c70ad505ba6e66b0590f7756f7cffc45ee3b98c636138b58c",
-      "version": "4.1.4"
+      "filename": "pool/main/v/vpi4-samples/vpi4-samples_4.1.6_arm64.deb",
+      "sha256": "230f18fc33cf5f135e23a83640952b9ad4e77e4e97554da10c95bd0b8a201eb4",
+      "version": "4.1.6"
     },
     "xserver-xorg-video-nvidia": {
       "filename": "pool/main/n/nvidia-graphics-drivers/xserver-xorg-video-nvidia_595.71.05-1ubuntu1_arm64.deb",
@@ -1206,364 +1350,369 @@
       "version": "2.1.13-0ubuntu1"
     },
     "nvidia-igx-bootloader": {
-      "filename": "pool/main/n/nvidia-igx-bootloader/nvidia-igx-bootloader_39.2.1-20260806224157_arm64.deb",
-      "sha256": "9e1e4cde653e7a4c206b6e6dc2f439b75c5521875d7aa5cc2bce425aef0e9266",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-igx-bootloader/nvidia-igx-bootloader_39.2.2-20261112230500_arm64.deb",
+      "sha256": "9631df34b23ef4a6c972f7b9b06094894c4e2a7cb4ffaf0389b8974ec7e94416",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-igx-oobe": {
-      "filename": "pool/main/n/nvidia-igx-oobe/nvidia-igx-oobe_39.2.1-20260806224157_arm64.deb",
-      "sha256": "327058a556ab6bc32fd51857f27ed89966a25a384b2b81fa8279d303983a9994",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-igx-oobe/nvidia-igx-oobe_39.2.2-20261112230500_arm64.deb",
+      "sha256": "d3ae252bb67ebfcda5d6d45a5b15e7239215b34d124d23e4366f43e9243dc60c",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-igx-systemd-reboot-hooks": {
-      "filename": "pool/main/n/nvidia-igx-systemd-reboot-hooks/nvidia-igx-systemd-reboot-hooks_39.2.1-20260806224157_arm64.deb",
-      "sha256": "edfaf2248339319df97a661327d8539d82b6a94d3636b8ca0b002c19c5840b14",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-igx-systemd-reboot-hooks/nvidia-igx-systemd-reboot-hooks_39.2.2-20261112230500_arm64.deb",
+      "sha256": "58e35b47d435e71ff326420d436995f534d126475719138519d6ad716e3ff4f9",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-3d-core": {
-      "filename": "pool/main/n/nvidia-l4t-3d-core/nvidia-l4t-3d-core_39.2.1-20260806224157_arm64.deb",
-      "sha256": "77fcb6c2c11ed67403f8e7697aab9d6ef11a2acbde86dd38a062a8945d5d8631",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-3d-core/nvidia-l4t-3d-core_39.2.2-20261112230500_arm64.deb",
+      "sha256": "7bbf86938d923a7dca0da30d8b76ba7d1245a53ce3e888e09eee7c1bceb948ce",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-adaruntime": {
-      "filename": "pool/main/n/nvidia-l4t-adaruntime/nvidia-l4t-adaruntime_39.2.1-20260806224157_arm64.deb",
-      "sha256": "df5c996d980e6383eb2c4e545fb923d4153f7e4af19a4fd022a9cfa7cc1c253e",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-adaruntime/nvidia-l4t-adaruntime_39.2.2-20261112230500_arm64.deb",
+      "sha256": "f1cf67e77a05bc11c06e7b14e00da4a30104bb2b42806eee67644e5dbc01758e",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-apt-source": {
-      "filename": "pool/main/n/nvidia-l4t-apt-source/nvidia-l4t-apt-source_39.2.1-20260806224157_arm64.deb",
-      "sha256": "55d62355527d103a0fb1fa3fbdac06923e35248d742043acc516355871a3a910",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-apt-source/nvidia-l4t-apt-source_39.2.2-20261112230500_arm64.deb",
+      "sha256": "1c7f8432ebc95b5a686b7097532cda054848f21c54fa4bc25fb1f55ead685aeb",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-bootloader": {
-      "filename": "pool/main/n/nvidia-l4t-bootloader/nvidia-l4t-bootloader_39.2.1-20260806224157_arm64.deb",
-      "sha256": "76d5c770b53a31c14ac0d827660d03979f420f2a3f24666c363de810d8ec903f",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-bootloader/nvidia-l4t-bootloader_39.2.2-20261112230500_arm64.deb",
+      "sha256": "fc382b42c7dbd9adf4de345b528d19f124155190633db163286738807c9858af",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-bootloader-utils": {
-      "filename": "pool/main/n/nvidia-l4t-bootloader-utils/nvidia-l4t-bootloader-utils_39.2.1-20260806224157_arm64.deb",
-      "sha256": "c05285f68b5ce23a6f382a949eb44162e5cd2a8123f8e5cdaeb86a12b5e01c8f",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-bootloader-utils/nvidia-l4t-bootloader-utils_39.2.2-20261112230500_arm64.deb",
+      "sha256": "a08253c57a83b0d536f4efd552b71506f155e466a03a89cf27069b3260fd6a18",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-bsp": {
-      "filename": "pool/main/n/nvidia-l4t-bsp/nvidia-l4t-bsp_39.2.1-20260806224157_arm64.deb",
-      "sha256": "8e96bb4a6a4343f02bbb434c79673aa8da8a269c67e05dd17298ea39ddfa35e2",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-bsp/nvidia-l4t-bsp_39.2.2-20261112230500_arm64.deb",
+      "sha256": "2504c40864580caadd1691847a2264c87bc8e6efc4a3148d06052257f2c33158",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-bsp-nvgpu": {
-      "filename": "pool/main/n/nvidia-l4t-bsp-nvgpu/nvidia-l4t-bsp-nvgpu_39.2.1-20260806224157_arm64.deb",
-      "sha256": "4e83df2cfdd9dfade5d48900d6e3d2f36d33949c2a944d02b58a52d7a4dbde6b",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-bsp-nvgpu/nvidia-l4t-bsp-nvgpu_39.2.2-20261112230500_arm64.deb",
+      "sha256": "014a1a6db3c83a1fe757795a110d92e49d7c90001ae360361e720d975905d3ac",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-bsp-openrm": {
-      "filename": "pool/main/n/nvidia-l4t-bsp-openrm/nvidia-l4t-bsp-openrm_39.2.1-20260806224157_arm64.deb",
-      "sha256": "7e5988dc981081971d4b59bd8dfaee491b809466c41aeaf1ab29550eb2c3488c",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-bsp-openrm/nvidia-l4t-bsp-openrm_39.2.2-20261112230500_arm64.deb",
+      "sha256": "4bc0a3b93b696639ec7b9eef7dd17e0ab100f74c970e0a866bff2e3383ebc3a0",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-camera": {
-      "filename": "pool/main/n/nvidia-l4t-camera/nvidia-l4t-camera_39.2.1-20260806224157_arm64.deb",
-      "sha256": "b3a20033dc8131423f7e60b0005c58a03569d23bfa06aa3c4d7065ff208d8662",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-camera/nvidia-l4t-camera_39.2.2-20261112230500_arm64.deb",
+      "sha256": "4ee5fc8ab661f4140153a7753c0d28d617f59dd23553f8a84330ec6b0181e618",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-configs": {
-      "filename": "pool/main/n/nvidia-l4t-configs/nvidia-l4t-configs_39.2.1-20260806224157_arm64.deb",
-      "sha256": "dd45cce107a89fe6efafe7d7429093893a2ab0a190b518d01be6ddeacd57f897",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-configs/nvidia-l4t-configs_39.2.2-20261112230500_arm64.deb",
+      "sha256": "a626b8c013285b23ee5ed028eecf8fa37975863b35e753fe200fd6aad9548d54",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-core": {
-      "filename": "pool/main/n/nvidia-l4t-core/nvidia-l4t-core_39.2.1-20260806224157_arm64.deb",
-      "sha256": "277a6fb25f2c06cc2dee6d352bef3abb15929739f396fea1cee70d1dea83008b",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-core/nvidia-l4t-core_39.2.2-20261112230500_arm64.deb",
+      "sha256": "d10d5e95a4970e7667c08fd987e4d37ac6efa1268b6ee07ecf769a537bfa43c3",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-cuda": {
-      "filename": "pool/main/n/nvidia-l4t-cuda/nvidia-l4t-cuda_39.2.1-20260806224157_arm64.deb",
-      "sha256": "a8f65b17c3dc9cae34d77e3a3481b809a49443d83241d85d5fea36525af6ab51",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-cuda/nvidia-l4t-cuda_39.2.2-20261112230500_arm64.deb",
+      "sha256": "caf27c435cf6eb14977e707281b71e3b60e694024a4aee070fb974c955106182",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-cuda-nvgpu": {
-      "filename": "pool/main/n/nvidia-l4t-cuda-nvgpu/nvidia-l4t-cuda-nvgpu_39.2.1-20260806224157_arm64.deb",
-      "sha256": "a70b1a731eaaf8a528428f1f8fe882ba5b06d670d8ffe28c338342fd195eb302",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-cuda-nvgpu/nvidia-l4t-cuda-nvgpu_39.2.2-20261112230500_arm64.deb",
+      "sha256": "b7f8538410e7b5845e7d17062cd2b59fc76737f86c008b0c4d305d932598ec6f",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-cuda-openrm": {
-      "filename": "pool/main/n/nvidia-l4t-cuda-openrm/nvidia-l4t-cuda-openrm_39.2.1-20260806224157_arm64.deb",
-      "sha256": "ac4d4b377d9154cb92fb59ddb8292937fcd9ff44b53bd807459c54a03fc29787",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-cuda-openrm/nvidia-l4t-cuda-openrm_39.2.2-20261112230500_arm64.deb",
+      "sha256": "c8dffa819a29ad8bb5bf9b7c637629dffd2ceb419b0343188cd5b29ce9e5668d",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-cuda-utils": {
-      "filename": "pool/main/n/nvidia-l4t-cuda-utils/nvidia-l4t-cuda-utils_39.2.1-20260806224157_arm64.deb",
-      "sha256": "6d143e637e37adf6ee34969a2f25526c03ef2e5513e6fcda267649792c84e870",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-cuda-utils/nvidia-l4t-cuda-utils_39.2.2-20261112230500_arm64.deb",
+      "sha256": "c4d554411a5cc8af8565c2854864393190b7be30d3e02b513b73fde57cde5d3b",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-dgpu-tools": {
-      "filename": "pool/main/n/nvidia-l4t-dgpu-tools/nvidia-l4t-dgpu-tools_39.2.1-20260806224157_arm64.deb",
-      "sha256": "0597a6262a221f9f4c233079cf9e2100cb338057449cac609541ddfc95520b4c",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-dgpu-tools/nvidia-l4t-dgpu-tools_39.2.2-20261112230500_arm64.deb",
+      "sha256": "509a72c6e68c1554845499d320e3fdfe54297a7baabd006461ad6e9b9e663717",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-display-kernel": {
-      "filename": "pool/main/n/nvidia-l4t-display-kernel/nvidia-l4t-display-kernel_6.8.12-tegra-39.2.1-20260806224157_arm64.deb",
-      "sha256": "fd7e47afde926bf443059d235106e1124c9a65fad21eaae5f082e8c59f6b1a43",
-      "version": "6.8.12-tegra-39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-display-kernel/nvidia-l4t-display-kernel_6.8.12-tegra-39.2.2-20261112230500_arm64.deb",
+      "sha256": "7147df0a5ed2857e97d88ef4de840a49e19923f4bc3dcdaea0caebec3ea72099",
+      "version": "6.8.12-tegra-39.2.2-20261112230500"
     },
     "nvidia-l4t-extlinux": {
-      "filename": "pool/main/n/nvidia-l4t-extlinux/nvidia-l4t-extlinux_39.2.1-20260806224157_arm64.deb",
-      "sha256": "da63cbc01f7af1da19c3114bc470600793f62e4275a21582bb8b6ae8a6e25fc0",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-extlinux/nvidia-l4t-extlinux_39.2.2-20261112230500_arm64.deb",
+      "sha256": "ccbad58ee28b9b228930a45dc3435c0cdb099dceb3e529f697bbb9a8af392e33",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-factory-service": {
-      "filename": "pool/main/n/nvidia-l4t-factory-service/nvidia-l4t-factory-service_39.2.1-20260806224157_arm64.deb",
-      "sha256": "9011f30568850a0f7032d6eea53d3be79e49d824f862b8c307609748576187a5",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-factory-service/nvidia-l4t-factory-service_39.2.2-20261112230500_arm64.deb",
+      "sha256": "39740b9588823dfd759b7f458bc90903c0e2006d848b7882709dbf9aab4032d9",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-fbdev-x11": {
-      "filename": "pool/main/n/nvidia-l4t-fbdev-x11/nvidia-l4t-fbdev-x11_39.2.1-20260806224157_arm64.deb",
-      "sha256": "5e6f798e19a0006a895a665324d46551e8d790ce7c9629268d31f724fc13590a",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-fbdev-x11/nvidia-l4t-fbdev-x11_39.2.2-20261112230500_arm64.deb",
+      "sha256": "a99a603ddbba5943df9e172370bcc292ce65d3408617a08a00af19caaaebf302",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-firmware": {
-      "filename": "pool/main/n/nvidia-l4t-firmware/nvidia-l4t-firmware_39.2.1-20260806224157_arm64.deb",
-      "sha256": "ab95bcddebe7e49accb1a951a32052ec4cf3bb5e54c13407c9f0a89894f58178",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-firmware/nvidia-l4t-firmware_39.2.2-20261112230500_arm64.deb",
+      "sha256": "6f3c0239523aec6c2d385f24e856fdeaba0673df14592b22a29d1b1bfcf38630",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-firmware-nvgpu": {
-      "filename": "pool/main/n/nvidia-l4t-firmware-nvgpu/nvidia-l4t-firmware-nvgpu_39.2.1-20260806224157_arm64.deb",
-      "sha256": "c219f18c2e352d02e0c0e3d2233ab1e208b16da6b19be1e7a2b8cd43ed136770",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-firmware-nvgpu/nvidia-l4t-firmware-nvgpu_39.2.2-20261112230500_arm64.deb",
+      "sha256": "00a6fa5fae960618ed912138ec042d185afb5b100e389e0dc22722f258a305ae",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-firmware-openrm": {
-      "filename": "pool/main/n/nvidia-l4t-firmware-openrm/nvidia-l4t-firmware-openrm_39.2.1-20260806224157_arm64.deb",
-      "sha256": "7efcfdb66b045fd2168665402745f1d781dbf2d44a354f2f355e4afe74466a20",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-firmware-openrm/nvidia-l4t-firmware-openrm_39.2.2-20261112230500_arm64.deb",
+      "sha256": "0d0c30dd69fde333125de80d9ebd227d9e1708a8d6339af215aa23c073dadee1",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-firstboot": {
-      "filename": "pool/main/n/nvidia-l4t-firstboot/nvidia-l4t-firstboot_39.2.1-20260806224157_arm64.deb",
-      "sha256": "8e2407af4c0d749a26348be0b6b42f863f4e02dfc7bd1f4132de9a5613dc3291",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-firstboot/nvidia-l4t-firstboot_39.2.2-20261112230500_arm64.deb",
+      "sha256": "7eeda0e9cfa1adfb71e129dff8999915022f12f7a5bd6b89898b7dc25bf17033",
+      "version": "39.2.2-20261112230500"
+    },
+    "nvidia-l4t-ftpm-fde": {
+      "filename": "pool/main/n/nvidia-l4t-ftpm-fde/nvidia-l4t-ftpm-fde_39.2.2-20261112230500_arm64.deb",
+      "sha256": "0585bfa75e4c51d73d83282eab893f6a5ecf4f83e51641d65305835b34d0fd43",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-gbm": {
-      "filename": "pool/main/n/nvidia-l4t-gbm/nvidia-l4t-gbm_39.2.1-20260806224157_arm64.deb",
-      "sha256": "e84d118dcdab013b783f34416865c981a27fa669e91d054067e54ef3f724c6d1",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-gbm/nvidia-l4t-gbm_39.2.2-20261112230500_arm64.deb",
+      "sha256": "78bcd962b47c77aba32fa3b220f1bcb2a4b6e2affcbcbab666789d325b6c1b41",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-graphics-demos": {
-      "filename": "pool/main/n/nvidia-l4t-graphics-demos/nvidia-l4t-graphics-demos_39.2.1-20260806224157_arm64.deb",
-      "sha256": "8216ee7c34b747745bab0b3333273ae4aed0234b548b23a1d53a5a2d6a327498",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-graphics-demos/nvidia-l4t-graphics-demos_39.2.2-20261112230500_arm64.deb",
+      "sha256": "a15a2dca0cd7c47c71a504e1ac0e8ccb1f80ebc9fe556905be3294151277df93",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-init": {
-      "filename": "pool/main/n/nvidia-l4t-init/nvidia-l4t-init_39.2.1-20260806224157_arm64.deb",
-      "sha256": "26cfc6b244ba3d3bbf424732a1ffe0d9e21faa0298eaacc911b7466b5bd76b93",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-init/nvidia-l4t-init_39.2.2-20261112230500_arm64.deb",
+      "sha256": "e6db7f2002d85300b8cdda62cac0219144997453915efc8aef16a20ca8fa44bc",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-init-nvgpu": {
-      "filename": "pool/main/n/nvidia-l4t-init-nvgpu/nvidia-l4t-init-nvgpu_39.2.1-20260806224157_arm64.deb",
-      "sha256": "5013d568110041c17e0f785f4212bd24019d57e432505e8d5266163d12bf2bd7",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-init-nvgpu/nvidia-l4t-init-nvgpu_39.2.2-20261112230500_arm64.deb",
+      "sha256": "701c8e7bdecae2af9945c593c0151af2906dcb3e2c137fa92ad1cfdf279af1de",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-init-openrm": {
-      "filename": "pool/main/n/nvidia-l4t-init-openrm/nvidia-l4t-init-openrm_39.2.1-20260806224157_arm64.deb",
-      "sha256": "bb4220b9f165b5fa6fdf07222d76e9758e783ff8f1be4ba06800a5878f988300",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-init-openrm/nvidia-l4t-init-openrm_39.2.2-20261112230500_arm64.deb",
+      "sha256": "193ad115d816a24c3b3d6f0b851a8eea71c24b0596a4d1dc0985a6e3de3f4061",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-initrd": {
-      "filename": "pool/main/n/nvidia-l4t-initrd/nvidia-l4t-initrd_39.2.1-20260806224157_arm64.deb",
-      "sha256": "0c2b475b10f9699406d68d8056f700f1a7faaa636168d755fe797da6b07f5b2c",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-initrd/nvidia-l4t-initrd_39.2.2-20261112230500_arm64.deb",
+      "sha256": "08e9e0909c88089b2005e6fa311562062fe852741e4951fde8bf9ffa9e58e688",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-jetson-io": {
-      "filename": "pool/main/n/nvidia-l4t-jetson-io/nvidia-l4t-jetson-io_39.2.1-20260806224157_arm64.deb",
-      "sha256": "063410764178ab1933fefcc8adf610743d8eec7a0456592ecd0c7c52c28fa753",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-jetson-io/nvidia-l4t-jetson-io_39.2.2-20261112230500_arm64.deb",
+      "sha256": "673d95056cc3807e0b0acbebb912f6ae1cf4f8e64be69bae4c13df9863a44080",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-jetsonpower-gui-tools": {
-      "filename": "pool/main/n/nvidia-l4t-jetsonpower-gui-tools/nvidia-l4t-jetsonpower-gui-tools_39.2.1-20260806224157_arm64.deb",
-      "sha256": "89a376e49aa4d17e037e765f87d28acf623b15298444e18ae4f5d409f3574ada",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-jetsonpower-gui-tools/nvidia-l4t-jetsonpower-gui-tools_39.2.2-20261112230500_arm64.deb",
+      "sha256": "ea216eb942f3ecbb7c142193bcdb63c956ee734a03cfb8f8413b0cc52d449fb4",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-kernel": {
-      "filename": "pool/main/n/nvidia-l4t-kernel/nvidia-l4t-kernel_6.8.12-tegra-39.2.1-20260806224157_arm64.deb",
-      "sha256": "91e8def02dcc45846a4f6ba70a258e29f436072ae42d0b547b86b3216dfe8d4f",
-      "version": "6.8.12-tegra-39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-kernel/nvidia-l4t-kernel_6.8.12-tegra-39.2.2-20261112230500_arm64.deb",
+      "sha256": "9b9e8aee0596f6413a3b0e578f3edb560ff18b04040aa81281a96c30c9cc0b08",
+      "version": "6.8.12-tegra-39.2.2-20261112230500"
     },
     "nvidia-l4t-kernel-dtbs": {
-      "filename": "pool/main/n/nvidia-l4t-kernel-dtbs/nvidia-l4t-kernel-dtbs_6.8.12-tegra-39.2.1-20260806224157_arm64.deb",
-      "sha256": "23a4048b78b90f9b8ac3d33b1375f98ed66be217f06d7d5e6073b247775549d2",
-      "version": "6.8.12-tegra-39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-kernel-dtbs/nvidia-l4t-kernel-dtbs_6.8.12-tegra-39.2.2-20261112230500_arm64.deb",
+      "sha256": "e73a21e6ba9a1a92e642b20713ab801130db51dd21eabb666f0b255f33f586ca",
+      "version": "6.8.12-tegra-39.2.2-20261112230500"
     },
     "nvidia-l4t-kernel-headers": {
-      "filename": "pool/main/n/nvidia-l4t-kernel-headers/nvidia-l4t-kernel-headers_6.8.12-tegra-39.2.1-20260806224157_arm64.deb",
-      "sha256": "e1c2bf37109913197b31293ce53ca642608fdb7f6d5859bfb372893fd721a17d",
-      "version": "6.8.12-tegra-39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-kernel-headers/nvidia-l4t-kernel-headers_6.8.12-tegra-39.2.2-20261112230500_arm64.deb",
+      "sha256": "b199bd5ade343b838b953b49de399f85b9b447fddc261eb51bcff99664cb9a36",
+      "version": "6.8.12-tegra-39.2.2-20261112230500"
     },
     "nvidia-l4t-kernel-module-configs": {
-      "filename": "pool/main/n/nvidia-l4t-kernel-module-configs/nvidia-l4t-kernel-module-configs_6.8.12-tegra-39.2.1-20260806224157_arm64.deb",
-      "sha256": "f8dc87bc50da83d3d69e64db2c1a306c2618fe0f51a069d131522305d12a2729",
-      "version": "6.8.12-tegra-39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-kernel-module-configs/nvidia-l4t-kernel-module-configs_6.8.12-tegra-39.2.2-20261112230500_arm64.deb",
+      "sha256": "5d2883590c9d2aca5548556f76a9f0e5e5a29b6418c20eacac9d2b485d450eb6",
+      "version": "6.8.12-tegra-39.2.2-20261112230500"
     },
     "nvidia-l4t-kernel-nvgpu": {
-      "filename": "pool/main/n/nvidia-l4t-kernel-nvgpu/nvidia-l4t-kernel-nvgpu_6.8.12-tegra-39.2.1-20260806224157_arm64.deb",
-      "sha256": "33f322d0ac248f315a5385f35146c84007d05fabdd5569ea5dd07862b53a1cb8",
-      "version": "6.8.12-tegra-39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-kernel-nvgpu/nvidia-l4t-kernel-nvgpu_6.8.12-tegra-39.2.2-20261112230500_arm64.deb",
+      "sha256": "88ee7d038e322e2b938e0eda77a3cb0ed72e4b12e2e2704f4d25b1924744e1dd",
+      "version": "6.8.12-tegra-39.2.2-20261112230500"
     },
     "nvidia-l4t-kernel-oot-headers": {
-      "filename": "pool/main/n/nvidia-l4t-kernel-oot-headers/nvidia-l4t-kernel-oot-headers_6.8.12-tegra-39.2.1-20260806224157_arm64.deb",
-      "sha256": "e8fb55e923bc4dfdda04c3ebb62f5f486f164321d5c4d08844a76218eba35740",
-      "version": "6.8.12-tegra-39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-kernel-oot-headers/nvidia-l4t-kernel-oot-headers_6.8.12-tegra-39.2.2-20261112230500_arm64.deb",
+      "sha256": "28b5e80c8ea44947eddf6861c9ce78e401cbffc99f377d5c4a1dc299ceaf7fb0",
+      "version": "6.8.12-tegra-39.2.2-20261112230500"
     },
     "nvidia-l4t-kernel-oot-modules": {
-      "filename": "pool/main/n/nvidia-l4t-kernel-oot-modules/nvidia-l4t-kernel-oot-modules_6.8.12-tegra-39.2.1-20260806224157_arm64.deb",
-      "sha256": "636577601b61612d254db45e2034c10263d899d766a9699c7827a7ca82ce409d",
-      "version": "6.8.12-tegra-39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-kernel-oot-modules/nvidia-l4t-kernel-oot-modules_6.8.12-tegra-39.2.2-20261112230500_arm64.deb",
+      "sha256": "f320eee0bcf9bda1d6fb378c0a7a11e477959487e48e0becd9607de47b42119c",
+      "version": "6.8.12-tegra-39.2.2-20261112230500"
     },
     "nvidia-l4t-kernel-openrm": {
-      "filename": "pool/main/n/nvidia-l4t-kernel-openrm/nvidia-l4t-kernel-openrm_6.8.12-tegra-39.2.1-20260806224157_arm64.deb",
-      "sha256": "3a789d743e226ff2cf2e49d736224bfeebcb0ad4ae581b9ed8b1548c59c4f917",
-      "version": "6.8.12-tegra-39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-kernel-openrm/nvidia-l4t-kernel-openrm_6.8.12-tegra-39.2.2-20261112230500_arm64.deb",
+      "sha256": "b7d1043acaae69c86a798f3b9c61b8a60f0c654aea3805f7f9d8c35a4cbebd6a",
+      "version": "6.8.12-tegra-39.2.2-20261112230500"
     },
     "nvidia-l4t-kernel-partitions": {
-      "filename": "pool/main/n/nvidia-l4t-kernel-partitions/nvidia-l4t-kernel-partitions_6.8.12-tegra-39.2.1-20260806224157_arm64.deb",
-      "sha256": "36653a1bdc390a8f31bb0b91e2ad89b2ff996bf47e32fd874eccdd820c161036",
-      "version": "6.8.12-tegra-39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-kernel-partitions/nvidia-l4t-kernel-partitions_6.8.12-tegra-39.2.2-20261112230500_arm64.deb",
+      "sha256": "708df56783cabaa62323d0e4f3b1558e67a20408a3f161cecece6e00073d02e7",
+      "version": "6.8.12-tegra-39.2.2-20261112230500"
     },
     "nvidia-l4t-libvulkan": {
-      "filename": "pool/main/n/nvidia-l4t-libvulkan/nvidia-l4t-libvulkan_39.2.1-20260806224157_arm64.deb",
-      "sha256": "5a5f99a93d413f0bad14498729381311f904025fe077dc4b40f0698fa03286c3",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-libvulkan/nvidia-l4t-libvulkan_39.2.2-20261112230500_arm64.deb",
+      "sha256": "c0af73bdeffa3d0b2b803c9a38b6b9799109c97556b2fa99cfb472498e8d50eb",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-multimedia": {
-      "filename": "pool/main/n/nvidia-l4t-multimedia/nvidia-l4t-multimedia_39.2.1-20260806224157_arm64.deb",
-      "sha256": "5f070f28008ff59a9f948dd8b0b7f6cc864285a595864043eb682efce913f7ca",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-multimedia/nvidia-l4t-multimedia_39.2.2-20261112230500_arm64.deb",
+      "sha256": "d43aff2a973f1f3936c8f7b41dc18b1a483f87e27c96adbd2cc05754ea8aca49",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-multimedia-nvgpu": {
-      "filename": "pool/main/n/nvidia-l4t-multimedia-nvgpu/nvidia-l4t-multimedia-nvgpu_39.2.1-20260806224157_arm64.deb",
-      "sha256": "b55df254f1a5e185170b3d7c1a92fe6e3d812e30d849c7141e11647a7dbd55d4",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-multimedia-nvgpu/nvidia-l4t-multimedia-nvgpu_39.2.2-20261112230500_arm64.deb",
+      "sha256": "3fb838952d92f955bb655eaa4985769fe9ed728a7e0952d520524b862c48c8ae",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-multimedia-openrm": {
-      "filename": "pool/main/n/nvidia-l4t-multimedia-openrm/nvidia-l4t-multimedia-openrm_39.2.1-20260806224157_arm64.deb",
-      "sha256": "6b886530befb3aacb6c931b0ec97c2b626fa5b0fc23dd43d4d16b87011fb68ef",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-multimedia-openrm/nvidia-l4t-multimedia-openrm_39.2.2-20261112230500_arm64.deb",
+      "sha256": "efde0f36e8a0dee6bd8370f0ffa96972e2afccd507655b233eb1a1a30a78752f",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-multimedia-utils": {
-      "filename": "pool/main/n/nvidia-l4t-multimedia-utils/nvidia-l4t-multimedia-utils_39.2.1-20260806224157_arm64.deb",
-      "sha256": "71bad758d12a486ac55f5c5cc12b1f908b88111b7695837ae3b76c682e97222d",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-multimedia-utils/nvidia-l4t-multimedia-utils_39.2.2-20261112230500_arm64.deb",
+      "sha256": "81f41749acb7680bddfb59546631c82a13fc74c439097b24b31fbc6b4d5c8a3a",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-nvfancontrol": {
-      "filename": "pool/main/n/nvidia-l4t-nvfancontrol/nvidia-l4t-nvfancontrol_39.2.1-20260806224157_arm64.deb",
-      "sha256": "3cc0463ed8e0b7c5ee6c03baa63bc14307a7ba3f46d93fb2959c52b49e4fb6a8",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-nvfancontrol/nvidia-l4t-nvfancontrol_39.2.2-20261112230500_arm64.deb",
+      "sha256": "708cf2de4a56084b6ff748e129f193a49bc4106c39e25facae3d575890a9ee89",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-nvml": {
-      "filename": "pool/main/n/nvidia-l4t-nvml/nvidia-l4t-nvml_39.2.1-20260806224157_arm64.deb",
-      "sha256": "6c3e78ad11e84c3c677f2d9c60473ca52103ed378faab9ccf6a83f756b884b21",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-nvml/nvidia-l4t-nvml_39.2.2-20261112230500_arm64.deb",
+      "sha256": "0e3fe7d86fd8d44792656b7c4bfc482083a7fa1f7bf27e8304a3ae3758f46c08",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-nvpmodel": {
-      "filename": "pool/main/n/nvidia-l4t-nvpmodel/nvidia-l4t-nvpmodel_39.2.1-20260806224157_arm64.deb",
-      "sha256": "e434d97e0423476913808c58a769a419a7f39cf63dd4e7b4c6ddd97c8283f761",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-nvpmodel/nvidia-l4t-nvpmodel_39.2.2-20261112230500_arm64.deb",
+      "sha256": "363d95088f788b301a52a93da841e26b685a010d16056bf417c4704c3f265457",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-nvpmodel-gui-tools": {
-      "filename": "pool/main/n/nvidia-l4t-nvpmodel-gui-tools/nvidia-l4t-nvpmodel-gui-tools_39.2.1-20260806224157_arm64.deb",
-      "sha256": "64c7442545cd99464030a0502b27e6d84fd9e212d6b60ea9d88b8a5a00fbe67d",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-nvpmodel-gui-tools/nvidia-l4t-nvpmodel-gui-tools_39.2.2-20261112230500_arm64.deb",
+      "sha256": "84b47994922d4332dd7b0400661d78d4c3c02a049ac7c691515d5a14de158c78",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-nvsci": {
-      "filename": "pool/main/n/nvidia-l4t-nvsci/nvidia-l4t-nvsci_39.2.1-20260806224157_arm64.deb",
-      "sha256": "7dc851490b23a4bba340786ee9b2fc51793c6c6bcdeca2fe0add5cadc0307423",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-nvsci/nvidia-l4t-nvsci_39.2.2-20261112230500_arm64.deb",
+      "sha256": "d8a2781505470bff3842d0ef9cb7993a11e02769aaccd6b2666d5415873afaef",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-oobe": {
-      "filename": "pool/main/n/nvidia-l4t-oobe/nvidia-l4t-oobe_39.2.1-20260806224157_arm64.deb",
-      "sha256": "990605936358a0ab6ff65d51e19558e10bfe6c80fb4af3adb12072845bb5e5d6",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-oobe/nvidia-l4t-oobe_39.2.2-20261112230500_arm64.deb",
+      "sha256": "743e14332f8f13e7521ee1ed463b6525bd625061874a1762b2e2f6dad50c12c7",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-openwfd": {
-      "filename": "pool/main/n/nvidia-l4t-openwfd/nvidia-l4t-openwfd_39.2.1-20260806224157_arm64.deb",
-      "sha256": "964d96d8dfd076024db3bea298896286ba76a53de31cc1c2009c187d46628d3d",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-openwfd/nvidia-l4t-openwfd_39.2.2-20261112230500_arm64.deb",
+      "sha256": "e8a94e1102e9f586e4aa5b07a484500154e613bcb9888da8e2e1d6afc7b78cb1",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-optee": {
-      "filename": "pool/main/n/nvidia-l4t-optee/nvidia-l4t-optee_39.2.1-20260806224157_arm64.deb",
-      "sha256": "4b98e036768266d62c3f9c48a2e8e9e4f02b4c791ca63b18be00f323e5be8861",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-optee/nvidia-l4t-optee_39.2.2-20261112230500_arm64.deb",
+      "sha256": "cc165d505f0132b471fb90f0ddcb749d1ea6faa3d48667fa7c267e8bcee05bdb",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-power-adapter-check": {
-      "filename": "pool/main/n/nvidia-l4t-power-adapter-check/nvidia-l4t-power-adapter-check_39.2.1-20260806224157_arm64.deb",
-      "sha256": "ace3bb2c77a45c5c3a2f4a31911f1b36e2d47c62586dc87ac2f5af83f6c98402",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-power-adapter-check/nvidia-l4t-power-adapter-check_39.2.2-20261112230500_arm64.deb",
+      "sha256": "3e164ddfc16c097e1cab498cef16e5a965c6d55a99127fe08a322dd557ff4014",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-pva": {
-      "filename": "pool/main/n/nvidia-l4t-pva/nvidia-l4t-pva_39.2.1-20260806224157_arm64.deb",
-      "sha256": "642d0d98cad4392c81867f67ddbf267f98b6bda92e9bed186d1378692d10416b",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-pva/nvidia-l4t-pva_39.2.2-20261112230500_arm64.deb",
+      "sha256": "afba92cef728a2f9926dd4e97dab0091db61a4b10deae1562126742efb515b30",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-tools": {
-      "filename": "pool/main/n/nvidia-l4t-tools/nvidia-l4t-tools_39.2.1-20260806224157_arm64.deb",
-      "sha256": "c73b0cb57f5c16055fca985252b62a5ce4e9e9b5f912f78bd73250d6e5db23c1",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-tools/nvidia-l4t-tools_39.2.2-20261112230500_arm64.deb",
+      "sha256": "dd2dd0771ce3ca22770d9e913a5c3ae6131ddb76b23f62fd4b3740d82522eb74",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-usb-service": {
-      "filename": "pool/main/n/nvidia-l4t-usb-service/nvidia-l4t-usb-service_39.2.1-20260806224157_arm64.deb",
-      "sha256": "32e9dffd77f74bd919165cd225f606617d40e79fe774aef75364e050c6ea7d19",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-usb-service/nvidia-l4t-usb-service_39.2.2-20261112230500_arm64.deb",
+      "sha256": "32f8fa334f79e759530038fc999991eab6a4f21ad9ea9a745284c0feb5a7063f",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-video-codec-openrm": {
-      "filename": "pool/main/n/nvidia-l4t-video-codec-openrm/nvidia-l4t-video-codec-openrm_39.2.1-20260806224157_arm64.deb",
-      "sha256": "a25ce7fcec1904a5b841e262413c5c6384eb82a9f5d9bc70877b677d970551c6",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-video-codec-openrm/nvidia-l4t-video-codec-openrm_39.2.2-20261112230500_arm64.deb",
+      "sha256": "1aac2377c79d62b7e6636bfffdbc85cb09868193270ea83e8b27958cb3c51ca2",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-vulkan-sc-dev": {
-      "filename": "pool/main/n/nvidia-l4t-vulkan-sc-dev/nvidia-l4t-vulkan-sc-dev_39.2.1-20260806224157_arm64.deb",
-      "sha256": "9de146ce1b149306ed20ebb7bdf6a42f65a1bdcaf3e6ae7c44b46684d16065f7",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-vulkan-sc-dev/nvidia-l4t-vulkan-sc-dev_39.2.2-20261112230500_arm64.deb",
+      "sha256": "2dd733c4f8bd2f806c91e53cb32e2e16fe352da68130325e4fa316028d47d69b",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-vulkan-sc-nvgpu": {
-      "filename": "pool/main/n/nvidia-l4t-vulkan-sc-nvgpu/nvidia-l4t-vulkan-sc-nvgpu_39.2.1-20260806224157_arm64.deb",
-      "sha256": "ab64c4b940ebf9af164964c2e32fb18ebeaff7623557f66a7798d85e2ce3a7d6",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-vulkan-sc-nvgpu/nvidia-l4t-vulkan-sc-nvgpu_39.2.2-20261112230500_arm64.deb",
+      "sha256": "3901921ee08d994a5319a9d201bd5b730a2a19ca0a32796b412631895081bf5f",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-vulkan-sc-openrm": {
-      "filename": "pool/main/n/nvidia-l4t-vulkan-sc-openrm/nvidia-l4t-vulkan-sc-openrm_39.2.1-20260806224157_arm64.deb",
-      "sha256": "0b9877ad0b7ad7a6cc1bc20a200c335e03e26cd69028b5b6ea3d2a3f38fe6368",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-vulkan-sc-openrm/nvidia-l4t-vulkan-sc-openrm_39.2.2-20261112230500_arm64.deb",
+      "sha256": "012dc11564ec2aed1f34862528d6d1b47e02060df62cd2fd6c38df4f9a7639ff",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-vulkan-sc-samples": {
-      "filename": "pool/main/n/nvidia-l4t-vulkan-sc-samples/nvidia-l4t-vulkan-sc-samples_39.2.1-20260806224157_arm64.deb",
-      "sha256": "529a81d473fa846bd7032b0e30ac0c30c05dee969508c1407f4e8cbb700b600f",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-vulkan-sc-samples/nvidia-l4t-vulkan-sc-samples_39.2.2-20261112230500_arm64.deb",
+      "sha256": "0e6478f902da5839e81d6f5f33593b41f35008c01c7cbf5201ec0147767c53fc",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-vulkan-sc-sdk": {
-      "filename": "pool/main/n/nvidia-l4t-vulkan-sc-sdk/nvidia-l4t-vulkan-sc-sdk_39.2.1-20260806224157_arm64.deb",
-      "sha256": "283c60a286746a0a29948afb62cc0db24b77aaa1eec80d7851c8cf31274e66f6",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-vulkan-sc-sdk/nvidia-l4t-vulkan-sc-sdk_39.2.2-20261112230500_arm64.deb",
+      "sha256": "874c32a600485cd4b14cfac2379907630fc6cac110f695e230384132833d899c",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-wayland": {
-      "filename": "pool/main/n/nvidia-l4t-wayland/nvidia-l4t-wayland_39.2.1-20260806224157_arm64.deb",
-      "sha256": "980cb672d5aa6a0fe1b817ba23bc1646344d8233f6cfb6cdb1923c0c3fcd8b20",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-wayland/nvidia-l4t-wayland_39.2.2-20261112230500_arm64.deb",
+      "sha256": "dbff371d14cc590520055e78d3052ed373d14a34b5771d7a6b3ae68350e72359",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-weston": {
-      "filename": "pool/main/n/nvidia-l4t-weston/nvidia-l4t-weston_39.2.1-20260806224157_arm64.deb",
-      "sha256": "e755b030e728aa2253534c33873bd94226d60eec4bdba3deb6185228ce52c8ff",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-weston/nvidia-l4t-weston_39.2.2-20261112230500_arm64.deb",
+      "sha256": "18885301ca928eb0d57272939950375433480929c64f5a108eecfec46ba1bd21",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-wpasupplicant": {
-      "filename": "pool/main/n/nvidia-l4t-wpasupplicant/nvidia-l4t-wpasupplicant_39.2.1-20260806224157_arm64.deb",
-      "sha256": "662dbccf2d98e17dbfff812048bba44695b5a32ebc209be173bf028cb24c3450",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-wpasupplicant/nvidia-l4t-wpasupplicant_39.2.2-20261112230500_arm64.deb",
+      "sha256": "61c607aefacef3c6c98234dca1d971b2f0586bf82f39d935fbd4d6c4df8edc14",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-x11": {
-      "filename": "pool/main/n/nvidia-l4t-x11/nvidia-l4t-x11_39.2.1-20260806224157_arm64.deb",
-      "sha256": "fc07f2b15567bb660917a315e9fc92ffc1558128a20701e235a095af3961a310",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-x11/nvidia-l4t-x11_39.2.2-20261112230500_arm64.deb",
+      "sha256": "068515675864318df8654b374dbacfbb2efa9e1da0f545f5727b0c148f48773f",
+      "version": "39.2.2-20261112230500"
     },
     "nvidia-l4t-xwayland": {
-      "filename": "pool/main/n/nvidia-l4t-xwayland/nvidia-l4t-xwayland_39.2.1-20260806224157_arm64.deb",
-      "sha256": "5d2276458d8d7aa3eb7b4c79ad8b7055141ac948f3853df44591ee514e982857",
-      "version": "39.2.1-20260806224157"
+      "filename": "pool/main/n/nvidia-l4t-xwayland/nvidia-l4t-xwayland_39.2.2-20261112230500_arm64.deb",
+      "sha256": "675db630a9d8f6b933c9077b8a9cf526b246cf9a7d6f59a438212ad09880225f",
+      "version": "39.2.2-20261112230500"
     },
     "python3-jetson-gpio": {
       "filename": "pool/main/j/jetson-gpio/python3-jetson-gpio_2.1.13-0ubuntu1_arm64.deb",

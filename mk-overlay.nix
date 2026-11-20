@@ -54,7 +54,9 @@ makeScope final.newScope (self: {
   # has no SoC.
   gpuDriver = "nvgpu";
 
-  callPackages = callPackagesWith (final // self);
+  # Use the spliced package set so nativeBuildInputs such as python3 and
+  # nukeReferences resolve to build-platform packages when cross compiling.
+  callPackages = callPackagesWith (final.__splicedPackages // self);
 
   # Present as a compatibility shim for packages which rely on `cudaPackages` to ensure they are able to draw from
   # a package set of the correct version.

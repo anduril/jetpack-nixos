@@ -57,7 +57,7 @@ in
 
   nvidia-jetpack7 =
     let
-      l4tMajorMinorPatchVersion = "39.2.1";
+      l4tMajorMinorPatchVersion = "39.2.2";
       hostOverlayFskpTools = final.fetchzip {
         url = final.lib.concatStrings [
           "https://developer.nvidia.com/downloads/embedded/l4t/"
@@ -66,19 +66,19 @@ in
           "${final.lib.versions.patch l4tMajorMinorPatchVersion}/release/"
           "host_overlay_fskp_tools_R${l4tMajorMinorPatchVersion}_aarch64.tbz2"
         ];
-        sha256 = "sha256-u3SIzBr1dxH82dqI7X9+ajdxe/vq54BgSAfkq1jdXTs=";
+        sha256 = "sha256-p4wb1yuD0GDUYKxB4Jgvifq18Tw61C1He7opkMi2los=";
         stripRoot = false;
       };
     in
     import ./mk-overlay.nix
       {
-        jetpackMajorMinorPatchVersion = "7.2.1";
+        jetpackMajorMinorPatchVersion = "7.2.2";
         inherit l4tMajorMinorPatchVersion;
         cudaMajorMinorPatchVersion = "13.2.1";
 
-        cudaDriverMajorMinorVersion = "595.78";
+        cudaDriverMajorMinorVersion = "595.113";
 
-        bspHash = "sha256-LlYZCIuojoXaslJH8DPXBlm29nb/g1F2oHdm3LD9vms=";
+        bspHash = "sha256-Y9PZknzZvLeuUV7M9zWnPoGxZ6q2oQG3nHLC4X1P+gc=";
         bspPrePatch = ''
           overlayRoot=${hostOverlayFskpTools}/Linux_for_Tegra/l4t
           cp --no-preserve=all -r "$overlayRoot"/. ./

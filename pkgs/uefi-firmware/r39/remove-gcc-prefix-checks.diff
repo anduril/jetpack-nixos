@@ -1,8 +1,8 @@
 diff --git a/BaseTools/Plugin/LinuxGccToolChain/LinuxGccToolChain.py b/BaseTools/Plugin/LinuxGccToolChain/LinuxGccToolChain.py
-index e7ef3df3b6..7212a8ae6b 100644
+index b3fbaf3..3c780ee 100644
 --- a/BaseTools/Plugin/LinuxGccToolChain/LinuxGccToolChain.py
 +++ b/BaseTools/Plugin/LinuxGccToolChain/LinuxGccToolChain.py
-@@ -22,45 +22,6 @@ class LinuxGccToolChain(IUefiBuildPlugin):
+@@ -22,39 +22,6 @@ class LinuxGccToolChain(IUefiBuildPlugin):
  
      def do_pre_build(self, thebuilder):
          self.Logger = logging.getLogger("LinuxGccToolChain")
@@ -27,12 +27,6 @@ index e7ef3df3b6..7212a8ae6b 100644
 -                self.Logger.critical("Failed in check aarch64")
 -                return ret
 -
--            # Check arm compiler
--            ret = self._check_arm(toolchain)
--            if ret != 0:
--                self.Logger.critical("Failed in check arm")
--                return ret
--
 -            # Check RISCV64 compiler
 -            ret = self._check_riscv64(toolchain)
 -            if ret != 0:
@@ -47,4 +41,4 @@ index e7ef3df3b6..7212a8ae6b 100644
 -
          return 0
  
-     def _check_arm(self, toolchain):
+     def _check_aarch64(self, toolchain):
