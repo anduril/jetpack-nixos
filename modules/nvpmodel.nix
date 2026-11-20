@@ -12,7 +12,7 @@ let
   gpuDriver = (import ../soc.nix { inherit lib; }).gpuDriverForSom config.hardware.nvidia-jetpack.som;
 
   # Experimentally found by doing each of the following for the different power modes
-  # rm -f /var/lib/nvpmodel/status && echo gpu_pg_mask_param=4294967295 >/opt/nvidia/l4t-gpusetup/gpu_pg_mask && /nix/store/0000000000-nvidia-l4t-nvpmodel-x.y.z/bin/nvpmodel -f /etc/nvpmodel.conf -m 3 && cat /opt/nvidia/l4t-gpusetup/gpu_pg_mask
+  # rm -f /var/lib/nvpmodel/status && echo gpu_pg_mask_param=4294967295 >/var/lib/l4t-gpu-static-pg/gpu_pg_mask && /nix/store/0000000000-nvidia-l4t-nvpmodel-x.y.z/bin/nvpmodel -f /etc/nvpmodel.conf -m 3 && cat /var/lib/l4t-gpu-static-pg/gpu_pg_mask
   initialGpuPgMaskParamDefaults = {
     "0" = 512;
     "1" = 512;
@@ -68,9 +68,9 @@ let
     ln -sf ${pkgs.nvidia-jetpack.l4t-nvpmodel}/etc/nvpmodel/nvpmodel_"$device_som".conf /etc/nvpmodel.conf
   ''
   + lib.optionalString (gpuDriver == "openrm") ''
-    if [ ! -e /opt/nvidia/l4t-gpusetup/gpu_pg_mask ] ; then
-      mkdir -p /opt/nvidia/l4t-gpusetup
-      echo "gpu_pg_mask_param=${toString cfg.initialGpuPgMaskParam}" >/opt/nvidia/l4t-gpusetup/gpu_pg_mask
+    if [ ! -e /var/lib/l4t-gpu-static-pg/gpu_pg_mask ] ; then
+      mkdir -p /var/lib/l4t-gpu-static-pg
+      echo "gpu_pg_mask_param=${toString cfg.initialGpuPgMaskParam}" >/var/lib/l4t-gpu-static-pg/gpu_pg_mask
     fi
   '');
 in
@@ -96,13 +96,13 @@ in
       # a GPU_POWER_GATING sysfs node. And the hack they suggested doesn't work.
       # https://forums.developer.nvidia.com/t/nvpmodel-conf-for-70w-with-jetson-thor/348826/13
       #
-      # How nvpmodel now determines the current state of GPU_POWER_GATING is through /opt/nvidia/l4t-gpusetup/gpu_pg_mask
+      # How nvpmodel now determines the current state of GPU_POWER_GATING is through /var/lib/l4t-gpu-static-pg/gpu_pg_mask
       # This file is read by modprobe.d when loading the GPU drivers to set the GPU_POWER_GATING setting.
       # This file is modified by nvpmodel when changing the power mode. Due to implementation, changing the
       # module paramter at runtime is not supported(?) and requires a reboot.
       #
-      # We populate /opt/nvidia/l4t-gpusetup/gpu_pg_mask with default value or with desired initial setting
-      # for requested power mode. Further, modeprobe is configured to read /opt/nvidia/l4t-gpusetup/gpu_pg_mask
+      # We populate /var/lib/l4t-gpu-static-pg/gpu_pg_mask with default value or with desired initial setting
+      # for requested power mode. Further, modeprobe is configured to read /var/lib/l4t-gpu-static-pg/gpu_pg_mask
       # if present or fallback to cfg.initialGpuPgMaskParam.
       initialGpuPgMaskParam = mkOption {
         description = "Initial gpu_pg_mask_param to use during *first* boot of a NixOS system";

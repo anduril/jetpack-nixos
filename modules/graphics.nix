@@ -196,7 +196,7 @@ in
 
       # see comment in modules/nvpmodel.nix for initialGpuPgMaskParam for details about gpu_pg_mask_param
       boot.extraModprobeConfig = ''
-        install nv-gpu-static-pg ${pkgs.kmod}/bin/modprobe --ignore-install nv-gpu-static-pg $(${lib.getExe pkgs.gnugrep} -E '^gpu_pg_mask_param=' /opt/nvidia/l4t-gpusetup/gpu_pg_mask 2>/dev/null || echo "gpu_pg_mask_param=${toString config.services.nvpmodel.initialGpuPgMaskParam}")
+        install nv-gpu-static-pg ${pkgs.kmod}/bin/modprobe --ignore-install nv-gpu-static-pg $(${lib.getExe pkgs.gnugrep} -E '^gpu_pg_mask_param=' /var/lib/l4t-gpu-static-pg/gpu_pg_mask 2>/dev/null || echo "gpu_pg_mask_param=${toString config.services.nvpmodel.initialGpuPgMaskParam}")
         softdep nvidia pre:nv-gpu-static-pg post:nvidia-uvm
 
         options nvidia NVreg_TemporaryFilePath=/var/tmp

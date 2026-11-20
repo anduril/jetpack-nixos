@@ -34,15 +34,15 @@ let
   };
   repos = {
     edk2 = {
-      sha256 = "sha256-3y56DRZwFri5K8S2wpYoACEyHlNJ3KMXAkme8UnIaU0=";
+      sha256 = "sha256-Wck4omOBz2urX5kpDjWqyRr9SI0hcmMfuuDvoAjxX3Y=";
       fetchSubmodules = true;
     };
-    edk2-non-osi.sha256 = "sha256-6yuvVvmGn4yaEksbbvGDX1ZcKpdWBKnwaNjLGvgAWyk=";
-    edk2-platforms.sha256 = "sha256-7SGml17A47+wZNn4Z9vZHjDYTAcxIyG6De9vU4U8QR8=";
+    edk2-non-osi.sha256 = "sha256-lX+2Ayul8o4fyM2THN0s6kNqSojRAqUtn8fxU/GeY+o=";
+    edk2-platforms.sha256 = "sha256-P65Nb1WIJ2CX1jWVtdZcyUJShN0K9hE7XAPwHMDMAGg=";
     edk2-infineon.sha256 = "sha256-47UJfEd4ViTenx5dvy2G75NFSgmcsyIWpN0Lv1QlvA8=";
-    edk2-redfish-client.sha256 = "sha256-Tq6dZu90T10FBVMYjYolm2WfAZc/cQe8dNuKXrK3RbE=";
-    edk2-nvidia.sha256 = "sha256-1qFt5wv5Ay3/rB6JecyKdc3ldHhpdOeNLcdWvsUuK3U=";
-    edk2-nvidia-non-osi.sha256 = "sha256-QdwDTzA23GGXY1jqgzbc6oTnOmhJJY5cm5NgWLH1VE8=";
+    edk2-redfish-client.sha256 = "sha256-CO8e17zudsHa+AOBp9s+f2qQjGA1Hd4GL1jLxRtR31Q=";
+    edk2-nvidia.sha256 = "sha256-Ve/6aA2TI7DVSn9ZWar2pK0CFiJWa0ZB9kAWjfEHWF4=";
+    edk2-nvidia-non-osi.sha256 = "sha256-Ac8r6E8JNLJTUi6ol08go72JUVDIWqG8HzjkJPxLq04=";
   };
 
   fetchRepo = name: value: fetchFromGitHub (defaultOrigin // { inherit name; repo = name; } // value);
@@ -59,12 +59,9 @@ let
           url = "https://src.fedoraproject.org/rpms/edk2/raw/08f2354cd280b4ce5a7888aa85cf520e042955c3/f/0021-Tweak-the-tools_def-to-support-cross-compiling.patch";
           hash = "sha256-E1/fiFNVx0aB1kOej2DJ2DlBIs9tAAcxoedym2Zhjxw=";
         })
-        # https://github.com/tianocore/edk2/pull/5658
-        (fetchpatch {
-          name = "fix-cross-compilation-antlr-dlg.patch";
-          url = "https://github.com/tianocore/edk2/commit/a34ff4a8f69a7b8a52b9b299153a8fac702c7df1.patch";
-          hash = "sha256-u+niqwjuLV5tNPykW4xhb7PW2XvUmXhx5uvftG1UIbU=";
-        })
+        # https://github.com/tianocore/edk2/pull/5658, rebased onto the
+        # $(BUILD_DIR)-based VfrCompile GNUmakefile in r39.2.2
+        ./fix-cross-compilation-antlr-dlg.patch
 
         ./remove-gcc-prefix-checks.diff
       ];

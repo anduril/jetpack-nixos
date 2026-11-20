@@ -1,0 +1,25 @@
+--- a/BaseTools/Source/C/VfrCompile/GNUmakefile
++++ b/BaseTools/Source/C/VfrCompile/GNUmakefile
+@@ -33,6 +33,9 @@
+ 
+ EXTRA_CLEAN_OBJECTS = $(BUILD_DIR)/EfiVfrParser.cpp $(BUILD_DIR)/EfiVfrParser.h $(BUILD_DIR)/VfrParser.dlg $(BUILD_DIR)/VfrTokens.h $(BUILD_DIR)/VfrLexer.cpp $(BUILD_DIR)/VfrLexer.h $(BUILD_DIR)/VfrSyntax.cpp $(BUILD_DIR)/tokens.h
+ 
++CC_FOR_BUILD ?= $(CC)
++CXX_FOR_BUILD ?= $(CXX)
++
+ MAKEROOT ?= ../..
+ 
+ include $(MAKEROOT)/Makefiles/header.makefile
+@@ -80,10 +83,10 @@
+ 	Pccts/dlg/dlg -C2 -i -CC -cl VfrLexer -o $(BUILD_DIR) $(BUILD_DIR)/VfrParser.dlg
+ 
+ Pccts/antlr/antlr:
+-	$(MAKE) -C Pccts/antlr
++	$(MAKE) -C Pccts/antlr CC=$(CC_FOR_BUILD) CXX=$(CXX_FOR_BUILD)
+ 
+ Pccts/dlg/dlg:
+-	$(MAKE) -C Pccts/dlg
++	$(MAKE) -C Pccts/dlg CC=$(CC_FOR_BUILD) CXX=$(CXX_FOR_BUILD)
+ 
+ clean: localClean
+ 
