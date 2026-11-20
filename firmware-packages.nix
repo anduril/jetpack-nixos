@@ -437,7 +437,9 @@ in
         # this firmware fixed point, not the SDK's or top-level Nixpkgs'.
         inherit (sdk) bspSrc gitRepos l4tMajorMinorPatchVersion jetpackMajorMinorPatchVersion
           l4tAtLeast l4tOlder patchfv flashFromDevice;
-        callPackages = lib.callPackagesWith (pkgs // sdk // finalJetpack);
+        # Use the spliced package set so nativeBuildInputs such as python3 and
+        # nukeReferences resolve to build-platform packages when cross compiling.
+        callPackages = lib.callPackagesWith (pkgs.__splicedPackages // sdk // finalJetpack);
       }
       // mkExtension (forPkgs pkgs.pkgsBuildBuild) finalJetpack sdk));
 }
