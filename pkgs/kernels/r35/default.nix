@@ -213,6 +213,11 @@ buildLinux (args // {
     NFT_COMPAT = module;
     NFT_LOG = module;
     NFT_COUNTER = module;
+    # Minimum needed for nftable firewall in NixOS to work.
+    NFT_CT = module;
+    NFT_FIB_INET = module;
+    NFT_FIB_IPV4 = module;
+    NFT_FIB_IPV6 = module;
     # IPv6 is enabled by default and without some of these `firewall.service` will explode.
     IP6_NF_MATCH_AH = module;
     IP6_NF_MATCH_EUI64 = module;

@@ -68,6 +68,11 @@ buildLinux (args // {
     NFT_COMPAT = module;
     NFT_LOG = module;
     NFT_COUNTER = module;
+    # Minimum needed for nftable firewall in NixOS to work.
+    NFT_CT = module;
+    NFT_FIB_INET = module;
+    NFT_FIB_IPV4 = module;
+    NFT_FIB_IPV6 = module;
 
     # search for "ip46tables" in nixpkgs and find all the -m options.
     # Enable the corresponding Kconfigs
