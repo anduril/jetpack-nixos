@@ -99,8 +99,8 @@ let
     , extraKernelParams ? [ ]
     }:
     mkRcmBootScript {
-      kernelPath = "${config.system.build.kernel}/${config.system.boot.loader.kernelFile}";
-      initrdPath = "${flashInitrd}/initrd";
+      kernel = "${config.system.build.kernel}/${config.system.boot.loader.kernelFile}";
+      initrd = "${flashInitrd}/initrd";
       kernelCmdline = lib.concatStringsSep " " ([
         "sdhci_tegra.en_boot_part_access=1"
         "clk_ignore_unused"

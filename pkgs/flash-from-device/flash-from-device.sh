@@ -76,7 +76,7 @@ program_spi_partition() {
   local file_size=0
 
   if [[ -n "$part_file" ]]; then
-    file_size=$(stat -c "%s" "$part_file")
+    file_size=$(stat -L -c "%s" "$part_file")
     if [[ -z "$file_size" ]]; then
       echo "ERR: could not retrieve file size of $part_file" >&2
       return 1
@@ -131,7 +131,7 @@ program_mmcboot_partition() {
     bootpart="/dev/mmcblk0boot1"
   fi
   if [[ -n "$part_file" ]]; then
-    file_size=$(stat -c "%s" "$part_file")
+    file_size=$(stat -L -c "%s" "$part_file")
     if [ -z "$file_size" ]; then
       echo "ERR: could not retrieve file size of $part_file" >&2
       return 1
@@ -338,7 +338,7 @@ write_partitions() {
     # with enough info to place it at the end
     if [[ "$partname" == "secondary_gpt" ]]; then
       disk_size=$(disk_size "$devnum" "$instnum")
-      file_size=$(stat -c "%s" "$partfile")
+      file_size=$(stat -L -c "%s" "$partfile")
       if [[ -n "$disk_size" ]]; then
         _start_location=$((disk_size - file_size))
         if [[ "$start_location" != "$_start_location" ]]; then
@@ -365,7 +365,7 @@ write_partitions() {
       program_mmcboot_partition "$partname" "$start_location" "$partsize" "$partfile"
     elif [[ "$devnum" -eq 1 && "$instnum" -eq 3 ]] || [[ "$devnum" -eq 6 && "$instnum" -eq 0 ]]; then
       report_step "Writing $partfile (size=$partsize) to $partname on /dev/mmcblk0 (offset=$start_location)"
-      file_size=$(stat -c "%s" "$partfile")
+      file_size=$(stat -L -c "%s" "$partfile")
       if ! dd if="$partfile" of="/dev/mmcblk0" bs=4096 seek="$start_location" oflag=seek_bytes conv=fsync >/dev/null; then
         return 1
       fi

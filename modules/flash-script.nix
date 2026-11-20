@@ -226,6 +226,14 @@ in
           '';
         };
 
+        decomposedFirmware.enable = mkEnableOption ''
+          building `signedFirmware` from one stock flash.sh run per variant plus
+          per-image signing of the firmware jetpack-nixos supplies (OP-TEE, ATF,
+          EKS, UEFI, kernel DTB), so changing those doesn't rerun flash.sh.
+          Enabling it changes the UEFI version stamp, so devices apply one
+          capsule update
+        '';
+
         eksFile = mkOption {
           type = types.nullOr types.path;
           default = null;
@@ -253,6 +261,16 @@ in
             description = "Additional requiredSystemFeatures to add to derivations which make use of secure boot keys";
           };
 
+          noChroot = lib.mkOption {
+            type = types.bool;
+            default = false;
+            description = ''
+              Set `__noChroot` on derivations which make use of secure boot keys, so
+              they build outside the sandbox chroot. Requires the builder to run with
+              `sandbox = relaxed`.
+            '';
+          };
+
           preSignCommands = lib.mkOption {
             type = types.oneOf [ (types.functionTo types.lines) types.lines ];
             apply = val: if lib.isFunction val then val else _: val;
@@ -268,6 +286,25 @@ in
               define this option to be a function that accepts the `pkgs`
               package-set if you need to access something from it.
             '';
+          };
+
+          derivationAttrs = mkOption {
+            internal = true;
+            readOnly = true;
+            type = types.attrs;
+            default = { inherit (cfg.firmware.secureBoot) requiredSystemFeatures; }
+              // lib.optionalAttrs cfg.firmware.secureBoot.noChroot { __noChroot = true; };
+            description = "Attributes for derivations which make use of secure boot keys: requiredSystemFeatures and noChroot.";
+          };
+
+          keyFlashArgs = mkOption {
+            internal = true;
+            readOnly = true;
+            type = types.listOf types.str;
+            default =
+              lib.optional (cfg.firmware.secureBoot.pkcFile != null) "-u ${lib.escapeShellArg "${cfg.firmware.secureBoot.pkcFile}"}" ++
+              lib.optional (cfg.firmware.secureBoot.sbkFile != null) "-v ${lib.escapeShellArg "${cfg.firmware.secureBoot.sbkFile}"}";
+            description = "The flash.sh options that pass pkcFile and sbkFile, as added to flashScriptOverrides.flashArgs.";
           };
         };
 
@@ -506,9 +543,7 @@ in
     ];
 
     hardware.nvidia-jetpack.flashScriptOverrides.flashArgs = lib.mkAfter (
-      lib.optional (cfg.firmware.secureBoot.pkcFile != null) "-u ${lib.escapeShellArg "${cfg.firmware.secureBoot.pkcFile}"}" ++
-      lib.optional (cfg.firmware.secureBoot.sbkFile != null) "-v ${lib.escapeShellArg "${cfg.firmware.secureBoot.sbkFile}"}" ++
-      [ cfg.flashScriptOverrides.configFileName "mmcblk0p1" ]
+      cfg.firmware.secureBoot.keyFlashArgs ++ [ cfg.flashScriptOverrides.configFileName "mmcblk0p1" ]
     );
 
     hardware.nvidia-jetpack.flashScriptOverrides.additionalDtbOverlays =
@@ -539,6 +574,16 @@ in
       {
         assertion = cfg.firmware.uefi.lowestSupportedVersion != null -> !(lib.versionOlder pkgs.nvidia-jetpack.l4tMajorMinorPatchVersion cfg.firmware.uefi.lowestSupportedVersion);
         message = "hardware.nvidia-jetpack.firmware.uefi.lowestSupportedVersion (${toString cfg.firmware.uefi.lowestSupportedVersion}) must not exceed the flashed L4T version (${pkgs.nvidia-jetpack.l4tMajorMinorPatchVersion}).";
+      }
+      {
+        assertion = cfg.firmware.decomposedFirmware.enable -> pkgs.nvidia-jetpack.l4tAtLeast "36";
+        message = "hardware.nvidia-jetpack.firmware.decomposedFirmware requires L4T r36 or newer.";
+      }
+      {
+        # signImage models neither the PV key flows nor --uefi-enc.
+        assertion = cfg.firmware.decomposedFirmware.enable ->
+          !lib.any (a: lib.any (f: lib.hasInfix f a) [ "--pv-enc" "--pv-crt" "--uefi-enc" ]) cfg.flashScriptOverrides.flashArgs;
+        message = "hardware.nvidia-jetpack.firmware.decomposedFirmware doesn't support the --pv-enc, --pv-crt and --uefi-enc flash.sh options.";
       }
       {
         assertion = cfg.firmware.uefi.edk2ExtraPackages != [ ] -> pkgs.nvidia-jetpack.l4tAtLeast "36";

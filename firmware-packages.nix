@@ -115,6 +115,8 @@ let
     // {
       inherit socType;
       socFamily = socInfo.family;
+      # The configured flash-tools (flashScriptOverrides.patches) for the platform that runs them.
+      inherit l4tFlashTools;
       chipId = socInfo.chipId;
       pkcListChipId = if socInfo.pkcListChipId != null then socInfo.pkcListChipId else throw "Unknown SoC type";
 
@@ -153,7 +155,8 @@ let
               uefi-firmware = null;
             })).bup;
           in
-          builtins.hashString "sha256" "${cursedBup}";
+          if cfg.firmware.decomposedFirmware.enable then finalJetpack.decomposed.versionHash
+          else builtins.hashString "sha256" "${cursedBup}";
       } // lib.optionalAttrs (finalJetpack.l4tAtLeast "36") {
         # r36+ only: r35's stuart argument set is closed, so it can't accept this.
         extraPackages = cfg.firmware.uefi.edk2ExtraPackages;
@@ -226,13 +229,11 @@ let
       } // (builtins.removeAttrs args [ "additionalDtbOverlays" ]));
 
       bup = (flasherPkgsOr pkgs).runCommand "bup-${cfg.name}-${finalJetpack.l4tMajorMinorPatchVersion}"
-        {
-          inherit (cfg.firmware.secureBoot) requiredSystemFeatures;
-        }
+        cfg.firmware.secureBoot.derivationAttrs
         ((finalJetpack.mkFlashScript
           l4tFlashTools # we need flash-tools for the platform that runs them
           {
-            # TODO: Remove preSignCommands when we switch to using signedFirmware directly
+            # Legacy BUP still signs via flash.sh; decomposed BUP consumes signedFirmware.
             flashCommands = ''
               ${cfg.firmware.secureBoot.preSignCommands (flasherPkgsOr pkgs.buildPackages)}
             '' + lib.concatMapStringsSep "\n"
@@ -264,10 +265,12 @@ let
       # python ${edk2-jetson}/BaseTools/BinWrappers/PosixLike/GenerateCapsule -v --encode --monotonic-count 1
       # NOTE: providing null public certs here will use the test certs in the EDK2 repo
       uefiCapsuleUpdate = pkgs.runCommand "uefi-${cfg.name}-${finalJetpack.l4tMajorMinorPatchVersion}.Cap"
-        {
+        ({
           nativeBuildInputs = [ pkgs.buildPackages.python3 pkgs.buildPackages.openssl ];
+        } // lib.optionalAttrs cfg.firmware.uefi.capsuleAuthentication.enable {
           inherit (cfg.firmware.uefi.capsuleAuthentication) requiredSystemFeatures;
-        }
+          __noChroot = cfg.firmware.secureBoot.noChroot;
+        })
         (''
           ${cfg.firmware.uefi.capsuleAuthentication.preSignCommands pkgs.buildPackages}
           ${lib.optionalString (fmpLowestSupportedVersion != null) "export FMP_LOWEST_SUPPORTED_VERSION=${toString fmpLowestSupportedVersion}"}
@@ -290,7 +293,7 @@ let
             else "enc_signed";
         in
         (flasherPkgsOr pkgs).runCommand "signed-${cfg.name}-${finalJetpack.l4tMajorMinorPatchVersion}"
-          { inherit (cfg.firmware.secureBoot) requiredSystemFeatures; }
+          cfg.firmware.secureBoot.derivationAttrs
           (finalJetpack.mkFlashScript l4tFlashTools {
             flashCommands = ''
               ${cfg.firmware.secureBoot.preSignCommands (flasherPkgsOr pkgs)}
@@ -412,9 +415,26 @@ let
           ]
         );
     } // flashTools;
+
+  # Today's derivations, which see the same uefi-firmware as decomposed's.
+  decomposedFirmware = finalJetpack: prevJetpack: {
+    reference = { inherit (prevJetpack) signedFirmware bup; };
+    decomposed = (flasherPkgsOr pkgs).callPackage ./firmware {
+      inherit cfg;
+      jetpack = finalJetpack;
+      dtbsDir = config.hardware.deviceTree.package;
+    };
+    flashEquivalence = import ./firmware/tests/flash-equivalence.nix {
+      inherit lib config pkgs devicePkgs extensions;
+      jetpack = finalJetpack;
+      toolsPkgs = flasherPkgsOr pkgs;
+    };
+  } // lib.optionalAttrs cfg.firmware.decomposedFirmware.enable {
+    inherit (finalJetpack.decomposed) signedFirmware bup;
+  };
 in
 {
-  extension = lib.composeManyExtensions ([ (mkExtension pkgs.pkgsBuildBuild.nvidia-jetpack) ] ++ extensions);
+  extension = lib.composeManyExtensions ([ (mkExtension pkgs.pkgsBuildBuild.nvidia-jetpack) decomposedFirmware ] ++ extensions);
 
   scope =
     let
@@ -429,15 +449,15 @@ in
       in config.hardware.nvidia-jetpack.firmwarePkgs, so these would be ignored. Move the override from the
       overlays that `pkgs` was instantiated with to hardware.nvidia-jetpack.firmwarePkgsExtensions.
     '';
-    applyExtensions (lib.makeScope sdk.newScope (finalJetpack:
+    applyExtensions ((lib.makeScope sdk.newScope (finalJetpack:
       {
         # Only these SDK inputs/helpers are part of the firmware API. sdk.newScope
         # supplies Nixpkgs + SDK automatic arguments without exporting userspace.
         # Rebind callPackages as well: its nested callPackage (e.g. Stuart) must see
         # this firmware fixed point, not the SDK's or top-level Nixpkgs'.
         inherit (sdk) bspSrc gitRepos l4tMajorMinorPatchVersion jetpackMajorMinorPatchVersion
-          l4tAtLeast l4tOlder patchfv flashFromDevice;
+          l4tAtLeast l4tOlder patchfv flashFromDevice signImage signFile bldtb;
         callPackages = lib.callPackagesWith (pkgs // sdk // finalJetpack);
       }
-      // mkExtension (forPkgs pkgs.pkgsBuildBuild) finalJetpack sdk));
+      // mkExtension (forPkgs pkgs.pkgsBuildBuild) finalJetpack sdk)).overrideScope decomposedFirmware);
 }
