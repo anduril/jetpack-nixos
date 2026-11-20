@@ -133,13 +133,19 @@ in
   # The x86_64-linux package set that runs NVIDIA's x86-only flashing and fusing
   # tools. It reuses this package set's config and overlays. It lives here instead
   # of in the NixOS module so that configurations sharing a `pkgs` also share it.
+  # CUDA is disabled because the Jetson CUDA capabilities in this package set's
+  # config are only valid on aarch64-linux, and the flashing host never needs CUDA.
   pkgsForJetsonFlashing =
     if system == "x86_64-linux" then
       final
     else
       import final.path {
         system = "x86_64-linux";
-        inherit (final) config overlays;
+        inherit (final) overlays;
+        config = final.config // {
+          cudaSupport = false;
+          cudaCapabilities = [ ];
+        };
       };
 
   # Set cudaPackage package sets to our JetPack-constructed package sets if we are on aarch64-linux. This is strictly
