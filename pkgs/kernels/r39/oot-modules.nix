@@ -16,7 +16,15 @@ let
   '';
 
   l4t-oot-projects = {
-    inherit (gitRepos) hwpm nvgpu nvdisplay unifiedgpudisp;
+    inherit (gitRepos) hwpm nvgpu nvdisplay;
+    unifiedgpudisp = applyPatches {
+      name = "unifiedgpudisp";
+      src = gitRepos.unifiedgpudisp;
+      patches = [
+        # Backported from open-gpu-kernel-modules 620.70.06.
+        ./0001-nvidia-put-the-clk-taken-in-nv_pci_tegra_boost_clock.patch
+      ];
+    };
     nvidia-oot = applyPatches {
       name = "nvidia-oot";
       src = gitRepos.nvidia-oot;

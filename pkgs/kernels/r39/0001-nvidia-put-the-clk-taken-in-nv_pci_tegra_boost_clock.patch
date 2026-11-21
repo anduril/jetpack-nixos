@@ -1,0 +1,68 @@
+From 1ec8eae6d1d80a86a47b7660854c897d9189ecf0 Mon Sep 17 00:00:00 2001
+From: Zachary Weiss <20050953+zacharyweiss@users.noreply.github.com>
+Date: Fri, 20 Nov 2026 20:06:37 -0500
+Subject: [PATCH] nvidia: put the clk taken in nv_pci_tegra_boost_clocks()
+
+nv_pci_tegra_boost_clocks() runs on every runtime suspend and resume of the 
+iGPU. It calls devm_clk_get() without a matching put, so each call leaves two clk 
+consumers on the device until unbind, and every later clk_{set,round}_rate() 
+walks the growing consumer list.
+
+On an idle Thor whose GPU is woken periodically (e.g. by nvidia-smi),
+this grows unreclaimable slab and kernel CPU time with uptime.
+
+Backport from open-gpu-kernel-modules 620.70.06 (kernel-open/nvidia/nv-tegra-clk.c), 
+which adds the devm_clk_put() and error checks. 
+---
+ kernel-open/nvidia/nv-pci.c | 18 ++++++++++++++++--
+ 1 file changed, 16 insertions(+), 2 deletions(-)
+
+diff --git a/kernel-open/nvidia/nv-pci.c b/kernel-open/nvidia/nv-pci.c
+index 619e57a..e94eb69 100644
+--- a/kernel-open/nvidia/nv-pci.c
++++ b/kernel-open/nvidia/nv-pci.c
+@@ -1596,13 +1596,19 @@ void nv_pci_tegra_boost_clocks(struct device *dev)
+     nv_linux_state_t *nvl = pci_get_drvdata(to_pci_dev(dev));
+     const struct nv_pci_tegra_devfreq_data *tdata;
+     struct clk *clk = NULL;
+-    unsigned long max_freq;
++    long max_freq;
+     int i;
+ 
+     for (i = 0; i < nvl->devfreq_table_size; i++)
+     {
+         tdata = &nvl->devfreq_table[i];
+ 
++        /* skip redundant clk entry */
++        if (tdata->clk_name == NULL)
++        {
++            continue;
++        }
++
+         /*
+          * Don't boost the GPC, NVD clocks but only the uprocclk
+          * and sysclk. This saves power consumption of GPU rail
+@@ -1611,6 +1617,10 @@ void nv_pci_tegra_boost_clocks(struct device *dev)
+         if (strstr(tdata->clk_name, "uproc") || strstr(tdata->clk_name, "sys"))
+         {
+             clk = devm_clk_get(dev, tdata->clk_name);
++            if (IS_ERR_OR_NULL(clk))
++            {
++                continue;
++            }
+         }
+         else
+         {
+@@ -1618,7 +1628,11 @@ void nv_pci_tegra_boost_clocks(struct device *dev)
+         }
+ 
+         max_freq = clk_round_rate(clk, ULONG_MAX);
+-        clk_set_rate(clk, max_freq);
++        if (max_freq >= 0)
++        {
++            clk_set_rate(clk, max_freq);
++        }
++        devm_clk_put(dev, clk);
+     }
+ #endif
+ }
