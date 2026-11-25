@@ -144,21 +144,6 @@ in
         '';
       };
 
-      rtc.hctosys.enable = mkOption {
-        default = true;
-        type = types.bool;
-        description = ''
-          Whether to set the system clock from the hardware RTC at boot
-          (CONFIG_RTC_HCTOSYS). Enabled by default for compatibility with
-          carrier boards that have a battery-backed RTC (e.g. AGX Orin with
-          C512).
-
-          If your device has no RTC battery, the RTC reads as epoch 0 and
-          the kernel will clobber CLOCK_REALTIME after userspace has started.
-          In that case, disable this option.
-        '';
-      };
-
       carrierBoard = mkOption {
         type = types.enum [
           "generic"
@@ -177,6 +162,21 @@ in
         default = false;
         type = types.bool;
         description = "Enable PREEMPT_RT patches";
+      };
+
+      kernel.rtcHctosys = mkOption {
+        default = true;
+        type = types.bool;
+        description = ''
+          Whether to set the system clock from the hardware RTC at boot
+          (CONFIG_RTC_HCTOSYS). Enabled by default for compatibility with
+          carrier boards that have a battery-backed RTC (e.g. AGX Orin with
+          C512).
+
+          If your device has no RTC battery, the RTC reads as epoch 0 and
+          the kernel will clobber CLOCK_REALTIME after userspace has started.
+          In that case, disable this option.
+        '';
       };
 
       kernelPackagesExtension = mkOption {
@@ -372,13 +372,7 @@ in
         else
           pkgs.nvidia-jetpack.kernelPackages).extend cfg.kernelPackagesExtension;
 
-      # Disable CONFIG_RTC_HCTOSYS when the user opts out (i.e. the device
-      # has no RTC battery). Without a battery, the RTC reads as epoch 0
-      # and the kernel's hctosys call clobbers CLOCK_REALTIME after
-      # userspace has already started (systemd-timesyncd, chrony, etc.).
-      # Users without a battery-backed RTC should set
-      # hardware.nvidia-jetpack.rtc.hctosys.enable = false;
-      boot.kernelPatches = lib.mkIf (!cfg.rtc.hctosys.enable) [
+      boot.kernelPatches = lib.mkIf (!cfg.kernel.rtcHctosys) [
         {
           name = "disable-rtc-hctosys";
           patch = null;
