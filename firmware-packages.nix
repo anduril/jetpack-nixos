@@ -157,6 +157,7 @@ let
       } // lib.optionalAttrs (finalJetpack.l4tAtLeast "36") {
         # r36+ only: r35's stuart argument set is closed, so it can't accept this.
         extraPackages = cfg.firmware.uefi.edk2ExtraPackages;
+        inherit (cfg.firmware.uefi) extraDefconfig;
       } // lib.optionalAttrs (finalJetpack.l4tAtLeast "38") {
         # r38-only: when true, skip the disable-ftpm.diff patch so UEFI uses
         # the fTPM TA we embedded in tos.img. r35/r36 builders don't accept

@@ -30,6 +30,8 @@
 , # Extra edk2 package trees, unpacked under their name and prepended to
   # PACKAGES_PATH -- a derivation named "foo" needs foo/SomePkg/SomePkg.inf.
   extraPackages ? [ ]
+, # Kconfig lines appended to every Tegra defconfig, e.g. "# CONFIG_NETWORKING_PXE is not set"
+  extraDefconfig ? ""
 , ...
 }:
 let
@@ -162,6 +164,10 @@ lib.extendMkDerivation {
       postPatch = ''
         find . -name \*_ext_dep.yaml -delete
         patchShebangs .
+      '' + lib.optionalString (extraDefconfig != "") ''
+        for f in edk2-nvidia/Platform/NVIDIA/Tegra/DefConfigs/*.defconfig; do
+          cat ${builtins.toFile "extra.defconfig" extraDefconfig} >>"$f"
+        done
       '' + lib.optionalString (printErrorLevel != null) ''
         sed -i 's#PcdDebugPrintErrorLevel|.*#PcdDebugPrintErrorLevel|${printErrorLevel}#' edk2-nvidia/Platform/NVIDIA/*.common.dsc.inc
       '' + lib.optionalString (bootLogo != null) ''
