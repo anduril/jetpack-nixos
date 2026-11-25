@@ -84,6 +84,16 @@ in
             default = [ ];
           };
 
+          extraDefconfig = mkOption {
+            type = types.lines;
+            description = ''
+              Kconfig lines appended to the edk2-nvidia defconfig, overriding its
+              defaults. For example, `# CONFIG_NETWORKING_PXE is not set` drops PXE
+              boot and its boot entries. Requires L4T r36 or newer.
+            '';
+            default = "";
+          };
+
           standaloneMMExtraPackages = mkOption {
             type = types.listOf types.package;
             description = ''
