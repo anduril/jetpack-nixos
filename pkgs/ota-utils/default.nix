@@ -21,13 +21,14 @@ stdenvNoCC.mkDerivation {
     cp ${./ota-apply-capsule-update.sh} $out/bin/ota-apply-capsule-update
     cp ${./ota-check-firmware.sh} $out/bin/ota-check-firmware
     cp ${./ota-abort-capsule-update.sh} $out/bin/ota-abort-capsule-update
+    cp ${./ota-setup-nv-boot-control.sh} $out/bin/ota-setup-nv-boot-control
     cp ${./ota_helpers.sh} $out/share/ota_helpers.sh
-    chmod +x $out/bin/ota-setup-efivars $out/bin/ota-apply-capsule-update $out/bin/ota-check-firmware $out/bin/ota-abort-capsule-update
+    chmod +x $out/bin/ota-setup-efivars $out/bin/ota-apply-capsule-update $out/bin/ota-check-firmware $out/bin/ota-abort-capsule-update $out/bin/ota-setup-nv-boot-control
 
     substituteInPlace "$out/share/ota_helpers.sh" \
       --subst-var efiSysMountPoint
 
-    for fname in ota-setup-efivars ota-apply-capsule-update ota-abort-capsule-update ota-check-firmware; do
+    for fname in ota-setup-efivars ota-apply-capsule-update ota-abort-capsule-update ota-check-firmware ota-setup-nv-boot-control; do
       substituteInPlace $out/bin/$fname \
         --subst-var expectedBiosVersion \
         --subst-var efiSysMountPoint \
