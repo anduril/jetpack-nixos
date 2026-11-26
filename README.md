@@ -143,6 +143,9 @@ You may need to enter the firmware menu and reorder it manually so NixOS will bo
 The major JetPack version may be changed by setting `hardware.nvidia-jetpack.majorVersion`.
 It defaults to the latest version supported by the board (e.g. JetPack 6 for Orin and JetPack 5 for Xavier).
 The "generic" som defaults to JetPack 6.
+Use `pkgs.nvidia-jetpack` for the packages of the configured version. In a `pkgs` built by the
+module or with `lib.nixpkgsArgsFor`, referencing a package from another version's package set
+(e.g. `pkgs.nvidia-jetpack5.l4t-core` in a JetPack 6 configuration) is an evaluation error.
 
 Note that the JetPack firmware of a given version is incompatible with the kernel and rootfs of
 the other. You cannot run the JetPack 5 firmware with the JetPack 6 kernel (and vice versa). Be
