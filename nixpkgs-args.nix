@@ -29,18 +29,39 @@ let
   selectJetpack =
     final: prev:
     let
-      mkWarnJetpack =
+      # The real package sets, saved the first time these overlays are applied.
+      # If they are applied again for another JetPack version (the module
+      # appends them to a `nixpkgs.pkgs` that `lib.nixpkgsArgsFor` already made
+      # for a different `majorVersion`), the sets replaced below are found here.
+      scopes = prev._jetpackNixosScopes or (lib.genAttrs (map (v: "nvidia-jetpack${v}") jetpackVersions) (name: prev.${name}));
+
+      # A package set for another JetPack major version must not end up in a
+      # closure for this one, so referencing any of its attributes is an error.
+      # The attribute names are kept, so `?` still works without throwing, and
+      # `recurseForDerivations` is false, so tools that walk the package set
+      # (`nix-env -qa`, `nix search`, Hydra's `packagePlatforms`) skip it.
+      mkUnsupportedJetpack =
         v:
-        lib.warn "nvidia-jetpack${v} is unsupported when nixos is configured to use Jetpack ${majorVersion}" prev."nvidia-jetpack${v}";
+        lib.mapAttrs
+          (name: _: throw ''
+            `nvidia-jetpack${v}.${name}` was referenced, but this package set is for JetPack ${majorVersion}.
+            Use `nvidia-jetpack` (JetPack ${majorVersion}) instead, or, if your SoM supports it, switch to
+            JetPack ${v} by setting `hardware.nvidia-jetpack.majorVersion = "${v}"` (or passing
+            `majorVersion = "${v}"` to jetpack-nixos's `lib.nixpkgsArgsFor`).
+          '')
+          scopes."nvidia-jetpack${v}"
+        // { recurseForDerivations = false; };
     in
     {
+      _jetpackNixosScopes = scopes;
+
+      "nvidia-jetpack${majorVersion}" = scopes."nvidia-jetpack${majorVersion}";
+
       nvidia-jetpack = final."nvidia-jetpack${majorVersion}".overrideScope (_: _: selection);
 
       cudaPackages = final."cudaPackages_${lib.versions.major final."nvidia-jetpack${majorVersion}".cudaMajorMinorVersion}";
     }
-    # Warn if anyone tries to evaluate non-default nvidia-jetpack package sets,
-    # but keep them around to avoid missing attribute errors.
-    // builtins.listToAttrs (map (v: { name = "nvidia-jetpack${v}"; value = mkWarnJetpack v; }) otherJetpacks);
+    // builtins.listToAttrs (map (v: { name = "nvidia-jetpack${v}"; value = mkUnsupportedJetpack v; }) otherJetpacks);
 in
 {
   overlays = [
