@@ -10,6 +10,38 @@ let
 
   cfg = config.hardware.nvidia-jetpack;
 
+  soc = import ../soc.nix { inherit lib; };
+  socType = soc.socTypeForSom cfg.som;
+
+  # Where the boot firmware is stored, for TEGRA_OTA_BOOT_DEVICE and
+  # TEGRA_OTA_GPT_DEVICE in nv_boot_control.conf. These are meta-tegra's
+  # OTABOOTDEV and OTAGPTDEV: QSPI flash, except on AGX Xavier, which boots
+  # from the eMMC boot partitions. null where meta-tegra has no value.
+  qspiOtaDevices = { boot = "/dev/mtdblock0"; gpt = "/dev/mtdblock0"; };
+  otaDevices = {
+    orin-agx = qspiOtaDevices;
+    orin-agx-industrial = qspiOtaDevices;
+    orin-nx = qspiOtaDevices;
+    orin-nano = qspiOtaDevices;
+    thor-agx = qspiOtaDevices;
+    thor-agx-t4000 = qspiOtaDevices;
+    xavier-agx = { boot = "/dev/mmcblk0boot0"; gpt = "/dev/mmcblk0boot1"; };
+    xavier-nx = qspiOtaDevices;
+    xavier-nx-emmc = qspiOtaDevices;
+  }.${cfg.som} or null;
+
+  setupNvBootControl = [
+    "${cfg.firmwarePkgs.otaUtils}/bin/ota-setup-nv-boot-control"
+  ]
+  ++ lib.optionals (socType != null) [ "-c" soc.socs.${socType}.chipId ]
+  ++ lib.optionals (otaDevices != null) [ "-b" otaDevices.boot "-g" otaDevices.gpt ]
+  ++ [
+    cfg.flashScriptOverrides.targetBoard
+    # The root device that flash-script.nix passes to flash.sh, which is also
+    # meta-tegra's default TNSPEC_BOOTDEV
+    "mmcblk0p1"
+  ];
+
   canUpdateFirmware = cfg.firmware.autoUpdate && cfg.som != "generic" && cfg.flashScriptOverrides.targetBoard != null;
 
   updateFirmware = pkgs.writeShellApplication {
@@ -92,6 +124,22 @@ in
       conflicts = [ "shutdown.target" ];
       serviceConfig.Type = "oneshot";
       serviceConfig.ExecStart = "${cfg.firmwarePkgs.otaUtils}/bin/ota-setup-efivars ${cfg.flashScriptOverrides.targetBoard}";
+    };
+
+    # nvbootctrl reads the board identity from /etc/nv_boot_control.conf,
+    # which flash.sh writes into the rootfs on stock L4T. Without it, it prints
+    # "Error: null input file!". This is a service of its own so that the file
+    # is written even if setting the EFI variables above fails.
+    systemd.services.setup-nv-boot-control = lib.mkIf (cfg.flashScriptOverrides.targetBoard != null) {
+      description = "Generate nv_boot_control.conf for nvbootctrl";
+      wantedBy = [ "multi-user.target" ];
+      serviceConfig.Type = "oneshot";
+      serviceConfig.RemainAfterExit = true;
+      serviceConfig.ExecStart = utils.escapeSystemdExecArgs setupNvBootControl;
+    };
+
+    environment.etc."nv_boot_control.conf" = lib.mkIf (cfg.flashScriptOverrides.targetBoard != null) {
+      source = "/run/nv_boot_control.conf";
     };
 
     systemd.services.firmware-update = lib.mkIf canUpdateFirmware {
